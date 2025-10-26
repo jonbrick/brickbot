@@ -1,159 +1,171 @@
 #!/usr/bin/env node
 /**
- * Sweep to Notion CLI
- * Main entry point for collecting Oura sleep data → Notion
+ * Oura Data Fetcher CLI
+ * Simple tool to fetch and display Oura API data
  */
 
 require("dotenv").config();
-const {
-  selectDateRange,
-  selectSources,
-  confirmOperation,
-  showSuccess,
-  showError,
-  showSummary,
-} = require("../src/utils/cli");
-const NotionService = require("../src/services/NotionService");
-const config = require("../src/config");
+const OuraService = require("../src/services/OuraService");
+const { formatDate, getDayName } = require("../src/utils/date");
+const { selectDateRange } = require("../src/utils/cli");
+const { calculateNightOf } = require("../src/utils/sleep");
 
-// Collectors
-const { fetchOuraData } = require("../src/collectors/oura");
+/**
+ * Extract and format sleep data with only the specified fields
+ */
+function extractSleepFields(sleepData) {
+  return sleepData.map((record) => {
+    // Calculate wake time from bedtime_end or bedtime_start + duration
+    const bedtimeEnd = record.bedtime_end ? new Date(record.bedtime_end) : null;
+    const bedtimeStart = record.bedtime_start
+      ? new Date(record.bedtime_start)
+      : null;
 
-// Transformers
-const {
-  batchTransformOuraToNotion,
-} = require("../src/transformers/oura-to-notion");
+    // Wake time is the bedtime_end
+    const wakeTime = bedtimeEnd ? bedtimeEnd.toLocaleString() : "N/A";
 
-const SOURCE_CONFIG = {
-  Oura: true,
-};
+    // Get day name for the record day
+    const dayDate = record.day ? new Date(record.day) : null;
+    const dayName = dayDate ? getDayName(dayDate) : "N/A";
 
-const AVAILABLE_SOURCES = Object.keys(SOURCE_CONFIG).filter(
-  (source) => SOURCE_CONFIG[source]
-);
+    // Calculate "Night of" date (the night you went to sleep)
+    // Oura's 'day' field is the wake-up date, so "Night of" = day - 1
+    const nightOfDate = record.day ? calculateNightOf(record.day) : null;
+    const nightOfDateStr = nightOfDate ? formatDate(nightOfDate) : "N/A";
+
+    return {
+      id: record.id,
+      day: record.day,
+      dayName: dayName,
+      nightOf: nightOfDateStr,
+      bedtime_start: record.bedtime_start,
+      bedtime_end: record.bedtime_end,
+      total_sleep_duration: record.total_sleep_duration,
+      deep_sleep_duration: record.deep_sleep_duration,
+      rem_sleep_duration: record.rem_sleep_duration,
+      light_sleep_duration: record.light_sleep_duration,
+      awake_time: record.awake_time,
+      average_heart_rate: record.average_heart_rate,
+      lowest_heart_rate: record.lowest_heart_rate,
+      average_hrv: record.average_hrv,
+      average_breath: record.average_breath,
+      efficiency: record.efficiency,
+      type: record.type,
+      wake_time_check: wakeTime,
+    };
+  });
+}
+
+/**
+ * Format duration in seconds to readable format
+ */
+function formatDuration(seconds) {
+  if (!seconds) return "N/A";
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${hours}h ${minutes}m`;
+}
+
+/**
+ * Print data in a nice table format
+ */
+function printSleepTable(data) {
+  console.log("\n" + "=".repeat(140));
+  console.log("OURA SLEEP DATA");
+  console.log("=".repeat(140) + "\n");
+
+  data.forEach((record, index) => {
+    console.log(`--- Sleep Session ${index + 1} ---`);
+    console.log(`Oura Day (Wake Date):      ${record.day}`);
+    console.log(`Night Of (Bed Date):       ${record.nightOf}`);
+    console.log(`Day of week (Bed Date):    ${record.dayName}`);
+    console.log(`ID:                        ${record.id}`);
+    console.log(`Bedtime Start:             ${record.bedtime_start || "N/A"}`);
+    console.log(`Bedtime End:               ${record.bedtime_end || "N/A"}`);
+    console.log(`Wake Time (Check):         ${record.wake_time_check}`);
+    console.log(`\nSleep Duration:`);
+    console.log(
+      `  Total:                   ${formatDuration(
+        record.total_sleep_duration
+      )} (${record.total_sleep_duration}s)`
+    );
+    console.log(
+      `  Deep Sleep:              ${formatDuration(
+        record.deep_sleep_duration
+      )} (${record.deep_sleep_duration}s)`
+    );
+    console.log(
+      `  REM Sleep:               ${formatDuration(
+        record.rem_sleep_duration
+      )} (${record.rem_sleep_duration}s)`
+    );
+    console.log(
+      `  Light Sleep:             ${formatDuration(
+        record.light_sleep_duration
+      )} (${record.light_sleep_duration}s)`
+    );
+    console.log(
+      `  Awake Time:              ${formatDuration(record.awake_time)} (${
+        record.awake_time
+      }s)`
+    );
+    console.log(`\nHeart Rate & Metrics:`);
+    console.log(
+      `  Avg Heart Rate:          ${record.average_heart_rate || "N/A"} bpm`
+    );
+    console.log(
+      `  Lowest Heart Rate:       ${record.lowest_heart_rate || "N/A"} bpm`
+    );
+    console.log(`  Avg HRV:                 ${record.average_hrv || "N/A"} ms`);
+    console.log(
+      `  Avg Breath Rate:         ${record.average_breath || "N/A"} bpm`
+    );
+    console.log(`  Sleep Efficiency:        ${record.efficiency || "N/A"}%`);
+    console.log(`  Sleep Type:              ${record.type || "N/A"}`);
+    console.log("\n");
+  });
+
+  console.log("=".repeat(140));
+  console.log(`\nTotal Records: ${data.length}\n`);
+}
 
 async function main() {
-  console.log("\n🤖 Brickbot - Collect Oura Sleep Data to Notion\n");
+  console.log("\n🤖 Brickbot - Fetch Oura Sleep Data\n");
 
   try {
-    // 1. Select date range
+    // Select date range
     const { startDate, endDate } = await selectDateRange();
 
-    // 2. Select sources
-    const selectedSources = await selectSources(AVAILABLE_SOURCES);
+    console.log("📊 Fetching sleep data...\n");
 
-    // 3. Confirm operation
-    const confirmed = await confirmOperation(
-      `Ready to collect data from ${selectedSources.length} source(s) and save to Notion?`
-    );
+    const service = new OuraService();
 
-    if (!confirmed) {
-      console.log("\n❌ Operation cancelled\n");
-      process.exit(0);
+    // Fetch sleep data only
+    const sleepData = await service.fetchSleep(startDate, endDate);
+
+    if (sleepData.length === 0) {
+      console.log("⚠️  No sleep data found for this date range\n");
+      return;
     }
 
-    // 4. Process each source
-    const results = {
-      totalRecords: 0,
-      successfulSources: 0,
-      failedSources: 0,
-      errors: [],
-    };
+    // Extract only the fields we want
+    const extractedData = extractSleepFields(sleepData);
 
-    const notionService = new NotionService();
+    // Print in a nice table format
+    printSleepTable(extractedData);
 
-    for (const source of selectedSources) {
-      try {
-        await processSource(source, startDate, endDate, notionService, results);
-        results.successfulSources++;
-      } catch (error) {
-        results.failedSources++;
-        results.errors.push(`${source}: ${error.message}`);
-        showError(`Failed to process ${source}`, error);
-      }
-    }
-
-    // 5. Display summary
-    console.log("\n");
-    showSummary({
-      "Sources Processed": `${results.successfulSources}/${selectedSources.length}`,
-      "Total Records Created": results.totalRecords,
-      Errors: results.failedSources,
-    });
-
-    if (results.errors.length > 0) {
-      console.log("\n⚠️  Errors:");
-      results.errors.forEach((error) => console.log(`   - ${error}`));
-    }
-
-    console.log("\n");
+    console.log("✅ Data fetched successfully!\n");
   } catch (error) {
-    showError("Fatal error", error);
+    console.error("\n❌ Error:", error.message);
+    if (error.stack) {
+      console.error(error.stack);
+    }
     process.exit(1);
   }
 }
 
-async function processSource(
-  source,
-  startDate,
-  endDate,
-  notionService,
-  results
-) {
-  const sourceLower = source.toLowerCase();
-
-  switch (sourceLower) {
-    case "oura":
-      await processOura(startDate, endDate, notionService, results);
-      break;
-
-    default:
-      throw new Error(`Unknown source: ${source}`);
-  }
-}
-
-async function processOura(startDate, endDate, notionService, results) {
-  const sessions = await fetchOuraData(startDate, endDate);
-
-  if (sessions.length === 0) {
-    return;
-  }
-
-  // Check for duplicates before creating
-  const newSessions = [];
-  for (const session of sessions) {
-    const existing = await notionService.findPageByProperty(
-      config.notion.databases.sleep,
-      config.notion.properties.sleep.sleepId,
-      session.sleepId
-    );
-
-    if (!existing) {
-      newSessions.push(session);
-    }
-  }
-
-  if (newSessions.length === 0) {
-    console.log("ℹ️  All Oura records already exist in Notion");
-    return;
-  }
-
-  const transformed = batchTransformOuraToNotion(newSessions);
-  const pagesData = transformed.map((props) => ({ properties: props }));
-
-  const created = await notionService.batchCreatePages(
-    config.notion.databases.sleep,
-    pagesData
-  );
-
-  results.totalRecords += created.filter((p) => !p.error).length;
-  showSuccess(
-    `Created ${created.filter((p) => !p.error).length} Oura records in Notion`
-  );
-}
-
 // Run main function
 main().catch((error) => {
-  showError("Unhandled error", error);
+  console.error("Fatal error:", error);
   process.exit(1);
 });

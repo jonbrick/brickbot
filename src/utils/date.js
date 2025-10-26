@@ -330,6 +330,20 @@ function daysDifference(date1, date2) {
   return Math.abs(Math.round((date1 - date2) / msPerDay));
 }
 
+/**
+ * Get day of week name (e.g., "Monday", "Tuesday")
+ * @param {Date} date - Date to get day name for
+ * @returns {string} Day of week name
+ */
+function getDayName(date) {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    throw new Error("Invalid date provided to getDayName");
+  }
+
+  const options = { weekday: "long" };
+  return date.toLocaleDateString("en-US", options);
+}
+
 module.exports = {
   parseDate,
   getToday,
@@ -350,4 +364,5 @@ module.exports = {
   getMonthStart,
   getMonthEnd,
   daysDifference,
+  getDayName,
 };

@@ -5,7 +5,6 @@
 
 const axios = require("axios");
 const config = require("../config");
-const { calculateOuraDate } = require("../utils/sleep");
 
 class OuraService {
   constructor() {
@@ -28,22 +27,20 @@ class OuraService {
 
   /**
    * Fetch sleep data for date range
-   * Converts "Night of" dates to Oura dates internally
    *
-   * @param {Date} startDate - Start date (night of)
-   * @param {Date} endDate - End date (night of)
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
    * @returns {Promise<Array>} Sleep sessions
    */
   async fetchSleep(startDate, endDate) {
     try {
-      // Convert "Night of" dates to Oura dates
-      const ouraStartDate = calculateOuraDate(startDate);
-      const ouraEndDate = calculateOuraDate(endDate);
+      const startStr = this._formatDateForAPI(startDate);
+      const endStr = this._formatDateForAPI(endDate);
 
       const response = await this.client.get("/usercollection/sleep", {
         params: {
-          start_date: this._formatDateForAPI(ouraStartDate),
-          end_date: this._formatDateForAPI(ouraEndDate),
+          start_date: startStr,
+          end_date: endStr,
         },
       });
 

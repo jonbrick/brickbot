@@ -16,6 +16,16 @@ const {
  * Select date range with consistent UI
  * Options: Today, Yesterday, This Week, Custom Range
  *
+ * ⚠️ OURA-SPECIFIC DATE LOGIC:
+ * This function is currently optimized for Oura Ring data where the API's 'day'
+ * field represents the WAKE-UP date, not the sleep date.
+ *
+ * For "Today": We query from today to tomorrow to get sleep sessions where you
+ * woke up today (slept last night).
+ *
+ * When adding other sleep tracking services, verify their date field semantics
+ * as they may differ from Oura's convention.
+ *
  * @returns {Promise<{startDate: Date, endDate: Date}>} Selected date range
  */
 async function selectDateRange() {
@@ -39,39 +49,50 @@ async function selectDateRange() {
 
   switch (rangeType) {
     case "today":
+      // OURA-SPECIFIC: Query from today to tomorrow to get sessions where you woke up today
+      // (Oura's 'day' field = wake-up date, so we need tomorrow's date as end range)
       startDate = getToday();
-      endDate = new Date(startDate);
+      endDate = new Date(getToday());
+      endDate.setDate(endDate.getDate() + 1);
       endDate.setHours(23, 59, 59, 999);
       break;
 
     case "yesterday":
+      // OURA-SPECIFIC: Query from yesterday to today to get sessions where you woke up yesterday
       startDate = getYesterday();
-      endDate = new Date(startDate);
+      endDate = getToday();
       endDate.setHours(23, 59, 59, 999);
       break;
 
     case "week": {
+      // OURA-SPECIFIC: This calendar week's sleep sessions (Sunday-Saturday wake-up dates)
       const today = getToday();
-      const dayOfWeek = today.getDay();
-      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
       startDate = new Date(today);
-      startDate.setDate(today.getDate() - daysToMonday);
+      startDate.setDate(today.getDate() - dayOfWeek); // Go back to Sunday
+      // Extend through next Sunday to capture Saturday night's sleep (wakes up Sunday)
       endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
+      endDate.setDate(startDate.getDate() + 7); // +7 days to next Sunday
+      endDate.setHours(23, 59, 59, 999);
       break;
     }
 
     case "last7": {
-      endDate = getToday();
-      startDate = new Date(endDate);
-      startDate.setDate(endDate.getDate() - 6);
+      // OURA-SPECIFIC: Last 7 wake-up days (including today)
+      // If today is Sunday, this means: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+      startDate = new Date(getToday());
+      startDate.setDate(startDate.getDate() - 6); // 6 days ago
+      endDate = new Date(getToday());
+      endDate.setHours(23, 59, 59, 999);
       break;
     }
 
     case "last30": {
-      endDate = getToday();
-      startDate = new Date(endDate);
-      startDate.setDate(endDate.getDate() - 29);
+      // OURA-SPECIFIC: Last 30 wake-up days (including today)
+      startDate = new Date(getToday());
+      startDate.setDate(startDate.getDate() - 29); // 29 days ago
+      endDate = new Date(getToday());
+      endDate.setHours(23, 59, 59, 999);
       break;
     }
 

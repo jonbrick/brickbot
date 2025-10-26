@@ -7,14 +7,18 @@ const { parseDate, formatDate, addDays } = require("./date");
 
 /**
  * Calculate "Night of" date from Oura date
- * Oura dates are UTC and represent the end of the sleep session (morning)
+ *
+ * ⚠️ OURA-SPECIFIC LOGIC:
+ * Oura dates are UTC and represent the END of the sleep session (wake-up morning).
  * "Night of" = Oura date - 1 day
  *
  * Example: Oura date "2024-01-15" = Night of "2024-01-14"
  * (You went to bed on Jan 14 night, woke up on Jan 15 morning)
  *
- * @param {string|Date} ouraDate - Oura API date
- * @returns {Date} Night of date
+ * Other sleep tracking services may use different date conventions!
+ *
+ * @param {string|Date} ouraDate - Oura API date (wake-up date)
+ * @returns {Date} Night of date (the night you went to sleep)
  */
 function calculateNightOf(ouraDate) {
   const date = typeof ouraDate === "string" ? parseDate(ouraDate) : ouraDate;

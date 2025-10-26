@@ -15,7 +15,7 @@ const { formatDate } = require("../utils/date");
 function transformStravaToNotion(activity) {
   const props = config.notion.properties.workouts;
 
-  return {
+  const transformed = {
     [props.title]: activity.name,
     [props.date]: activity.date,
     [props.activityType]: mapActivityType(activity.activityType),
@@ -25,13 +25,22 @@ function transformStravaToNotion(activity) {
       : 0, // Convert to minutes
     [props.distance]: activity.distance ? Math.round(activity.distance) : 0, // meters
     [props.calories]: activity.calories || null,
-    [props.heartRateAvg]: activity.averageHeartRate || null,
     [props.elevationGain]: activity.elevationGain
       ? Math.round(activity.elevationGain)
       : null,
-    [props.activityId]: activity.activityId || "",
     [props.calendarCreated]: false,
   };
+
+  // Skip heartRateAvg - property doesn't exist in Notion database
+  // Only add activityId if it exists and is valid
+  if (activity.activityId) {
+    const activityIdNum = parseInt(activity.activityId, 10);
+    if (!isNaN(activityIdNum)) {
+      transformed[props.activityId] = activityIdNum;
+    }
+  }
+
+  return transformed;
 }
 
 /**

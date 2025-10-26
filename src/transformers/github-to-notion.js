@@ -18,6 +18,8 @@ function transformGitHubToNotion(activity) {
   return {
     [props.title]: activity.repository,
     [props.date]: activity.date,
+    [props.uniqueId]:
+      activity.uniqueId || `${activity.repository}:${activity.date}`,
     [props.commitsCount]: activity.commitsCount || 0,
     [props.commitMessages]: (activity.commitMessages || []).join("\n"),
     [props.prTitles]: (activity.prTitles || []).join("\n"),

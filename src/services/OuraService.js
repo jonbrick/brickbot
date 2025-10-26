@@ -31,15 +31,54 @@ class OuraService {
       const ouraStart = addDays(startDate, 1);
       const ouraEnd = addDays(endDate, 1);
 
-      const url = `${this.baseUrl}/usercollection/daily_sleep`;
+      const url = `${this.baseUrl}/usercollection/sleep`;
       const params = new URLSearchParams({
         start_date: formatDate(ouraStart),
         end_date: formatDate(ouraEnd),
       });
 
+      // Debug: Log the query URL
+      console.log(
+        `Querying Oura sleep from ${formatDate(ouraStart)} to ${formatDate(
+          ouraEnd
+        )}`
+      );
+
       const response = await this._makeRequest(`${url}?${params}`);
-      return response.data || [];
+
+      // Debug: Log the raw API response
+      console.log(
+        `Oura API response keys:`,
+        JSON.stringify(Object.keys(response), null, 2)
+      );
+      console.log(
+        `Oura API returned ${response.data?.length || 0} sleep sessions`
+      );
+
+      // Debug: Show if there's a next_token (pagination)
+      if (response.next_token) {
+        console.log(
+          `⚠️ Oura API has next_token for pagination (might have more data)`
+        );
+      }
+
+      // Debug: Show actual response structure
+      console.log(`Full Oura API response:`, JSON.stringify(response, null, 2));
+
+      // Handle different response formats - sometimes data is an array directly
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (Array.isArray(response)) {
+        return response;
+      } else {
+        console.warn(
+          "Unexpected Oura API response format:",
+          JSON.stringify(response, null, 2)
+        );
+        return [];
+      }
     } catch (error) {
+      console.error(`Oura API error: ${error.message}`);
       throw new Error(`Failed to fetch Oura sleep data: ${error.message}`);
     }
   }

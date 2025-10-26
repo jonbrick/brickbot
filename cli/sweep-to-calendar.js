@@ -130,24 +130,24 @@ async function processSource(
   calendarService,
   results
 ) {
-  switch (source) {
-    case "GitHub PRs":
+  switch (source.toLowerCase()) {
+    case "github prs":
       await processGitHubPRs(startDate, endDate, calendarService, results);
       break;
 
-    case "Workouts":
+    case "workouts":
       await processWorkouts(startDate, endDate, calendarService, results);
       break;
 
-    case "Sleep":
+    case "sleep":
       await processSleep(startDate, endDate, calendarService, results);
       break;
 
-    case "Body Weight":
+    case "body weight":
       await processBodyWeight(startDate, endDate, calendarService, results);
       break;
 
-    case "Video Games":
+    case "video games":
       await processVideoGames(startDate, endDate, calendarService, results);
       break;
 

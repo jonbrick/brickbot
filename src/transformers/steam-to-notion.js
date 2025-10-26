@@ -20,12 +20,12 @@ function transformSteamToNotion(session) {
     [props.date]: session.date,
     [props.hoursPlayed]: session.hoursPlayed || 0,
     [props.minutesPlayed]: session.minutesPlayed || 0,
-    [props.sessionCount]: 1, // Steam doesn't provide session count
-    [props.sessionDetails]: "",
-    [props.startTime]: "",
-    [props.endTime]: "",
+    [props.sessionCount]: session.sessionCount || 1,
+    [props.sessionDetails]: JSON.stringify(session.sessionDetails || []),
+    [props.startTime]: session.startTime || "",
+    [props.endTime]: session.endTime || "",
     [props.platform]: "Steam",
-    [props.activityId]: session.appId || "",
+    [props.activityId]: session.activityId || "",
     [props.calendarCreated]: false,
   };
 }

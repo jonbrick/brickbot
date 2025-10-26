@@ -145,7 +145,26 @@ async function processGitHub(startDate, endDate, notionService, results) {
     return;
   }
 
-  const transformed = batchTransformGitHubToNotion(activities);
+  // Check for duplicates before creating
+  const newActivities = [];
+  for (const activity of activities) {
+    const existing = await notionService.findPageByProperty(
+      config.notion.databases.prs,
+      config.notion.properties.prs.uniqueId,
+      activity.uniqueId
+    );
+
+    if (!existing) {
+      newActivities.push(activity);
+    }
+  }
+
+  if (newActivities.length === 0) {
+    console.log("ℹ️  All GitHub records already exist in Notion");
+    return;
+  }
+
+  const transformed = batchTransformGitHubToNotion(newActivities);
   const pagesData = transformed.map((props) => ({ properties: props }));
 
   const created = await notionService.batchCreatePages(
@@ -166,7 +185,26 @@ async function processOura(startDate, endDate, notionService, results) {
     return;
   }
 
-  const transformed = batchTransformOuraToNotion(sessions);
+  // Check for duplicates before creating
+  const newSessions = [];
+  for (const session of sessions) {
+    const existing = await notionService.findPageByProperty(
+      config.notion.databases.sleep,
+      config.notion.properties.sleep.sleepId,
+      session.sleepId
+    );
+
+    if (!existing) {
+      newSessions.push(session);
+    }
+  }
+
+  if (newSessions.length === 0) {
+    console.log("ℹ️  All Oura records already exist in Notion");
+    return;
+  }
+
+  const transformed = batchTransformOuraToNotion(newSessions);
   const pagesData = transformed.map((props) => ({ properties: props }));
 
   const created = await notionService.batchCreatePages(
@@ -187,7 +225,26 @@ async function processStrava(startDate, endDate, notionService, results) {
     return;
   }
 
-  const transformed = batchTransformStravaToNotion(activities);
+  // Check for duplicates before creating
+  const newActivities = [];
+  for (const activity of activities) {
+    const existing = await notionService.findPageByProperty(
+      config.notion.databases.workouts,
+      config.notion.properties.workouts.activityId,
+      activity.activityId
+    );
+
+    if (!existing) {
+      newActivities.push(activity);
+    }
+  }
+
+  if (newActivities.length === 0) {
+    console.log("ℹ️  All Strava records already exist in Notion");
+    return;
+  }
+
+  const transformed = batchTransformStravaToNotion(newActivities);
   const pagesData = transformed.map((props) => ({ properties: props }));
 
   const created = await notionService.batchCreatePages(
@@ -208,7 +265,26 @@ async function processSteam(startDate, endDate, notionService, results) {
     return;
   }
 
-  const transformed = batchTransformSteamToNotion(sessions);
+  // Check for duplicates before creating
+  const newSessions = [];
+  for (const session of sessions) {
+    const existing = await notionService.findPageByProperty(
+      config.notion.databases.videoGames,
+      config.notion.properties.videoGames.activityId,
+      session.activityId
+    );
+
+    if (!existing) {
+      newSessions.push(session);
+    }
+  }
+
+  if (newSessions.length === 0) {
+    console.log("ℹ️  All Steam records already exist in Notion");
+    return;
+  }
+
+  const transformed = batchTransformSteamToNotion(newSessions);
   const pagesData = transformed.map((props) => ({ properties: props }));
 
   const created = await notionService.batchCreatePages(
@@ -229,7 +305,26 @@ async function processWithings(startDate, endDate, notionService, results) {
     return;
   }
 
-  const transformed = batchTransformWithingsToNotion(measurements);
+  // Check for duplicates before creating
+  const newMeasurements = [];
+  for (const measurement of measurements) {
+    const existing = await notionService.findPageByProperty(
+      config.notion.databases.bodyWeight,
+      config.notion.properties.bodyWeight.measurementId,
+      measurement.measurementId
+    );
+
+    if (!existing) {
+      newMeasurements.push(measurement);
+    }
+  }
+
+  if (newMeasurements.length === 0) {
+    console.log("ℹ️  All Withings records already exist in Notion");
+    return;
+  }
+
+  const transformed = batchTransformWithingsToNotion(newMeasurements);
   const pagesData = transformed.map((props) => ({ properties: props }));
 
   const created = await notionService.batchCreatePages(

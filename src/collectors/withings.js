@@ -40,12 +40,30 @@ async function fetchWithingsData(startDate, endDate) {
     const processed = measurements.map((measurement) => ({
       date: measurement.date,
       timestamp: measurement.timestamp,
-      weight: measurement.weight,
-      weightUnit: "kg", // Withings returns kg
-      // Convert to lbs if needed
-      weightLbs: measurement.weight
-        ? Math.round(measurement.weight * 2.20462 * 10) / 10
+      measurementId:
+        measurement.measurementId || measurement.timestamp.toString(),
+      weight: measurement.weight
+        ? Math.round(measurement.weight * 2.20462 * 10) / 10 // Convert to lbs
         : null,
+      fatPercentage: measurement.fatRatio
+        ? Math.round(measurement.fatRatio * 10) / 10
+        : null,
+      fatMass: measurement.fatMassWeight
+        ? Math.round(measurement.fatMassWeight * 2.20462 * 10) / 10
+        : null,
+      fatFreeMass: measurement.fatFreeMass
+        ? Math.round(measurement.fatFreeMass * 2.20462 * 10) / 10
+        : null,
+      muscleMass: measurement.muscleMass
+        ? Math.round(measurement.muscleMass * 2.20462 * 10) / 10
+        : null,
+      boneMass: measurement.boneMass
+        ? Math.round(measurement.boneMass * 2.20462 * 10) / 10
+        : null,
+      bodyWaterPercentage: measurement.hydration
+        ? Math.round(measurement.hydration * 10) / 10
+        : null,
+      deviceModel: measurement.deviceModel || "",
     }));
 
     spinner.succeed(`Fetched ${processed.length} Withings measurements`);

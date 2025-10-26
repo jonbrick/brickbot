@@ -117,10 +117,22 @@ function transformSleepToCalendarEvent(sleep) {
       ? config.calendar.calendars.sleepIn
       : config.calendar.calendars.normalWakeUp;
 
-  const summary = `Wake Up - ${sleep.googleCalendar}`;
+  // Sleep duration is stored in hours (from archive format)
+  const hours = sleep.sleepDuration || 0;
+
+  // Format title
+  const summary = `Sleep - ${hours}hrs (${sleep.efficiency}% efficiency)`;
+
+  // Format description with emojis and sleep stages
   const description = [
-    `Sleep Duration: ${Math.round(sleep.sleepDuration / 60)} minutes`,
-    `Efficiency: ${sleep.efficiency}%`,
+    `😴 ${formatNightOfDate(sleep.nightOf)}`,
+    `⏱️ Duration: ${hours} hours`,
+    `📊 Efficiency: ${sleep.efficiency}%`,
+    ``,
+    `🛌 Sleep Stages:`,
+    `• Deep Sleep: ${sleep.deepSleep} min`,
+    `• REM Sleep: ${sleep.remSleep} min`,
+    `• Light Sleep: ${sleep.lightSleep} min`,
   ].join("\n");
 
   return {
@@ -218,10 +230,30 @@ function formatDateOnly(date) {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Format night of date as "Weekday, Month Day, Year"
+ *
+ * @param {Date} date - Date to format
+ * @returns {string} Formatted date like "Sunday, September 28, 2025"
+ */
+function formatNightOfDate(date) {
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
+
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 module.exports = {
   transformPRToCalendarEvent,
   transformWorkoutToCalendarEvent,
   transformSleepToCalendarEvent,
   transformBodyWeightToCalendarEvent,
   transformVideoGameToCalendarEvent,
+  formatNightOfDate,
 };

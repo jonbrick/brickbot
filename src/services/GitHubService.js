@@ -239,14 +239,18 @@ class GitHubService {
     });
 
     // Convert to array and format
-    return Object.values(byRepo).map((data) => ({
-      repository: data.repository,
-      date: data.date,
-      commitsCount: data.commits.length,
-      commitMessages: data.commits.map((c) => c.message),
-      prsCount: data.prs.length,
-      prTitles: data.prs.map((pr) => pr.title),
-    }));
+    return Object.values(byRepo).map((data) => {
+      const uniqueId = `${data.repository}:${data.date}`;
+      return {
+        repository: data.repository,
+        date: data.date,
+        uniqueId,
+        commitsCount: data.commits.length,
+        commitMessages: data.commits.map((c) => c.message),
+        prsCount: data.prs.length,
+        prTitles: data.prs.map((pr) => pr.title),
+      };
+    });
   }
 
   /**

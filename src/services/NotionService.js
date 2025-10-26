@@ -276,6 +276,70 @@ class NotionService {
   }
 
   /**
+   * Check if a page exists with a specific property value
+   *
+   * @param {string} databaseId - Database ID
+   * @param {string} propertyName - Property name to check
+   * @param {string} value - Value to search for
+   * @returns {Promise<Object|null>} Existing page or null
+   */
+  async findPageByProperty(databaseId, propertyName, value) {
+    try {
+      // Detect property type and use appropriate filter
+      const propertyType = this._getPropertyType(databaseId, propertyName);
+
+      let filter;
+
+      if (propertyType === "number") {
+        // Convert to number if it's a string
+        const numValue = typeof value === "string" ? parseFloat(value) : value;
+        filter = {
+          property: propertyName,
+          number: {
+            equals: numValue,
+          },
+        };
+      } else {
+        // Default to rich_text filter
+        filter = {
+          property: propertyName,
+          rich_text: {
+            equals: value,
+          },
+        };
+      }
+
+      const results = await this.queryDatabase(databaseId, filter);
+      return results.length > 0 ? results[0] : null;
+    } catch (error) {
+      throw new Error(`Failed to find page by property: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get property type for a database
+   *
+   * @param {string} databaseId - Database ID
+   * @param {string} propertyName - Property name
+   * @returns {string} Property type
+   */
+  _getPropertyType(databaseId, propertyName) {
+    const propertyTypes = config.notion.propertyTypes;
+
+    // Find the database key that matches this databaseId
+    for (const dbKey in propertyTypes) {
+      const dbId = config.notion.databases[dbKey];
+      if (dbId === databaseId) {
+        // Return the property type
+        return propertyTypes[dbKey][propertyName] || "rich_text";
+      }
+    }
+
+    // Default to rich_text if not found
+    return "rich_text";
+  }
+
+  /**
    * Extract property value from page
    *
    * @param {Object} page - Notion page object
@@ -348,11 +412,9 @@ class NotionService {
 
       // Detect property type and format accordingly
       if (typeof value === "string") {
-        // Check if it's a title property (usually first property or "Name")
-        if (
-          key.toLowerCase().includes("name") ||
-          key.toLowerCase().includes("title")
-        ) {
+        // Check if this property should be formatted as a title based on config
+        const isTitleProperty = this._isTitleProperty(key);
+        if (isTitleProperty) {
           formatted[key] = {
             title: [{ text: { content: value } }],
           };
@@ -392,6 +454,33 @@ class NotionService {
     });
 
     return formatted;
+  }
+
+  /**
+   * Check if a property key should be formatted as a title type
+   * @param {string} key - Property key/name
+   * @returns {boolean} True if it's a title property
+   */
+  _isTitleProperty(key) {
+    const propertyTypes = config.notion.propertyTypes;
+
+    // Check the propertyTypes config
+    for (const dbKey in propertyTypes) {
+      if (propertyTypes[dbKey][key] === "title") {
+        return true;
+      }
+    }
+
+    // Fallback: check if key contains "name" or "title"
+    // (for backwards compatibility)
+    if (
+      key.toLowerCase().includes("name") ||
+      key.toLowerCase().includes("title")
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   /**

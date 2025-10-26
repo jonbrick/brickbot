@@ -39,11 +39,15 @@ async function selectDateRange() {
 
   switch (rangeType) {
     case "today":
-      startDate = endDate = getToday();
+      startDate = getToday();
+      endDate = new Date(startDate);
+      endDate.setHours(23, 59, 59, 999);
       break;
 
     case "yesterday":
-      startDate = endDate = getYesterday();
+      startDate = getYesterday();
+      endDate = new Date(startDate);
+      endDate.setHours(23, 59, 59, 999);
       break;
 
     case "week": {

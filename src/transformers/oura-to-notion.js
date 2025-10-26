@@ -4,7 +4,7 @@
  */
 
 const config = require("../config");
-const { formatDate, formatTime } = require("../utils/date");
+const { formatDate, formatDateLong, formatTime } = require("../utils/date");
 const { isSleepIn } = require("../utils/sleep");
 
 /**
@@ -24,14 +24,14 @@ function transformOuraToNotion(session) {
       : config.notion.sleep.normalWakeUpLabel;
 
   return {
-    [props.title]: `Night of ${formatDate(session.nightOf)}`,
+    [props.title]: formatDateLong(session.nightOf),
     [props.nightOfDate]: session.nightOf,
     [props.ouraDate]: session.ouraDate,
     [props.bedtime]: session.bedtimeStart || "",
     [props.wakeTime]: session.bedtimeEnd || "",
     [props.sleepDuration]: session.sleepDuration
-      ? Math.round(session.sleepDuration / 60)
-      : 0, // Convert to minutes
+      ? parseFloat((session.sleepDuration / 3600).toFixed(1))
+      : 0, // Convert seconds to hours (to match archive format)
     [props.deepSleep]: session.deepSleep
       ? Math.round(session.deepSleep / 60)
       : 0,

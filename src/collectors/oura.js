@@ -23,6 +23,13 @@ async function fetchOuraData(startDate, endDate) {
   try {
     const service = new OuraService();
 
+    // Debug: Log the date range being queried
+    if (process.env.DEBUG) {
+      console.log(
+        `Querying Oura sleep data from ${startDate.toISOString()} to ${endDate.toISOString()}`
+      );
+    }
+
     // Fetch sleep sessions
     // Service handles the date offset internally
     const sleepSessions = await service.fetchSleep(startDate, endDate);
@@ -34,6 +41,11 @@ async function fetchOuraData(startDate, endDate) {
 
     // Process sleep sessions
     const processed = sleepSessions.map((session) => {
+      // Debug: Log the raw session data for inspection
+      if (process.env.DEBUG) {
+        console.log("Raw Oura session data:", JSON.stringify(session, null, 2));
+      }
+
       // Oura date is in the response as 'day'
       // Convert to "Night of" date for consistency
       const ouraDate = new Date(session.day);

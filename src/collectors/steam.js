@@ -38,10 +38,18 @@ async function fetchSteamData(startDate, endDate) {
 
     daySessions.forEach((dayData) => {
       dayData.games.forEach((game) => {
+        // Create a unique activity ID based on date + game name + first session start time
+        const activityId = game.sessions[0]?.start_time
+          ? `${formatDate(new Date(dayData.date))}_${game.name}_${
+              game.sessions[0].start_time
+            }`
+          : `${formatDate(new Date(dayData.date))}_${game.name}`;
+
         // Create a session entry for each game on each day
         const sessionEntry = {
           date: new Date(dayData.date),
           gameName: game.name,
+          activityId,
           hoursPlayed: game.hours,
           minutesPlayed: game.minutes,
           sessionCount: game.sessions.length,

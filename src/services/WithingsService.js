@@ -241,6 +241,7 @@ class WithingsService {
       return {
         date,
         timestamp: group.date,
+        measurementId: group.grpid.toString(),
         ...measurements,
       };
     });

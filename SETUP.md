@@ -1,8 +1,8 @@
-# 🔧 Brickbot Setup Guide
+# Brickbot Setup Guide
 
 Complete step-by-step setup instructions for Brickbot.
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Initial Setup](#initial-setup)
@@ -265,16 +265,18 @@ Get each calendar ID:
 
 ## External API Setup
 
-> 💡 **Quick Setup Guide**: For detailed step-by-step instructions with screenshots and troubleshooting, see [EXTERNAL_SERVICES_SETUP.md](./EXTERNAL_SERVICES_SETUP.md)
-
-All external data sources are **optional**. Only configure the services you want to use. The sections below provide quick reference - for comprehensive setup instructions, see the dedicated external services guide.
+All external data sources are **optional**. Only configure the services you want to use.
 
 ### GitHub
 
-1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+**What you'll get**: Daily commit counts, PR titles, code change statistics
+
+**Setup**:
+
+1. Go to [GitHub Settings > Personal Access Tokens](https://github.com/settings/tokens)
 2. Click "Generate new token (classic)"
 3. Select scopes: `repo`, `read:user`
-4. Generate token
+4. Copy the token
 5. Add to `.env`:
    ```bash
    GITHUB_TOKEN=ghp_xxxxxxxxxxxxx
@@ -283,59 +285,79 @@ All external data sources are **optional**. Only configure the services you want
 
 ### Oura Ring
 
-1. Go to [Oura Cloud](https://cloud.ouraring.com/personal-access-tokens)
-2. Generate a Personal Access Token
-3. Add to `.env`:
+**What you'll get**: Sleep duration, bedtime, heart rate metrics, HRV
+
+**Setup**:
+
+1. Go to [Oura Cloud Personal Access Tokens](https://cloud.ouraring.com/personal-access-tokens)
+2. Create a new token
+3. Copy the token
+4. Add to `.env`:
    ```bash
    OURA_TOKEN=xxxxxxxxxxxxx
    ```
 
 ### Strava
 
+**What you'll get**: Activities, distance, duration, heart rate, calories
+
+**Setup**:
+
 1. Go to [Strava API Settings](https://www.strava.com/settings/api)
 2. Create a new application
 3. Set "Authorization Callback Domain" to `localhost`
-4. Add to `.env`:
+4. Copy Client ID and Client Secret
+5. Add to `.env`:
    ```bash
    STRAVA_CLIENT_ID=xxxxx
    STRAVA_CLIENT_SECRET=xxxxxxxxxxxxx
    ```
-5. Run OAuth setup:
+6. Run OAuth setup:
    ```bash
    yarn tokens:setup
    ```
-   Select "Strava" and follow prompts.
+   Select "Strava" and follow prompts
 
 ### Steam
 
-Steam integration uses a Lambda endpoint that provides accurate gaming session data.
+**What you'll get**: Gaming sessions with timestamps, hours played, session details
 
-1. See [steam-tracker-complete-guide.md](./steam-tracker-complete-guide.md) for deploying the Steam tracking Lambda
-2. Once deployed, get your Lambda function URL
-3. Add to `.env`:
-   ```bash
-   STEAM_URL=https://your-lambda-url.lambda-url.region.on.aws
-   ```
+**Setup**:
 
-For detailed setup instructions, see the complete Steam tracking guide.
+Steam integration uses a Lambda endpoint. See [Steam documentation](../steam-tracker-docs.md) for deploying the Lambda function.
+
+Once deployed, add to `.env`:
+
+```bash
+STEAM_URL=https://your-lambda-url.lambda-url.region.on.aws
+```
 
 ### Withings
+
+**What you'll get**: Body weight measurements with timestamps
+
+**Setup**:
 
 1. Go to [Withings Developer Portal](https://developer.withings.com/)
 2. Create a new application
 3. Set redirect URI to `http://localhost:3000/callback`
-4. Add to `.env`:
+4. Copy Client ID and Client Secret
+5. Add to `.env`:
    ```bash
    WITHINGS_CLIENT_ID=xxxxxxxxxxxxx
    WITHINGS_CLIENT_SECRET=xxxxxxxxxxxxx
    ```
-5. Run OAuth setup:
+6. Run OAuth setup:
    ```bash
    yarn tokens:setup
    ```
-   Select "Withings" and follow prompts.
+   Select "Withings" and follow prompts
 
-### Claude AI (for task categorization and insights)
+### Claude AI
+
+**What you'll get**: AI-powered task categorization, weekly retrospectives, insights
+
+**Setup**:
 
 1. Go to [Anthropic Console](https://console.anthropic.com/)
 2. Get your API key
@@ -344,6 +366,8 @@ For detailed setup instructions, see the complete Steam tracking guide.
    ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
    CLAUDE_MODEL=claude-sonnet-4-20250514
    ```
+
+**Pricing**: Very affordable for personal use (~$1-3/month for daily use)
 
 ## Environment Variables
 
@@ -490,7 +514,6 @@ Pull data for the current week to test Notion queries.
 
 ### "Rate limit exceeded"
 
-- Brickbot respects rate limits but may need to slow down
 - Wait a few minutes and try again
 - Consider reducing batch sizes in config
 
@@ -502,21 +525,6 @@ Once setup is complete:
 2. Sync to calendar: `yarn 2-sync-cal`
 3. Set up a daily cron job or manual routine
 4. Explore weekly insights: `yarn week:5-run-all`
-
-## Additional Resources
-
-- **[EXTERNAL_SERVICES_SETUP.md](./EXTERNAL_SERVICES_SETUP.md)** - Detailed API credential setup guide
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Technical architecture details
-- **[README.md](./README.md)** - Usage examples and workflows
-
-## Support
-
-For issues or questions:
-
-- Check [EXTERNAL_SERVICES_SETUP.md](./EXTERNAL_SERVICES_SETUP.md) for API setup help
-- Review [ARCHITECTURE.md](./ARCHITECTURE.md) for technical details
-- See [README.md](./README.md) for usage examples
-- Run `yarn tokens:check` to verify credentials
 
 ---
 

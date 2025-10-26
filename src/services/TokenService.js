@@ -372,18 +372,25 @@ class TokenService {
    */
   async _checkSteamToken() {
     try {
-      if (!config.sources.steam.apiKey) {
+      if (!config.sources.steam.apiUrl) {
         return {
           valid: false,
           needsRefresh: false,
-          message: "No API key configured",
+          message: "No API URL configured",
         };
       }
 
+      // Test Lambda endpoint accessibility
+      const SteamService = require("./SteamService");
+      const service = new SteamService();
+      const isValid = await service.testConnection();
+
       return {
-        valid: true,
+        valid: isValid,
         needsRefresh: false,
-        message: "API key is configured",
+        message: isValid
+          ? "Lambda endpoint accessible"
+          : "Lambda endpoint unreachable",
       };
     } catch (error) {
       return {
@@ -392,6 +399,14 @@ class TokenService {
         message: error.message,
       };
     }
+  }
+
+  /**
+   * Public method for Steam token checking (called by CLI)
+   * @returns {Promise<Object>} Token status
+   */
+  async checkSteamToken() {
+    return await this._checkSteamToken();
   }
 
   /**
@@ -754,6 +769,98 @@ class TokenService {
         : null,
       userId: data.body.userid,
     };
+  }
+
+  /**
+   * Generic token check by service key
+   * @param {string} serviceKey - Service key (e.g., 'github', 'strava')
+   * @returns {Promise<Object>} Token status
+   */
+  async checkServiceByKey(serviceKey) {
+    const tokenConfig = require("../config/tokens");
+    const serviceConfig = tokenConfig.getService(serviceKey);
+
+    if (!serviceConfig) {
+      throw new Error(`Unknown service: ${serviceKey}`);
+    }
+
+    // Get credentials if needed
+    const credentials = serviceConfig.getCredentials
+      ? serviceConfig.getCredentials()
+      : null;
+
+    // Call the appropriate check method
+    const checkMethod = this[serviceConfig.checkMethod];
+    if (!checkMethod) {
+      throw new Error(`Check method not found: ${serviceConfig.checkMethod}`);
+    }
+
+    return await checkMethod.call(this, credentials || null);
+  }
+
+  /**
+   * Generic token refresh by service key
+   * @param {string} serviceKey - Service key (e.g., 'strava', 'withings')
+   * @returns {Promise<Object>} Refresh result with env updates
+   */
+  async refreshServiceByKey(serviceKey) {
+    const tokenConfig = require("../config/tokens");
+    const serviceConfig = tokenConfig.getService(serviceKey);
+
+    if (!serviceConfig) {
+      throw new Error(`Unknown service: ${serviceKey}`);
+    }
+
+    if (!serviceConfig.requiresRefresh) {
+      throw new Error(`Service ${serviceKey} does not support token refresh`);
+    }
+
+    // Get credentials
+    const credentials = serviceConfig.getCredentials
+      ? serviceConfig.getCredentials()
+      : null;
+
+    // Call the appropriate refresh method
+    const refreshMethod = this[serviceConfig.refreshMethod];
+    if (!refreshMethod) {
+      throw new Error(
+        `Refresh method not found: ${serviceConfig.refreshMethod}`
+      );
+    }
+
+    const newTokens = await refreshMethod.call(this, credentials || null);
+
+    // Map tokens to env var names
+    const envUpdates = this._mapTokensToEnv(newTokens, serviceConfig.envVars);
+
+    return {
+      serviceName: serviceConfig.name,
+      envUpdates,
+    };
+  }
+
+  /**
+   * Map token response to environment variable names
+   * @param {Object} tokens - Token response from API
+   * @param {Object} envVarConfig - Environment variable configuration
+   * @returns {Object} Environment updates
+   */
+  _mapTokensToEnv(tokens, envVarConfig) {
+    const updates = {};
+
+    if (tokens.accessToken && envVarConfig.accessToken) {
+      updates[envVarConfig.accessToken] = tokens.accessToken;
+    }
+
+    if (tokens.refreshToken && envVarConfig.refreshToken) {
+      updates[envVarConfig.refreshToken] = tokens.refreshToken;
+    }
+
+    if (tokens.expiresAt && envVarConfig.expiresAt) {
+      updates[envVarConfig.expiresAt] = tokens.expiresAt;
+    }
+
+    return updates;
   }
 }
 

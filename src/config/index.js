@@ -9,6 +9,7 @@ require("dotenv").config();
 const notion = require("./notion");
 const calendar = require("./calendar");
 const sources = require("./sources");
+const tokens = require("./tokens");
 
 /**
  * Validate that all required environment variables are present
@@ -64,6 +65,7 @@ module.exports = {
   notion,
   calendar,
   sources,
+  tokens,
   env: {
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: process.env.NODE_ENV === "production",

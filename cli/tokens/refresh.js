@@ -13,7 +13,7 @@ const {
   showSummary,
 } = require("../../src/utils/cli");
 const TokenService = require("../../src/services/TokenService");
-const config = require("../../src/config");
+const tokenConfig = require("../../src/config/tokens");
 const fs = require("fs");
 const path = require("path");
 
@@ -28,37 +28,22 @@ async function main() {
     showInfo("Checking which tokens need refresh...");
 
     const tokensToRefresh = [];
+    const refreshableServices = tokenConfig.getRefreshableServices();
 
-    // Check Strava
-    const stravaStatus = await tokenService.checkStravaTokens(
-      config.sources.strava
-    );
-    if (stravaStatus.needsRefresh) {
-      tokensToRefresh.push("Strava");
-    }
+    for (const serviceKey of refreshableServices) {
+      const serviceConfig = tokenConfig.getService(serviceKey);
 
-    // Check Withings
-    const withingsStatus = await tokenService.checkWithingsTokens(
-      config.sources.withings
-    );
-    if (withingsStatus.needsRefresh) {
-      tokensToRefresh.push("Withings");
-    }
-
-    // Check Personal Google Calendar
-    const personalGoogleStatus = await tokenService.checkGoogleTokens(
-      config.calendar.getPersonalCredentials()
-    );
-    if (personalGoogleStatus.needsRefresh) {
-      tokensToRefresh.push("Personal Google Calendar");
-    }
-
-    // Check Work Google Calendar
-    const workGoogleStatus = await tokenService.checkGoogleTokens(
-      config.calendar.getWorkCredentials()
-    );
-    if (workGoogleStatus.needsRefresh) {
-      tokensToRefresh.push("Work Google Calendar");
+      try {
+        const status = await tokenService.checkServiceByKey(serviceKey);
+        if (status.needsRefresh) {
+          tokensToRefresh.push(serviceKey);
+        }
+      } catch (error) {
+        // Skip if service is not configured
+        console.log(
+          `   Skipping ${serviceConfig.name} (not configured or error)`
+        );
+      }
     }
 
     if (tokensToRefresh.length === 0) {
@@ -67,7 +52,11 @@ async function main() {
       process.exit(0);
     }
 
-    console.log(`\nTokens that need refresh: ${tokensToRefresh.join(", ")}\n`);
+    console.log(
+      `\nTokens that need refresh: ${tokensToRefresh
+        .map((key) => tokenConfig.getService(key).name)
+        .join(", ")}\n`
+    );
 
     // Confirm operation
     const confirmed = await confirmOperation(
@@ -80,28 +69,33 @@ async function main() {
     }
 
     // Refresh tokens
-    if (tokensToRefresh.includes("Strava")) {
-      showInfo("Refreshing Strava tokens...");
-      const result = await refreshStravaToken(tokenService);
-      results.push(result);
-    }
+    for (const serviceKey of tokensToRefresh) {
+      const serviceConfig = tokenConfig.getService(serviceKey);
+      showInfo(`Refreshing ${serviceConfig.name}...`);
 
-    if (tokensToRefresh.includes("Withings")) {
-      showInfo("Refreshing Withings tokens...");
-      const result = await refreshWithingsToken(tokenService);
-      results.push(result);
-    }
+      try {
+        const result = await tokenService.refreshServiceByKey(serviceKey);
 
-    if (tokensToRefresh.includes("Personal Google Calendar")) {
-      showInfo("Refreshing Personal Google Calendar tokens...");
-      const result = await refreshGooglePersonalToken(tokenService);
-      results.push(result);
-    }
+        // Update .env file
+        updateEnvFile(result.envUpdates);
 
-    if (tokensToRefresh.includes("Work Google Calendar")) {
-      showInfo("Refreshing Work Google Calendar tokens...");
-      const result = await refreshGoogleWorkToken(tokenService);
-      results.push(result);
+        results.push({
+          service: serviceConfig.name,
+          success: true,
+          message: "Refreshed successfully",
+          details: result.envUpdates
+            ? Object.entries(result.envUpdates).map(
+                ([key, value]) => `${key} updated`
+              )
+            : [],
+        });
+      } catch (error) {
+        results.push({
+          service: serviceConfig.name,
+          success: false,
+          message: `Failed: ${error.message}`,
+        });
+      }
     }
 
     // Display results
@@ -148,114 +142,6 @@ async function main() {
   } catch (error) {
     showError("Fatal error", error);
     process.exit(1);
-  }
-}
-
-async function refreshStravaToken(tokenService) {
-  try {
-    const newTokens = await tokenService.refreshStravaTokens(
-      config.sources.strava
-    );
-
-    // Update .env file
-    updateEnvFile({
-      STRAVA_ACCESS_TOKEN: newTokens.accessToken,
-      STRAVA_REFRESH_TOKEN: newTokens.refreshToken,
-      STRAVA_TOKEN_EXPIRY: newTokens.expiresAt,
-    });
-
-    return {
-      service: "Strava",
-      success: true,
-      message: "Refreshed successfully",
-      details: [
-        `New expiry: ${new Date(newTokens.expiresAt * 1000).toLocaleString()}`,
-      ],
-    };
-  } catch (error) {
-    return {
-      service: "Strava",
-      success: false,
-      message: `Failed: ${error.message}`,
-    };
-  }
-}
-
-async function refreshWithingsToken(tokenService) {
-  try {
-    const newTokens = await tokenService.refreshWithingsTokens(
-      config.sources.withings
-    );
-
-    // Update .env file
-    updateEnvFile({
-      WITHINGS_ACCESS_TOKEN: newTokens.accessToken,
-      WITHINGS_REFRESH_TOKEN: newTokens.refreshToken,
-      WITHINGS_TOKEN_EXPIRY: newTokens.expiresAt,
-    });
-
-    return {
-      service: "Withings",
-      success: true,
-      message: "Refreshed successfully",
-      details: [
-        `New expiry: ${new Date(newTokens.expiresAt * 1000).toLocaleString()}`,
-      ],
-    };
-  } catch (error) {
-    return {
-      service: "Withings",
-      success: false,
-      message: `Failed: ${error.message}`,
-    };
-  }
-}
-
-async function refreshGooglePersonalToken(tokenService) {
-  try {
-    const newTokens = await tokenService.refreshGoogleTokens(
-      config.calendar.getPersonalCredentials()
-    );
-
-    // Note: Google refresh tokens typically don't expire unless revoked
-    // The access token is refreshed automatically by the library
-
-    return {
-      service: "Personal Google Calendar",
-      success: true,
-      message: "Refreshed successfully",
-      details: ["Access token refreshed (refresh token remains valid)"],
-    };
-  } catch (error) {
-    return {
-      service: "Personal Google Calendar",
-      success: false,
-      message: `Failed: ${error.message}`,
-    };
-  }
-}
-
-async function refreshGoogleWorkToken(tokenService) {
-  try {
-    const newTokens = await tokenService.refreshGoogleTokens(
-      config.calendar.getWorkCredentials()
-    );
-
-    // Note: Google refresh tokens typically don't expire unless revoked
-    // The access token is refreshed automatically by the library
-
-    return {
-      service: "Work Google Calendar",
-      success: true,
-      message: "Refreshed successfully",
-      details: ["Access token refreshed (refresh token remains valid)"],
-    };
-  } catch (error) {
-    return {
-      service: "Work Google Calendar",
-      success: false,
-      message: `Failed: ${error.message}`,
-    };
   }
 }
 

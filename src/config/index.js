@@ -7,7 +7,6 @@
 require("dotenv").config();
 
 const notion = require("./notion");
-const calendar = require("./calendar");
 const sources = require("./sources");
 const tokens = require("./tokens");
 
@@ -23,23 +22,14 @@ function validateConfig() {
     errors.push("NOTION_TOKEN is required");
   }
 
-  // Validate Notion databases (at least one should be configured)
-  const notionDbIds = Object.values(notion.databases).filter(
-    (id) => id && id !== "your_db_id"
-  );
-  if (notionDbIds.length === 0) {
-    errors.push("At least one Notion database ID must be configured");
+  // Validate Notion sleep database
+  if (!notion.databases.sleep) {
+    errors.push("NOTION_SLEEP_DATABASE_ID is required");
   }
 
-  // Validate Google Calendar auth for personal account
-  if (
-    !process.env.PERSONAL_GOOGLE_CLIENT_ID ||
-    !process.env.PERSONAL_GOOGLE_CLIENT_SECRET ||
-    !process.env.PERSONAL_GOOGLE_REFRESH_TOKEN
-  ) {
-    errors.push(
-      "Personal Google Calendar OAuth credentials are incomplete (CLIENT_ID, CLIENT_SECRET, REFRESH_TOKEN required)"
-    );
+  // Validate Oura token
+  if (!process.env.OURA_TOKEN) {
+    errors.push("OURA_TOKEN is required");
   }
 
   if (errors.length > 0) {
@@ -63,7 +53,6 @@ try {
 
 module.exports = {
   notion,
-  calendar,
   sources,
   tokens,
   env: {

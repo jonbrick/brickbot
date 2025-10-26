@@ -67,8 +67,20 @@ async function fetchOuraData(startDate, endDate) {
         hrv: session.average_hrv,
         respiratoryRate: session.average_breath,
         efficiency: session.efficiency,
-        score: session.score,
-        contributors: session.contributors,
+        score: session.score || session.readiness?.score,
+        contributors: session.contributors || session.readiness?.contributors,
+        temperatureDeviation:
+          session.temperature_deviation ||
+          session.readiness?.temperature_deviation,
+        temperatureTrendDeviation:
+          session.temperature_trend_deviation ||
+          session.readiness?.temperature_trend_deviation,
+        type: session.type,
+        // New fields
+        latency: session.latency,
+        timeInBed: session.time_in_bed,
+        restlessPeriods: session.restless_periods,
+        period: session.period,
       };
     });
 

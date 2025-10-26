@@ -27,9 +27,11 @@ class OuraService {
     }
 
     try {
-      // Convert "night of" dates to Oura dates (add 1 day)
-      const ouraStart = addDays(startDate, 1);
-      const ouraEnd = addDays(endDate, 1);
+      // Oura API uses the date the sleep ended (wake-up date)
+      // The input dates are already in the correct format
+      // Example: User selects Oct 25 → Query Oura for Oct 25 → Returns sleep ending Oct 25 (night of Oct 24)
+      const ouraStart = startDate;
+      const ouraEnd = endDate;
 
       const url = `${this.baseUrl}/usercollection/sleep`;
       const params = new URLSearchParams({
@@ -259,6 +261,34 @@ class OuraService {
     }
 
     return await response.json();
+  }
+
+  /**
+   * Fetch daily sleep summaries (includes sleep scores)
+   *
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} Daily sleep summaries
+   */
+  async fetchDailySleepSummaries(startDate, endDate) {
+    if (!this.token) {
+      throw new Error("Oura token not configured");
+    }
+
+    try {
+      const url = `${this.baseUrl}/usercollection/daily_sleep`;
+      const params = new URLSearchParams({
+        start_date: formatDate(startDate),
+        end_date: formatDate(endDate),
+      });
+
+      const response = await this._makeRequest(`${url}?${params}`);
+      return response.data || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch Oura daily sleep summaries: ${error.message}`
+      );
+    }
   }
 
   /**

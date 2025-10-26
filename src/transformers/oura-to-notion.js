@@ -23,6 +23,18 @@ function transformOuraToNotion(session) {
       ? config.notion.sleep.sleepInLabel
       : config.notion.sleep.normalWakeUpLabel;
 
+  // Extract readiness data from contributors
+  const readinessScore =
+    session.contributors?.resting_heart_rate ||
+    session.contributors?.hrv_balance ||
+    session.temperatureDeviation
+      ? session.score
+      : null;
+
+  const recoveryIndex = session.contributors?.recovery_index || null;
+  const sleepBalance = session.contributors?.sleep_balance || null;
+  const temperatureDeviation = session.temperatureDeviation || null;
+
   return {
     [props.title]: formatDateLong(session.nightOf),
     [props.nightOfDate]: session.nightOf,
@@ -50,7 +62,21 @@ function transformOuraToNotion(session) {
     [props.googleCalendar]: sleepInType,
     [props.sleepId]: session.sleepId || "",
     [props.calendarCreated]: false,
-    [props.type]: "Sleep",
+    [props.type]: session.type || "Sleep",
+    // New fields
+    [props.sleepLatency]: session.latency
+      ? Math.round(session.latency / 60)
+      : null, // Convert seconds to minutes
+    [props.timeInBed]: session.timeInBed
+      ? parseFloat((session.timeInBed / 3600).toFixed(1))
+      : null, // Convert seconds to hours
+    [props.restlessPeriods]: session.restlessPeriods || null,
+    [props.readinessScore]: readinessScore,
+    [props.temperatureDeviation]: temperatureDeviation,
+    [props.recoveryIndex]: recoveryIndex,
+    [props.sleepBalance]: sleepBalance,
+    [props.sleepPeriod]: session.period !== undefined ? session.period : null,
+    [props.sleepScore]: session.score || null,
   };
 }
 

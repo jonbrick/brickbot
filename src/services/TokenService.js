@@ -570,6 +570,191 @@ class TokenService {
     await service.refreshToken();
     return { success: true };
   }
+
+  /**
+   * Get Google Calendar authorization URL for OAuth flow
+   * @param {string} accountType - "personal" or "work"
+   * @returns {Promise<string>} Authorization URL
+   */
+  async getGoogleAuthUrl(accountType = "personal") {
+    const { google } = require("googleapis");
+    const credentials =
+      accountType === "work"
+        ? config.calendar.getWorkCredentials()
+        : config.calendar.getPersonalCredentials();
+
+    const oauth2Client = new google.auth.OAuth2(
+      credentials.clientId,
+      credentials.clientSecret,
+      credentials.redirectUri
+    );
+
+    const scopes = ["https://www.googleapis.com/auth/calendar"];
+
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: scopes,
+      prompt: "consent", // Force consent screen to get refresh token
+    });
+
+    return authUrl;
+  }
+
+  /**
+   * Exchange authorization code for Google Calendar tokens
+   * @param {string} code - Authorization code from OAuth callback
+   * @param {string} accountType - "personal" or "work"
+   * @returns {Promise<Object>} Tokens
+   */
+  async exchangeGoogleCode(code, accountType = "personal") {
+    const { google } = require("googleapis");
+    const credentials =
+      accountType === "work"
+        ? config.calendar.getWorkCredentials()
+        : config.calendar.getPersonalCredentials();
+
+    const oauth2Client = new google.auth.OAuth2(
+      credentials.clientId,
+      credentials.clientSecret,
+      credentials.redirectUri
+    );
+
+    const { tokens } = await oauth2Client.getToken(code);
+
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      expiryDate: tokens.expiry_date,
+    };
+  }
+
+  /**
+   * Get Strava authorization URL for OAuth flow
+   * @returns {Promise<string>} Authorization URL
+   */
+  async getStravaAuthUrl() {
+    const clientId = config.sources.strava.clientId;
+    const redirectUri = config.sources.strava.redirectUri;
+    const scopes = "activity:read_all,profile:read_all";
+
+    const authUrl =
+      `https://www.strava.com/oauth/authorize?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${scopes}&` +
+      `approval_prompt=force`;
+
+    return authUrl;
+  }
+
+  /**
+   * Exchange authorization code for Strava tokens
+   * @param {string} code - Authorization code from OAuth callback
+   * @returns {Promise<Object>} Tokens
+   */
+  async exchangeStravaCode(code) {
+    const fetch = require("node-fetch");
+    const clientId = config.sources.strava.clientId;
+    const clientSecret = config.sources.strava.clientSecret;
+    const redirectUri = config.sources.strava.redirectUri;
+
+    const params = new URLSearchParams({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      grant_type: "authorization_code",
+      redirect_uri: redirectUri,
+    });
+
+    const response = await fetch("https://www.strava.com/oauth/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to exchange Strava code: ${error}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_at,
+      expiresIn: data.expires_in,
+    };
+  }
+
+  /**
+   * Get Withings authorization URL for OAuth flow
+   * @returns {Promise<string>} Authorization URL
+   */
+  async getWithingsAuthUrl() {
+    const clientId = config.sources.withings.clientId;
+    const redirectUri = config.sources.withings.redirectUri;
+    const state = Math.random().toString(36).substring(7);
+
+    const authUrl =
+      `https://account.withings.com/oauth2_user/authorize2?` +
+      `response_type=code&` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `state=${state}&` +
+      `scope=user.metrics,user.activity&` +
+      `mode=demo`;
+
+    return authUrl;
+  }
+
+  /**
+   * Exchange authorization code for Withings tokens
+   * @param {string} code - Authorization code from OAuth callback
+   * @returns {Promise<Object>} Tokens
+   */
+  async exchangeWithingsCode(code) {
+    const fetch = require("node-fetch");
+    const clientId = config.sources.withings.clientId;
+    const clientSecret = config.sources.withings.clientSecret;
+    const redirectUri = config.sources.withings.redirectUri;
+
+    const params = new URLSearchParams({
+      action: "requesttoken",
+      grant_type: "authorization_code",
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      redirect_uri: redirectUri,
+    });
+
+    const response = await fetch("https://account.withings.com/oauth2/token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to exchange Withings code: ${error}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      accessToken: data.body.access_token,
+      refreshToken: data.body.refresh_token,
+      expiresAt: data.body.expires_in
+        ? Math.floor(Date.now() / 1000) + data.body.expires_in
+        : null,
+      userId: data.body.userid,
+    };
+  }
 }
 
 module.exports = TokenService;

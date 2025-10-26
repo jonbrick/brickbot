@@ -17,7 +17,12 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 
-const OAUTH_SERVICES = ["Google Calendar", "Strava", "Withings"];
+const OAUTH_SERVICES = [
+  "Personal Google Calendar",
+  "Work Google Calendar",
+  "Strava",
+  "Withings",
+];
 
 async function main() {
   console.log("\n🔧 Brickbot - OAuth Setup Wizard\n");
@@ -71,8 +76,12 @@ async function main() {
 
 async function setupService(service, tokenService) {
   switch (service) {
-    case "Google Calendar":
-      await setupGoogleCalendar(tokenService);
+    case "Personal Google Calendar":
+      await setupGooglePersonalCalendar(tokenService);
+      break;
+
+    case "Work Google Calendar":
+      await setupGoogleWorkCalendar(tokenService);
       break;
 
     case "Strava":
@@ -88,8 +97,8 @@ async function setupService(service, tokenService) {
   }
 }
 
-async function setupGoogleCalendar(tokenService) {
-  console.log("Google Calendar OAuth Setup\n");
+async function setupGooglePersonalCalendar(tokenService) {
+  console.log("Personal Google Calendar OAuth Setup\n");
 
   // Check if credentials already exist
   const clientId = process.env.PERSONAL_GOOGLE_CLIENT_ID;
@@ -97,7 +106,7 @@ async function setupGoogleCalendar(tokenService) {
 
   if (!clientId || !clientSecret) {
     console.log("⚠️  Google OAuth credentials not found in .env file.\n");
-    console.log("To setup Google Calendar OAuth:");
+    console.log("To setup Personal Google Calendar OAuth:");
     console.log("1. Go to https://console.cloud.google.com/");
     console.log("2. Create a new project or select an existing one");
     console.log("3. Enable the Google Calendar API");
@@ -120,7 +129,7 @@ async function setupGoogleCalendar(tokenService) {
 
   // Generate auth URL
   showInfo("Generating authorization URL...");
-  const authUrl = await tokenService.getGoogleAuthUrl();
+  const authUrl = await tokenService.getGoogleAuthUrl("personal");
 
   console.log("\n📋 Authorization URL:\n");
   console.log(authUrl);
@@ -132,14 +141,68 @@ async function setupGoogleCalendar(tokenService) {
 
   // Exchange code for tokens
   showInfo("Exchanging code for tokens...");
-  const tokens = await tokenService.exchangeGoogleCode(code.trim());
+  const tokens = await tokenService.exchangeGoogleCode(code.trim(), "personal");
 
   // Update .env file
   updateEnvFile({
     PERSONAL_GOOGLE_REFRESH_TOKEN: tokens.refreshToken,
   });
 
-  showSuccess("Google Calendar OAuth setup completed!");
+  showSuccess("Personal Google Calendar OAuth setup completed!");
+}
+
+async function setupGoogleWorkCalendar(tokenService) {
+  console.log("Work Google Calendar OAuth Setup\n");
+
+  // Check if credentials already exist
+  const clientId = process.env.WORK_GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.WORK_GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.log("⚠️  Google OAuth credentials not found in .env file.\n");
+    console.log("To setup Work Google Calendar OAuth:");
+    console.log("1. Go to https://console.cloud.google.com/");
+    console.log("2. Create a new project or select an existing one");
+    console.log("3. Enable the Google Calendar API");
+    console.log("4. Create OAuth 2.0 credentials (Desktop app)");
+    console.log("5. Add these to your .env file:");
+    console.log("   - WORK_GOOGLE_CLIENT_ID");
+    console.log("   - WORK_GOOGLE_CLIENT_SECRET\n");
+
+    const hasCredentials = await askYesNo(
+      "Have you added the credentials to .env?"
+    );
+
+    if (!hasCredentials) {
+      throw new Error("Please add credentials to .env and run setup again");
+    }
+
+    // Reload .env
+    require("dotenv").config();
+  }
+
+  // Generate auth URL
+  showInfo("Generating authorization URL...");
+  const authUrl = await tokenService.getGoogleAuthUrl("work");
+
+  console.log("\n📋 Authorization URL:\n");
+  console.log(authUrl);
+  console.log("\n1. Open this URL in your browser");
+  console.log("2. Authorize the application");
+  console.log("3. Copy the authorization code\n");
+
+  const code = await askQuestion("Enter the authorization code: ");
+
+  // Exchange code for tokens
+  showInfo("Exchanging code for tokens...");
+  const tokens = await tokenService.exchangeGoogleCode(code.trim(), "work");
+
+  // Update .env file
+  updateEnvFile({
+    WORK_GOOGLE_REFRESH_TOKEN: tokens.refreshToken,
+  });
+
+  showSuccess("Work Google Calendar OAuth setup completed!");
 }
 
 async function setupStrava(tokenService) {

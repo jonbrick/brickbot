@@ -45,12 +45,20 @@ async function main() {
       tokensToRefresh.push("Withings");
     }
 
-    // Check Google Calendar
-    const googleStatus = await tokenService.checkGoogleTokens(
+    // Check Personal Google Calendar
+    const personalGoogleStatus = await tokenService.checkGoogleTokens(
       config.calendar.getPersonalCredentials()
     );
-    if (googleStatus.needsRefresh) {
-      tokensToRefresh.push("Google Calendar");
+    if (personalGoogleStatus.needsRefresh) {
+      tokensToRefresh.push("Personal Google Calendar");
+    }
+
+    // Check Work Google Calendar
+    const workGoogleStatus = await tokenService.checkGoogleTokens(
+      config.calendar.getWorkCredentials()
+    );
+    if (workGoogleStatus.needsRefresh) {
+      tokensToRefresh.push("Work Google Calendar");
     }
 
     if (tokensToRefresh.length === 0) {
@@ -84,9 +92,15 @@ async function main() {
       results.push(result);
     }
 
-    if (tokensToRefresh.includes("Google Calendar")) {
-      showInfo("Refreshing Google Calendar tokens...");
-      const result = await refreshGoogleToken(tokenService);
+    if (tokensToRefresh.includes("Personal Google Calendar")) {
+      showInfo("Refreshing Personal Google Calendar tokens...");
+      const result = await refreshGooglePersonalToken(tokenService);
+      results.push(result);
+    }
+
+    if (tokensToRefresh.includes("Work Google Calendar")) {
+      showInfo("Refreshing Work Google Calendar tokens...");
+      const result = await refreshGoogleWorkToken(tokenService);
       results.push(result);
     }
 
@@ -197,7 +211,7 @@ async function refreshWithingsToken(tokenService) {
   }
 }
 
-async function refreshGoogleToken(tokenService) {
+async function refreshGooglePersonalToken(tokenService) {
   try {
     const newTokens = await tokenService.refreshGoogleTokens(
       config.calendar.getPersonalCredentials()
@@ -207,14 +221,38 @@ async function refreshGoogleToken(tokenService) {
     // The access token is refreshed automatically by the library
 
     return {
-      service: "Google Calendar",
+      service: "Personal Google Calendar",
       success: true,
       message: "Refreshed successfully",
       details: ["Access token refreshed (refresh token remains valid)"],
     };
   } catch (error) {
     return {
-      service: "Google Calendar",
+      service: "Personal Google Calendar",
+      success: false,
+      message: `Failed: ${error.message}`,
+    };
+  }
+}
+
+async function refreshGoogleWorkToken(tokenService) {
+  try {
+    const newTokens = await tokenService.refreshGoogleTokens(
+      config.calendar.getWorkCredentials()
+    );
+
+    // Note: Google refresh tokens typically don't expire unless revoked
+    // The access token is refreshed automatically by the library
+
+    return {
+      service: "Work Google Calendar",
+      success: true,
+      message: "Refreshed successfully",
+      details: ["Access token refreshed (refresh token remains valid)"],
+    };
+  } catch (error) {
+    return {
+      service: "Work Google Calendar",
       success: false,
       message: `Failed: ${error.message}`,
     };

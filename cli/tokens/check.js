@@ -46,10 +46,17 @@ async function main() {
     const claudeStatus = await checkClaudeToken(tokenService);
     results.push(claudeStatus);
 
-    // Check Google Calendar credentials
-    showInfo("Checking Google Calendar credentials...");
-    const googleStatus = await checkGoogleCredentials(tokenService);
-    results.push(googleStatus);
+    // Check Personal Google Calendar credentials
+    showInfo("Checking Personal Google Calendar credentials...");
+    const personalGoogleStatus = await checkGooglePersonalCredentials(
+      tokenService
+    );
+    results.push(personalGoogleStatus);
+
+    // Check Work Google Calendar credentials
+    showInfo("Checking Work Google Calendar credentials...");
+    const workGoogleStatus = await checkGoogleWorkCredentials(tokenService);
+    results.push(workGoogleStatus);
 
     // Check Notion token
     showInfo("Checking Notion token...");
@@ -311,7 +318,7 @@ async function checkClaudeToken(tokenService) {
   }
 }
 
-async function checkGoogleCredentials(tokenService) {
+async function checkGooglePersonalCredentials(tokenService) {
   const personalCreds = config.calendar.getPersonalCredentials();
 
   if (
@@ -320,7 +327,7 @@ async function checkGoogleCredentials(tokenService) {
     !personalCreds.refreshToken
   ) {
     return {
-      service: "Google Calendar",
+      service: "Personal Google Calendar",
       configured: false,
       valid: false,
       message: "Not configured (missing credentials)",
@@ -336,7 +343,7 @@ async function checkGoogleCredentials(tokenService) {
     }
 
     return {
-      service: "Google Calendar",
+      service: "Personal Google Calendar",
       configured: true,
       valid: status.valid,
       message: status.valid ? "Valid" : "Needs refresh",
@@ -344,7 +351,48 @@ async function checkGoogleCredentials(tokenService) {
     };
   } catch (error) {
     return {
-      service: "Google Calendar",
+      service: "Personal Google Calendar",
+      configured: true,
+      valid: false,
+      message: `Error: ${error.message}`,
+    };
+  }
+}
+
+async function checkGoogleWorkCredentials(tokenService) {
+  const workCreds = config.calendar.getWorkCredentials();
+
+  if (
+    !workCreds.clientId ||
+    !workCreds.clientSecret ||
+    !workCreds.refreshToken
+  ) {
+    return {
+      service: "Work Google Calendar",
+      configured: false,
+      valid: false,
+      message: "Not configured (missing credentials)",
+    };
+  }
+
+  try {
+    const status = await tokenService.checkGoogleTokens(workCreds);
+
+    const details = [];
+    if (status.needsRefresh) {
+      details.push("Access token may need refresh");
+    }
+
+    return {
+      service: "Work Google Calendar",
+      configured: true,
+      valid: status.valid,
+      message: status.valid ? "Valid" : "Needs refresh",
+      details,
+    };
+  } catch (error) {
+    return {
+      service: "Work Google Calendar",
       configured: true,
       valid: false,
       message: `Error: ${error.message}`,

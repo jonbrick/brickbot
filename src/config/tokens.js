@@ -3,7 +3,10 @@
  * Centralized configuration for all token management across services
  */
 
-const config = require("./index");
+// Import the specific configs we need to avoid circular dependencies
+// We'll get these via functions instead of direct import
+const getSourcesConfig = () => require("./sources");
+const getCalendarConfig = () => require("./calendar");
 
 /**
  * Service token configurations
@@ -42,7 +45,10 @@ const tokenConfig = {
     },
     checkMethod: "checkStravaTokens",
     refreshMethod: "refreshStravaTokens",
-    getCredentials: () => config.sources.strava,
+    getCredentials: () => {
+      const sources = getSourcesConfig();
+      return sources.strava;
+    },
   },
 
   withings: {
@@ -58,7 +64,10 @@ const tokenConfig = {
     },
     checkMethod: "checkWithingsTokens",
     refreshMethod: "refreshWithingsTokens",
-    getCredentials: () => config.sources.withings,
+    getCredentials: () => {
+      const sources = getSourcesConfig();
+      return sources.withings;
+    },
   },
 
   claude: {
@@ -102,7 +111,10 @@ const tokenConfig = {
     },
     checkMethod: "checkGoogleTokens",
     refreshMethod: "refreshGoogleTokens",
-    getCredentials: () => config.calendar.getPersonalCredentials(),
+    getCredentials: () => {
+      const calendar = getCalendarConfig();
+      return calendar.getPersonalCredentials();
+    },
   },
 
   googleWork: {
@@ -116,7 +128,10 @@ const tokenConfig = {
     },
     checkMethod: "checkGoogleTokens",
     refreshMethod: "refreshGoogleTokens",
-    getCredentials: () => config.calendar.getWorkCredentials(),
+    getCredentials: () => {
+      const calendar = getCalendarConfig();
+      return calendar.getWorkCredentials();
+    },
   },
 };
 

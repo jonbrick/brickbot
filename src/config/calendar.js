@@ -28,6 +28,7 @@ const calendars = {
 };
 
 // Calendar color IDs (Google Calendar standard colors)
+// Only used for manual event categorization when reading calendar events
 const colors = {
   // Standard Google Calendar colors
   lavender: "1",
@@ -41,98 +42,6 @@ const colors = {
   blueberry: "9",
   basil: "10",
   tomato: "11",
-};
-
-// Color mappings for different event types
-const colorMappings = {
-  prs: {
-    Personal: colors.blueberry,
-    Work: colors.tangerine,
-  },
-
-  workouts: {
-    Run: colors.flamingo,
-    Ride: colors.peacock,
-    Walk: colors.sage,
-    Hike: colors.basil,
-    Swim: colors.blueberry,
-    Workout: colors.grape,
-    Yoga: colors.lavender,
-    WeightTraining: colors.tomato,
-    Other: colors.graphite,
-  },
-
-  sleep: {
-    "Normal Wake Up": colors.sage,
-    "Sleep In": colors.lavender,
-  },
-
-  bodyWeight: colors.tangerine,
-  videoGames: colors.grape,
-};
-
-// Event categorization rules for calendar events
-const categorization = {
-  interpersonal: {
-    keywords: [
-      "coffee",
-      "lunch",
-      "dinner",
-      "drinks",
-      "hangout",
-      "catch up",
-      "meetup",
-      "party",
-      "celebration",
-      "birthday",
-      "social",
-    ],
-    color: colors.flamingo,
-  },
-
-  family: {
-    keywords: [
-      "family",
-      "mom",
-      "dad",
-      "sister",
-      "brother",
-      "parent",
-      "relative",
-      "grandparent",
-    ],
-    color: colors.banana,
-  },
-
-  relationship: {
-    keywords: [
-      "date",
-      "partner",
-      "girlfriend",
-      "boyfriend",
-      "spouse",
-      "wife",
-      "husband",
-      "anniversary",
-    ],
-    color: colors.flamingo,
-  },
-
-  calls: {
-    keywords: [
-      "call",
-      "phone",
-      "zoom",
-      "video call",
-      "meeting",
-      "conference",
-      "sync",
-      "standup",
-      "1:1",
-      "one-on-one",
-    ],
-    color: colors.peacock,
-  },
 };
 
 // Event type mappings
@@ -170,13 +79,91 @@ function getWorkCredentials() {
   };
 }
 
+// Work Calendar Color Mappings - for categorizing events when reading calendars
+const WORK_CALENDAR_CATEGORIES = {
+  1: { category: "research", name: "Research Cal" }, // Lavender
+  2: { category: "design", name: "Design Work Cal" }, // Sage
+  3: { category: "coding", name: "Coding & Tickets Cal" }, // Grape
+  5: { category: "review", name: "Review, Feedback, Crit Cal" }, // Citron
+  9: { category: "rituals", name: "Rituals Cal" }, // Blueberry
+  8: { category: "personal", name: "Personal Event Cal" }, // Graphite
+  11: { category: "qa", name: "Design & Dev QA Cal" }, // Tomato
+};
+
+// Personal Calendar Color Mappings - for categorizing events when reading calendars
+const PERSONAL_CALENDAR_CATEGORIES = {
+  2: { category: "personal", name: "Personal Cal" }, // Sage
+  3: { category: "interpersonal", name: "Interpersonal Cal" }, // Grape
+  5: { category: "home", name: "Home Cal" }, // Citron
+  8: { category: "physicalHealth", name: "Physical Health Cal" }, // Graphite
+  11: { category: "mentalHealth", name: "Mental Health Cal" }, // Tomato
+};
+
+// Work Calendar Field Mappings (category to Notion field name)
+const WORK_FIELD_MAPPING = {
+  default: "Default Work Cal",
+  design: "Design Work Cal",
+  coding: "Coding & Tickets Cal",
+  review: "Review, Feedback, Crit Cal",
+  qa: "Design & Dev QA Cal",
+  rituals: "Rituals Cal",
+  research: "Research Cal",
+  summary: "Work Cal Summary",
+};
+
+// Personal Calendar Field Mappings (category to Notion field name)
+const PERSONAL_FIELD_MAPPING = {
+  personal: "Personal Cal",
+  interpersonal: "Interpersonal Cal",
+  home: "Home Cal",
+  mentalHealth: "Mental Health Cal",
+  physicalHealth: "Physical Health Cal",
+  summary: "Personal Cal Summary",
+};
+
+/**
+ * Get calendar categories mapping based on calendar type
+ * @param {string} calendarType - 'work' or 'personal'
+ * @returns {Object} Color ID to category mapping
+ */
+function getCalendarCategories(calendarType) {
+  switch (calendarType) {
+    case "work":
+      return WORK_CALENDAR_CATEGORIES;
+    case "personal":
+      return PERSONAL_CALENDAR_CATEGORIES;
+    default:
+      throw new Error(`Unknown calendar type: ${calendarType}`);
+  }
+}
+
+/**
+ * Get field mapping based on calendar type
+ * @param {string} calendarType - 'work' or 'personal'
+ * @returns {Object} Category to Notion field name mapping
+ */
+function getFieldMapping(calendarType) {
+  switch (calendarType) {
+    case "work":
+      return WORK_FIELD_MAPPING;
+    case "personal":
+      return PERSONAL_FIELD_MAPPING;
+    default:
+      throw new Error(`Unknown calendar type: ${calendarType}`);
+  }
+}
+
 module.exports = {
   calendars,
   colors,
-  colorMappings,
-  categorization,
   eventTypes,
   oauthScopes,
+  WORK_CALENDAR_CATEGORIES,
+  PERSONAL_CALENDAR_CATEGORIES,
+  WORK_FIELD_MAPPING,
+  PERSONAL_FIELD_MAPPING,
+  getCalendarCategories,
+  getFieldMapping,
   getPersonalCredentials,
   getWorkCredentials,
 };

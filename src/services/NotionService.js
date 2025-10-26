@@ -357,9 +357,17 @@ class NotionService {
             title: [{ text: { content: value } }],
           };
         } else {
-          formatted[key] = {
-            rich_text: [{ text: { content: value } }],
-          };
+          // Check if this property should be a select type
+          const isSelectProperty = this._isSelectProperty(key);
+          if (isSelectProperty) {
+            formatted[key] = {
+              select: { name: value },
+            };
+          } else {
+            formatted[key] = {
+              rich_text: [{ text: { content: value } }],
+            };
+          }
         }
       } else if (typeof value === "number") {
         formatted[key] = {
@@ -384,6 +392,33 @@ class NotionService {
     });
 
     return formatted;
+  }
+
+  /**
+   * Check if a property key should be formatted as a select type
+   * @param {string} key - Property key/name
+   * @returns {boolean} True if it's a select property
+   */
+  _isSelectProperty(key) {
+    // Check all databases for select properties
+    const selectOptions = config.notion.selectOptions;
+    const propertyTypes = config.notion.propertyTypes;
+
+    // First check the selectOptions config (looks for exact property name)
+    for (const dbKey in selectOptions) {
+      if (selectOptions[dbKey][key]) {
+        return true;
+      }
+    }
+
+    // Then check the propertyTypes config (more comprehensive)
+    for (const dbKey in propertyTypes) {
+      if (propertyTypes[dbKey][key] === "select") {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**

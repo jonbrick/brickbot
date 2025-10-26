@@ -18,11 +18,6 @@ function transformPRToCalendarEvent(pr) {
       ? config.calendar.calendars.workPRs
       : config.calendar.calendars.personalPRs;
 
-  const colorId =
-    pr.projectType === "Work"
-      ? config.calendar.colorMappings.prs.Work
-      : config.calendar.colorMappings.prs.Personal;
-
   const summary = `${pr.repository} - ${pr.commitsCount} commits, ${pr.prsCount} PRs`;
   const description = [
     `Repository: ${pr.repository}`,
@@ -44,7 +39,6 @@ function transformPRToCalendarEvent(pr) {
       end: {
         date: formatDateOnly(pr.date),
       },
-      colorId,
     },
   };
 }
@@ -57,9 +51,6 @@ function transformPRToCalendarEvent(pr) {
  */
 function transformWorkoutToCalendarEvent(workout) {
   const calendarId = config.calendar.calendars.fitness;
-  const colorId =
-    config.calendar.colorMappings.workouts[workout.activityType] ||
-    config.calendar.colors.graphite;
 
   const summary = `${workout.activityType}: ${workout.activityName}`;
   const description = [
@@ -94,7 +85,6 @@ function transformWorkoutToCalendarEvent(workout) {
           dateTime: endTime.toISOString(),
           timeZone: "America/New_York",
         },
-        colorId,
       },
     };
   } else {
@@ -110,7 +100,6 @@ function transformWorkoutToCalendarEvent(workout) {
         end: {
           date: formatDateOnly(workout.date),
         },
-        colorId,
       },
     };
   }
@@ -127,10 +116,6 @@ function transformSleepToCalendarEvent(sleep) {
     sleep.googleCalendar === config.notion.sleep.sleepInLabel
       ? config.calendar.calendars.sleepIn
       : config.calendar.calendars.normalWakeUp;
-
-  const colorId =
-    config.calendar.colorMappings.sleep[sleep.googleCalendar] ||
-    config.calendar.colors.sage;
 
   const summary = `Wake Up - ${sleep.googleCalendar}`;
   const description = [
@@ -149,7 +134,6 @@ function transformSleepToCalendarEvent(sleep) {
       end: {
         date: formatDateOnly(sleep.nightOf),
       },
-      colorId,
     },
   };
 }
@@ -162,7 +146,6 @@ function transformSleepToCalendarEvent(sleep) {
  */
 function transformBodyWeightToCalendarEvent(bodyWeight) {
   const calendarId = config.calendar.calendars.bodyWeight;
-  const colorId = config.calendar.colorMappings.bodyWeight;
 
   const summary = `Weight: ${bodyWeight.weight} ${bodyWeight.weightUnit}`;
   const description = [
@@ -183,7 +166,6 @@ function transformBodyWeightToCalendarEvent(bodyWeight) {
       end: {
         date: formatDateOnly(bodyWeight.date),
       },
-      colorId,
     },
   };
 }
@@ -196,7 +178,6 @@ function transformBodyWeightToCalendarEvent(bodyWeight) {
  */
 function transformVideoGameToCalendarEvent(videoGame) {
   const calendarId = config.calendar.calendars.videoGames;
-  const colorId = config.calendar.colorMappings.videoGames;
 
   const totalMinutes = videoGame.hoursPlayed * 60 + videoGame.minutesPlayed;
   const summary = `🎮 ${videoGame.gameName} - ${
@@ -220,7 +201,6 @@ function transformVideoGameToCalendarEvent(videoGame) {
       end: {
         date: formatDateOnly(videoGame.date),
       },
-      colorId,
     },
   };
 }

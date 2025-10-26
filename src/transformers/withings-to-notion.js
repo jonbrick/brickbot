@@ -15,17 +15,19 @@ const { formatDate, formatTime } = require("../utils/date");
 function transformWithingsToNotion(measurement) {
   const props = config.notion.properties.bodyWeight;
 
-  // Use lbs as default, convert from kg if needed
-  const weightValue = measurement.weightLbs || measurement.weight;
-  const weightUnit = measurement.weightUnit || "lbs";
-
   return {
-    [props.title]: `Weight - ${formatDate(measurement.date)}`,
+    [props.title]: `${measurement.weight} lbs`,
     [props.date]: measurement.date,
-    [props.weight]: weightValue,
-    [props.weightUnit]: weightUnit,
+    [props.weight]: measurement.weight,
     [props.time]: measurement.time || formatTime(measurement.date),
-    [props.notes]: "",
+    [props.fatPercentage]: measurement.fatPercentage || null,
+    [props.fatMass]: measurement.fatMass || null,
+    [props.fatFreeMass]: measurement.fatFreeMass || null,
+    [props.muscleMass]: measurement.muscleMass || null,
+    [props.boneMass]: measurement.boneMass || null,
+    [props.bodyWaterPercentage]: measurement.bodyWaterPercentage || null,
+    [props.deviceModel]: measurement.deviceModel || "",
+    [props.measurementId]: measurement.measurementId || "",
     [props.calendarCreated]: false,
   };
 }

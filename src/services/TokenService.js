@@ -228,12 +228,33 @@ class TokenService {
         };
       }
 
-      return {
-        valid: true,
-        needsRefresh: false,
-        message: "Token is valid",
-        expiresAt: tokenExpiry ? new Date(tokenExpiry * 1000) : null,
-      };
+      // Try to actually validate the token with a test API call
+      try {
+        await this.services.withings.fetchMeasurements(
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+          new Date()
+        );
+
+        return {
+          valid: true,
+          needsRefresh: false,
+          message: "Token is valid",
+          expiresAt: tokenExpiry ? new Date(tokenExpiry * 1000) : null,
+        };
+      } catch (error) {
+        // If token validation fails, mark as needing refresh
+        if (
+          error.message.includes("invalid_token") ||
+          error.message.includes("invalid")
+        ) {
+          return {
+            valid: false,
+            needsRefresh: true,
+            message: "Token is invalid or expired",
+          };
+        }
+        throw error;
+      }
     } catch (error) {
       return {
         valid: false,
@@ -471,22 +492,20 @@ class TokenService {
 
   /**
    * Validate GitHub token
-   * @param {string} token - GitHub token
-   * @returns {Promise<boolean>} True if valid
+   * @param {string} token - GitHub token (unused, kept for compatibility)
+   * @returns {Promise<Object>} Token status
    */
   async validateGitHubToken(token) {
-    const status = await this._checkGitHubToken();
-    return status.valid;
+    return await this._checkGitHubToken();
   }
 
   /**
    * Validate Oura token
-   * @param {string} token - Oura token
-   * @returns {Promise<boolean>} True if valid
+   * @param {string} token - Oura token (unused, kept for compatibility)
+   * @returns {Promise<Object>} Token status
    */
   async validateOuraToken(token) {
-    const status = await this._checkOuraToken();
-    return status.valid;
+    return await this._checkOuraToken();
   }
 
   /**
@@ -509,12 +528,11 @@ class TokenService {
 
   /**
    * Validate Claude token
-   * @param {string} apiKey - Claude API key
-   * @returns {Promise<boolean>} True if valid
+   * @param {string} apiKey - Claude API key (unused, kept for compatibility)
+   * @returns {Promise<Object>} Token status
    */
   async validateClaudeToken(apiKey) {
-    const status = await this._checkClaudeToken();
-    return status.valid;
+    return await this._checkClaudeToken();
   }
 
   /**
@@ -533,12 +551,11 @@ class TokenService {
 
   /**
    * Validate Notion token
-   * @param {string} token - Notion token
-   * @returns {Promise<boolean>} True if valid
+   * @param {string} token - Notion token (unused, kept for compatibility)
+   * @returns {Promise<Object>} Token status
    */
   async validateNotionToken(token) {
-    const status = await this._checkNotionToken();
-    return status.valid;
+    return await this._checkNotionToken();
   }
 
   /**

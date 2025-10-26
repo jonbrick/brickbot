@@ -16,6 +16,9 @@ const {
 const NotionService = require("../../src/services/NotionService");
 const GoogleCalendarService = require("../../src/services/GoogleCalendarService");
 const { getWeekBoundaries } = require("../../src/utils/date");
+const {
+  categorizeEventByColor,
+} = require("../../src/transformers/calendar-to-analysis");
 const config = require("../../src/config");
 const fs = require("fs");
 const path = require("path");
@@ -369,22 +372,63 @@ async function pullVideoGames(notionService, startDate, endDate) {
 
 async function pullCalendarEvents(calendarService, startDate, endDate) {
   try {
-    const calendarId = config.calendar.calendars.personalMain;
-    if (!calendarId) return [];
+    const events = [];
 
-    const events = await calendarService.listEvents(
-      calendarId,
-      startDate,
-      endDate
-    );
+    // Pull personal calendar events
+    const personalCalendarId = config.calendar.calendars.personalMain;
+    if (personalCalendarId) {
+      const personalEvents = await calendarService.listEvents(
+        personalCalendarId,
+        startDate,
+        endDate
+      );
 
-    return events.map((event) => ({
-      id: event.id,
-      summary: event.summary,
-      start: event.start.dateTime || event.start.date,
-      end: event.end.dateTime || event.end.date,
-      description: event.description,
-    }));
+      // Categorize and add personal events
+      personalEvents.forEach((event) => {
+        const categorized = categorizeEventByColor(event, "personal");
+        events.push({
+          id: categorized.id,
+          summary: categorized.summary,
+          start: categorized.start,
+          end: categorized.end,
+          description: categorized.description,
+          colorId: categorized.colorId,
+          calendarType: "personal",
+          category: categorized.category,
+          categoryName: categorized.categoryName,
+        });
+      });
+    }
+
+    // Pull work calendar events
+    const workCalendarId = config.calendar.calendars.workMain;
+    if (workCalendarId) {
+      // Create work calendar service instance
+      const workCalendarService = new GoogleCalendarService("work");
+      const workEvents = await workCalendarService.listEvents(
+        workCalendarId,
+        startDate,
+        endDate
+      );
+
+      // Categorize and add work events
+      workEvents.forEach((event) => {
+        const categorized = categorizeEventByColor(event, "work");
+        events.push({
+          id: categorized.id,
+          summary: categorized.summary,
+          start: categorized.start,
+          end: categorized.end,
+          description: categorized.description,
+          colorId: categorized.colorId,
+          calendarType: "work",
+          category: categorized.category,
+          categoryName: categorized.categoryName,
+        });
+      });
+    }
+
+    return events;
   } catch (error) {
     console.warn(`Failed to pull calendar events: ${error.message}`);
     return [];

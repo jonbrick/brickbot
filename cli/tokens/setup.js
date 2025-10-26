@@ -75,20 +75,23 @@ async function main() {
 }
 
 async function setupService(service, tokenService) {
-  switch (service) {
-    case "Personal Google Calendar":
+  // Normalize service name to handle both capitalized and lowercase versions
+  const normalizedService = service.toLowerCase();
+
+  switch (normalizedService) {
+    case "personal google calendar":
       await setupGooglePersonalCalendar(tokenService);
       break;
 
-    case "Work Google Calendar":
+    case "work google calendar":
       await setupGoogleWorkCalendar(tokenService);
       break;
 
-    case "Strava":
+    case "strava":
       await setupStrava(tokenService);
       break;
 
-    case "Withings":
+    case "withings":
       await setupWithings(tokenService);
       break;
 

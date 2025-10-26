@@ -81,12 +81,18 @@ const properties = {
   },
 
   bodyWeight: {
-    title: "Measurement",
+    title: "Name",
     date: "Date",
     weight: "Weight",
-    weightUnit: "Weight Unit",
-    time: "Time",
-    notes: "Notes",
+    time: "Measurement Time",
+    fatPercentage: "Fat Percentage",
+    fatMass: "Fat Mass",
+    fatFreeMass: "Fat Free Mass",
+    muscleMass: "Muscle Mass",
+    boneMass: "Bone Mass",
+    bodyWaterPercentage: "Body Water Percentage",
+    deviceModel: "Device Model",
+    measurementId: "Measurement ID",
     calendarCreated: "Calendar Created",
   },
 
@@ -119,7 +125,7 @@ const properties = {
 // Select option values for each database
 const selectOptions = {
   prs: {
-    projectType: ["Personal", "Work"],
+    projectType: ["Work", "Personal"],
   },
 
   workouts: {
@@ -131,8 +137,8 @@ const selectOptions = {
       "Swim",
       "Workout",
       "Yoga",
-      "WeightTraining",
       "Other",
+      "running",
     ],
   },
 
@@ -141,18 +147,12 @@ const selectOptions = {
   },
 
   bodyWeight: {
-    weightUnit: ["lbs", "kg"],
+    // Note: weightUnit property doesn't exist in database
+    // Keeping in config for reference but not used
   },
 
   videoGames: {
-    platform: [
-      "Steam",
-      "PlayStation",
-      "Xbox",
-      "Nintendo Switch",
-      "PC",
-      "Other",
-    ],
+    platform: ["Steam"],
   },
 
   tasks: {
@@ -167,6 +167,80 @@ const selectOptions = {
     ],
     status: ["Not Started", "In Progress", "Completed", "Blocked", "Cancelled"],
     priority: ["Low", "Medium", "High", "Urgent"],
+  },
+};
+
+// Property type metadata for better formatting
+// Maps property config names to their Notion types
+const propertyTypes = {
+  prs: {
+    Repository: "title",
+    Date: "date",
+    "Project Type": "select",
+    "Calendar Created": "checkbox",
+  },
+
+  workouts: {
+    "Activity Name": "title",
+    Date: "date",
+    "Activity Type": "select",
+    "Activity ID": "number",
+    Duration: "number",
+    Distance: "number",
+    "Start Time": "text",
+    "Calendar Created": "checkbox",
+  },
+
+  sleep: {
+    "Night of": "title",
+    "Google Calendar": "select",
+    "Night of Date": "date",
+    "Oura Date": "date",
+    Bedtime: "text",
+    "Wake Time": "text",
+    "Sleep Duration": "number",
+    "Deep Sleep": "number",
+    "REM Sleep": "number",
+    "Light Sleep": "number",
+    "Awake Time": "number",
+    "Heart Rate Avg": "number",
+    "Heart Rate Low": "number",
+    HRV: "number",
+    "Respiratory Rate": "number",
+    Efficiency: "number",
+    "Sleep ID": "text",
+    "Calendar Created": "checkbox",
+    Type: "text",
+  },
+
+  bodyWeight: {
+    Name: "title",
+    Date: "date",
+    Weight: "number",
+    "Measurement Time": "text",
+    "Fat Percentage": "number",
+    "Fat Mass": "number",
+    "Fat Free Mass": "number",
+    "Muscle Mass": "number",
+    "Bone Mass": "number",
+    "Body Water Percentage": "number",
+    "Device Model": "text",
+    "Measurement ID": "text",
+    "Calendar Created": "checkbox",
+  },
+
+  videoGames: {
+    "Game Name": "title",
+    Date: "date",
+    Platform: "select",
+    "Hours Played": "number",
+    "Minutes Played": "number",
+    "Session Count": "number",
+    "Session Details": "text",
+    "Start Time": "text",
+    "End Time": "text",
+    "Activity ID": "text",
+    "Calendar Created": "checkbox",
   },
 };
 
@@ -293,6 +367,7 @@ module.exports = {
   databases,
   properties,
   selectOptions,
+  propertyTypes,
   colors,
   emojis,
   sleep,

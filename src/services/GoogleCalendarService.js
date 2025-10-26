@@ -76,6 +76,18 @@ class GoogleCalendarService {
   }
 
   /**
+   * List events (alias for getEvents)
+   *
+   * @param {string} calendarId - Calendar ID
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} List of events
+   */
+  async listEvents(calendarId, startDate, endDate) {
+    return this.getEvents(calendarId, startDate, endDate);
+  }
+
+  /**
    * Create a calendar event
    *
    * @param {string} calendarId - Calendar ID

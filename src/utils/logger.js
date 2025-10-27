@@ -63,33 +63,35 @@ function printDataTable(data, dataType, title = null) {
   data.forEach((record, index) => {
     console.log(`--- Record ${index + 1} ---`);
 
-    // Iterate through all properties
-    Object.entries(dataProperties).forEach(([propertyKey, propConfig]) => {
-      // Get the display name from config
-      const displayName = getPropertyName(propConfig);
+    // Iterate through all properties in alphabetical order
+    Object.entries(dataProperties)
+      .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+      .forEach(([propertyKey, propConfig]) => {
+        // Get the display name from config
+        const displayName = getPropertyName(propConfig);
 
-      // Check if property is enabled
-      const isEnabled = isPropertyEnabled(propConfig);
+        // Check if property is enabled
+        const isEnabled = isPropertyEnabled(propConfig);
 
-      // Get the display value
-      let displayValue;
-      if (!isEnabled) {
-        // Show "disabled" for disabled properties
-        displayValue = "disabled";
-      } else {
-        // Get the actual value from the record
-        const value = getFieldValue(record, fieldMapping, propertyKey);
-
-        // Format the value for display
-        if (value === null || value === undefined) {
-          displayValue = "N/A";
+        // Get the display value
+        let displayValue;
+        if (!isEnabled) {
+          // Show "disabled" for disabled properties
+          displayValue = "disabled";
         } else {
-          displayValue = value;
-        }
-      }
+          // Get the actual value from the record
+          const value = getFieldValue(record, fieldMapping, propertyKey);
 
-      console.log(`${displayName.padEnd(30)} ${displayValue}`);
-    });
+          // Format the value for display
+          if (value === null || value === undefined) {
+            displayValue = "N/A";
+          } else {
+            displayValue = value;
+          }
+        }
+
+        console.log(`${displayName.padEnd(30)} ${displayValue}`);
+      });
 
     console.log("\n");
   });

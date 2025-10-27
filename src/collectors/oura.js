@@ -73,7 +73,6 @@ async function fetchOuraData(startDate, endDate) {
         efficiency: session.efficiency,
         readinessScore: session.readiness?.score || null,
         type: session.type,
-        // New fields
         latency: session.latency,
         timeInBed: session.time_in_bed,
         restlessPeriods: session.restless_periods,

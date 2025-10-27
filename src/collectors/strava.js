@@ -50,6 +50,14 @@ async function fetchStravaData(startDate, endDate) {
       averageHeartrate: activity.average_heartrate || null,
       calories: activity.calories || null,
       summaryPolyline: activity.map?.summary_polyline || null,
+      // New performance metrics
+      maxSpeed: activity.max_speed
+        ? (activity.max_speed * 2.237).toFixed(1)
+        : null, // Convert m/s to mph
+      maxHeartrate: activity.max_heartrate || null,
+      sufferScore: activity.suffer_score || null,
+      prCount: activity.pr_count || null,
+      timezone: activity.timezone || null,
       // Keep raw data for debugging
       raw: activity,
     }));

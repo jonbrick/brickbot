@@ -172,11 +172,11 @@ function formatDateLong(date) {
     throw new Error("Invalid date provided to formatDateLong");
   }
 
-  // Use UTC date components to match formatDate() behavior
-  const year = date.getUTCFullYear();
-  const month = date.getUTCMonth();
-  const day = date.getUTCDate();
-  const dayOfWeek = date.getUTCDay();
+  // Use local date components for display
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const dayOfWeek = date.getDay();
 
   const weekdayNames = [
     "Sunday",
@@ -405,6 +405,23 @@ function formatDateOnly(date) {
   return formatDate(dateObj);
 }
 
+/**
+ * Determine if wake time should be categorized as "Sleep In"
+ * Based on wake time threshold (default 7 AM)
+ *
+ * @param {Date} wakeTime - Wake time
+ * @param {number} threshold - Hour threshold (default 7)
+ * @returns {boolean} True if sleep in
+ */
+function isSleepIn(wakeTime, threshold = 7) {
+  if (!wakeTime) return false;
+  const hours = wakeTime.getHours();
+  const minutes = wakeTime.getMinutes();
+  const totalMinutes = hours * 60 + minutes;
+  const thresholdMinutes = threshold * 60;
+  return totalMinutes > thresholdMinutes;
+}
+
 module.exports = {
   parseDate,
   getToday,
@@ -428,4 +445,5 @@ module.exports = {
   daysDifference,
   getDayName,
   formatDateOnly,
+  isSleepIn,
 };

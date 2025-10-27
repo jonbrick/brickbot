@@ -9,29 +9,9 @@ const {
   formatDateLong,
   formatTime,
   formatDateOnly,
+  isSleepIn,
 } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
-
-/**
- * Determine if wake time should be categorized as "Sleep In"
- * Based on wake time threshold (default 7 AM)
- *
- * @param {Date} wakeTime - Wake time
- * @param {number} threshold - Hour threshold (default 7)
- * @returns {boolean} True if sleep in
- */
-function isSleepIn(wakeTime, threshold = 7) {
-  if (!wakeTime) {
-    return false;
-  }
-
-  const hours = wakeTime.getHours();
-  const minutes = wakeTime.getMinutes();
-  const totalMinutes = hours * 60 + minutes;
-  const thresholdMinutes = threshold * 60;
-
-  return totalMinutes > thresholdMinutes;
-}
 
 /**
  * Transform Oura sleep session to Notion properties
@@ -49,17 +29,9 @@ function transformOuraToNotion(session) {
       ? config.notion.sleepCategorization.sleepInLabel
       : config.notion.sleepCategorization.normalWakeUpLabel;
 
-  // Extract readiness data from contributors
-  const readinessScore =
-    session.contributors?.resting_heart_rate ||
-    session.contributors?.hrv_balance ||
-    session.temperatureDeviation
-      ? session.score
-      : null;
-
-  const recoveryIndex = session.contributors?.recovery_index || null;
-  const sleepBalance = session.contributors?.sleep_balance || null;
-  const temperatureDeviation = session.temperatureDeviation || null;
+  const recoveryIndex = null; // Not currently extracted
+  const sleepBalance = null; // Not currently extracted
+  const temperatureDeviation = null; // Not currently extracted
 
   // Build properties object using getPropertyName helper
   const allProperties = {
@@ -104,13 +76,12 @@ function transformOuraToNotion(session) {
       ? parseFloat((session.timeInBed / 3600).toFixed(1))
       : null, // Convert seconds to hours
     [getPropertyName(props.restlessPeriods)]: session.restlessPeriods || null,
-    [getPropertyName(props.readinessScore)]: readinessScore,
+    [getPropertyName(props.readinessScore)]: session.readinessScore || null,
     [getPropertyName(props.temperatureDeviation)]: temperatureDeviation,
     [getPropertyName(props.recoveryIndex)]: recoveryIndex,
     [getPropertyName(props.sleepBalance)]: sleepBalance,
     [getPropertyName(props.sleepPeriod)]:
       session.period !== undefined ? session.period : null,
-    [getPropertyName(props.sleepScore)]: session.score || null,
   };
 
   // Filter out disabled properties

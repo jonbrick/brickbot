@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /**
- * Oura Data Fetcher CLI
- * Simple tool to fetch and display Oura API data
+ * Data Collection CLI
+ * Tool to fetch and display data from external sources (Oura, Strava, etc.)
  */
 
 require("dotenv").config();
 const inquirer = require("inquirer");
 const OuraService = require("../src/services/OuraService");
 const { fetchOuraData } = require("../src/collectors/oura");
+const { fetchStravaData } = require("../src/collectors/strava");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
 const {
   formatDate,
@@ -16,8 +17,11 @@ const {
   parseDate,
   addDays,
   calculateNightOf,
+  isSleepIn,
 } = require("../src/utils/date");
 const { selectDateRange, createSpinner } = require("../src/utils/cli");
+const { printDataTable } = require("../src/utils/logger");
+const { sleepCategorization } = require("../src/config/notion");
 
 /**
  * Extract and format sleep data with only the specified fields
@@ -42,11 +46,18 @@ function extractSleepFields(sleepData) {
     const nightOfDate = record.day ? calculateNightOf(record.day) : null;
     const nightOfDateStr = nightOfDate ? formatDate(nightOfDate) : "N/A";
 
+    // Determine wake time category
+    const googleCalendar =
+      bedtimeEnd && isSleepIn(bedtimeEnd)
+        ? sleepCategorization.sleepInLabel
+        : sleepCategorization.normalWakeUpLabel;
+
     return {
       id: record.id,
       day: record.day,
       dayName: dayName,
       nightOf: nightOfDateStr,
+      nightOfDate: nightOfDateStr,
       bedtime_start: record.bedtime_start,
       bedtime_end: record.bedtime_end,
       total_sleep_duration: record.total_sleep_duration,
@@ -61,99 +72,47 @@ function extractSleepFields(sleepData) {
       efficiency: record.efficiency,
       type: record.type,
       wake_time_check: wakeTime,
+      googleCalendar: googleCalendar,
+      calendarCreated: false,
+      readinessScore: record.readiness?.score || null,
     };
   });
 }
 
 /**
- * Format duration in seconds to readable format
- */
-function formatDuration(seconds) {
-  if (!seconds) return "N/A";
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
-}
-
-/**
- * Print data in a nice table format
- */
-function printSleepTable(data) {
-  console.log("\n" + "=".repeat(140));
-  console.log("OURA SLEEP DATA");
-  console.log("=".repeat(140) + "\n");
-
-  data.forEach((record, index) => {
-    console.log(`--- Sleep Session ${index + 1} ---`);
-    console.log(`Oura Day (Wake Date):      ${record.day}`);
-    console.log(`Night Of (Bed Date):       ${record.nightOf}`);
-    console.log(`Day of week (Bed Date):    ${record.dayName}`);
-    console.log(`ID:                        ${record.id}`);
-    console.log(`Bedtime Start:             ${record.bedtime_start || "N/A"}`);
-    console.log(`Bedtime End:               ${record.bedtime_end || "N/A"}`);
-    console.log(`Wake Time (Check):         ${record.wake_time_check}`);
-    console.log(`\nSleep Duration:`);
-    console.log(
-      `  Total:                   ${formatDuration(
-        record.total_sleep_duration
-      )} (${record.total_sleep_duration}s)`
-    );
-    console.log(
-      `  Deep Sleep:              ${formatDuration(
-        record.deep_sleep_duration
-      )} (${record.deep_sleep_duration}s)`
-    );
-    console.log(
-      `  REM Sleep:               ${formatDuration(
-        record.rem_sleep_duration
-      )} (${record.rem_sleep_duration}s)`
-    );
-    console.log(
-      `  Light Sleep:             ${formatDuration(
-        record.light_sleep_duration
-      )} (${record.light_sleep_duration}s)`
-    );
-    console.log(
-      `  Awake Time:              ${formatDuration(record.awake_time)} (${
-        record.awake_time
-      }s)`
-    );
-    console.log(`\nHeart Rate & Metrics:`);
-    console.log(
-      `  Avg Heart Rate:          ${record.average_heart_rate || "N/A"} bpm`
-    );
-    console.log(
-      `  Lowest Heart Rate:       ${record.lowest_heart_rate || "N/A"} bpm`
-    );
-    console.log(`  Avg HRV:                 ${record.average_hrv || "N/A"} ms`);
-    console.log(
-      `  Avg Breath Rate:         ${record.average_breath || "N/A"} bpm`
-    );
-    console.log(`  Sleep Efficiency:        ${record.efficiency || "N/A"}%`);
-    console.log(`  Sleep Type:              ${record.type || "N/A"}`);
-    console.log("\n");
-  });
-
-  console.log("=".repeat(140));
-  console.log(`\nTotal Records: ${data.length}\n`);
-}
-
-/**
- * Select action type (display only or sync to Notion)
+ * Select action type and source
  */
 async function selectAction() {
-  const { action } = await inquirer.prompt([
+  const { source, action } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "source",
+      message: "Select data source:",
+      choices: [
+        { name: "Oura", value: "oura" },
+        { name: "Strava", value: "strava" },
+      ],
+    },
     {
       type: "list",
       name: "action",
       message: "What would you like to do?",
-      choices: [
-        { name: "Display data only (debug)", value: "display" },
-        { name: "Sync to Notion", value: "sync" },
-      ],
+      choices: (answers) => {
+        const commonChoices = [
+          { name: "Display data only (debug)", value: "display" },
+        ];
+
+        // Only show sync option for Oura (Strava sync will be added in Phase 2)
+        if (answers.source === "oura") {
+          commonChoices.push({ name: "Sync to Notion", value: "sync" });
+        }
+
+        return commonChoices;
+      },
     },
   ]);
-  return action;
+
+  return `${source}-${action}`;
 }
 
 /**
@@ -197,42 +156,21 @@ function printSyncResults(results) {
 }
 
 async function main() {
-  console.log("\n🤖 Brickbot - Fetch Oura Sleep Data\n");
+  console.log("\n🤖 Brickbot - Data Collection Tool\n");
 
   try {
     // Select action first
-    const action = await selectAction();
+    const actionString = await selectAction();
+    const [source, action] = actionString.split("-");
 
     // Select date range
     const { startDate, endDate } = await selectDateRange();
 
-    console.log("📊 Fetching sleep data...\n");
-
-    const service = new OuraService();
-
-    // Fetch sleep data
-    const sleepData = await service.fetchSleep(startDate, endDate);
-
-    if (sleepData.length === 0) {
-      console.log("⚠️  No sleep data found for this date range\n");
-      return;
-    }
-
-    // Extract only the fields we want for display
-    const extractedData = extractSleepFields(sleepData);
-
-    // Always display the table
-    printSleepTable(extractedData);
-
-    // NEW: Sync to Notion if requested
-    if (action === "sync") {
-      console.log("\n📤 Syncing to Notion...\n");
-
-      // Use the processed data from collector
-      const processed = await fetchOuraData(startDate, endDate);
-      const results = await syncOuraToNotion(processed);
-
-      printSyncResults(results);
+    // Route to appropriate handler based on source
+    if (source === "oura") {
+      await handleOuraData(startDate, endDate, action);
+    } else if (source === "strava") {
+      await handleStravaData(startDate, endDate);
     }
 
     console.log("✅ Done!\n");
@@ -242,6 +180,53 @@ async function main() {
       console.error(error.stack);
     }
     process.exit(1);
+  }
+}
+
+/**
+ * Handle Oura data fetching and processing
+ */
+async function handleOuraData(startDate, endDate, action) {
+  console.log("📊 Fetching Oura sleep data...\n");
+
+  const service = new OuraService();
+
+  // Fetch sleep data
+  const sleepData = await service.fetchSleep(startDate, endDate);
+
+  if (sleepData.length === 0) {
+    console.log("⚠️  No sleep data found for this date range\n");
+    return;
+  }
+
+  // Extract only the fields we want for display
+  const extractedData = extractSleepFields(sleepData);
+
+  // Always display the table
+  printDataTable(extractedData, "sleep", "OURA SLEEP DATA");
+
+  // Sync to Notion if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Notion...\n");
+
+    // Use the processed data from collector
+    const processed = await fetchOuraData(startDate, endDate);
+    const results = await syncOuraToNotion(processed);
+
+    printSyncResults(results);
+  }
+}
+
+/**
+ * Handle Strava data fetching and display
+ */
+async function handleStravaData(startDate, endDate) {
+  console.log("📊 Fetching Strava activity data...\n");
+
+  const activities = await fetchStravaData(startDate, endDate);
+
+  if (activities.length > 0) {
+    printDataTable(activities, "strava", "STRAVA ACTIVITIES");
   }
 }
 

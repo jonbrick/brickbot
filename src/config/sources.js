@@ -1,6 +1,6 @@
 /**
  * External Service Configurations
- * API settings and credentials for Oura sleep data collection
+ * API settings and credentials for external data sources
  */
 
 // Oura Ring configuration
@@ -12,10 +12,24 @@ const oura = {
   dateOffset: 1,
 };
 
+// Strava configuration
+const strava = {
+  clientId: process.env.STRAVA_CLIENT_ID,
+  clientSecret: process.env.STRAVA_CLIENT_SECRET,
+  accessToken: process.env.STRAVA_ACCESS_TOKEN,
+  refreshToken: process.env.STRAVA_REFRESH_TOKEN,
+  apiBaseUrl: "https://www.strava.com/api/v3",
+};
+
 // Rate limiting configurations
 const rateLimits = {
   oura: {
     requestsPerMinute: 300, // Oura allows 5000 per day, ~300 per minute to be safe
+    backoffMs: 200,
+  },
+
+  strava: {
+    requestsPerMinute: 100, // Strava: 100 per 15 min, ~7 per minute to be safe
     backoffMs: 200,
   },
 
@@ -41,6 +55,7 @@ const retryConfig = {
 
 module.exports = {
   oura,
+  strava,
   rateLimits,
   retryConfig,
 };

@@ -28,14 +28,25 @@ class OuraService {
   /**
    * Fetch sleep data for date range
    *
+   * Note: Oura API requires start_date and end_date to be different, and the end_date
+   * should be 1 day after the desired end date to include all sleep sessions that
+   * wake up on the end date (since Oura dates represent wake-up dates).
+   *
    * @param {Date} startDate - Start date
-   * @param {Date} endDate - End date
+   * @param {Date} endDate - End date (will be incremented by 1 day for API call)
    * @returns {Promise<Array>} Sleep sessions
    */
   async fetchSleep(startDate, endDate) {
     try {
+      // Always add 1 day to endDate for Oura API requirement
+      // Oura dates represent wake-up dates, so to get sleep through Oct 27, we need to query through Oct 28
+      const apiEndDate = new Date(endDate);
+      apiEndDate.setDate(apiEndDate.getDate() + 1);
+
       const startStr = this._formatDateForAPI(startDate);
-      const endStr = this._formatDateForAPI(endDate);
+      const endStr = this._formatDateForAPI(apiEndDate);
+
+      console.log(`📊 Querying Oura API: ${startStr} to ${endStr}\n`);
 
       const response = await this.client.get("/usercollection/sleep", {
         params: {
@@ -63,6 +74,7 @@ class OuraService {
    */
   async fetchActivity(startDate, endDate) {
     try {
+      // Activity data uses calendar dates directly, no offset needed
       const response = await this.client.get("/usercollection/daily_activity", {
         params: {
           start_date: this._formatDateForAPI(startDate),
@@ -89,6 +101,7 @@ class OuraService {
    */
   async fetchReadiness(startDate, endDate) {
     try {
+      // Readiness data uses calendar dates directly, no offset needed
       const response = await this.client.get(
         "/usercollection/daily_readiness",
         {

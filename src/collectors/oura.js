@@ -71,14 +71,7 @@ async function fetchOuraData(startDate, endDate) {
         hrv: session.average_hrv,
         respiratoryRate: session.average_breath,
         efficiency: session.efficiency,
-        score: session.score || session.readiness?.score,
-        contributors: session.contributors || session.readiness?.contributors,
-        temperatureDeviation:
-          session.temperature_deviation ||
-          session.readiness?.temperature_deviation,
-        temperatureTrendDeviation:
-          session.temperature_trend_deviation ||
-          session.readiness?.temperature_trend_deviation,
+        readinessScore: session.readiness?.score || null,
         type: session.type,
         // New fields
         latency: session.latency,

@@ -422,6 +422,37 @@ function isSleepIn(wakeTime, threshold = 7) {
   return totalMinutes > thresholdMinutes;
 }
 
+/**
+ * Format ISO timestamp with timezone offset
+ * Converts a timestamp like "2025-10-25T12:10:06Z" to "2025-10-25T12:10:06-04:00"
+ * using the provided UTC offset in seconds
+ *
+ * @param {string} isoString - ISO timestamp string (e.g., "2025-10-25T12:10:06Z")
+ * @param {number} utcOffsetSeconds - UTC offset in seconds (e.g., -14400 for -04:00)
+ * @returns {string} Formatted timestamp with timezone offset (e.g., "2025-10-25T12:10:06-04:00")
+ */
+function formatTimestampWithOffset(isoString, utcOffsetSeconds) {
+  if (!isoString) return "";
+
+  // Remove the Z suffix if present
+  const cleanedString = isoString.replace("Z", "");
+
+  // Calculate offset hours and minutes
+  const offsetHours = Math.floor(utcOffsetSeconds / 3600);
+  const offsetMinutes = Math.abs(Math.floor((utcOffsetSeconds % 3600) / 60));
+
+  // Format the offset sign
+  const sign = offsetHours >= 0 ? "+" : "-";
+  const absHours = Math.abs(offsetHours);
+
+  // Format as -04:00 or +05:30
+  const formattedOffset = `${sign}${String(absHours).padStart(2, "0")}:${String(
+    offsetMinutes
+  ).padStart(2, "0")}`;
+
+  return cleanedString + formattedOffset;
+}
+
 module.exports = {
   parseDate,
   getToday,
@@ -446,4 +477,5 @@ module.exports = {
   getDayName,
   formatDateOnly,
   isSleepIn,
+  formatTimestampWithOffset,
 };

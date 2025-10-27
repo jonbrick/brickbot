@@ -7,6 +7,7 @@
 const calendars = {
   normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
   sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
+  fitness: process.env.FITNESS_CALENDAR_ID,
 };
 
 // OAuth credentials for personal account
@@ -44,10 +45,21 @@ function mapNotionCalendarToId(notionFieldValue) {
   return mapping[notionFieldValue] || null;
 }
 
+/**
+ * Map Strava workout to calendar ID
+ * All workouts go to the fitness calendar
+ *
+ * @returns {string|null} Fitness calendar ID or null if not configured
+ */
+function mapStravaToCalendarId() {
+  return calendars.fitness || null;
+}
+
 module.exports = {
   calendars,
   personalCredentials,
   getPersonalCredentials,
   getWorkCredentials,
   mapNotionCalendarToId,
+  mapStravaToCalendarId,
 };

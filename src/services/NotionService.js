@@ -661,6 +661,75 @@ class NotionService {
   }
 
   /**
+   * Get unsynced workout records (where Calendar Created = false)
+   *
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} Unsynced workout records
+   */
+  async getUnsyncedWorkouts(startDate, endDate) {
+    try {
+      const databaseId = config.notion.databases.workouts;
+
+      // Filter by date range and checkbox
+      const filter = {
+        and: [
+          {
+            property: config.notion.getPropertyName(
+              config.notion.properties.strava.date
+            ),
+            date: {
+              on_or_after: formatDate(startDate),
+            },
+          },
+          {
+            property: config.notion.getPropertyName(
+              config.notion.properties.strava.date
+            ),
+            date: {
+              on_or_before: formatDate(endDate),
+            },
+          },
+          {
+            property: config.notion.getPropertyName(
+              config.notion.properties.strava.calendarCreated
+            ),
+            checkbox: {
+              equals: false,
+            },
+          },
+        ],
+      };
+
+      return await this.queryDatabaseAll(databaseId, filter);
+    } catch (error) {
+      throw new Error(
+        `Failed to get unsynced workout records: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Mark workout record as synced (update Calendar Created checkbox)
+   *
+   * @param {string} pageId - Notion page ID
+   * @returns {Promise<Object>} Updated page
+   */
+  async markWorkoutSynced(pageId) {
+    try {
+      const properties = {
+        [config.notion.getPropertyName(
+          config.notion.properties.strava.calendarCreated
+        )]: true,
+      };
+
+      return await this.updatePage(pageId, properties);
+    } catch (error) {
+      throw new Error(`Failed to mark workout as synced: ${error.message}`);
+    }
+  }
+
+  /**
    * Helper to format date as YYYY-MM-DD
    *
    * @param {Date} date - Date to format

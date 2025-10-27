@@ -5,6 +5,7 @@
 
 const StravaService = require("../services/StravaService");
 const { createSpinner } = require("../utils/cli");
+const { formatTimestampWithOffset } = require("../utils/date");
 
 /**
  * Fetch Strava activities for date range
@@ -34,7 +35,10 @@ async function fetchStravaData(startDate, endDate) {
       name: activity.name,
       type: activity.type,
       date: activity.start_date_local.split("T")[0],
-      startTime: activity.start_date_local,
+      startTime: formatTimestampWithOffset(
+        activity.start_date_local,
+        activity.utc_offset
+      ),
       distance: activity.distance
         ? (activity.distance / 1609.34).toFixed(2)
         : 0, // Convert meters to miles

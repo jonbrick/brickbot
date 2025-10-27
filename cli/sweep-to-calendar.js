@@ -1,22 +1,33 @@
 #!/usr/bin/env node
 /**
  * Notion to Calendar Sync CLI
- * Sync sleep records from Notion to Google Calendar
+ * Sync sleep and workout records from Notion to Google Calendar
  */
 
 require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
 const { syncSleepToCalendar } = require("../src/workflows/notion-to-calendar");
-const { selectCalendarDateRange, createSpinner } = require("../src/utils/cli");
-const { formatDate } = require("../src/utils/date");
+const {
+  syncWorkoutsToCalendar,
+} = require("../src/workflows/strava-to-calendar");
+const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 
 /**
- * Select action type (display only or sync to calendar)
+ * Select source (Oura or Strava) and action type (display only or sync to calendar)
  */
-async function selectAction() {
-  const { action } = await inquirer.prompt([
+async function selectSourceAndAction() {
+  const { source, action } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "source",
+      message: "Select data source:",
+      choices: [
+        { name: "Oura (Sleep)", value: "oura" },
+        { name: "Strava (Workouts)", value: "strava" },
+      ],
+    },
     {
       type: "list",
       name: "action",
@@ -27,7 +38,7 @@ async function selectAction() {
       ],
     },
   ]);
-  return action;
+  return { source, action };
 }
 
 /**
@@ -77,9 +88,52 @@ function formatSleepRecords(sleepRecords, notionService) {
 }
 
 /**
- * Display table of records to sync
+ * Format workout records for display
  */
-function displayRecordsTable(records) {
+function formatWorkoutRecords(workoutRecords, notionService) {
+  const props = config.notion.properties.strava;
+
+  return workoutRecords.map((record) => {
+    const name = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.name)
+    );
+    const date = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.date)
+    );
+    const startTime = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.startTime)
+    );
+    const duration = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.duration)
+    );
+    const type = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.type)
+    );
+
+    // Format start time for display (matches Oura pattern)
+    const startTimeFormatted = startTime
+      ? new Date(startTime).toLocaleString()
+      : "N/A";
+
+    return {
+      name,
+      date,
+      startTime: startTimeFormatted,
+      duration,
+      type,
+    };
+  });
+}
+
+/**
+ * Display table of sleep records to sync
+ */
+function displaySleepRecordsTable(records) {
   console.log("\n" + "=".repeat(120));
   console.log("📊 SLEEP RECORDS TO SYNC");
   console.log("=".repeat(120) + "\n");
@@ -100,6 +154,36 @@ function displayRecordsTable(records) {
   records.forEach((record) => {
     console.log(
       `  📅 ${record.nightOf}: Sleep - ${record.duration}hrs (${record.efficiency}% efficiency) → ${record.calendar}`
+    );
+  });
+
+  console.log("\n" + "=".repeat(120) + "\n");
+}
+
+/**
+ * Display table of workout records to sync
+ */
+function displayWorkoutRecordsTable(records) {
+  console.log("\n" + "=".repeat(120));
+  console.log("🏋️  WORKOUT RECORDS TO SYNC");
+  console.log("=".repeat(120) + "\n");
+
+  if (records.length === 0) {
+    console.log(
+      "✅ No records to sync (all records already have calendar events)\n"
+    );
+    return;
+  }
+
+  console.log(
+    `Found ${records.length} workout record${
+      records.length === 1 ? "" : "s"
+    } without calendar events\n`
+  );
+
+  records.forEach((record) => {
+    console.log(
+      `  🏋️  ${record.date} ${record.startTime}: ${record.name} (${record.duration} min) - ${record.type}`
     );
   });
 
@@ -147,7 +231,7 @@ function printSyncResults(results) {
 }
 
 async function main() {
-  console.log("\n🤖 Brickbot - Sync Sleep to Calendar\n");
+  console.log("\n🤖 Brickbot - Sync to Calendar\n");
 
   try {
     // Check if calendar sync is enabled
@@ -159,36 +243,17 @@ async function main() {
       return;
     }
 
-    // Select action first
-    const action = await selectAction();
+    // Select source and action
+    const { source, action } = await selectSourceAndAction();
 
     // Select date range
     const { startDate, endDate } = await selectCalendarDateRange();
 
-    console.log("📊 Querying Notion for unsynced sleep records...\n");
-
-    const notionService = new NotionService();
-    const sleepRecords = await notionService.getUnsyncedSleep(
-      startDate,
-      endDate
-    );
-
-    if (sleepRecords.length === 0) {
-      console.log("✅ No sleep records found without calendar events\n");
-      return;
-    }
-
-    // Format and display records
-    const formattedRecords = formatSleepRecords(sleepRecords, notionService);
-    displayRecordsTable(formattedRecords);
-
-    // Sync to calendar if requested
-    if (action === "sync") {
-      console.log("\n📤 Syncing to Calendar...\n");
-
-      const results = await syncSleepToCalendar(startDate, endDate);
-
-      printSyncResults(results);
+    // Route to appropriate handler
+    if (source === "oura") {
+      await handleOuraSync(startDate, endDate, action);
+    } else if (source === "strava") {
+      await handleStravaSync(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -198,6 +263,65 @@ async function main() {
       console.error(error.stack);
     }
     process.exit(1);
+  }
+}
+
+/**
+ * Handle Oura sleep sync
+ */
+async function handleOuraSync(startDate, endDate, action) {
+  console.log("📊 Querying Notion for unsynced sleep records...\n");
+
+  const notionService = new NotionService();
+  const sleepRecords = await notionService.getUnsyncedSleep(startDate, endDate);
+
+  if (sleepRecords.length === 0) {
+    console.log("✅ No sleep records found without calendar events\n");
+    return;
+  }
+
+  // Format and display records
+  const formattedRecords = formatSleepRecords(sleepRecords, notionService);
+  displaySleepRecordsTable(formattedRecords);
+
+  // Sync to calendar if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Calendar...\n");
+
+    const results = await syncSleepToCalendar(startDate, endDate);
+
+    printSyncResults(results);
+  }
+}
+
+/**
+ * Handle Strava workout sync
+ */
+async function handleStravaSync(startDate, endDate, action) {
+  console.log("📊 Querying Notion for unsynced workout records...\n");
+
+  const notionService = new NotionService();
+  const workoutRecords = await notionService.getUnsyncedWorkouts(
+    startDate,
+    endDate
+  );
+
+  if (workoutRecords.length === 0) {
+    console.log("✅ No workout records found without calendar events\n");
+    return;
+  }
+
+  // Format and display records
+  const formattedRecords = formatWorkoutRecords(workoutRecords, notionService);
+  displayWorkoutRecordsTable(formattedRecords);
+
+  // Sync to calendar if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Calendar...\n");
+
+    const results = await syncWorkoutsToCalendar(startDate, endDate);
+
+    printSyncResults(results);
   }
 }
 

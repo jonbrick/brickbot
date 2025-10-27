@@ -10,6 +10,7 @@ const OuraService = require("../src/services/OuraService");
 const { fetchOuraData } = require("../src/collectors/oura");
 const { fetchStravaData } = require("../src/collectors/strava");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
+const { syncStravaToNotion } = require("../src/workflows/strava-to-notion");
 const {
   formatDate,
   formatDateLong,
@@ -100,12 +101,8 @@ async function selectAction() {
       choices: (answers) => {
         const commonChoices = [
           { name: "Display data only (debug)", value: "display" },
+          { name: "Sync to Notion", value: "sync" },
         ];
-
-        // Only show sync option for Oura (Strava sync will be added in Phase 2)
-        if (answers.source === "oura") {
-          commonChoices.push({ name: "Sync to Notion", value: "sync" });
-        }
 
         return commonChoices;
       },
@@ -131,7 +128,12 @@ function printSyncResults(results) {
   if (results.created.length > 0) {
     console.log("Created records:");
     results.created.forEach((r) => {
-      console.log(`  ✅ ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
+      // Handle both Oura (has nightOf) and Strava (has name/activityId)
+      if (r.nightOf) {
+        console.log(`  ✅ ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
+      } else if (r.activityId) {
+        console.log(`  ✅ ${r.name} (Activity ID: ${r.activityId})`);
+      }
     });
     console.log();
   }
@@ -139,7 +141,12 @@ function printSyncResults(results) {
   if (results.skipped.length > 0) {
     console.log("Skipped records (already exist):");
     results.skipped.forEach((r) => {
-      console.log(`  ⏭️  ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
+      // Handle both Oura (has nightOf) and Strava (has name/activityId)
+      if (r.nightOf) {
+        console.log(`  ⏭️  ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
+      } else if (r.activityId) {
+        console.log(`  ⏭️  ${r.name} (Activity ID: ${r.activityId})`);
+      }
     });
     console.log();
   }
@@ -147,7 +154,8 @@ function printSyncResults(results) {
   if (results.errors.length > 0) {
     console.log("Errors:");
     results.errors.forEach((e) => {
-      console.log(`  ❌ ${e.session}: ${e.error}`);
+      const identifier = e.session || e.activity || "Unknown";
+      console.log(`  ❌ ${identifier}: ${e.error}`);
     });
     console.log();
   }
@@ -170,7 +178,7 @@ async function main() {
     if (source === "oura") {
       await handleOuraData(startDate, endDate, action);
     } else if (source === "strava") {
-      await handleStravaData(startDate, endDate);
+      await handleStravaData(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -218,15 +226,30 @@ async function handleOuraData(startDate, endDate, action) {
 }
 
 /**
- * Handle Strava data fetching and display
+ * Handle Strava data fetching and processing
  */
-async function handleStravaData(startDate, endDate) {
+async function handleStravaData(startDate, endDate, action) {
   console.log("📊 Fetching Strava activity data...\n");
 
   const activities = await fetchStravaData(startDate, endDate);
 
-  if (activities.length > 0) {
-    printDataTable(activities, "strava", "STRAVA ACTIVITIES");
+  if (activities.length === 0) {
+    console.log("⚠️  No Strava activities found for this date range\n");
+    return;
+  }
+
+  // Always display the table
+  printDataTable(activities, "strava", "STRAVA ACTIVITIES");
+
+  // Sync to Notion if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Notion...\n");
+
+    // Use the processed data from collector
+    const processed = await fetchStravaData(startDate, endDate);
+    const results = await syncStravaToNotion(processed);
+
+    printSyncResults(results);
   }
 }
 

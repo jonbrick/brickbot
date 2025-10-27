@@ -6,6 +6,7 @@
 // Database IDs
 const databases = {
   sleep: process.env.NOTION_SLEEP_DATABASE_ID,
+  workouts: process.env.NOTION_WORKOUTS_DATABASE_ID,
 };
 
 // Unified property configuration for sleep database
@@ -85,7 +86,7 @@ const properties = {
     startTime: { name: "Start Time", type: "text", enabled: true },
     sufferScore: { name: "Suffer Score", type: "number", enabled: false },
     timezone: { name: "Timezone", type: "text", enabled: false },
-    type: { name: "Type", type: "text", enabled: true },
+    type: { name: "Activity Type", type: "select", enabled: true },
   },
 };
 

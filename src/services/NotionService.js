@@ -333,6 +333,36 @@ class NotionService {
   }
 
   /**
+   * Find workout record by Activity ID
+   * Convenience method for Strava workout de-duplication
+   *
+   * @param {number} activityId - Activity ID to search for
+   * @returns {Promise<Object|null>} Existing page or null
+   */
+  async findWorkoutByActivityId(activityId) {
+    const databaseId = config.notion.databases.workouts;
+    const propertyName = config.notion.getPropertyName(
+      config.notion.properties.strava.activityId
+    );
+
+    // Get property type manually since we're querying a different database type
+    const propertyType =
+      config.notion.properties.strava.activityId.type || "number";
+
+    // Create filter manually for number type
+    const filter = {
+      property: propertyName,
+      number: {
+        equals:
+          typeof activityId === "string" ? parseFloat(activityId) : activityId,
+      },
+    };
+
+    const results = await this.queryDatabase(databaseId, filter);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  /**
    * Get property type for a database
    *
    * @param {string} databaseId - Database ID

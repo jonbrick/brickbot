@@ -5,6 +5,7 @@
 
 const { Client } = require("@notionhq/client");
 const config = require("../config");
+const { formatDate, formatDateOnly } = require("../utils/date");
 
 class NotionService {
   constructor() {
@@ -317,6 +318,21 @@ class NotionService {
   }
 
   /**
+   * Find sleep record by Sleep ID
+   * Convenience method for Oura sleep de-duplication
+   *
+   * @param {string} sleepId - Sleep ID to search for
+   * @returns {Promise<Object|null>} Existing page or null
+   */
+  async findSleepBySleepId(sleepId) {
+    const databaseId = config.notion.databases.sleep;
+    const propertyName = config.notion.getPropertyName(
+      config.notion.properties.sleep.sleepId
+    );
+    return await this.findPageByProperty(databaseId, propertyName, sleepId);
+  }
+
+  /**
    * Get property type for a database
    *
    * @param {string} databaseId - Database ID
@@ -324,14 +340,19 @@ class NotionService {
    * @returns {string} Property type
    */
   _getPropertyType(databaseId, propertyName) {
-    const propertyTypes = config.notion.propertyTypes;
+    const properties = config.notion.properties;
 
     // Find the database key that matches this databaseId
-    for (const dbKey in propertyTypes) {
+    for (const dbKey in properties) {
       const dbId = config.notion.databases[dbKey];
       if (dbId === databaseId) {
-        // Return the property type
-        return propertyTypes[dbKey][propertyName] || "rich_text";
+        // Find the property that matches the propertyName
+        const props = properties[dbKey];
+        for (const propKey in props) {
+          if (props[propKey].name === propertyName) {
+            return props[propKey].type || "rich_text";
+          }
+        }
       }
     }
 
@@ -412,23 +433,32 @@ class NotionService {
 
       // Detect property type and format accordingly
       if (typeof value === "string") {
-        // Check if this property should be formatted as a title based on config
-        const isTitleProperty = this._isTitleProperty(key);
-        if (isTitleProperty) {
+        // Check if this property should be a date type
+        const isDateOnlyProperty = this._isDateOnlyProperty(key);
+        if (isDateOnlyProperty && value) {
+          // String value for a date property - format as date
           formatted[key] = {
-            title: [{ text: { content: value } }],
+            date: { start: value },
           };
         } else {
-          // Check if this property should be a select type
-          const isSelectProperty = this._isSelectProperty(key);
-          if (isSelectProperty) {
+          // Check if this property should be formatted as a title based on config
+          const isTitleProperty = this._isTitleProperty(key);
+          if (isTitleProperty) {
             formatted[key] = {
-              select: { name: value },
+              title: [{ text: { content: value } }],
             };
           } else {
-            formatted[key] = {
-              rich_text: [{ text: { content: value } }],
-            };
+            // Check if this property should be a select type
+            const isSelectProperty = this._isSelectProperty(key);
+            if (isSelectProperty) {
+              formatted[key] = {
+                select: { name: value },
+              };
+            } else {
+              formatted[key] = {
+                rich_text: [{ text: { content: value } }],
+              };
+            }
           }
         }
       } else if (typeof value === "number") {
@@ -440,8 +470,13 @@ class NotionService {
           checkbox: value,
         };
       } else if (value instanceof Date) {
+        // Check if this property should be date-only based on config
+        const isDateOnlyProperty = this._isDateOnlyProperty(key);
+        const dateValue = isDateOnlyProperty
+          ? formatDateOnly(value)
+          : value.toISOString();
         formatted[key] = {
-          date: { start: value.toISOString() },
+          date: { start: dateValue },
         };
       } else if (Array.isArray(value)) {
         formatted[key] = {
@@ -462,12 +497,15 @@ class NotionService {
    * @returns {boolean} True if it's a title property
    */
   _isTitleProperty(key) {
-    const propertyTypes = config.notion.propertyTypes;
+    const properties = config.notion.properties;
 
-    // Check the propertyTypes config
-    for (const dbKey in propertyTypes) {
-      if (propertyTypes[dbKey][key] === "title") {
-        return true;
+    // Check all databases for title properties
+    for (const dbKey in properties) {
+      const props = properties[dbKey];
+      for (const propKey in props) {
+        if (props[propKey].name === key && props[propKey].type === "title") {
+          return true;
+        }
       }
     }
 
@@ -484,30 +522,125 @@ class NotionService {
   }
 
   /**
+   * Check if a property key should be formatted as a date-only type
+   * @param {string} key - Property key/name
+   * @returns {boolean} True if it's a date-only property
+   */
+  _isDateOnlyProperty(key) {
+    const properties = config.notion.properties;
+
+    // Check all databases for date properties
+    for (const dbKey in properties) {
+      const props = properties[dbKey];
+      for (const propKey in props) {
+        if (props[propKey].name === key && props[propKey].type === "date") {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Check if a property key should be formatted as a select type
    * @param {string} key - Property key/name
    * @returns {boolean} True if it's a select property
    */
   _isSelectProperty(key) {
+    const properties = config.notion.properties;
+
     // Check all databases for select properties
-    const selectOptions = config.notion.selectOptions;
-    const propertyTypes = config.notion.propertyTypes;
-
-    // First check the selectOptions config (looks for exact property name)
-    for (const dbKey in selectOptions) {
-      if (selectOptions[dbKey][key]) {
-        return true;
-      }
-    }
-
-    // Then check the propertyTypes config (more comprehensive)
-    for (const dbKey in propertyTypes) {
-      if (propertyTypes[dbKey][key] === "select") {
-        return true;
+    for (const dbKey in properties) {
+      const props = properties[dbKey];
+      for (const propKey in props) {
+        if (props[propKey].name === key && props[propKey].type === "select") {
+          return true;
+        }
       }
     }
 
     return false;
+  }
+
+  /**
+   * Get unsynced sleep records (where Calendar Created = false)
+   *
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} Unsynced sleep records
+   */
+  async getUnsyncedSleep(startDate, endDate) {
+    try {
+      const databaseId = config.notion.databases.sleep;
+
+      // Filter by date range and checkbox
+      const filter = {
+        and: [
+          {
+            property: config.notion.getPropertyName(
+              config.notion.properties.sleep.nightOfDate
+            ),
+            date: {
+              on_or_after: formatDate(startDate),
+            },
+          },
+          {
+            property: config.notion.getPropertyName(
+              config.notion.properties.sleep.nightOfDate
+            ),
+            date: {
+              on_or_before: formatDate(endDate),
+            },
+          },
+          {
+            property: config.notion.getPropertyName(
+              config.notion.properties.sleep.calendarCreated
+            ),
+            checkbox: {
+              equals: false,
+            },
+          },
+        ],
+      };
+
+      return await this.queryDatabaseAll(databaseId, filter);
+    } catch (error) {
+      throw new Error(`Failed to get unsynced sleep records: ${error.message}`);
+    }
+  }
+
+  /**
+   * Mark sleep record as synced (update Calendar Created checkbox)
+   *
+   * @param {string} pageId - Notion page ID
+   * @returns {Promise<Object>} Updated page
+   */
+  async markSleepSynced(pageId) {
+    try {
+      const properties = {
+        [config.notion.getPropertyName(
+          config.notion.properties.sleep.calendarCreated
+        )]: true,
+      };
+
+      return await this.updatePage(pageId, properties);
+    } catch (error) {
+      throw new Error(`Failed to mark sleep as synced: ${error.message}`);
+    }
+  }
+
+  /**
+   * Helper to format date as YYYY-MM-DD
+   *
+   * @param {Date} date - Date to format
+   * @returns {string} Formatted date string
+   */
+  _formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
   /**

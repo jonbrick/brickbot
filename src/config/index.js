@@ -9,6 +9,7 @@ require("dotenv").config();
 const notion = require("./notion");
 const sources = require("./sources");
 const tokens = require("./tokens");
+const calendar = require("./calendar");
 
 /**
  * Validate that all required environment variables are present
@@ -30,6 +31,29 @@ function validateConfig() {
   // Validate Oura token
   if (!process.env.OURA_TOKEN) {
     errors.push("OURA_TOKEN is required");
+  }
+
+  // Validate calendar credentials (only if using calendar sync)
+  if (process.env.ENABLE_CALENDAR_SYNC === "true") {
+    if (!calendar.calendars.normalWakeUp) {
+      errors.push("NORMAL_WAKE_UP_CALENDAR_ID is required for calendar sync");
+    }
+    if (!calendar.calendars.sleepIn) {
+      errors.push("SLEEP_IN_CALENDAR_ID is required for calendar sync");
+    }
+    if (!calendar.personalCredentials.clientId) {
+      errors.push("PERSONAL_GOOGLE_CLIENT_ID is required for calendar sync");
+    }
+    if (!calendar.personalCredentials.clientSecret) {
+      errors.push(
+        "PERSONAL_GOOGLE_CLIENT_SECRET is required for calendar sync"
+      );
+    }
+    if (!calendar.personalCredentials.refreshToken) {
+      errors.push(
+        "PERSONAL_GOOGLE_REFRESH_TOKEN is required for calendar sync"
+      );
+    }
   }
 
   if (errors.length > 0) {
@@ -55,6 +79,7 @@ module.exports = {
   notion,
   sources,
   tokens,
+  calendar,
   env: {
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: process.env.NODE_ENV === "production",

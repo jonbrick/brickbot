@@ -140,9 +140,9 @@ function formatDate(date) {
     throw new Error("Invalid date provided to formatDate");
   }
 
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -156,9 +156,9 @@ function formatDateUS(date) {
     throw new Error("Invalid date provided to formatDateUS");
   }
 
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const year = date.getFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const year = date.getUTCFullYear();
   return `${month}/${day}/${year}`;
 }
 
@@ -172,13 +172,37 @@ function formatDateLong(date) {
     throw new Error("Invalid date provided to formatDateLong");
   }
 
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  };
-  return date.toLocaleDateString("en-US", options);
+  // Use local date components
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const dayOfWeek = date.getDay();
+
+  const weekdayNames = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+
+  return `${weekdayNames[dayOfWeek]}, ${monthNames[month]} ${day}, ${year}`;
 }
 
 /**
@@ -344,6 +368,30 @@ function getDayName(date) {
   return date.toLocaleDateString("en-US", options);
 }
 
+/**
+ * Format date to date-only string (YYYY-MM-DD) without time component
+ * @param {Date|string} date - Date to format
+ * @returns {string} Date-only string in YYYY-MM-DD format
+ */
+function formatDateOnly(date) {
+  let dateObj;
+
+  if (date instanceof Date) {
+    dateObj = date;
+  } else if (typeof date === "string") {
+    // Parse ISO string or YYYY-MM-DD string
+    dateObj = new Date(date);
+  } else {
+    throw new Error("Invalid date provided to formatDateOnly");
+  }
+
+  if (isNaN(dateObj.getTime())) {
+    throw new Error("Invalid date provided to formatDateOnly");
+  }
+
+  return formatDate(dateObj);
+}
+
 module.exports = {
   parseDate,
   getToday,
@@ -365,4 +413,5 @@ module.exports = {
   getMonthEnd,
   daysDifference,
   getDayName,
+  formatDateOnly,
 };

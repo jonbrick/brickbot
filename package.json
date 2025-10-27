@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "collect": "node cli/sweep-to-notion.js",
+    "update": "node cli/sweep-to-calendar.js",
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",
     "tokens:setup": "node cli/tokens/setup.js",

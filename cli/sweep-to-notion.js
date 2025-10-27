@@ -5,9 +5,12 @@
  */
 
 require("dotenv").config();
+const inquirer = require("inquirer");
 const OuraService = require("../src/services/OuraService");
-const { formatDate, getDayName } = require("../src/utils/date");
-const { selectDateRange } = require("../src/utils/cli");
+const { fetchOuraData } = require("../src/collectors/oura");
+const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
+const { formatDate, formatDateLong, getDayName } = require("../src/utils/date");
+const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const { calculateNightOf } = require("../src/utils/sleep");
 
 /**
@@ -129,10 +132,71 @@ function printSleepTable(data) {
   console.log(`\nTotal Records: ${data.length}\n`);
 }
 
+/**
+ * Select action type (display only or sync to Notion)
+ */
+async function selectAction() {
+  const { action } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "action",
+      message: "What would you like to do?",
+      choices: [
+        { name: "Display data only (debug)", value: "display" },
+        { name: "Sync to Notion", value: "sync" },
+      ],
+    },
+  ]);
+  return action;
+}
+
+/**
+ * Print sync results summary
+ */
+function printSyncResults(results) {
+  console.log("\n" + "=".repeat(80));
+  console.log("NOTION SYNC RESULTS");
+  console.log("=".repeat(80) + "\n");
+
+  console.log(`📊 Total records processed: ${results.total}`);
+  console.log(`✅ Created: ${results.created.length}`);
+  console.log(`⏭️  Skipped (duplicates): ${results.skipped.length}`);
+  console.log(`❌ Errors: ${results.errors.length}\n`);
+
+  if (results.created.length > 0) {
+    console.log("Created records:");
+    results.created.forEach((r) => {
+      console.log(`  ✅ ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
+    });
+    console.log();
+  }
+
+  if (results.skipped.length > 0) {
+    console.log("Skipped records (already exist):");
+    results.skipped.forEach((r) => {
+      console.log(`  ⏭️  ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
+    });
+    console.log();
+  }
+
+  if (results.errors.length > 0) {
+    console.log("Errors:");
+    results.errors.forEach((e) => {
+      console.log(`  ❌ ${e.session}: ${e.error}`);
+    });
+    console.log();
+  }
+
+  console.log("=".repeat(80));
+}
+
 async function main() {
   console.log("\n🤖 Brickbot - Fetch Oura Sleep Data\n");
 
   try {
+    // Select action first
+    const action = await selectAction();
+
     // Select date range
     const { startDate, endDate } = await selectDateRange();
 
@@ -140,7 +204,7 @@ async function main() {
 
     const service = new OuraService();
 
-    // Fetch sleep data only
+    // Fetch sleep data
     const sleepData = await service.fetchSleep(startDate, endDate);
 
     if (sleepData.length === 0) {
@@ -148,13 +212,24 @@ async function main() {
       return;
     }
 
-    // Extract only the fields we want
+    // Extract only the fields we want for display
     const extractedData = extractSleepFields(sleepData);
 
-    // Print in a nice table format
+    // Always display the table
     printSleepTable(extractedData);
 
-    console.log("✅ Data fetched successfully!\n");
+    // NEW: Sync to Notion if requested
+    if (action === "sync") {
+      console.log("\n📤 Syncing to Notion...\n");
+
+      // Use the processed data from collector
+      const processed = await fetchOuraData(startDate, endDate);
+      const results = await syncOuraToNotion(processed);
+
+      printSyncResults(results);
+    }
+
+    console.log("✅ Done!\n");
   } catch (error) {
     console.error("\n❌ Error:", error.message);
     if (error.stack) {

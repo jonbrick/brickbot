@@ -8,80 +8,61 @@ const databases = {
   sleep: process.env.NOTION_SLEEP_DATABASE_ID,
 };
 
-// Property names for sleep database
+// Unified property configuration for sleep database
+// Each property includes: name, type, enabled flag, and options (for select properties)
+// enabled: false keeps the property in config but excludes it from Notion sync
 const properties = {
   sleep: {
-    title: "Night of",
-    nightOfDate: "Night of Date",
-    ouraDate: "Oura Date",
-    bedtime: "Bedtime",
-    wakeTime: "Wake Time",
-    sleepDuration: "Sleep Duration",
-    deepSleep: "Deep Sleep",
-    remSleep: "REM Sleep",
-    lightSleep: "Light Sleep",
-    awakeTime: "Awake Time",
-    heartRateAvg: "Heart Rate Avg",
-    heartRateLow: "Heart Rate Low",
-    hrv: "HRV",
-    respiratoryRate: "Respiratory Rate",
-    efficiency: "Efficiency",
-    googleCalendar: "Google Calendar",
-    sleepId: "Sleep ID",
-    calendarCreated: "Calendar Created",
-    type: "Type",
-    // New fields
-    sleepLatency: "Sleep Latency",
-    timeInBed: "Time in Bed",
-    restlessPeriods: "Restless Periods",
-    readinessScore: "Readiness Score",
-    temperatureDeviation: "Temperature Deviation",
-    recoveryIndex: "Recovery Index",
-    sleepBalance: "Sleep Balance",
-    sleepPeriod: "Sleep Period",
-    sleepScore: "Sleep Score",
-  },
-};
-
-// Select option values for sleep database
-const selectOptions = {
-  sleep: {
-    googleCalendar: ["Normal Wake Up", "Sleep In"],
-  },
-};
-
-// Property type metadata for better formatting
-// Maps property config names to their Notion types
-const propertyTypes = {
-  sleep: {
-    "Night of": "title",
-    "Google Calendar": "select",
-    "Night of Date": "date",
-    "Oura Date": "date",
-    Bedtime: "text",
-    "Wake Time": "text",
-    "Sleep Duration": "number",
-    "Deep Sleep": "number",
-    "REM Sleep": "number",
-    "Light Sleep": "number",
-    "Awake Time": "number",
-    "Heart Rate Avg": "number",
-    "Heart Rate Low": "number",
-    HRV: "number",
-    "Respiratory Rate": "number",
-    Efficiency: "number",
-    "Sleep ID": "text",
-    "Calendar Created": "checkbox",
-    Type: "text",
-    "Sleep Latency": "number",
-    "Time in Bed": "number",
-    "Restless Periods": "number",
-    "Readiness Score": "number",
-    "Temperature Deviation": "number",
-    "Recovery Index": "number",
-    "Sleep Balance": "number",
-    "Sleep Period": "number",
-    "Sleep Score": "number",
+    title: { name: "Night of", type: "title", enabled: true },
+    nightOfDate: { name: "Night of Date", type: "date", enabled: true },
+    ouraDate: { name: "Oura Date", type: "date", enabled: true },
+    bedtime: { name: "Bedtime", type: "text", enabled: true },
+    wakeTime: { name: "Wake Time", type: "text", enabled: true },
+    sleepDuration: { name: "Sleep Duration", type: "number", enabled: true },
+    deepSleep: { name: "Deep Sleep", type: "number", enabled: true },
+    remSleep: { name: "REM Sleep", type: "number", enabled: true },
+    lightSleep: { name: "Light Sleep", type: "number", enabled: true },
+    awakeTime: { name: "Awake Time", type: "number", enabled: true },
+    heartRateAvg: { name: "Heart Rate Avg", type: "number", enabled: true },
+    heartRateLow: { name: "Heart Rate Low", type: "number", enabled: true },
+    hrv: { name: "HRV", type: "number", enabled: true },
+    respiratoryRate: {
+      name: "Respiratory Rate",
+      type: "number",
+      enabled: true,
+    },
+    efficiency: { name: "Efficiency", type: "number", enabled: true },
+    googleCalendar: {
+      name: "Google Calendar",
+      type: "select",
+      options: ["Normal Wake Up", "Sleep In"],
+      enabled: true,
+    },
+    sleepId: { name: "Sleep ID", type: "text", enabled: true },
+    calendarCreated: {
+      name: "Calendar Created",
+      type: "checkbox",
+      enabled: true,
+    },
+    type: { name: "Type", type: "text", enabled: true },
+    // New fields - disabled by default until added to Notion database
+    sleepLatency: { name: "Sleep Latency", type: "number", enabled: false },
+    timeInBed: { name: "Time in Bed", type: "number", enabled: false },
+    restlessPeriods: {
+      name: "Restless Periods",
+      type: "number",
+      enabled: false,
+    },
+    readinessScore: { name: "Readiness Score", type: "number", enabled: false },
+    temperatureDeviation: {
+      name: "Temperature Deviation",
+      type: "number",
+      enabled: false,
+    },
+    recoveryIndex: { name: "Recovery Index", type: "number", enabled: false },
+    sleepBalance: { name: "Sleep Balance", type: "number", enabled: false },
+    sleepPeriod: { name: "Sleep Period", type: "number", enabled: false },
+    sleepScore: { name: "Sleep Score", type: "number", enabled: true },
   },
 };
 
@@ -104,22 +85,75 @@ const emojis = {
 };
 
 // Sleep-specific configurations
-const sleep = {
+const sleepCategorization = {
   // Wake time threshold for categorization (7 AM in hours)
   wakeTimeThreshold: 7,
   normalWakeUpLabel: "Normal Wake Up",
   sleepInLabel: "Sleep In",
 };
 
+// Helper function to get property name (handles both string and object formats)
+function getPropertyName(property) {
+  if (typeof property === "string") {
+    return property; // Backward compatibility
+  }
+  if (property && typeof property === "object" && property.name) {
+    return property.name;
+  }
+  return property;
+}
+
+// Helper function to check if property is enabled
+function isPropertyEnabled(property) {
+  if (typeof property === "string") {
+    return true; // Backward compatibility - strings are enabled by default
+  }
+  if (property && typeof property === "object") {
+    return property.enabled !== false; // Default to enabled if not specified
+  }
+  return true;
+}
+
+// Helper function to filter properties for a specific database
+function getEnabledProperties(dbKey) {
+  const dbProperties = properties[dbKey];
+  if (!dbProperties) return {};
+
+  const enabled = {};
+  Object.entries(dbProperties).forEach(([key, prop]) => {
+    if (isPropertyEnabled(prop)) {
+      enabled[key] = prop;
+    }
+  });
+  return enabled;
+}
+
+// Helper function to get property type for a database and property key
+function getPropertyType(dbKey, propertyKey) {
+  const prop = properties[dbKey]?.[propertyKey];
+  return prop?.type || "text";
+}
+
+// Helper function to get select options for a property
+function getPropertyOptions(dbKey, propertyKey) {
+  const prop = properties[dbKey]?.[propertyKey];
+  return prop?.options || null;
+}
+
 module.exports = {
   databases,
   properties,
-  selectOptions,
-  propertyTypes,
   colors,
   emojis,
-  sleep,
+  sleepCategorization,
 
   // Helper to get token (uses primary NOTION_TOKEN)
   getToken: () => process.env.NOTION_TOKEN,
+
+  // Helper functions for property management
+  getPropertyName,
+  isPropertyEnabled,
+  getEnabledProperties,
+  getPropertyType,
+  getPropertyOptions,
 };

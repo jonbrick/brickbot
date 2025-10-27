@@ -23,6 +23,11 @@ const rateLimits = {
     requestsPerSecond: 3, // Notion: 3 requests per second
     backoffMs: 350,
   },
+
+  googleCalendar: {
+    requestsPerSecond: 3, // Google Calendar API: 3 requests per second
+    backoffMs: 350,
+  },
 };
 
 // Retry configurations

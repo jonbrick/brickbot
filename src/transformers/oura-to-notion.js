@@ -4,8 +4,14 @@
  */
 
 const config = require("../config");
-const { formatDate, formatDateLong, formatTime } = require("../utils/date");
+const {
+  formatDate,
+  formatDateLong,
+  formatTime,
+  formatDateOnly,
+} = require("../utils/date");
 const { isSleepIn } = require("../utils/sleep");
+const { getPropertyName } = require("../config/notion");
 
 /**
  * Transform Oura sleep session to Notion properties
@@ -20,8 +26,8 @@ function transformOuraToNotion(session) {
   const wakeTime = session.bedtimeEnd ? new Date(session.bedtimeEnd) : null;
   const sleepInType =
     wakeTime && isSleepIn(wakeTime)
-      ? config.notion.sleep.sleepInLabel
-      : config.notion.sleep.normalWakeUpLabel;
+      ? config.notion.sleepCategorization.sleepInLabel
+      : config.notion.sleepCategorization.normalWakeUpLabel;
 
   // Extract readiness data from contributors
   const readinessScore =
@@ -35,49 +41,75 @@ function transformOuraToNotion(session) {
   const sleepBalance = session.contributors?.sleep_balance || null;
   const temperatureDeviation = session.temperatureDeviation || null;
 
-  return {
-    [props.title]: formatDateLong(session.nightOf),
-    [props.nightOfDate]: session.nightOf,
-    [props.ouraDate]: session.ouraDate,
-    [props.bedtime]: session.bedtimeStart || "",
-    [props.wakeTime]: session.bedtimeEnd || "",
-    [props.sleepDuration]: session.sleepDuration
+  // Build properties object using getPropertyName helper
+  const allProperties = {
+    [getPropertyName(props.title)]: formatDateLong(session.nightOf),
+    [getPropertyName(props.nightOfDate)]: session.nightOf
+      ? formatDateOnly(session.nightOf)
+      : "",
+    [getPropertyName(props.ouraDate)]: session.ouraDate
+      ? formatDateOnly(session.ouraDate)
+      : "",
+    [getPropertyName(props.bedtime)]: session.bedtimeStart || "",
+    [getPropertyName(props.wakeTime)]: session.bedtimeEnd || "",
+    [getPropertyName(props.sleepDuration)]: session.sleepDuration
       ? parseFloat((session.sleepDuration / 3600).toFixed(1))
       : 0, // Convert seconds to hours (to match archive format)
-    [props.deepSleep]: session.deepSleep
+    [getPropertyName(props.deepSleep)]: session.deepSleep
       ? Math.round(session.deepSleep / 60)
       : 0,
-    [props.remSleep]: session.remSleep ? Math.round(session.remSleep / 60) : 0,
-    [props.lightSleep]: session.lightSleep
+    [getPropertyName(props.remSleep)]: session.remSleep
+      ? Math.round(session.remSleep / 60)
+      : 0,
+    [getPropertyName(props.lightSleep)]: session.lightSleep
       ? Math.round(session.lightSleep / 60)
       : 0,
-    [props.awakeTime]: session.awakeTime
+    [getPropertyName(props.awakeTime)]: session.awakeTime
       ? Math.round(session.awakeTime / 60)
       : 0,
-    [props.heartRateAvg]: session.heartRateAvg || null,
-    [props.heartRateLow]: session.heartRateLow || null,
-    [props.hrv]: session.hrv || null,
-    [props.respiratoryRate]: session.respiratoryRate || null,
-    [props.efficiency]: session.efficiency || null,
-    [props.googleCalendar]: sleepInType,
-    [props.sleepId]: session.sleepId || "",
-    [props.calendarCreated]: false,
-    [props.type]: session.type || "Sleep",
+    [getPropertyName(props.heartRateAvg)]: session.heartRateAvg || null,
+    [getPropertyName(props.heartRateLow)]: session.heartRateLow || null,
+    [getPropertyName(props.hrv)]: session.hrv || null,
+    [getPropertyName(props.respiratoryRate)]: session.respiratoryRate || null,
+    [getPropertyName(props.efficiency)]: session.efficiency || null,
+    [getPropertyName(props.googleCalendar)]: sleepInType,
+    [getPropertyName(props.sleepId)]: session.sleepId || "",
+    [getPropertyName(props.calendarCreated)]: false,
+    [getPropertyName(props.type)]: session.type || "Sleep",
     // New fields
-    [props.sleepLatency]: session.latency
+    [getPropertyName(props.sleepLatency)]: session.latency
       ? Math.round(session.latency / 60)
       : null, // Convert seconds to minutes
-    [props.timeInBed]: session.timeInBed
+    [getPropertyName(props.timeInBed)]: session.timeInBed
       ? parseFloat((session.timeInBed / 3600).toFixed(1))
       : null, // Convert seconds to hours
-    [props.restlessPeriods]: session.restlessPeriods || null,
-    [props.readinessScore]: readinessScore,
-    [props.temperatureDeviation]: temperatureDeviation,
-    [props.recoveryIndex]: recoveryIndex,
-    [props.sleepBalance]: sleepBalance,
-    [props.sleepPeriod]: session.period !== undefined ? session.period : null,
-    [props.sleepScore]: session.score || null,
+    [getPropertyName(props.restlessPeriods)]: session.restlessPeriods || null,
+    [getPropertyName(props.readinessScore)]: readinessScore,
+    [getPropertyName(props.temperatureDeviation)]: temperatureDeviation,
+    [getPropertyName(props.recoveryIndex)]: recoveryIndex,
+    [getPropertyName(props.sleepBalance)]: sleepBalance,
+    [getPropertyName(props.sleepPeriod)]:
+      session.period !== undefined ? session.period : null,
+    [getPropertyName(props.sleepScore)]: session.score || null,
   };
+
+  // Filter out disabled properties
+  const enabledProperties = {};
+  Object.entries(allProperties).forEach(([key, value]) => {
+    // Find the corresponding property config
+    const propKey = Object.keys(props).find(
+      (k) => getPropertyName(props[k]) === key
+    );
+
+    if (propKey && config.notion.isPropertyEnabled(props[propKey])) {
+      enabledProperties[key] = value;
+    } else if (!propKey) {
+      // If property config doesn't exist, include it (backward compatibility)
+      enabledProperties[key] = value;
+    }
+  });
+
+  return enabledProperties;
 }
 
 /**

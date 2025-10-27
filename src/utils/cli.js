@@ -78,11 +78,12 @@ async function selectDateRange() {
     }
 
     case "last7": {
-      // OURA-SPECIFIC: Last 7 wake-up days (including today)
-      // If today is Sunday, this means: Mon, Tue, Wed, Thu, Fri, Sat, Sun
+      // Last 7 days including today
+      // Oura API end_date is EXCLUSIVE, so add 1 day to include today
       startDate = new Date(getToday());
       startDate.setDate(startDate.getDate() - 6); // 6 days ago
       endDate = new Date(getToday());
+      endDate.setDate(endDate.getDate() + 1); // Tomorrow (to include today)
       endDate.setHours(23, 59, 59, 999);
       break;
     }
@@ -92,6 +93,132 @@ async function selectDateRange() {
       startDate = new Date(getToday());
       startDate.setDate(startDate.getDate() - 29); // 29 days ago
       endDate = new Date(getToday());
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+
+    case "custom": {
+      const answers = await inquirer.prompt([
+        {
+          type: "input",
+          name: "startDate",
+          message: "Start date (YYYY-MM-DD or 'yesterday', 'today'):",
+          validate: (input) => {
+            try {
+              parseDate(input);
+              return true;
+            } catch (e) {
+              return "Invalid date format";
+            }
+          },
+        },
+        {
+          type: "input",
+          name: "endDate",
+          message: "End date (YYYY-MM-DD or 'yesterday', 'today'):",
+          validate: (input) => {
+            try {
+              parseDate(input);
+              return true;
+            } catch (e) {
+              return "Invalid date format";
+            }
+          },
+        },
+      ]);
+
+      startDate = parseDate(answers.startDate);
+      endDate = parseDate(answers.endDate);
+
+      if (startDate > endDate) {
+        console.log("⚠️  Start date is after end date, swapping...");
+        [startDate, endDate] = [endDate, startDate];
+      }
+      break;
+    }
+  }
+
+  // Display the actual data range (API end_date is exclusive, so subtract 1 day for display)
+  const displayEndDate = new Date(endDate);
+  displayEndDate.setDate(displayEndDate.getDate() - 1);
+
+  console.log(
+    `\n📅 Fetching data for: ${formatDateLong(startDate)} to ${formatDateLong(
+      displayEndDate
+    )}\n`
+  );
+
+  return { startDate, endDate };
+}
+
+/**
+ * Select date range for calendar syncing
+ *
+ * Calendar sync works with already-recorded sleep data, so date ranges
+ * should never include future dates. This function provides explicit past-only
+ * date logic optimized for calendar syncing workflows.
+ *
+ * @returns {Promise<{startDate: Date, endDate: Date}>} Selected date range
+ */
+async function selectCalendarDateRange() {
+  const { rangeType } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "rangeType",
+      message: "Select date range:",
+      choices: [
+        { name: "Today", value: "today" },
+        { name: "Yesterday", value: "yesterday" },
+        { name: "This Week", value: "week" },
+        { name: "Last 7 Days", value: "last7" },
+        { name: "Last 30 Days", value: "last30" },
+        { name: "Custom Range", value: "custom" },
+      ],
+    },
+  ]);
+
+  let startDate, endDate;
+
+  switch (rangeType) {
+    case "today":
+      // Start = today, End = today 23:59:59
+      startDate = getToday();
+      endDate = getToday();
+      endDate.setHours(23, 59, 59, 999);
+      break;
+
+    case "yesterday":
+      // Start = yesterday, End = yesterday 23:59:59
+      startDate = getYesterday();
+      endDate = getYesterday();
+      endDate.setHours(23, 59, 59, 999);
+      break;
+
+    case "week": {
+      // Start = last Sunday, End = today 23:59:59 (not next Sunday)
+      const today = getToday();
+      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - dayOfWeek); // Go back to Sunday
+      endDate = getToday();
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+
+    case "last7": {
+      // Start = 6 days ago, End = today 23:59:59 (not tomorrow)
+      startDate = new Date(getToday());
+      startDate.setDate(startDate.getDate() - 6); // 6 days ago
+      endDate = getToday();
+      endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+
+    case "last30": {
+      // Start = 29 days ago, End = today 23:59:59
+      startDate = new Date(getToday());
+      startDate.setDate(startDate.getDate() - 29); // 29 days ago
+      endDate = getToday();
       endDate.setHours(23, 59, 59, 999);
       break;
     }
@@ -441,6 +568,7 @@ async function promptMultiSelect(message, choices) {
 
 module.exports = {
   selectDateRange,
+  selectCalendarDateRange,
   selectSources,
   confirmOperation,
   showProgress,

@@ -10,8 +10,28 @@ const {
   formatTime,
   formatDateOnly,
 } = require("../utils/date");
-const { isSleepIn } = require("../utils/sleep");
 const { getPropertyName } = require("../config/notion");
+
+/**
+ * Determine if wake time should be categorized as "Sleep In"
+ * Based on wake time threshold (default 7 AM)
+ *
+ * @param {Date} wakeTime - Wake time
+ * @param {number} threshold - Hour threshold (default 7)
+ * @returns {boolean} True if sleep in
+ */
+function isSleepIn(wakeTime, threshold = 7) {
+  if (!wakeTime) {
+    return false;
+  }
+
+  const hours = wakeTime.getHours();
+  const minutes = wakeTime.getMinutes();
+  const totalMinutes = hours * 60 + minutes;
+  const thresholdMinutes = threshold * 60;
+
+  return totalMinutes > thresholdMinutes;
+}
 
 /**
  * Transform Oura sleep session to Notion properties

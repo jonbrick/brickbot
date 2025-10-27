@@ -4,8 +4,12 @@
  */
 
 const OuraService = require("../services/OuraService");
-const { calculateNightOf } = require("../utils/sleep");
-const { formatDate } = require("../utils/date");
+const {
+  parseDate,
+  addDays,
+  formatDate,
+  calculateNightOf,
+} = require("../utils/date");
 const { createSpinner } = require("../utils/cli");
 
 /**

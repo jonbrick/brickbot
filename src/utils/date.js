@@ -172,11 +172,11 @@ function formatDateLong(date) {
     throw new Error("Invalid date provided to formatDateLong");
   }
 
-  // Use local date components
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  const day = date.getDate();
-  const dayOfWeek = date.getDay();
+  // Use UTC date components to match formatDate() behavior
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  const dayOfWeek = date.getUTCDay();
 
   const weekdayNames = [
     "Sunday",
@@ -279,6 +279,19 @@ function addDays(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
+}
+
+/**
+ * Calculate "Night of" date from Oura date
+ * Oura dates represent the END of the sleep session (wake-up morning).
+ * "Night of" = Oura date - 1 day
+ *
+ * @param {string|Date} ouraDate - Oura API date (wake-up date)
+ * @returns {Date} Night of date (the night you went to sleep)
+ */
+function calculateNightOf(ouraDate) {
+  const date = typeof ouraDate === "string" ? parseDate(ouraDate) : ouraDate;
+  return addDays(date, -1);
 }
 
 /**
@@ -406,6 +419,7 @@ module.exports = {
   isValidDate,
   getDateRange,
   addDays,
+  calculateNightOf,
   addMonths,
   getWeekStart,
   getWeekEnd,

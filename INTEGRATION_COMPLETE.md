@@ -120,6 +120,32 @@ node cli/sweep-to-notion.js
 - `src/config/sources.js` - Rate limiting configuration
 - `API_MAPPINGS_COMPLETE.md` - Complete field mapping reference
 
+## Code Quality Improvements
+
+### Consolidation of Date Logic
+
+Eliminated duplicate `calculateNightOf()` function implementations:
+
+- **Before**: Function was duplicated in `src/collectors/oura.js` and `cli/sweep-to-notion.js`
+- **After**: Function consolidated in `src/utils/date.js` as a shared utility
+- **Benefits**: Single source of truth, easier to maintain and test, consistent date handling
+
+### Date Offset Documentation
+
+Added documentation for the `dateOffset` configuration pattern:
+
+- **Location**: `ARCHITECTURE.md` under "Configuration" section
+- **Purpose**: Documents API-specific date conventions (e.g., Oura's wake-up date vs bed date)
+- **Implementation**: Referenced in `src/utils/date.js` with `calculateNightOf()` utility
+- **Benefit**: Makes the date offset pattern explicit and easier to understand
+
+### Updated Files
+
+- `src/utils/date.js` - Added `calculateNightOf()` export
+- `src/collectors/oura.js` - Removed duplicate, imports from utils
+- `cli/sweep-to-notion.js` - Removed duplicate, imports from utils
+- `ARCHITECTURE.md` - Documented date offset pattern
+
 ## Notes
 
 - The Sleep ID property type is configured as "text" in `notion.js` (line 73)

@@ -79,6 +79,18 @@ Single source of truth for all settings. Eliminates scattered `process.env` call
 - **calendar.js**: Calendar IDs, color mappings, OAuth credentials, event categorization
 - **sources.js**: API credentials, rate limits, retry configuration
 
+#### Date Offset Pattern
+
+Some APIs use different date conventions. For example, Oura dates represent the **wake-up morning** (end of sleep session), but we need the **bed date** (night of). The `dateOffset` configuration in `sources.js` documents this convention:
+
+```javascript
+oura: {
+  dateOffset: 1, // Oura dates represent wake-up, need to subtract 1 day to get "night of"
+}
+```
+
+The actual offset logic is implemented in `src/utils/date.js` with the `calculateNightOf()` utility function, ensuring consistent date handling across the application.
+
 ### Services (`src/services/`)
 
 Thin wrappers around external APIs. Each service handles authentication, HTTP requests, error handling, retry logic, and rate limiting.

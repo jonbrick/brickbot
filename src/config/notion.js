@@ -45,7 +45,6 @@ const properties = {
       enabled: true,
     },
     type: { name: "Type", type: "text", enabled: true },
-    // New fields - disabled by default until added to Notion database
     sleepLatency: { name: "Sleep Latency", type: "number", enabled: false },
     timeInBed: { name: "Time in Bed", type: "number", enabled: false },
     restlessPeriods: {

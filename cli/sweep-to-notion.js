@@ -9,9 +9,15 @@ const inquirer = require("inquirer");
 const OuraService = require("../src/services/OuraService");
 const { fetchOuraData } = require("../src/collectors/oura");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
-const { formatDate, formatDateLong, getDayName } = require("../src/utils/date");
+const {
+  formatDate,
+  formatDateLong,
+  getDayName,
+  parseDate,
+  addDays,
+  calculateNightOf,
+} = require("../src/utils/date");
 const { selectDateRange, createSpinner } = require("../src/utils/cli");
-const { calculateNightOf } = require("../src/utils/sleep");
 
 /**
  * Extract and format sleep data with only the specified fields

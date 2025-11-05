@@ -19,13 +19,15 @@ const path = require("path");
 
 async function main() {
   console.log("\n🔄 Brickbot - Token Refresher\n");
+  console.log("This command refreshes OAuth2 tokens for services that support token refresh.");
+  console.log("Note: API key services (Notion, Oura) don't expire and don't need refresh.\n");
 
   try {
     const tokenService = new TokenService();
     const results = [];
 
     // Check which tokens need refresh
-    showInfo("Checking which tokens need refresh...");
+    showInfo("Checking OAuth tokens that can be refreshed...");
 
     const tokensToRefresh = [];
     const refreshableServices = tokenConfig.getRefreshableServices();
@@ -47,7 +49,7 @@ async function main() {
     }
 
     if (tokensToRefresh.length === 0) {
-      showSuccess("All tokens are valid - no refresh needed!");
+      showSuccess("All OAuth tokens are valid - no refresh needed!");
       console.log("\n");
       process.exit(0);
     }
@@ -90,11 +92,29 @@ async function main() {
             : [],
         });
       } catch (error) {
-        results.push({
-          service: serviceConfig.name,
-          success: false,
-          message: `Failed: ${error.message}`,
-        });
+        // Check for invalid_grant error (refresh token expired/revoked)
+        const isInvalidGrant = 
+          error.message?.includes("invalid_grant") ||
+          error.message?.includes("invalid_grant:") ||
+          error.response?.data?.error === "invalid_grant";
+        
+        if (isInvalidGrant) {
+          results.push({
+            service: serviceConfig.name,
+            success: false,
+            message: "Refresh token expired or revoked",
+            details: [
+              "❌ This refresh token is no longer valid and cannot be refreshed.",
+              "💡 Run 'yarn tokens:setup' to re-authenticate and get new tokens."
+            ],
+          });
+        } else {
+          results.push({
+            service: serviceConfig.name,
+            success: false,
+            message: `Failed: ${error.message}`,
+          });
+        }
       }
     }
 

@@ -59,7 +59,7 @@ class StravaService {
   /**
    * Refresh access token using refresh token
    *
-   * @returns {Promise<void>}
+   * @returns {Promise<Object>} Token data
    */
   async refreshAccessToken() {
     try {
@@ -81,9 +81,34 @@ class StravaService {
       if (process.env.DEBUG) {
         console.log("✅ Strava access token refreshed successfully");
       }
+
+      return {
+        access_token: response.data.access_token,
+        refresh_token: response.data.refresh_token || this.refreshToken,
+        expires_at: response.data.expires_at,
+        expires_in: response.data.expires_in,
+      };
     } catch (error) {
       throw new Error(
         `Failed to refresh Strava access token: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  /**
+   * Get athlete information
+   *
+   * @returns {Promise<Object>} Athlete data
+   */
+  async getAthlete() {
+    try {
+      const response = await this.client.get("/athlete");
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        `Failed to fetch Strava athlete data: ${
           error.response?.data?.message || error.message
         }`
       );

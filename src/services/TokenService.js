@@ -5,8 +5,6 @@
 
 const GoogleCalendarService = require("./GoogleCalendarService");
 const StravaService = require("./StravaService");
-const WithingsService = require("./WithingsService");
-const GitHubService = require("./GitHubService");
 const OuraService = require("./OuraService");
 const config = require("../config");
 
@@ -14,10 +12,7 @@ class TokenService {
   constructor() {
     this.services = {
       googlePersonal: new GoogleCalendarService("personal"),
-      googleWork: new GoogleCalendarService("work"),
       strava: new StravaService(),
-      withings: new WithingsService(),
-      github: new GitHubService(),
       oura: new OuraService(),
     };
   }
@@ -30,14 +25,9 @@ class TokenService {
   async checkAllTokens() {
     const status = {
       googlePersonal: await this._checkGoogleToken("personal"),
-      googleWork: await this._checkGoogleToken("work"),
       strava: await this._checkStravaToken(),
-      withings: await this._checkWithingsToken(),
-      github: await this._checkGitHubToken(),
       oura: await this._checkOuraToken(),
       notion: await this._checkNotionToken(),
-      claude: await this._checkClaudeToken(),
-      steam: await this._checkSteamToken(),
     };
 
     return status;
@@ -67,22 +57,6 @@ class TokenService {
       results.googlePersonal = { success: false, message: error.message };
     }
 
-    // Google Work
-    try {
-      const credentials = config.calendar.getWorkCredentials();
-      if (credentials.refreshToken) {
-        await this.services.googleWork.refreshToken();
-        results.googleWork = { success: true, message: "Token refreshed" };
-      } else {
-        results.googleWork = {
-          success: false,
-          message: "No refresh token configured",
-        };
-      }
-    } catch (error) {
-      results.googleWork = { success: false, message: error.message };
-    }
-
     // Strava
     try {
       if (config.sources.strava.refreshToken) {
@@ -96,21 +70,6 @@ class TokenService {
       }
     } catch (error) {
       results.strava = { success: false, message: error.message };
-    }
-
-    // Withings
-    try {
-      if (config.sources.withings.refreshToken) {
-        await this.services.withings.refreshAccessToken();
-        results.withings = { success: true, message: "Token refreshed" };
-      } else {
-        results.withings = {
-          success: false,
-          message: "No refresh token configured",
-        };
-      }
-    } catch (error) {
-      results.withings = { success: false, message: error.message };
     }
 
     return results;
@@ -129,6 +88,16 @@ class TokenService {
           ? config.calendar.getWorkCredentials()
           : config.calendar.getPersonalCredentials();
 
+      if (!credentials) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: `${
+            accountType === "work" ? "Work" : "Personal"
+          } account not configured`,
+        };
+      }
+
       if (!credentials.refreshToken) {
         return {
           valid: false,
@@ -140,6 +109,17 @@ class TokenService {
       // Try to list calendars as a test
       const service =
         this.services[`google${accountType === "work" ? "Work" : "Personal"}`];
+
+      if (!service) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: `${
+            accountType === "work" ? "Work" : "Personal"
+          } account service not available`,
+        };
+      }
+
       await service.listCalendars();
 
       return {
@@ -148,6 +128,17 @@ class TokenService {
         message: "Token is valid",
       };
     } catch (error) {
+      // Check if it's a configuration error (service not instantiated)
+      if (
+        error.message.includes("not configured") ||
+        error.message.includes("credentials are required")
+      ) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: error.message,
+        };
+      }
       return {
         valid: false,
         needsRefresh: true,
@@ -196,101 +187,6 @@ class TokenService {
       return {
         valid: false,
         needsRefresh: true,
-        message: error.message,
-      };
-    }
-  }
-
-  /**
-   * Check Withings token
-   *
-   * @returns {Promise<Object>} Token status
-   */
-  async _checkWithingsToken() {
-    try {
-      const tokenExpiry = parseInt(config.sources.withings.tokenExpiry);
-      const now = Math.floor(Date.now() / 1000);
-
-      if (!config.sources.withings.accessToken) {
-        return {
-          valid: false,
-          needsRefresh: false,
-          message: "No access token configured",
-        };
-      }
-
-      if (tokenExpiry && now >= tokenExpiry) {
-        return {
-          valid: false,
-          needsRefresh: true,
-          message: "Token expired",
-          expiresAt: new Date(tokenExpiry * 1000),
-        };
-      }
-
-      // Try to actually validate the token with a test API call
-      try {
-        await this.services.withings.fetchMeasurements(
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
-          new Date()
-        );
-
-        return {
-          valid: true,
-          needsRefresh: false,
-          message: "Token is valid",
-          expiresAt: tokenExpiry ? new Date(tokenExpiry * 1000) : null,
-        };
-      } catch (error) {
-        // If token validation fails, mark as needing refresh
-        if (
-          error.message.includes("invalid_token") ||
-          error.message.includes("invalid")
-        ) {
-          return {
-            valid: false,
-            needsRefresh: true,
-            message: "Token is invalid or expired",
-          };
-        }
-        throw error;
-      }
-    } catch (error) {
-      return {
-        valid: false,
-        needsRefresh: true,
-        message: error.message,
-      };
-    }
-  }
-
-  /**
-   * Check GitHub token
-   *
-   * @returns {Promise<Object>} Token status
-   */
-  async _checkGitHubToken() {
-    try {
-      if (!config.sources.github.token) {
-        return {
-          valid: false,
-          needsRefresh: false,
-          message: "No token configured",
-        };
-      }
-
-      // Try to check rate limit as a test
-      await this.services.github.checkRateLimit();
-
-      return {
-        valid: true,
-        needsRefresh: false,
-        message: "Token is valid",
-      };
-    } catch (error) {
-      return {
-        valid: false,
-        needsRefresh: false,
         message: error.message,
       };
     }
@@ -358,79 +254,6 @@ class TokenService {
   }
 
   /**
-   * Check Claude token
-   *
-   * @returns {Promise<Object>} Token status
-   */
-  async _checkClaudeToken() {
-    try {
-      if (!config.sources.claude.apiKey) {
-        return {
-          valid: false,
-          needsRefresh: false,
-          message: "No API key configured",
-        };
-      }
-
-      return {
-        valid: true,
-        needsRefresh: false,
-        message: "API key is configured",
-      };
-    } catch (error) {
-      return {
-        valid: false,
-        needsRefresh: false,
-        message: error.message,
-      };
-    }
-  }
-
-  /**
-   * Check Steam token
-   *
-   * @returns {Promise<Object>} Token status
-   */
-  async _checkSteamToken() {
-    try {
-      if (!config.sources.steam.apiUrl) {
-        return {
-          valid: false,
-          needsRefresh: false,
-          message: "No API URL configured",
-        };
-      }
-
-      // Test Lambda endpoint accessibility
-      const SteamService = require("./SteamService");
-      const service = new SteamService();
-      const isValid = await service.testConnection();
-
-      return {
-        valid: isValid,
-        needsRefresh: false,
-        message: isValid
-          ? "Lambda endpoint accessible"
-          : "Lambda endpoint unreachable",
-      };
-    } catch (error) {
-      return {
-        valid: false,
-        needsRefresh: false,
-        message: error.message,
-      };
-    }
-  }
-
-  /**
-   * Public method for Steam token checking (called by CLI)
-   * @returns {Promise<Object>} Token status
-   */
-  async checkSteamToken() {
-    return await this._checkSteamToken();
-  }
-
-  /**
    * Get summary of token status
    *
    * @returns {Promise<Object>} Summary
@@ -491,15 +314,6 @@ class TokenService {
   // Public methods for CLI scripts
 
   /**
-   * Validate GitHub token
-   * @param {string} token - GitHub token (unused, kept for compatibility)
-   * @returns {Promise<Object>} Token status
-   */
-  async validateGitHubToken(token) {
-    return await this._checkGitHubToken();
-  }
-
-  /**
    * Validate Oura token
    * @param {string} token - Oura token (unused, kept for compatibility)
    * @returns {Promise<Object>} Token status
@@ -515,24 +329,6 @@ class TokenService {
    */
   async checkStravaTokens(credentials) {
     return await this._checkStravaToken();
-  }
-
-  /**
-   * Check Withings tokens
-   * @param {Object} credentials - Withings credentials
-   * @returns {Promise<Object>} Token status
-   */
-  async checkWithingsTokens(credentials) {
-    return await this._checkWithingsToken();
-  }
-
-  /**
-   * Validate Claude token
-   * @param {string} apiKey - Claude API key (unused, kept for compatibility)
-   * @returns {Promise<Object>} Token status
-   */
-  async validateClaudeToken(apiKey) {
-    return await this._checkClaudeToken();
   }
 
   /**
@@ -573,23 +369,9 @@ class TokenService {
   }
 
   /**
-   * Refresh Withings tokens
-   * @param {Object} credentials - Withings credentials
-   * @returns {Promise<Object>} New tokens
-   */
-  async refreshWithingsTokens(credentials) {
-    const newTokens = await this.services.withings.refreshAccessToken();
-    return {
-      accessToken: newTokens.access_token,
-      refreshToken: newTokens.refresh_token,
-      expiresAt: newTokens.expires_at,
-    };
-  }
-
-  /**
    * Refresh Google Calendar tokens
    * @param {Object} credentials - Google credentials
-   * @returns {Promise<Object>} Status
+   * @returns {Promise<Object>} Token data
    */
   async refreshGoogleTokens(credentials) {
     // Determine if personal or work based on credentials
@@ -599,8 +381,15 @@ class TokenService {
         : "personal";
     const service =
       this.services[`google${accountType === "work" ? "Work" : "Personal"}`];
-    await service.refreshToken();
-    return { success: true };
+    const credentialsData = await service.refreshToken();
+    
+    // Google returns: { access_token, refresh_token, expiry_date, ... }
+    // Map to expected format: { accessToken, refreshToken, expiryDate }
+    return {
+      accessToken: credentialsData.access_token,
+      refreshToken: credentialsData.refresh_token,
+      expiryDate: credentialsData.expiry_date,
+    };
   }
 
   /**
@@ -615,10 +404,13 @@ class TokenService {
         ? config.calendar.getWorkCredentials()
         : config.calendar.getPersonalCredentials();
 
+    // Use the standard OOB redirect URI for desktop apps
+    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+
     const oauth2Client = new google.auth.OAuth2(
       credentials.clientId,
       credentials.clientSecret,
-      credentials.redirectUri
+      redirectUri
     );
 
     const scopes = ["https://www.googleapis.com/auth/calendar"];
@@ -645,10 +437,13 @@ class TokenService {
         ? config.calendar.getWorkCredentials()
         : config.calendar.getPersonalCredentials();
 
+    // Use the standard OOB redirect URI for desktop apps
+    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+
     const oauth2Client = new google.auth.OAuth2(
       credentials.clientId,
       credentials.clientSecret,
-      credentials.redirectUri
+      redirectUri
     );
 
     const { tokens } = await oauth2Client.getToken(code);
@@ -719,72 +514,6 @@ class TokenService {
       refreshToken: data.refresh_token,
       expiresAt: data.expires_at,
       expiresIn: data.expires_in,
-    };
-  }
-
-  /**
-   * Get Withings authorization URL for OAuth flow
-   * @returns {Promise<string>} Authorization URL
-   */
-  async getWithingsAuthUrl() {
-    const clientId = config.sources.withings.clientId;
-    const redirectUri = config.sources.withings.redirectUri;
-    const state = Math.random().toString(36).substring(7);
-
-    const authUrl =
-      `https://account.withings.com/oauth2_user/authorize2?` +
-      `response_type=code&` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `state=${state}&` +
-      `scope=user.metrics,user.activity&` +
-      `mode=demo`;
-
-    return authUrl;
-  }
-
-  /**
-   * Exchange authorization code for Withings tokens
-   * @param {string} code - Authorization code from OAuth callback
-   * @returns {Promise<Object>} Tokens
-   */
-  async exchangeWithingsCode(code) {
-    const fetch = require("node-fetch");
-    const clientId = config.sources.withings.clientId;
-    const clientSecret = config.sources.withings.clientSecret;
-    const redirectUri = config.sources.withings.redirectUri;
-
-    const params = new URLSearchParams({
-      action: "requesttoken",
-      grant_type: "authorization_code",
-      client_id: clientId,
-      client_secret: clientSecret,
-      code: code,
-      redirect_uri: redirectUri,
-    });
-
-    const response = await fetch("https://account.withings.com/oauth2/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: params.toString(),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to exchange Withings code: ${error}`);
-    }
-
-    const data = await response.json();
-
-    return {
-      accessToken: data.body.access_token,
-      refreshToken: data.body.refresh_token,
-      expiresAt: data.body.expires_in
-        ? Math.floor(Date.now() / 1000) + data.body.expires_in
-        : null,
-      userId: data.body.userid,
     };
   }
 
@@ -873,8 +602,15 @@ class TokenService {
       updates[envVarConfig.refreshToken] = tokens.refreshToken;
     }
 
+    // Handle both expiresAt (Strava) and expiryDate (Google) formats
     if (tokens.expiresAt && envVarConfig.expiresAt) {
       updates[envVarConfig.expiresAt] = tokens.expiresAt;
+    }
+    
+    if (tokens.expiryDate && envVarConfig.expiresAt) {
+      // Convert Google's expiry_date (timestamp) to same format as Strava if needed
+      // For now, just store the timestamp directly
+      updates[envVarConfig.expiresAt] = tokens.expiryDate;
     }
 
     return updates;

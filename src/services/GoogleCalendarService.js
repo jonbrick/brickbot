@@ -9,14 +9,25 @@ const config = require("../config");
 class GoogleCalendarService {
   constructor(accountType = "personal") {
     this.accountType = accountType;
-    const credentials = config.calendar.getPersonalCredentials();
+    const credentials =
+      accountType === "work"
+        ? config.calendar.getWorkCredentials()
+        : config.calendar.getPersonalCredentials();
+
+    if (!credentials) {
+      throw new Error(
+        `Google Calendar credentials for ${accountType} account are not configured`
+      );
+    }
 
     if (
       !credentials.clientId ||
       !credentials.clientSecret ||
       !credentials.refreshToken
     ) {
-      throw new Error("Google Calendar credentials are required");
+      throw new Error(
+        `Google Calendar credentials for ${accountType} account are incomplete`
+      );
     }
 
     this.oauth2Client = new google.auth.OAuth2(
@@ -30,6 +41,24 @@ class GoogleCalendarService {
     });
 
     this.calendar = google.calendar({ version: "v3", auth: this.oauth2Client });
+  }
+
+  /**
+   * List all calendars
+   *
+   * @returns {Promise<Array>} List of calendars
+   */
+  async listCalendars() {
+    try {
+      const response = await this.calendar.calendarList.list();
+      return response.data.items || [];
+    } catch (error) {
+      throw new Error(
+        `Failed to list calendars: ${
+          error.response?.data?.error?.message || error.message
+        }`
+      );
+    }
   }
 
   /**
@@ -96,6 +125,11 @@ class GoogleCalendarService {
       this.oauth2Client.setCredentials(credentials);
       return credentials;
     } catch (error) {
+      // Preserve invalid_grant errors for better error handling upstream
+      const errorMessage = error.response?.data?.error || error.message;
+      if (errorMessage.includes("invalid_grant")) {
+        throw new Error(`invalid_grant: ${error.response?.data?.error_description || "Refresh token expired or revoked"}`);
+      }
       throw new Error(`Failed to refresh token: ${error.message}`);
     }
   }

@@ -12,16 +12,6 @@ const getCalendarConfig = () => require("./calendar");
  * Service token configurations
  */
 const tokenConfig = {
-  github: {
-    name: "GitHub",
-    type: "api_key",
-    requiresRefresh: false,
-    envVars: {
-      token: "GITHUB_TOKEN",
-    },
-    checkMethod: "validateGitHubToken",
-  },
-
   oura: {
     name: "Oura",
     type: "api_key",
@@ -51,35 +41,6 @@ const tokenConfig = {
     },
   },
 
-  withings: {
-    name: "Withings",
-    type: "oauth2",
-    requiresRefresh: true,
-    envVars: {
-      clientId: "WITHINGS_CLIENT_ID",
-      clientSecret: "WITHINGS_CLIENT_SECRET",
-      refreshToken: "WITHINGS_REFRESH_TOKEN",
-      accessToken: "WITHINGS_ACCESS_TOKEN",
-      expiresAt: "WITHINGS_TOKEN_EXPIRY",
-    },
-    checkMethod: "checkWithingsTokens",
-    refreshMethod: "refreshWithingsTokens",
-    getCredentials: () => {
-      const sources = getSourcesConfig();
-      return sources.withings;
-    },
-  },
-
-  claude: {
-    name: "Claude AI",
-    type: "api_key",
-    requiresRefresh: false,
-    envVars: {
-      apiKey: "ANTHROPIC_API_KEY",
-    },
-    checkMethod: "validateClaudeToken",
-  },
-
   notion: {
     name: "Notion",
     type: "api_key",
@@ -88,16 +49,6 @@ const tokenConfig = {
       token: "NOTION_TOKEN",
     },
     checkMethod: "validateNotionToken",
-  },
-
-  steam: {
-    name: "Steam",
-    type: "lambda_endpoint",
-    requiresRefresh: false,
-    envVars: {
-      apiUrl: "STEAM_URL",
-    },
-    checkMethod: "checkSteamToken",
   },
 
   googlePersonal: {
@@ -114,23 +65,6 @@ const tokenConfig = {
     getCredentials: () => {
       const calendar = getCalendarConfig();
       return calendar.getPersonalCredentials();
-    },
-  },
-
-  googleWork: {
-    name: "Work Google Calendar",
-    type: "oauth2",
-    requiresRefresh: true,
-    envVars: {
-      clientId: "WORK_GOOGLE_CLIENT_ID",
-      clientSecret: "WORK_GOOGLE_CLIENT_SECRET",
-      refreshToken: "WORK_GOOGLE_REFRESH_TOKEN",
-    },
-    checkMethod: "checkGoogleTokens",
-    refreshMethod: "refreshGoogleTokens",
-    getCredentials: () => {
-      const calendar = getCalendarConfig();
-      return calendar.getWorkCredentials();
     },
   },
 };

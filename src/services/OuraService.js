@@ -26,6 +26,44 @@ class OuraService {
   }
 
   /**
+   * Get personal information
+   * Validates token by fetching a minimal amount of data
+   *
+   * @returns {Promise<Object>} Personal info data
+   */
+  async getPersonalInfo() {
+    try {
+      // Use a lightweight endpoint that definitely exists - fetch today's sleep data
+      // This validates the token without requiring much data
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const startStr = this._formatDateForAPI(today);
+      const endStr = this._formatDateForAPI(tomorrow);
+
+      const response = await this.client.get("/usercollection/sleep", {
+        params: {
+          start_date: startStr,
+          end_date: endStr,
+        },
+      });
+
+      // Return a simple validation response
+      return {
+        valid: true,
+        data: response.data.data || [],
+      };
+    } catch (error) {
+      throw new Error(
+        `Failed to validate Oura token: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  /**
    * Fetch sleep data for date range
    *
    * Note: Oura API requires start_date and end_date to be different, and the end_date

@@ -67,6 +67,23 @@ const tokenConfig = {
       return calendar.getPersonalCredentials();
     },
   },
+
+  googleWork: {
+    name: "Work Google Calendar",
+    type: "oauth2",
+    requiresRefresh: true,
+    envVars: {
+      clientId: "WORK_GOOGLE_CLIENT_ID",
+      clientSecret: "WORK_GOOGLE_CLIENT_SECRET",
+      refreshToken: "WORK_GOOGLE_REFRESH_TOKEN",
+    },
+    checkMethod: "checkGoogleTokens",
+    refreshMethod: "refreshGoogleTokens",
+    getCredentials: () => {
+      const calendar = getCalendarConfig();
+      return calendar.getWorkCredentials();
+    },
+  },
 };
 
 /**

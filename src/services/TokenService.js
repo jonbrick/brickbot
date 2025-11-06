@@ -11,10 +11,27 @@ const config = require("../config");
 class TokenService {
   constructor() {
     this.services = {
-      googlePersonal: new GoogleCalendarService("personal"),
+      googlePersonal: null,
+      googleWork: null,
       strava: new StravaService(),
       oura: new OuraService(),
     };
+
+    // Try to instantiate Google Calendar services
+    // These may fail if credentials aren't configured, which is fine
+    try {
+      this.services.googlePersonal = new GoogleCalendarService("personal");
+    } catch (error) {
+      // Service not configured, will be handled by check methods
+      this.services.googlePersonal = null;
+    }
+
+    try {
+      this.services.googleWork = new GoogleCalendarService("work");
+    } catch (error) {
+      // Service not configured, will be handled by check methods
+      this.services.googleWork = null;
+    }
   }
 
   /**
@@ -25,6 +42,7 @@ class TokenService {
   async checkAllTokens() {
     const status = {
       googlePersonal: await this._checkGoogleToken("personal"),
+      googleWork: await this._checkGoogleToken("work"),
       strava: await this._checkStravaToken(),
       oura: await this._checkOuraToken(),
       notion: await this._checkNotionToken(),
@@ -44,7 +62,7 @@ class TokenService {
     // Google Personal
     try {
       const credentials = config.calendar.getPersonalCredentials();
-      if (credentials.refreshToken) {
+      if (credentials && credentials.refreshToken && this.services.googlePersonal) {
         await this.services.googlePersonal.refreshToken();
         results.googlePersonal = { success: true, message: "Token refreshed" };
       } else {
@@ -55,6 +73,22 @@ class TokenService {
       }
     } catch (error) {
       results.googlePersonal = { success: false, message: error.message };
+    }
+
+    // Google Work
+    try {
+      const credentials = config.calendar.getWorkCredentials();
+      if (credentials && credentials.refreshToken && this.services.googleWork) {
+        await this.services.googleWork.refreshToken();
+        results.googleWork = { success: true, message: "Token refreshed" };
+      } else {
+        results.googleWork = {
+          success: false,
+          message: "No refresh token configured",
+        };
+      }
+    } catch (error) {
+      results.googleWork = { success: false, message: error.message };
     }
 
     // Strava

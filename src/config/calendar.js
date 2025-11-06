@@ -17,15 +17,21 @@ const personalCredentials = {
   refreshToken: process.env.PERSONAL_GOOGLE_REFRESH_TOKEN,
 };
 
+// OAuth credentials for work account
+const workCredentials = {
+  clientId: process.env.WORK_GOOGLE_CLIENT_ID,
+  clientSecret: process.env.WORK_GOOGLE_CLIENT_SECRET,
+  refreshToken: process.env.WORK_GOOGLE_REFRESH_TOKEN,
+};
+
 // Helper function to get personal OAuth credentials
 function getPersonalCredentials() {
   return personalCredentials;
 }
 
-// Helper function to get work OAuth credentials (future use)
+// Helper function to get work OAuth credentials
 function getWorkCredentials() {
-  // TODO: Add work account credentials when needed
-  return null;
+  return workCredentials;
 }
 
 /**
@@ -58,6 +64,7 @@ function mapStravaToCalendarId() {
 module.exports = {
   calendars,
   personalCredentials,
+  workCredentials,
   getPersonalCredentials,
   getWorkCredentials,
   mapNotionCalendarToId,

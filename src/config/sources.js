@@ -21,6 +21,17 @@ const strava = {
   apiBaseUrl: "https://www.strava.com/api/v3",
 };
 
+// Withings configuration
+const withings = {
+  clientId: process.env.WITHINGS_CLIENT_ID,
+  clientSecret: process.env.WITHINGS_CLIENT_SECRET,
+  accessToken: process.env.WITHINGS_ACCESS_TOKEN,
+  refreshToken: process.env.WITHINGS_REFRESH_TOKEN,
+  userId: process.env.WITHINGS_USER_ID,
+  apiBaseUrl: "https://wbsapi.withings.net",
+  redirectUri: process.env.WITHINGS_REDIRECT_URI || "http://localhost:3000/callback",
+};
+
 // Rate limiting configurations
 const rateLimits = {
   oura: {
@@ -31,6 +42,11 @@ const rateLimits = {
   strava: {
     requestsPerMinute: 100, // Strava: 100 per 15 min, ~7 per minute to be safe
     backoffMs: 200,
+  },
+
+  withings: {
+    requestsPerMinute: 60, // Withings: conservative rate limit
+    backoffMs: 1000,
   },
 
   notion: {
@@ -56,6 +72,7 @@ const retryConfig = {
 module.exports = {
   oura,
   strava,
+  withings,
   rateLimits,
   retryConfig,
 };

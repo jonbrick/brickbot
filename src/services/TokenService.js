@@ -6,6 +6,7 @@
 const GoogleCalendarService = require("./GoogleCalendarService");
 const StravaService = require("./StravaService");
 const OuraService = require("./OuraService");
+const WithingsService = require("./WithingsService");
 const config = require("../config");
 
 class TokenService {
@@ -15,7 +16,17 @@ class TokenService {
       googleWork: null,
       strava: new StravaService(),
       oura: new OuraService(),
+      withings: null,
     };
+
+    // Try to instantiate WithingsService
+    // This may fail if credentials aren't configured, which is fine
+    try {
+      this.services.withings = new WithingsService();
+    } catch (error) {
+      // Service not configured, will be handled by check methods
+      this.services.withings = null;
+    }
 
     // Try to instantiate Google Calendar services
     // These may fail if credentials aren't configured, which is fine
@@ -45,6 +56,7 @@ class TokenService {
       googleWork: await this._checkGoogleToken("work"),
       strava: await this._checkStravaToken(),
       oura: await this._checkOuraToken(),
+      withings: await this._checkWithingsToken(),
       notion: await this._checkNotionToken(),
     };
 
@@ -104,6 +116,21 @@ class TokenService {
       }
     } catch (error) {
       results.strava = { success: false, message: error.message };
+    }
+
+    // Withings
+    try {
+      if (config.sources.withings?.refreshToken && this.services.withings) {
+        await this.services.withings.refreshAccessToken();
+        results.withings = { success: true, message: "Token refreshed" };
+      } else {
+        results.withings = {
+          success: false,
+          message: "No refresh token configured",
+        };
+      }
+    } catch (error) {
+      results.withings = { success: false, message: error.message };
     }
 
     return results;
@@ -253,6 +280,77 @@ class TokenService {
       return {
         valid: false,
         needsRefresh: false,
+        message: error.message,
+      };
+    }
+  }
+
+  /**
+   * Check Withings token
+   *
+   * @returns {Promise<Object>} Token status
+   */
+  async _checkWithingsToken() {
+    try {
+      if (!config.sources.withings?.accessToken) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: "No access token configured",
+        };
+      }
+
+      if (!this.services.withings) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: "Withings service not available",
+        };
+      }
+
+      // Check token expiry if available
+      const tokenExpiry = process.env.WITHINGS_TOKEN_EXPIRY
+        ? parseInt(process.env.WITHINGS_TOKEN_EXPIRY)
+        : null;
+      if (tokenExpiry) {
+        const now = Math.floor(Date.now() / 1000);
+        if (now >= tokenExpiry) {
+          return {
+            valid: false,
+            needsRefresh: true,
+            message: "Token expired",
+            expiresAt: new Date(tokenExpiry * 1000),
+          };
+        }
+      }
+
+      // Try to fetch a small date range as a test
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      await this.services.withings.fetchMeasurements(yesterday, today);
+
+      return {
+        valid: true,
+        needsRefresh: false,
+        message: "Token is valid",
+        expiresAt: tokenExpiry ? new Date(tokenExpiry * 1000) : null,
+      };
+    } catch (error) {
+      // Check if it's a configuration error
+      if (
+        error.message.includes("not configured") ||
+        error.message.includes("are required")
+      ) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: error.message,
+        };
+      }
+      return {
+        valid: false,
+        needsRefresh: true,
         message: error.message,
       };
     }
@@ -549,6 +647,113 @@ class TokenService {
       expiresAt: data.expires_at,
       expiresIn: data.expires_in,
     };
+  }
+
+  /**
+   * Check Withings tokens
+   * @param {Object} credentials - Withings credentials
+   * @returns {Promise<Object>} Token status
+   */
+  async checkWithingsTokens(credentials) {
+    return await this._checkWithingsToken();
+  }
+
+  /**
+   * Refresh Withings tokens
+   * @param {Object} credentials - Withings credentials
+   * @returns {Promise<Object>} New tokens
+   */
+  async refreshWithingsTokens(credentials) {
+    if (!this.services.withings) {
+      throw new Error("Withings service not available");
+    }
+    const newTokens = await this.services.withings.refreshAccessToken();
+    
+    // Ensure expires_at is calculated if not provided
+    const expiresAt = newTokens.expires_at || 
+      (newTokens.expires_in ? Math.floor(Date.now() / 1000) + newTokens.expires_in : null);
+    
+    return {
+      accessToken: newTokens.access_token,
+      refreshToken: newTokens.refresh_token,
+      expiresAt: expiresAt,
+    };
+  }
+
+  /**
+   * Get Withings authorization URL for OAuth flow
+   * @returns {Promise<string>} Authorization URL
+   */
+  async getWithingsAuthUrl() {
+    const clientId = config.sources.withings.clientId;
+    const redirectUri = config.sources.withings.redirectUri;
+    const scopes = "user.metrics,user.info";
+
+    const authUrl =
+      `https://account.withings.com/oauth2_user/authorize2?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=code&` +
+      `scope=${scopes}&` +
+      `state=withings_auth`;
+
+    return authUrl;
+  }
+
+  /**
+   * Exchange authorization code for Withings tokens
+   * @param {string} code - Authorization code from OAuth callback
+   * @returns {Promise<Object>} Tokens
+   */
+  async exchangeWithingsCode(code) {
+    const fetch = require("node-fetch");
+    const clientId = config.sources.withings.clientId;
+    const clientSecret = config.sources.withings.clientSecret;
+    const redirectUri = config.sources.withings.redirectUri;
+
+    const params = new URLSearchParams({
+      action: "requesttoken",
+      grant_type: "authorization_code",
+      client_id: clientId,
+      client_secret: clientSecret,
+      code: code,
+      redirect_uri: redirectUri,
+    });
+
+    const response = await fetch("https://wbsapi.withings.net/v2/oauth2", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: params.toString(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to exchange Withings code: ${error}`);
+    }
+
+    const data = await response.json();
+
+    // Withings API returns { status: 0, body: { access_token, refresh_token, expires_in, userid, ... } }
+    if (data.status === 0 && data.body) {
+      return {
+        accessToken: data.body.access_token,
+        refreshToken: data.body.refresh_token,
+        expiresAt: data.body.expires_in
+          ? Math.floor(Date.now() / 1000) + data.body.expires_in
+          : null,
+        expiresIn: data.body.expires_in,
+        userId: data.body.userid,
+      };
+    } else {
+      // Error response
+      const errorMsg = data.error || "Unknown error";
+      const errorDesc = data.error_description || "";
+      throw new Error(
+        `Withings API error (status ${data.status || "unknown"}): ${errorMsg}${errorDesc ? ` - ${errorDesc}` : ""}`
+      );
+    }
   }
 
   /**

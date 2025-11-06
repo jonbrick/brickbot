@@ -9,6 +9,7 @@ const inquirer = require("inquirer");
 const OuraService = require("../src/services/OuraService");
 const { fetchOuraData } = require("../src/collectors/oura");
 const { fetchStravaData } = require("../src/collectors/strava");
+const { fetchWithingsData } = require("../src/collectors/withings");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
 const { syncStravaToNotion } = require("../src/workflows/strava-to-notion");
 const {
@@ -92,6 +93,7 @@ async function selectAction() {
       choices: [
         { name: "Oura", value: "oura" },
         { name: "Strava", value: "strava" },
+        { name: "Withings", value: "withings" },
       ],
     },
     {
@@ -133,6 +135,8 @@ function printSyncResults(results) {
         console.log(`  ✅ ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
       } else if (r.activityId) {
         console.log(`  ✅ ${r.name} (Activity ID: ${r.activityId})`);
+      } else if (r.measurementId) {
+        console.log(`  ✅ ${r.dateString} (Measurement ID: ${r.measurementId})`);
       }
     });
     console.log();
@@ -146,6 +150,8 @@ function printSyncResults(results) {
         console.log(`  ⏭️  ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
       } else if (r.activityId) {
         console.log(`  ⏭️  ${r.name} (Activity ID: ${r.activityId})`);
+      } else if (r.measurementId) {
+        console.log(`  ⏭️  ${r.dateString} (Measurement ID: ${r.measurementId})`);
       }
     });
     console.log();
@@ -179,6 +185,8 @@ async function main() {
       await handleOuraData(startDate, endDate, action);
     } else if (source === "strava") {
       await handleStravaData(startDate, endDate, action);
+    } else if (source === "withings") {
+      await handleWithingsData(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -250,6 +258,33 @@ async function handleStravaData(startDate, endDate, action) {
     const results = await syncStravaToNotion(processed);
 
     printSyncResults(results);
+  }
+}
+
+/**
+ * Handle Withings data fetching and processing
+ */
+async function handleWithingsData(startDate, endDate, action) {
+  console.log("📊 Fetching Withings measurement data...\n");
+
+  const measurements = await fetchWithingsData(startDate, endDate);
+
+  if (measurements.length === 0) {
+    console.log("⚠️  No Withings measurements found for this date range\n");
+    return;
+  }
+
+  // Always display the table
+  printDataTable(measurements, "withings", "WITHINGS MEASUREMENTS");
+
+  // Sync to Notion if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Notion...\n");
+    console.log("⚠️  Notion sync for Withings is not yet implemented");
+    // TODO: Implement syncWithingsToNotion workflow
+    // const processed = await fetchWithingsData(startDate, endDate);
+    // const results = await syncWithingsToNotion(processed);
+    // printSyncResults(results);
   }
 }
 

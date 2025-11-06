@@ -88,6 +88,21 @@ const properties = {
     timezone: { name: "Timezone", type: "text", enabled: false },
     type: { name: "Activity Type", type: "select", enabled: true },
   },
+  withings: {
+    measurementId: { name: "Measurement ID", type: "text", enabled: true },
+    date: { name: "Date", type: "date", enabled: true },
+    dateString: { name: "Date String", type: "text", enabled: true },
+    name: { name: "Name", type: "title", enabled: true },
+    weight: { name: "Weight", type: "number", enabled: true },
+    fatFreeMass: { name: "Fat Free Mass", type: "number", enabled: true },
+    fatPercentage: { name: "Fat Percentage", type: "number", enabled: true },
+    fatMass: { name: "Fat Mass", type: "number", enabled: true },
+    muscleMass: { name: "Muscle Mass", type: "number", enabled: true },
+    bodyWaterPercentage: { name: "Body Water Percentage", type: "number", enabled: true },
+    boneMass: { name: "Bone Mass", type: "number", enabled: true },
+    measurementTime: { name: "Measurement Time", type: "text", enabled: true },
+    deviceModel: { name: "Device Model", type: "text", enabled: true },
+  },
 };
 
 // Field mappings: maps config property keys to actual data field names in records
@@ -134,6 +149,21 @@ const fieldMappings = {
     sufferScore: "sufferScore",
     timezone: "timezone",
     type: "type",
+  },
+  withings: {
+    measurementId: "measurementId",
+    date: "date",
+    dateString: "dateString",
+    name: "name",
+    weight: "weight",
+    fatFreeMass: "fatFreeMass",
+    fatPercentage: "fatPercentage",
+    fatMass: "fatMass",
+    muscleMass: "muscleMass",
+    bodyWaterPercentage: "bodyWaterPercentage",
+    boneMass: "boneMass",
+    measurementTime: "measurementTime",
+    deviceModel: "deviceModel",
   },
 };
 

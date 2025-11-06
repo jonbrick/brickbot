@@ -84,6 +84,26 @@ const tokenConfig = {
       return calendar.getWorkCredentials();
     },
   },
+
+  withings: {
+    name: "Withings",
+    type: "oauth2",
+    requiresRefresh: true,
+    envVars: {
+      clientId: "WITHINGS_CLIENT_ID",
+      clientSecret: "WITHINGS_CLIENT_SECRET",
+      refreshToken: "WITHINGS_REFRESH_TOKEN",
+      accessToken: "WITHINGS_ACCESS_TOKEN",
+      expiresAt: "WITHINGS_TOKEN_EXPIRY",
+      userId: "WITHINGS_USER_ID",
+    },
+    checkMethod: "checkWithingsTokens",
+    refreshMethod: "refreshWithingsTokens",
+    getCredentials: () => {
+      const sources = getSourcesConfig();
+      return sources.withings;
+    },
+  },
 };
 
 /**

@@ -453,6 +453,36 @@ function formatTimestampWithOffset(isoString, utcOffsetSeconds) {
   return cleanedString + formattedOffset;
 }
 
+/**
+ * Convert UTC Date to Eastern Time date string (YYYY-MM-DD)
+ * Automatically handles DST (EDT vs EST) using JavaScript's native timezone conversion
+ *
+ * @param {Date} utcDate - UTC date object
+ * @returns {string} Eastern Time date string in YYYY-MM-DD format
+ */
+function convertUTCToEasternDate(utcDate) {
+  if (!(utcDate instanceof Date) || isNaN(utcDate.getTime())) {
+    throw new Error("Invalid UTC date provided to convertUTCToEasternDate");
+  }
+
+  // Use Intl.DateTimeFormat to format the UTC date in Eastern timezone
+  // This automatically handles DST transitions (EDT vs EST)
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  // Format the date parts
+  const parts = formatter.formatToParts(utcDate);
+  const year = parts.find((p) => p.type === "year").value;
+  const month = parts.find((p) => p.type === "month").value;
+  const day = parts.find((p) => p.type === "day").value;
+
+  return `${year}-${month}-${day}`;
+}
+
 module.exports = {
   parseDate,
   getToday,
@@ -478,4 +508,5 @@ module.exports = {
   formatDateOnly,
   isSleepIn,
   formatTimestampWithOffset,
+  convertUTCToEasternDate,
 };

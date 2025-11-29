@@ -5,40 +5,7 @@
 
 const GitHubService = require("../services/GitHubService");
 const { createSpinner } = require("../utils/cli");
-const { formatDateOnly } = require("../utils/date");
-const crypto = require("crypto");
-
-/**
- * Convert UTC date to EST date string for grouping
- * EST is UTC-5, but we need to handle the date boundary correctly
- *
- * @param {Date} utcDate - UTC date
- * @returns {string} EST date string (YYYY-MM-DD)
- */
-function convertUTCToESTDate(utcDate) {
-  // Create a date at midnight UTC
-  const utcMidnight = new Date(Date.UTC(
-    utcDate.getUTCFullYear(),
-    utcDate.getUTCMonth(),
-    utcDate.getUTCDate()
-  ));
-
-  // EST is UTC-5 (or EDT is UTC-4 during daylight saving)
-  // For simplicity, use UTC-5 offset
-  // This means EST midnight is 05:00 UTC
-  // So if a commit is before 05:00 UTC, it's the previous day in EST
-  const estOffsetHours = -5;
-  const estDate = new Date(utcMidnight.getTime() + estOffsetHours * 60 * 60 * 1000);
-
-  // Check if the original UTC time falls before EST midnight
-  const commitHour = utcDate.getUTCHours();
-  if (commitHour < 5) {
-    // Before 05:00 UTC, so it's the previous day in EST
-    estDate.setUTCDate(estDate.getUTCDate() - 1);
-  }
-
-  return formatDateOnly(estDate);
-}
+const { convertUTCToEasternDate } = require("../utils/date");
 
 /**
  * Get project type for a repository
@@ -64,7 +31,7 @@ async function processCommitsIntoActivities(commits, service) {
   for (const commitItem of commits) {
     const commit = commitItem.commit;
     const commitDate = new Date(commit.committer.date); // UTC from GitHub
-    const estDateKey = convertUTCToESTDate(commitDate);
+    const estDateKey = convertUTCToEasternDate(commitDate);
     const repoName = commitItem.repository.full_name;
 
     // Get detailed commit information (may return multiple commits for work PRs)
@@ -73,7 +40,9 @@ async function processCommitsIntoActivities(commits, service) {
       commitDetails = await service.getCommitDetails(repoName, commitItem.sha);
     } catch (error) {
       if (process.env.DEBUG) {
-        console.warn(`Failed to get commit details for ${commitItem.sha}: ${error.message}`);
+        console.warn(
+          `Failed to get commit details for ${commitItem.sha}: ${error.message}`
+        );
       }
       continue;
     }
@@ -83,12 +52,14 @@ async function processCommitsIntoActivities(commits, service) {
     }
 
     // Process each commit detail (may be expanded for squashed PRs)
-    const commitsToProcess = Array.isArray(commitDetails) ? commitDetails : [commitDetails];
+    const commitsToProcess = Array.isArray(commitDetails)
+      ? commitDetails
+      : [commitDetails];
 
     for (const commitDetail of commitsToProcess) {
-      // Convert commit date to EST for grouping
+      // Convert commit date to Eastern Time for grouping
       const commitUTCDate = new Date(commitDetail.date);
-      const commitEstDateKey = convertUTCToESTDate(commitUTCDate);
+      const commitEstDateKey = convertUTCToEasternDate(commitUTCDate);
 
       // Check if this commit has PRs
       const hasPRs = commitDetail.prs && commitDetail.prs.length > 0;
@@ -172,7 +143,10 @@ function convertGroupToActivity(repoGroup) {
   // Format commit messages with timestamps
   const commitMessages = repoGroup.commits
     .map((commit) => {
-      const time = new Date(commit.date).toISOString().split("T")[1].split(".")[0];
+      const time = new Date(commit.date)
+        .toISOString()
+        .split("T")[1]
+        .split(".")[0];
       const message = commit.message.split("\n")[0]; // First line only
       return `${message} (${time})`;
     })
@@ -222,37 +196,26 @@ function convertGroupToActivity(repoGroup) {
       ? new Date(Math.max(...commitTimes))
       : repoGroup.eventDate;
 
-  // Generate unique hash ID
+  // Generate unique ID using first commit SHA (globally unique, no date dependency)
   let uniqueId;
-  if (repoGroup.isPrRecord && repoGroup.pr) {
-    // For PR records: hash of repository + date + PR number
-    const hashInput = `${repoGroup.repository}-${repoGroup.date}-PR${repoGroup.pr.number}`;
-    uniqueId = crypto
-      .createHash("sha256")
-      .update(hashInput)
-      .digest("hex")
-      .substring(0, 16);
+  if (repoGroup.commits && repoGroup.commits.length > 0) {
+    // Use first commit's SHA (short form, first 8 chars)
+    const firstCommitSha = repoGroup.commits[0].sha || "";
+    const shortSha = firstCommitSha.substring(0, 8);
+    uniqueId = `${repoGroup.repository}-${shortSha}`;
   } else {
-    // For non-PR records: hash of repository + date + commit SHAs
-    const commitShas = repoGroup.commits
-      .map((c) => c.sha || "")
-      .sort()
-      .join("-");
-    const hashInput = `${repoGroup.repository}-${repoGroup.date}-${commitShas}`;
-    uniqueId = crypto
-      .createHash("sha256")
-      .update(hashInput)
-      .digest("hex")
-      .substring(0, 16);
+    // Fallback (shouldn't happen, but safety check)
+    uniqueId = `${repoGroup.repository}-unknown`;
   }
 
   // Generate activity ID for backward compatibility
   let activityId;
   if (repoGroup.isPrRecord && repoGroup.pr) {
-    activityId = `${repoGroup.repository}-${repoGroup.date}-PR${repoGroup.pr.number}`.replace(
-      /[^a-zA-Z0-9-]/g,
-      "-"
-    );
+    activityId =
+      `${repoGroup.repository}-${repoGroup.date}-PR${repoGroup.pr.number}`.replace(
+        /[^a-zA-Z0-9-]/g,
+        "-"
+      );
   } else {
     activityId = `${repoGroup.repository}-${repoGroup.date}`.replace(
       /[^a-zA-Z0-9-]/g,
@@ -340,4 +303,3 @@ async function fetchGitHubData(startDate, endDate) {
 }
 
 module.exports = { fetchGitHubData };
-

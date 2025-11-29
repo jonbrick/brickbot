@@ -12,6 +12,7 @@ const {
   syncWorkoutsToCalendar,
 } = require("../src/workflows/strava-to-calendar");
 const { syncSteamToCalendar } = require("../src/workflows/steam-to-calendar");
+const { syncPRsToCalendar } = require("../src/workflows/github-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 
@@ -28,6 +29,7 @@ async function selectSourceAndAction() {
         { name: "Oura (Sleep)", value: "oura" },
         { name: "Strava (Workouts)", value: "strava" },
         { name: "Steam (Video Games)", value: "steam" },
+        { name: "GitHub (PRs)", value: "github" },
       ],
     },
     {
@@ -260,9 +262,95 @@ function displaySteamRecordsTable(records) {
 
   records.forEach((record) => {
     console.log(
-      `  🎮 ${record.date}: ${record.gameName} (${record.playtime}) - ${record.sessionCount} session${
-        record.sessionCount === 1 ? "" : "s"
-      }`
+      `  🎮 ${record.date}: ${record.gameName} (${record.playtime}) - ${
+        record.sessionCount
+      } session${record.sessionCount === 1 ? "" : "s"}`
+    );
+  });
+
+  console.log("\n" + "=".repeat(120) + "\n");
+}
+
+/**
+ * Format PR records for display
+ */
+function formatPRRecords(prRecords, notionService) {
+  const props = config.notion.properties.github;
+
+  return prRecords.map((record) => {
+    const repository = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.repository)
+    );
+    const date = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.date)
+    );
+    const commitsCount = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.commitsCount)
+    );
+    const totalLinesAdded = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.totalLinesAdded)
+    );
+    const totalLinesDeleted = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.totalLinesDeleted)
+    );
+    const projectType = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.projectType)
+    );
+
+    // Extract short repo name
+    let repoName = repository || "Unknown Repository";
+    const repoMatch = repoName.match(/^([^\s-]+)/);
+    if (repoMatch) {
+      const repoPath = repoMatch[1];
+      const parts = repoPath.split("/");
+      repoName = parts[parts.length - 1];
+    }
+
+    return {
+      repository: repoName,
+      date,
+      commitsCount: commitsCount || 0,
+      linesAdded: totalLinesAdded || 0,
+      linesDeleted: totalLinesDeleted || 0,
+      projectType: projectType || "Personal",
+    };
+  });
+}
+
+/**
+ * Display table of PR records to sync
+ */
+function displayPRRecordsTable(records) {
+  console.log("\n" + "=".repeat(120));
+  console.log("💻 GITHUB PR RECORDS TO SYNC");
+  console.log("=".repeat(120) + "\n");
+
+  if (records.length === 0) {
+    console.log(
+      "✅ No records to sync (all records already have calendar events)\n"
+    );
+    return;
+  }
+
+  console.log(
+    `Found ${records.length} PR record${
+      records.length === 1 ? "" : "s"
+    } without calendar events\n`
+  );
+
+  records.forEach((record) => {
+    console.log(
+      `  💻 ${record.date}: ${record.repository} - ${
+        record.commitsCount
+      } commit${record.commitsCount === 1 ? "" : "s"} (+${record.linesAdded}/-${
+        record.linesDeleted
+      } lines) → ${record.projectType}`
     );
   });
 
@@ -335,6 +423,8 @@ async function main() {
       await handleStravaSync(startDate, endDate, action);
     } else if (source === "steam") {
       await handleSteamSync(startDate, endDate, action);
+    } else if (source === "github") {
+      await handleGitHubSync(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -429,6 +519,34 @@ async function handleSteamSync(startDate, endDate, action) {
     console.log("\n📤 Syncing to Calendar...\n");
 
     const results = await syncSteamToCalendar(startDate, endDate);
+
+    printSyncResults(results);
+  }
+}
+
+/**
+ * Handle GitHub PR sync
+ */
+async function handleGitHubSync(startDate, endDate, action) {
+  console.log("📊 Querying Notion for unsynced PR records...\n");
+
+  const notionService = new NotionService();
+  const prRecords = await notionService.getUnsyncedPRs(startDate, endDate);
+
+  if (prRecords.length === 0) {
+    console.log("✅ No PR records found without calendar events\n");
+    return;
+  }
+
+  // Format and display records
+  const formattedRecords = formatPRRecords(prRecords, notionService);
+  displayPRRecordsTable(formattedRecords);
+
+  // Sync to calendar if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Calendar...\n");
+
+    const results = await syncPRsToCalendar(startDate, endDate);
 
     printSyncResults(results);
   }

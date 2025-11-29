@@ -9,6 +9,8 @@ const calendars = {
   sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
   fitness: process.env.FITNESS_CALENDAR_ID,
   videoGames: process.env.VIDEO_GAMES_CALENDAR_ID,
+  personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID,
+  workPRs: process.env.WORK_PRS_CALENDAR_ID,
 };
 
 // OAuth credentials for personal account
@@ -72,6 +74,26 @@ function mapSteamToCalendarId() {
   return calendars.videoGames || null;
 }
 
+/**
+ * Map PR record to calendar ID based on Project Type
+ *
+ * @param {string} projectType - Project Type from Notion ("Personal" or "Work")
+ * @returns {string|null} Calendar ID or null if not configured
+ */
+function mapPRToCalendarId(projectType) {
+  if (!projectType) {
+    return null;
+  }
+
+  if (projectType === "Personal") {
+    return calendars.personalPRs || null;
+  } else if (projectType === "Work") {
+    return calendars.workPRs || null;
+  }
+
+  return null;
+}
+
 module.exports = {
   calendars,
   personalCredentials,
@@ -81,4 +103,5 @@ module.exports = {
   mapNotionCalendarToId,
   mapStravaToCalendarId,
   mapSteamToCalendarId,
+  mapPRToCalendarId,
 };

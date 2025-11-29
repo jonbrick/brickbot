@@ -116,6 +116,32 @@ yarn week:5-run-all # Run complete pipeline for current week
 yarn 3-sweep-notes   # Process Apple Notes to Notion tasks
 ```
 
+## Troubleshooting
+
+### Token Errors
+
+**Problem**: Tokens show as expired or invalid when running `yarn tokens:check`
+
+**Solution**:
+
+1. Try refreshing: `yarn tokens:refresh`
+2. If refresh fails, re-authenticate: `yarn tokens:setup`
+3. Select the service(s) that failed and follow the setup prompts
+
+**Common errors**:
+
+- `invalid_grant` or `invalid refresh_token`: Your refresh token expired or was revoked. Run `yarn tokens:setup` to re-authenticate.
+- `Token expired`: Usually fixable with `yarn tokens:refresh`
+- Services not showing: Check your `.env` file has the required credentials configured
+
+**Quick reference**:
+
+- Check token status: `yarn tokens:check`
+- Refresh expired tokens: `yarn tokens:refresh`
+- Re-authenticate services: `yarn tokens:setup`
+
+For detailed setup instructions, see [SETUP.md](./SETUP.md).
+
 ## Documentation
 
 - [SETUP.md](./SETUP.md) - Complete setup guide (Notion, Google Calendar, external APIs)

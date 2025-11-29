@@ -98,7 +98,13 @@ async function main() {
           error.message?.includes("invalid_grant:") ||
           error.response?.data?.error === "invalid_grant";
         
-        if (isInvalidGrant) {
+        // Check for Withings invalid refresh_token error (treated same as invalid_grant)
+        const isInvalidRefreshToken = 
+          error.message?.includes("invalid refresh_token") ||
+          error.message?.includes("Invalid Params: invalid refresh_token") ||
+          error.message?.includes("Invalid refresh_token");
+        
+        if (isInvalidGrant || isInvalidRefreshToken) {
           results.push({
             service: serviceConfig.name,
             success: false,
@@ -152,10 +158,24 @@ async function main() {
     }
 
     if (failureCount > 0) {
-      showError(
-        "Some tokens failed to refresh",
-        new Error("Check the errors above for details")
+      const failedServices = results.filter(r => !r.success);
+      const needsReauth = failedServices.filter(r => 
+        r.message === "Refresh token expired or revoked"
       );
+      
+      if (needsReauth.length > 0) {
+        console.log("\n💡 To fix:");
+        console.log("   Run 'yarn tokens:setup' and select the following services to re-authenticate:");
+        needsReauth.forEach(r => {
+          console.log(`   - ${r.service}`);
+        });
+        if (needsReauth.length < failedServices.length) {
+          console.log("\n   Other failures listed above may need different fixes.");
+        }
+      } else {
+        console.log("\n💡 Tip: Check the error messages above for details.");
+        console.log("   If tokens can't be refreshed, try: yarn tokens:setup");
+      }
     }
 
     console.log("\n");

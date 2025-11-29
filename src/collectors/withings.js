@@ -63,22 +63,40 @@ async function fetchWithingsData(startDate, endDate) {
   try {
     const service = new WithingsService();
 
+    // Debug: Log date range being queried
+    if (process.env.DEBUG) {
+      console.log(`\n🔍 Withings Collector:`);
+      console.log(`   Start Date: ${startDate.toISOString()}`);
+      console.log(`   End Date: ${endDate.toISOString()}`);
+    }
+
     // Fetch measurement groups
     const measurementGroups = await service.fetchMeasurements(
       startDate,
       endDate
     );
 
+    if (process.env.DEBUG) {
+      console.log(`\n📦 Raw API Response:`);
+      console.log(`   Total measurement groups: ${measurementGroups.length}`);
+      if (measurementGroups.length > 0) {
+        console.log(`   Sample group structure:`, JSON.stringify(measurementGroups[0], null, 2));
+      }
+    }
+
     if (measurementGroups.length === 0) {
       spinner.info("No Withings measurements found for this date range");
+      if (process.env.DEBUG) {
+        console.log(`\n⚠️  No measurements found for date range ${startDate.toISOString()} to ${endDate.toISOString()}`);
+      }
       return [];
     }
 
     // Process measurement groups
-    const processed = measurementGroups.map((group) => {
+    const processed = measurementGroups.map((group, index) => {
       // Debug: Log the raw group data for inspection
-      if (process.env.DEBUG) {
-        console.log("Raw Withings group data:", JSON.stringify(group, null, 2));
+      if (process.env.DEBUG && index < 3) {
+        console.log(`\n📋 Processing measurement group ${index + 1}:`, JSON.stringify(group, null, 2));
       }
 
       // Extract date from Unix timestamp
@@ -169,10 +187,27 @@ async function fetchWithingsData(startDate, endDate) {
       };
     });
 
+    if (process.env.DEBUG) {
+      console.log(`\n✅ Processing Complete:`);
+      console.log(`   Processed ${processed.length} measurement(s)`);
+      if (processed.length > 0) {
+        console.log(`   Sample processed data:`, JSON.stringify(processed[0], null, 2));
+      }
+    }
+
     spinner.succeed(`Fetched ${processed.length} Withings measurements`);
     return processed;
   } catch (error) {
     spinner.fail(`Failed to fetch Withings data: ${error.message}`);
+    
+    if (process.env.DEBUG) {
+      console.error(`\n❌ Withings Collector Error:`);
+      console.error(`   Error: ${error.message}`);
+      if (error.stack) {
+        console.error(`   Stack:`, error.stack);
+      }
+    }
+    
     throw error;
   }
 }

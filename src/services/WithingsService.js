@@ -13,15 +13,13 @@ class WithingsService {
     this.clientSecret = config.sources.withings.clientSecret;
     this.accessToken = config.sources.withings.accessToken;
     this.refreshToken = config.sources.withings.refreshToken;
-    this.userId = config.sources.withings.userId;
+    this.userId = config.sources.withings.userId; // Optional - OAuth2 token is user-specific
 
     if (!this.accessToken || !this.refreshToken) {
       throw new Error("Withings access token and refresh token are required");
     }
 
-    if (!this.userId) {
-      throw new Error("Withings user ID is required");
-    }
+    // userId is optional - OAuth2 tokens are user-specific, so API doesn't require userid parameter
 
     this.client = axios.create({
       baseURL: this.baseURL,
@@ -29,21 +27,47 @@ class WithingsService {
     });
 
     // Add response interceptor for token refresh
+    // Withings API returns status 401 or status 2555 in response.data.status for token errors
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Check if response indicates token error (even if HTTP status is 200)
+        if (response.data?.status === 401 || response.data?.status === 2555) {
+          // This will be handled as an error below
+          const error = new Error("Token expired");
+          error.response = response;
+          error.config = response.config;
+          return Promise.reject(error);
+        }
+        return response;
+      },
       async (error) => {
         const originalRequest = error.config;
 
-        // If 401 and not already retried, try to refresh token
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Check for token expiration: HTTP 401 or Withings API status 401/2555
+        const isTokenError =
+          error.response?.status === 401 ||
+          error.response?.data?.status === 401 ||
+          error.response?.data?.status === 2555;
+
+        if (isTokenError && !originalRequest._retry) {
           originalRequest._retry = true;
+
+          if (process.env.DEBUG) {
+            console.log("🔄 Token expired, attempting refresh...");
+          }
 
           try {
             await this.refreshAccessToken();
 
+            // Update the authorization header with new token
+            originalRequest.headers.Authorization = `Bearer ${this.accessToken}`;
+
             // Retry the original request with new token
             return this.client(originalRequest);
           } catch (refreshError) {
+            if (process.env.DEBUG) {
+              console.error("❌ Token refresh failed:", refreshError.message);
+            }
             throw new Error(
               `Failed to refresh Withings token: ${refreshError.message}`
             );
@@ -158,6 +182,7 @@ class WithingsService {
   /**
    * Make authenticated API request to Withings
    * Withings uses action parameters in URL query string with Bearer token auth
+   * Note: userid is NOT required - OAuth2 tokens are user-specific
    *
    * @param {string} action - API action (e.g., 'getmeas')
    * @param {Object} params - Additional parameters
@@ -165,28 +190,62 @@ class WithingsService {
    */
   async _makeRequest(action, params = {}) {
     try {
-      // Build request parameters
+      // Build request parameters - match archived version format (no userid)
       const requestParams = {
         action,
-        userid: this.userId,
         ...params,
       };
 
       // Withings API uses GET requests with query parameters
-      // Format: https://wbsapi.withings.net/measure?action=getmeas&userid=...&...
+      // Format: https://wbsapi.withings.net/measure?action=getmeas&meastype=...&startdate=...&enddate=...
       const queryString = new URLSearchParams(requestParams).toString();
+      const fullUrl = `${this.baseURL}/measure?${queryString}`;
       
-      const response = await axios.get(`${this.baseURL}/measure?${queryString}`, {
+      // Debug logging
+      if (process.env.DEBUG) {
+        console.log(`\n🔍 Withings API Request:`);
+        console.log(`   URL: ${fullUrl}`);
+        console.log(`   Action: ${action}`);
+        console.log(`   Params:`, JSON.stringify(requestParams, null, 2));
+      }
+
+      const response = await axios.get(fullUrl, {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
         },
       });
+
+      // Debug logging for response
+      if (process.env.DEBUG) {
+        console.log(`\n📥 Withings API Response:`);
+        console.log(`   Status: ${response.status}`);
+        console.log(`   Data Status: ${response.data?.status}`);
+        if (response.data?.status === 0) {
+          console.log(`   Body Keys:`, Object.keys(response.data.body || {}));
+          if (response.data.body?.measuregrps) {
+            console.log(`   Measurement Groups: ${response.data.body.measuregrps.length}`);
+          }
+        } else {
+          console.log(`   Error:`, JSON.stringify(response.data, null, 2));
+        }
+      }
 
       // Withings API returns { status: 0, body: { ... } } on success
       // Or { status: <error_code>, error: "...", error_description: "..." } on error
       if (response.data.status !== 0) {
         const errorMsg = response.data.error || "Unknown error";
         const errorDesc = response.data.error_description || "";
+        const errorDetails = {
+          status: response.data.status,
+          error: errorMsg,
+          error_description: errorDesc,
+          fullResponse: response.data,
+        };
+        
+        if (process.env.DEBUG) {
+          console.error(`\n❌ Withings API Error:`, JSON.stringify(errorDetails, null, 2));
+        }
+        
         throw new Error(
           `Withings API error (status ${response.data.status}): ${errorMsg}${errorDesc ? ` - ${errorDesc}` : ""}`
         );
@@ -194,8 +253,18 @@ class WithingsService {
 
       return response.data.body || {};
     } catch (error) {
+      // Enhanced error handling
       if (error.response?.data) {
         const data = error.response.data;
+        
+        // Log full error details in debug mode
+        if (process.env.DEBUG) {
+          console.error(`\n❌ Withings API Request Failed:`);
+          console.error(`   URL: ${error.config?.url || 'unknown'}`);
+          console.error(`   Status: ${error.response.status}`);
+          console.error(`   Response Data:`, JSON.stringify(data, null, 2));
+        }
+        
         if (data.status !== undefined && data.status !== 0) {
           throw new Error(
             `Withings API error (status ${data.status}): ${data.error || "Unknown error"}${data.error_description ? ` - ${data.error_description}` : ""}`
@@ -207,9 +276,57 @@ class WithingsService {
           );
         }
       }
+      
+      // Log network/other errors
+      if (process.env.DEBUG) {
+        console.error(`\n❌ Withings API Request Error:`, error.message);
+        if (error.config) {
+          console.error(`   URL: ${error.config.url}`);
+          console.error(`   Method: ${error.config.method}`);
+        }
+      }
+      
       throw new Error(
         `Failed to call Withings API: ${error.message}`
       );
+    }
+  }
+
+  /**
+   * Test connection to Withings API
+   * Verifies tokens and API connectivity
+   *
+   * @returns {Promise<boolean>} True if connection successful
+   */
+  async testConnection() {
+    try {
+      if (process.env.DEBUG) {
+        console.log("\n🔍 Testing Withings connection...");
+      }
+
+      // Test with a simple request to get latest measurement
+      const response = await this._makeRequest("getmeas", {
+        meastype: "1", // Weight only for test
+        lastupdate: 0,
+        limit: 1,
+      });
+
+      if (process.env.DEBUG) {
+        console.log("✅ Withings connection successful!");
+        if (response.timezone) {
+          console.log(`   Timezone: ${response.timezone}`);
+        }
+        if (response.measuregrps) {
+          console.log(`   Found ${response.measuregrps.length} measurement(s) in test query`);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      if (process.env.DEBUG) {
+        console.error("❌ Withings connection test failed:", error.message);
+      }
+      throw error;
     }
   }
 
@@ -222,18 +339,52 @@ class WithingsService {
    */
   async fetchMeasurements(startDate, endDate) {
     try {
-      const startTimestamp = this._formatDateForAPI(startDate);
-      const endTimestamp = this._formatDateForAPI(endDate);
+      // Ensure startDate is at midnight (00:00:00) for start of day
+      const normalizedStartDate = new Date(startDate);
+      normalizedStartDate.setHours(0, 0, 0, 0);
+      
+      // Ensure endDate includes the full day (23:59:59)
+      const normalizedEndDate = new Date(endDate);
+      normalizedEndDate.setHours(23, 59, 59, 999);
+      
+      const startTimestamp = this._formatDateForAPI(normalizedStartDate);
+      const endTimestamp = this._formatDateForAPI(normalizedEndDate);
+
+      // Debug logging
+      if (process.env.DEBUG) {
+        console.log(`\n📅 Withings API Query:`);
+        console.log(`   Start: ${normalizedStartDate.toISOString()} (${startTimestamp})`);
+        console.log(`   End: ${normalizedEndDate.toISOString()} (${endTimestamp})`);
+        console.log(`   Date Range: ${normalizedStartDate.toDateString()} to ${normalizedEndDate.toDateString()}`);
+      }
+
+      // Get all measurement types available from your scale
+      // Types: 1=Weight, 5=Fat Free Mass, 6=Fat Ratio, 8=Fat Mass, 76=Muscle Mass, 77=Hydration, 88=Bone Mass
+      const measureTypes = "1,5,6,8,76,77,88";
 
       const response = await this._makeRequest("getmeas", {
         startdate: startTimestamp,
         enddate: endTimestamp,
-        category: 1, // 1 = real measurements (not user-entered)
+        meastype: measureTypes,
       });
 
       // Response structure: { measuregrps: [...] }
-      return response.measuregrps || [];
+      const measurementGroups = response.measuregrps || [];
+      
+      if (process.env.DEBUG) {
+        console.log(`\n📊 Withings Measurement Results:`);
+        console.log(`   Found ${measurementGroups.length} measurement group(s)`);
+        if (measurementGroups.length > 0) {
+          console.log(`   First measurement date: ${new Date(measurementGroups[0].date * 1000).toISOString()}`);
+          console.log(`   Last measurement date: ${new Date(measurementGroups[measurementGroups.length - 1].date * 1000).toISOString()}`);
+        }
+      }
+
+      return measurementGroups;
     } catch (error) {
+      if (process.env.DEBUG) {
+        console.error(`\n❌ Failed to fetch Withings measurements:`, error.message);
+      }
       throw new Error(
         `Failed to fetch Withings measurements: ${error.message}`
       );

@@ -6,6 +6,7 @@
 const NotionService = require("../services/NotionService");
 const { transformGitHubToNotion } = require("../transformers/github-to-notion");
 const config = require("../config");
+const { delay } = require("../utils/async");
 
 /**
  * Sync multiple GitHub activities to Notion
@@ -33,7 +34,7 @@ async function syncGitHubToNotion(activities, options = {}) {
       }
 
       // Rate limiting between operations
-      await sleep(config.sources.rateLimits.notion.backoffMs);
+      await delay(config.sources.rateLimits.notion.backoffMs);
     } catch (error) {
       results.errors.push({
         activity: activity.activityId || activity.repository,
@@ -79,16 +80,6 @@ async function syncSingleActivity(activity, notionService) {
     date: activity.date,
     pageId: page.id,
   };
-}
-
-/**
- * Sleep helper for rate limiting
- *
- * @param {number} ms - Milliseconds to sleep
- * @returns {Promise} Promise that resolves after delay
- */
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {

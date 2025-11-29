@@ -12,6 +12,7 @@ const {
   isSleepIn,
 } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
+const { filterEnabledProperties } = require("../utils/transformers");
 
 /**
  * Transform Oura sleep session to Notion properties
@@ -85,22 +86,7 @@ function transformOuraToNotion(session) {
   };
 
   // Filter out disabled properties
-  const enabledProperties = {};
-  Object.entries(allProperties).forEach(([key, value]) => {
-    // Find the corresponding property config
-    const propKey = Object.keys(props).find(
-      (k) => getPropertyName(props[k]) === key
-    );
-
-    if (propKey && config.notion.isPropertyEnabled(props[propKey])) {
-      enabledProperties[key] = value;
-    } else if (!propKey) {
-      // If property config doesn't exist, include it (backward compatibility)
-      enabledProperties[key] = value;
-    }
-  });
-
-  return enabledProperties;
+  return filterEnabledProperties(allProperties, props);
 }
 
 /**

@@ -6,6 +6,7 @@
 const NotionService = require("../services/NotionService");
 const { transformSteamToNotion } = require("../transformers/steam-to-notion");
 const config = require("../config");
+const { delay } = require("../utils/async");
 
 /**
  * Sync multiple Steam activities to Notion
@@ -33,7 +34,7 @@ async function syncSteamToNotion(activities, options = {}) {
       }
 
       // Rate limiting between operations
-      await sleep(config.sources.rateLimits.notion.backoffMs);
+      await delay(config.sources.rateLimits.notion.backoffMs);
     } catch (error) {
       results.errors.push({
         activity: activity.activityId,
@@ -79,16 +80,6 @@ async function syncSingleActivity(activity, notionService) {
     gameName: activity.gameName,
     pageId: page.id,
   };
-}
-
-/**
- * Sleep helper for rate limiting
- *
- * @param {number} ms - Milliseconds to sleep
- * @returns {Promise} Promise that resolves after delay
- */
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {

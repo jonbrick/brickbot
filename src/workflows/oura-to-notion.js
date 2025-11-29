@@ -6,6 +6,7 @@
 const NotionService = require("../services/NotionService");
 const { transformOuraToNotion } = require("../transformers/oura-to-notion");
 const config = require("../config");
+const { delay } = require("../utils/async");
 
 /**
  * Sync multiple Oura sleep sessions to Notion
@@ -33,7 +34,7 @@ async function syncOuraToNotion(sessions, options = {}) {
       }
 
       // Rate limiting between operations
-      await sleep(config.sources.rateLimits.notion.backoffMs);
+      await delay(config.sources.rateLimits.notion.backoffMs);
     } catch (error) {
       results.errors.push({
         session: session.sleepId,
@@ -77,16 +78,6 @@ async function syncSingleSession(session, notionService) {
     nightOf: session.nightOf,
     pageId: page.id,
   };
-}
-
-/**
- * Sleep helper for rate limiting
- *
- * @param {number} ms - Milliseconds to sleep
- * @returns {Promise} Promise that resolves after delay
- */
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {

@@ -53,9 +53,11 @@ brickbot/
 │   │   └── notion-to-calendar.js
 │   │
 │   └── utils/           # Shared utilities
+│       ├── async.js     # Async helpers (delay, rate limiting)
 │       ├── cli.js       # CLI prompts & formatting
 │       ├── date.js      # Date parsing & manipulation
 │       ├── formatting.js # Display formatting
+│       ├── transformers.js # Transformer utilities (property filtering)
 │       └── validation.js # Input validation
 │
 ├── cli/                  # User-facing command-line scripts
@@ -79,17 +81,58 @@ Single source of truth for all settings. Eliminates scattered `process.env` call
 - **calendar.js**: Calendar IDs, color mappings, OAuth credentials, event categorization
 - **sources.js**: API credentials, rate limits, retry configuration
 
-#### Date Offset Pattern
+#### Date Handling Patterns
 
-Some APIs use different date conventions. For example, Oura dates represent the **wake-up morning** (end of sleep session), but we need the **bed date** (night of). The `dateOffset` configuration in `sources.js` documents this convention:
+Different APIs use different date conventions and timezone formats. Each integration handles dates appropriately:
 
-```javascript
-oura: {
-  dateOffset: 1, // Oura dates represent wake-up, need to subtract 1 day to get "night of"
-}
-```
+**Oura** - Subtracts 1 day (special case):
 
-The actual offset logic is implemented in `src/utils/date.js` with the `calculateNightOf()` utility function, ensuring consistent date handling across the application.
+- Oura API returns dates representing the **wake-up morning** (end of sleep session)
+- We store the **"night of" date** (the night you went to sleep)
+- Logic: `calculateNightOf()` subtracts 1 day from the Oura date
+- Also adds 1 day to `endDate` when querying API (to include sessions that wake up on end date)
+- Config: `dateOffset: 1` in `sources.js`
+- Utility: `src/utils/date.js` → `calculateNightOf()`
+
+**Strava** - Direct date extraction:
+
+- Uses `start_date_local` from API directly
+- Extracts date: `activity.start_date_local.split("T")[0]`
+- No offset needed
+
+**GitHub** - UTC to Eastern Time conversion:
+
+- Commits are in UTC from GitHub API
+- Converts to Eastern Time: `convertUTCToEasternDate(commitDate)`
+- Automatically handles DST transitions
+- No day offset, only timezone conversion
+- Utility: `src/utils/date.js` → `convertUTCToEasternDate()`
+
+**Steam** - Timezone conversion with potential date adjustment:
+
+- API returns UTC times
+- Converts to Eastern Time with DST handling
+- May adjust date if gaming session crosses midnight
+- Extracts date from converted start time: `actualDate = startTime.split("T")[0]`
+- Utility: `src/utils/date.js` → `getEasternOffset()`
+
+**Withings** - Unix timestamp conversion:
+
+- API returns Unix timestamps (seconds since epoch)
+- Converts: `new Date(dateTimestamp * 1000)`
+- No offset needed
+
+**Summary Table:**
+
+| Integration | Date Handling   | Special Logic                                              |
+| ----------- | --------------- | ---------------------------------------------------------- |
+| Oura        | Subtracts 1 day | `calculateNightOf()` - converts wake-up date to "night of" |
+| Strava      | Direct use      | Extracts date from `start_date_local`                      |
+| GitHub      | UTC → Eastern   | Timezone conversion, no day offset                         |
+| Steam       | UTC → Eastern   | Timezone conversion, may adjust date if crossing midnight  |
+| Withings    | Unix timestamp  | Converts timestamp to Date, no offset                      |
+
+The actual offset logic is implemented in `src/utils/date.js` with utility functions like `calculateNightOf()` and `convertUTCToEasternDate()`, ensuring consistent date handling across the application.
 
 ### Services (`src/services/`)
 
@@ -120,6 +163,8 @@ Design pattern: Functions that take date ranges and return arrays of structured 
 Pure functions that transform data between formats (API format → Notion properties, Notion records → Calendar events).
 
 Design pattern: No side effects, easy to test, clear input/output contracts, config-driven mappings.
+
+**Shared Utilities**: Property filtering logic extracted to `src/utils/transformers.js` for DRY code across all transformers.
 
 ### CLI Scripts (`cli/`)
 
@@ -176,6 +221,8 @@ All configuration centralized in `src/config/`, eliminating scattered `process.e
 ### Service Pattern
 
 Services implement automatic retry with exponential backoff, respect rate limits, handle token refresh, and provide consistent error handling.
+
+**Rate Limiting**: All services use the shared `delay()` function from `src/utils/async.js` for consistent rate limiting across the application.
 
 ### Collector Pattern
 
@@ -237,6 +284,37 @@ Batch operations where possible (N API calls → 1 batch call).
 ### Parallel Operations
 
 Independent operations run in parallel using `Promise.all()`.
+
+## Code Quality & DRY Principles
+
+### Shared Utilities
+
+To maintain DRY (Don't Repeat Yourself) principles, common functionality is extracted into shared utilities:
+
+**`src/utils/async.js`**:
+
+- `delay(ms)` - Rate limiting delay function used across all workflows and services
+- Replaces duplicated `sleep()` functions that were previously copy-pasted 8+ times
+- Clear naming: "delay" instead of confusing "sleep" (important for a sleep tracking app!)
+
+**`src/utils/transformers.js`**:
+
+- `filterEnabledProperties()` - Property filtering logic for Notion transformers
+- Removes ~60 lines of duplicated code across 4 transformer files
+- Ensures consistent property filtering based on config
+
+**`src/utils/date.js`**:
+
+- `calculateNightOf()` - Converts Oura wake-up dates to "night of" dates
+- Centralized date handling logic for consistency
+
+### Benefits
+
+✅ **~140 lines of duplicated code eliminated**  
+✅ **Single source of truth** for common operations  
+✅ **Easier maintenance** - changes in one place affect all usages  
+✅ **Better testing** - shared utilities can be tested once  
+✅ **Clear naming conventions** - `delay()` vs confusing `sleep()`
 
 ---
 

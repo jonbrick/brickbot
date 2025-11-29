@@ -9,6 +9,7 @@ const {
   transformWorkoutToCalendarEvent,
 } = require("../transformers/strava-to-calendar");
 const config = require("../config");
+const { delay } = require("../utils/async");
 
 /**
  * Sync workout records from Notion to Google Calendar
@@ -57,7 +58,7 @@ async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
         }
 
         // Rate limiting between operations
-        await sleep(config.sources.rateLimits.googleCalendar.backoffMs);
+        await delay(config.sources.rateLimits.googleCalendar.backoffMs);
       } catch (error) {
         results.errors.push({
           pageId: workoutRecord.id,
@@ -119,16 +120,6 @@ async function syncSingleWorkout(
     // Don't mark as synced if calendar creation failed
     throw new Error(`Failed to create calendar event: ${error.message}`);
   }
-}
-
-/**
- * Sleep helper for rate limiting
- *
- * @param {number} ms - Milliseconds to sleep
- * @returns {Promise} Promise that resolves after delay
- */
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 module.exports = {

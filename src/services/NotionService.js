@@ -6,6 +6,7 @@
 const { Client } = require("@notionhq/client");
 const config = require("../config");
 const { formatDate, formatDateOnly } = require("../utils/date");
+const { delay } = require("../utils/async");
 
 class NotionService {
   constructor() {
@@ -79,7 +80,7 @@ class NotionService {
 
         // Rate limiting
         if (hasMore) {
-          await this._sleep(config.sources.rateLimits.notion.backoffMs);
+          await delay(config.sources.rateLimits.notion.backoffMs);
         }
       }
 
@@ -190,7 +191,7 @@ class NotionService {
         results.push(page);
 
         // Rate limiting
-        await this._sleep(config.sources.rateLimits.notion.backoffMs);
+        await delay(config.sources.rateLimits.notion.backoffMs);
       } catch (error) {
         console.error(`Failed to create page: ${error.message}`);
         results.push({ error: error.message });
@@ -215,7 +216,7 @@ class NotionService {
         results.push(page);
 
         // Rate limiting
-        await this._sleep(config.sources.rateLimits.notion.backoffMs);
+        await delay(config.sources.rateLimits.notion.backoffMs);
       } catch (error) {
         console.error(
           `Failed to update page ${update.pageId}: ${error.message}`
@@ -934,15 +935,6 @@ class NotionService {
     return `${year}-${month}-${day}`;
   }
 
-  /**
-   * Sleep helper for rate limiting
-   *
-   * @param {number} ms - Milliseconds to sleep
-   * @returns {Promise} Promise that resolves after delay
-   */
-  _sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
 }
 
 module.exports = NotionService;

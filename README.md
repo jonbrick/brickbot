@@ -157,6 +157,18 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed extension guide.
 
+## Date Handling
+
+Different data sources use different date formats and conventions:
+
+- **Oura**: Returns wake-up dates, but we store "night of" dates (subtracts 1 day)
+- **Strava**: Uses activity start date directly
+- **GitHub**: Converts UTC commits to Eastern Time
+- **Steam**: Converts UTC gaming sessions to Eastern Time (may adjust date if crossing midnight)
+- **Withings**: Converts Unix timestamps to dates
+
+For details on date handling patterns, see [ARCHITECTURE.md](./ARCHITECTURE.md#date-handling-patterns).
+
 ---
 
 **Made with ❤️ by Jon Brick**

@@ -7,6 +7,7 @@
 const databases = {
   sleep: process.env.NOTION_SLEEP_DATABASE_ID,
   workouts: process.env.NOTION_WORKOUTS_DATABASE_ID,
+  steam: process.env.NOTION_VIDEO_GAMES_DATABASE_ID,
 };
 
 // Unified property configuration for sleep database
@@ -103,6 +104,28 @@ const properties = {
     measurementTime: { name: "Measurement Time", type: "text", enabled: true },
     deviceModel: { name: "Device Model", type: "text", enabled: true },
   },
+  steam: {
+    gameName: { name: "Game Name", type: "title", enabled: true },
+    date: { name: "Date", type: "date", enabled: true },
+    hoursPlayed: { name: "Hours Played", type: "number", enabled: true },
+    minutesPlayed: { name: "Minutes Played", type: "number", enabled: true },
+    sessionCount: { name: "Session Count", type: "number", enabled: true },
+    sessionDetails: { name: "Session Details", type: "rich_text", enabled: true },
+    activityId: { name: "Activity ID", type: "rich_text", enabled: true },
+    startTime: { name: "Start Time", type: "rich_text", enabled: true },
+    endTime: { name: "End Time", type: "rich_text", enabled: true },
+    platform: {
+      name: "Platform",
+      type: "select",
+      options: ["Steam"],
+      enabled: true,
+    },
+    calendarCreated: {
+      name: "Calendar Created",
+      type: "checkbox",
+      enabled: true,
+    },
+  },
 };
 
 // Field mappings: maps config property keys to actual data field names in records
@@ -164,6 +187,19 @@ const fieldMappings = {
     boneMass: "boneMass",
     measurementTime: "measurementTime",
     deviceModel: "deviceModel",
+  },
+  steam: {
+    gameName: "gameName",
+    date: "date",
+    hoursPlayed: "hoursPlayed",
+    minutesPlayed: "minutesPlayed",
+    sessionCount: "sessionCount",
+    sessionDetails: "sessionDetails",
+    activityId: "activityId",
+    startTime: "startTime",
+    endTime: "endTime",
+    platform: "platform",
+    calendarCreated: "calendarCreated",
   },
 };
 

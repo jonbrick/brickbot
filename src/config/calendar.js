@@ -8,6 +8,7 @@ const calendars = {
   normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
   sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
   fitness: process.env.FITNESS_CALENDAR_ID,
+  videoGames: process.env.VIDEO_GAMES_CALENDAR_ID,
 };
 
 // OAuth credentials for personal account
@@ -61,6 +62,16 @@ function mapStravaToCalendarId() {
   return calendars.fitness || null;
 }
 
+/**
+ * Map Steam gaming sessions to calendar ID
+ * All gaming sessions go to the video games calendar
+ *
+ * @returns {string|null} Video games calendar ID or null if not configured
+ */
+function mapSteamToCalendarId() {
+  return calendars.videoGames || null;
+}
+
 module.exports = {
   calendars,
   personalCredentials,
@@ -69,4 +80,5 @@ module.exports = {
   getWorkCredentials,
   mapNotionCalendarToId,
   mapStravaToCalendarId,
+  mapSteamToCalendarId,
 };

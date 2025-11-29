@@ -32,6 +32,13 @@ const withings = {
   redirectUri: process.env.WITHINGS_REDIRECT_URI || "http://localhost:3000/callback",
 };
 
+// Steam configuration
+const steam = {
+  apiBaseUrl:
+    process.env.STEAM_URL ||
+    "https://fmbemz2etdgk23bce3wvf2yk540kezhy.lambda-url.us-east-2.on.aws",
+};
+
 // Rate limiting configurations
 const rateLimits = {
   oura: {
@@ -47,6 +54,11 @@ const rateLimits = {
   withings: {
     requestsPerMinute: 60, // Withings: conservative rate limit
     backoffMs: 1000,
+  },
+
+  steam: {
+    requestsPerMinute: 60, // Steam Lambda: conservative rate limit
+    backoffMs: 200,
   },
 
   notion: {
@@ -73,6 +85,7 @@ module.exports = {
   oura,
   strava,
   withings,
+  steam,
   rateLimits,
   retryConfig,
 };

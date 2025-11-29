@@ -104,6 +104,16 @@ const tokenConfig = {
       return sources.withings;
     },
   },
+
+  steam: {
+    name: "Steam",
+    type: "api_url",
+    requiresRefresh: false,
+    envVars: {
+      apiBaseUrl: "STEAM_URL",
+    },
+    checkMethod: "checkSteamConnection",
+  },
 };
 
 /**

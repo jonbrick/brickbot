@@ -11,6 +11,7 @@ const { syncSleepToCalendar } = require("../src/workflows/notion-to-calendar");
 const {
   syncWorkoutsToCalendar,
 } = require("../src/workflows/strava-to-calendar");
+const { syncSteamToCalendar } = require("../src/workflows/steam-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 
@@ -26,6 +27,7 @@ async function selectSourceAndAction() {
       choices: [
         { name: "Oura (Sleep)", value: "oura" },
         { name: "Strava (Workouts)", value: "strava" },
+        { name: "Steam (Video Games)", value: "steam" },
       ],
     },
     {
@@ -191,6 +193,83 @@ function displayWorkoutRecordsTable(records) {
 }
 
 /**
+ * Format Steam gaming records for display
+ */
+function formatSteamRecords(steamRecords, notionService) {
+  const props = config.notion.properties.steam;
+
+  return steamRecords.map((record) => {
+    const gameName = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.gameName)
+    );
+    const date = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.date)
+    );
+    const hoursPlayed = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.hoursPlayed)
+    );
+    const minutesPlayed = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.minutesPlayed)
+    );
+    const sessionCount = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.sessionCount)
+    );
+
+    // Format playtime
+    let playtime = "";
+    if (hoursPlayed > 0) {
+      playtime = `${hoursPlayed}h ${minutesPlayed}m`;
+    } else {
+      playtime = `${minutesPlayed}m`;
+    }
+
+    return {
+      gameName,
+      date,
+      playtime,
+      sessionCount,
+    };
+  });
+}
+
+/**
+ * Display table of Steam gaming records to sync
+ */
+function displaySteamRecordsTable(records) {
+  console.log("\n" + "=".repeat(120));
+  console.log("🎮 STEAM GAMING RECORDS TO SYNC");
+  console.log("=".repeat(120) + "\n");
+
+  if (records.length === 0) {
+    console.log(
+      "✅ No records to sync (all records already have calendar events)\n"
+    );
+    return;
+  }
+
+  console.log(
+    `Found ${records.length} gaming record${
+      records.length === 1 ? "" : "s"
+    } without calendar events\n`
+  );
+
+  records.forEach((record) => {
+    console.log(
+      `  🎮 ${record.date}: ${record.gameName} (${record.playtime}) - ${record.sessionCount} session${
+        record.sessionCount === 1 ? "" : "s"
+      }`
+    );
+  });
+
+  console.log("\n" + "=".repeat(120) + "\n");
+}
+
+/**
  * Print sync results summary
  */
 function printSyncResults(results) {
@@ -254,6 +333,8 @@ async function main() {
       await handleOuraSync(startDate, endDate, action);
     } else if (source === "strava") {
       await handleStravaSync(startDate, endDate, action);
+    } else if (source === "steam") {
+      await handleSteamSync(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -320,6 +401,34 @@ async function handleStravaSync(startDate, endDate, action) {
     console.log("\n📤 Syncing to Calendar...\n");
 
     const results = await syncWorkoutsToCalendar(startDate, endDate);
+
+    printSyncResults(results);
+  }
+}
+
+/**
+ * Handle Steam gaming sync
+ */
+async function handleSteamSync(startDate, endDate, action) {
+  console.log("📊 Querying Notion for unsynced gaming records...\n");
+
+  const notionService = new NotionService();
+  const steamRecords = await notionService.getUnsyncedSteam(startDate, endDate);
+
+  if (steamRecords.length === 0) {
+    console.log("✅ No gaming records found without calendar events\n");
+    return;
+  }
+
+  // Format and display records
+  const formattedRecords = formatSteamRecords(steamRecords, notionService);
+  displaySteamRecordsTable(formattedRecords);
+
+  // Sync to calendar if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Calendar...\n");
+
+    const results = await syncSteamToCalendar(startDate, endDate);
 
     printSyncResults(results);
   }

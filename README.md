@@ -42,15 +42,15 @@ yarn tokens:check
 #### 1. Collect Data from External Sources
 
 ```bash
-yarn 1-collect
+yarn collect
 ```
 
-Fetches data from GitHub, Oura, Strava, Steam, and Withings for a selected date range and saves to Notion.
+Fetches data from Oura, Strava, Steam, and Withings for a selected date range and saves to Notion. You'll be prompted to select a source and date range.
 
 #### 2. Sync to Google Calendar
 
 ```bash
-yarn 2-sync-cal
+yarn update
 ```
 
 Creates calendar events from Notion records (PRs, workouts, sleep, body weight, video games).
@@ -100,8 +100,8 @@ yarn tokens:setup   # Run OAuth setup wizard
 ### Daily Data Collection
 
 ```bash
-yarn 1-collect      # Collect yesterday's data
-yarn 2-sync-cal     # Sync to calendar
+yarn collect        # Collect data from external sources
+yarn update         # Sync to calendar
 ```
 
 ### Weekly Review

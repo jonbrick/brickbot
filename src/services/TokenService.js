@@ -7,6 +7,7 @@ const GoogleCalendarService = require("./GoogleCalendarService");
 const StravaService = require("./StravaService");
 const OuraService = require("./OuraService");
 const WithingsService = require("./WithingsService");
+const SteamService = require("./SteamService");
 const config = require("../config");
 
 class TokenService {
@@ -17,6 +18,7 @@ class TokenService {
       strava: new StravaService(),
       oura: new OuraService(),
       withings: null,
+      steam: null,
     };
 
     // Try to instantiate WithingsService
@@ -43,6 +45,15 @@ class TokenService {
       // Service not configured, will be handled by check methods
       this.services.googleWork = null;
     }
+
+    // Try to instantiate SteamService
+    // This may fail if URL isn't configured, which is fine
+    try {
+      this.services.steam = new SteamService();
+    } catch (error) {
+      // Service not configured, will be handled by check methods
+      this.services.steam = null;
+    }
   }
 
   /**
@@ -58,6 +69,7 @@ class TokenService {
       oura: await this._checkOuraToken(),
       withings: await this._checkWithingsToken(),
       notion: await this._checkNotionToken(),
+      steam: await this._checkSteamConnection(),
     };
 
     return status;
@@ -386,6 +398,54 @@ class TokenService {
   }
 
   /**
+   * Check Steam Lambda API connection
+   *
+   * @returns {Promise<Object>} Connection status
+   */
+  async _checkSteamConnection() {
+    try {
+      if (!config.sources.steam?.apiBaseUrl) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: "No API URL configured",
+        };
+      }
+
+      if (!this.services.steam) {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: "Steam service not available",
+        };
+      }
+
+      // Test connection by calling testConnection
+      const result = await this.services.steam.testConnection();
+
+      if (result.valid) {
+        return {
+          valid: true,
+          needsRefresh: false,
+          message: "Connection is valid",
+        };
+      } else {
+        return {
+          valid: false,
+          needsRefresh: false,
+          message: result.error || "Connection failed",
+        };
+      }
+    } catch (error) {
+      return {
+        valid: false,
+        needsRefresh: false,
+        message: error.message,
+      };
+    }
+  }
+
+  /**
    * Get summary of token status
    *
    * @returns {Promise<Object>} Summary
@@ -484,6 +544,15 @@ class TokenService {
    */
   async validateNotionToken(token) {
     return await this._checkNotionToken();
+  }
+
+  /**
+   * Check Steam connection
+   * @param {Object} credentials - Steam credentials (unused, kept for compatibility)
+   * @returns {Promise<Object>} Connection status
+   */
+  async checkSteamConnection(credentials) {
+    return await this._checkSteamConnection();
   }
 
   /**

@@ -378,6 +378,26 @@ class NotionService {
   }
 
   /**
+   * Find PR record by Unique ID
+   * Convenience method for GitHub PR de-duplication
+   *
+   * @param {string} uniqueId - Unique ID to search for
+   * @returns {Promise<Object|null>} Existing page or null
+   */
+  async findPRByUniqueId(uniqueId) {
+    const databaseId = config.notion.databases.prs;
+    if (!databaseId) {
+      return null;
+    }
+
+    const propertyName = config.notion.getPropertyName(
+      config.notion.properties.github.uniqueId
+    );
+
+    return await this.findPageByProperty(databaseId, propertyName, uniqueId);
+  }
+
+  /**
    * Get property type for a database
    *
    * @param {string} databaseId - Database ID
@@ -478,9 +498,12 @@ class NotionService {
 
       // Detect property type and format accordingly
       if (typeof value === "string") {
-        // Check if this property should be a date type
+        // Skip empty strings for date properties
         const isDateOnlyProperty = this._isDateOnlyProperty(key);
-        if (isDateOnlyProperty && value) {
+        if (isDateOnlyProperty) {
+          if (!value || value === "") {
+            return; // Skip empty date strings
+          }
           // String value for a date property - format as date
           formatted[key] = {
             date: { start: value },
@@ -500,6 +523,10 @@ class NotionService {
                 select: { name: value },
               };
             } else {
+              // Skip empty strings for rich_text - Notion doesn't accept them
+              if (value === "") {
+                return;
+              }
               formatted[key] = {
                 rich_text: [{ text: { content: value } }],
               };
@@ -543,19 +570,31 @@ class NotionService {
    */
   _isTitleProperty(key) {
     const properties = config.notion.properties;
+    let foundInConfig = false;
+    let isTitleType = false;
 
-    // Check all databases for title properties
+    // Check all databases for this property
     for (const dbKey in properties) {
       const props = properties[dbKey];
       for (const propKey in props) {
-        if (props[propKey].name === key && props[propKey].type === "title") {
-          return true;
+        if (props[propKey].name === key) {
+          foundInConfig = true;
+          if (props[propKey].type === "title") {
+            isTitleType = true;
+            break;
+          }
         }
       }
+      if (foundInConfig && isTitleType) break;
+    }
+
+    // If found in config, use the config type (not the fallback)
+    if (foundInConfig) {
+      return isTitleType;
     }
 
     // Fallback: check if key contains "name" or "title"
-    // (for backwards compatibility)
+    // (for backwards compatibility - only if NOT found in config)
     if (
       key.toLowerCase().includes("name") ||
       key.toLowerCase().includes("title")

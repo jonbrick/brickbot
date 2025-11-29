@@ -1,0 +1,98 @@
+/**
+ * GitHub to Notion Transformer
+ * Transform GitHub activity data to Notion page properties
+ */
+
+const config = require("../config");
+const { formatDateOnly } = require("../utils/date");
+const { getPropertyName } = require("../config/notion");
+
+/**
+ * Truncate text to Notion's 2000 character limit
+ *
+ * @param {string} text - Text to truncate
+ * @param {number} maxLength - Maximum length (default: 2000)
+ * @returns {string} Truncated text
+ */
+function truncateForNotion(text, maxLength = 2000) {
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+  // Truncate and add ellipsis
+  return text.substring(0, maxLength - 3) + "...";
+}
+
+/**
+ * Transform GitHub activity to Notion properties
+ *
+ * @param {Object} activity - GitHub activity data
+ * @returns {Object} Notion properties
+ */
+function transformGitHubToNotion(activity) {
+  const props = config.notion.properties.github;
+
+  // Handle repository name - use PR title if available for PR records
+  let repositoryName = activity.repository || "Unknown Repository";
+  if (activity.isPrRecord && activity.prTitle) {
+    repositoryName = `${activity.repository} - ${activity.prTitle} (#${activity.prNumber})`;
+  }
+
+  // Build properties object using getPropertyName helper
+  const allProperties = {
+    [getPropertyName(props.repository)]: repositoryName,
+    [getPropertyName(props.date)]: activity.date
+      ? formatDateOnly(activity.date)
+      : "",
+    [getPropertyName(props.commitsCount)]: activity.commitsCount || 0,
+    [getPropertyName(props.commitMessages)]: truncateForNotion(activity.commitMessages || ""),
+    [getPropertyName(props.prTitles)]: truncateForNotion(activity.prTitles || ""),
+    [getPropertyName(props.pullRequestsCount)]: activity.pullRequestsCount || 0,
+    [getPropertyName(props.filesChanged)]: activity.filesChanged || 0,
+    [getPropertyName(props.filesChangedList)]: truncateForNotion(activity.filesChangedList || ""),
+    [getPropertyName(props.totalLinesAdded)]: activity.totalLinesAdded || 0,
+    [getPropertyName(props.totalLinesDeleted)]: activity.totalLinesDeleted || 0,
+    [getPropertyName(props.totalChanges)]: activity.totalChanges || 0,
+    [getPropertyName(props.projectType)]: activity.projectType || "Personal",
+    [getPropertyName(props.uniqueId)]: activity.uniqueId || "",
+    [getPropertyName(props.calendarCreated)]: false,
+  };
+
+  // Filter out disabled properties
+  const enabledProperties = {};
+  Object.entries(allProperties).forEach(([key, value]) => {
+    // Find the corresponding property config
+    const propKey = Object.keys(props).find(
+      (k) => getPropertyName(props[k]) === key
+    );
+
+    if (propKey && config.notion.isPropertyEnabled(props[propKey])) {
+      // Handle select type for Project Type
+      if (propKey === "projectType" && typeof value === "string") {
+        enabledProperties[key] = value;
+      } else {
+        enabledProperties[key] = value;
+      }
+    } else if (!propKey) {
+      // If property config doesn't exist, include it (backward compatibility)
+      enabledProperties[key] = value;
+    }
+  });
+
+  return enabledProperties;
+}
+
+/**
+ * Batch transform GitHub activities
+ *
+ * @param {Array} activities - Array of GitHub activities
+ * @returns {Array} Array of Notion properties objects
+ */
+function batchTransformGitHubToNotion(activities) {
+  return activities.map(transformGitHubToNotion);
+}
+
+module.exports = {
+  transformGitHubToNotion,
+  batchTransformGitHubToNotion,
+};
+

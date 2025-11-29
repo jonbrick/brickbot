@@ -39,6 +39,14 @@ const steam = {
     "https://fmbemz2etdgk23bce3wvf2yk540kezhy.lambda-url.us-east-2.on.aws",
 };
 
+// GitHub configuration
+const github = {
+  token: process.env.GITHUB_TOKEN,
+  username: process.env.GITHUB_USERNAME,
+  apiBaseUrl: "https://api.github.com",
+  workRepos: process.env.GITHUB_WORK_REPOS?.split(",").map((r) => r.trim()).filter(Boolean) || [],
+};
+
 // Rate limiting configurations
 const rateLimits = {
   oura: {
@@ -59,6 +67,11 @@ const rateLimits = {
   steam: {
     requestsPerMinute: 60, // Steam Lambda: conservative rate limit
     backoffMs: 200,
+  },
+
+  github: {
+    requestsPerMinute: 60, // GitHub: 5000 req/hour = ~83 req/min, conservative: 60 req/min
+    backoffMs: 1000,
   },
 
   notion: {
@@ -86,6 +99,7 @@ module.exports = {
   strava,
   withings,
   steam,
+  github,
   rateLimits,
   retryConfig,
 };

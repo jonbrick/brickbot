@@ -11,9 +11,11 @@ const { fetchOuraData } = require("../src/collectors/oura");
 const { fetchStravaData } = require("../src/collectors/strava");
 const { fetchWithingsData } = require("../src/collectors/withings");
 const { fetchSteamData } = require("../src/collectors/steam");
+const { fetchGitHubData } = require("../src/collectors/github");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
 const { syncStravaToNotion } = require("../src/workflows/strava-to-notion");
 const { syncSteamToNotion } = require("../src/workflows/steam-to-notion");
+const { syncGitHubToNotion } = require("../src/workflows/github-to-notion");
 const {
   formatDate,
   formatDateLong,
@@ -97,6 +99,7 @@ async function selectAction() {
         { name: "Strava", value: "strava" },
         { name: "Withings", value: "withings" },
         { name: "Steam", value: "steam" },
+        { name: "GitHub", value: "github" },
       ],
     },
     {
@@ -142,6 +145,8 @@ function printSyncResults(results) {
         console.log(`  ✅ ${r.dateString} (Measurement ID: ${r.measurementId})`);
       } else if (r.gameName) {
         console.log(`  ✅ ${r.gameName} (Activity ID: ${r.activityId})`);
+      } else if (r.repository) {
+        console.log(`  ✅ ${r.repository} (${r.date || "Unknown date"})`);
       }
     });
     console.log();
@@ -159,6 +164,8 @@ function printSyncResults(results) {
         console.log(`  ⏭️  ${r.dateString} (Measurement ID: ${r.measurementId})`);
       } else if (r.gameName) {
         console.log(`  ⏭️  ${r.gameName} (Activity ID: ${r.activityId})`);
+      } else if (r.repository) {
+        console.log(`  ⏭️  ${r.repository} (${r.date || "Unknown date"})`);
       }
     });
     console.log();
@@ -196,6 +203,8 @@ async function main() {
       await handleWithingsData(startDate, endDate, action);
     } else if (source === "steam") {
       await handleSteamData(startDate, endDate, action);
+    } else if (source === "github") {
+      await handleGitHubData(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -320,6 +329,34 @@ async function handleSteamData(startDate, endDate, action) {
     // Use the processed data from collector
     const processed = await fetchSteamData(startDate, endDate);
     const results = await syncSteamToNotion(processed);
+
+    printSyncResults(results);
+  }
+}
+
+/**
+ * Handle GitHub data fetching and processing
+ */
+async function handleGitHubData(startDate, endDate, action) {
+  console.log("📊 Fetching GitHub activity data...\n");
+
+  const activities = await fetchGitHubData(startDate, endDate);
+
+  if (activities.length === 0) {
+    console.log("⚠️  No GitHub activities found for this date range\n");
+    return;
+  }
+
+  // Always display the table
+  printDataTable(activities, "github", "GITHUB ACTIVITIES");
+
+  // Sync to Notion if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Notion...\n");
+
+    // Use the processed data from collector
+    const processed = await fetchGitHubData(startDate, endDate);
+    const results = await syncGitHubToNotion(processed);
 
     printSyncResults(results);
   }

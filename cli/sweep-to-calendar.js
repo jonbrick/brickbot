@@ -362,6 +362,74 @@ function displayPRRecordsTable(records) {
 }
 
 /**
+ * Format body weight records for display
+ */
+function formatBodyWeightRecords(weightRecords, notionService) {
+  const props = config.notion.properties.withings;
+
+  return weightRecords.map((record) => {
+    const name = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.name)
+    );
+    const date = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.date)
+    );
+    const weight = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.weight)
+    );
+    const fatPercentage = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.fatPercentage)
+    );
+    const muscleMass = notionService.extractProperty(
+      record,
+      config.notion.getPropertyName(props.muscleMass)
+    );
+
+    return {
+      name,
+      date,
+      weight,
+      fatPercentage,
+      muscleMass,
+    };
+  });
+}
+
+/**
+ * Display table of body weight records to sync
+ */
+function displayBodyWeightRecordsTable(records) {
+  console.log("\n" + "=".repeat(120));
+  console.log("⚖️  BODY WEIGHT RECORDS TO SYNC");
+  console.log("=".repeat(120) + "\n");
+
+  if (records.length === 0) {
+    console.log(
+      "✅ No records to sync (all records already have calendar events)\n"
+    );
+    return;
+  }
+
+  console.log(
+    `Found ${records.length} body weight record${
+      records.length === 1 ? "" : "s"
+    } without calendar events\n`
+  );
+
+  records.forEach((record) => {
+    console.log(
+      `  ⚖️  ${record.date}: ${record.weight} lbs (${record.fatPercentage}% fat, ${record.muscleMass} lbs muscle)`
+    );
+  });
+
+  console.log("\n" + "=".repeat(120) + "\n");
+}
+
+/**
  * Print sync results summary
  */
 function printSyncResults(results) {

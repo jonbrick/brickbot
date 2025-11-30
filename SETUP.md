@@ -353,6 +353,8 @@ STEAM_URL=https://your-lambda-url.lambda-url.region.on.aws
    ```
    Select "Withings" and follow prompts
 
+**Note**: Withings integration is currently display-only. Data fetching works, but automatic sync to Notion and Calendar workflows are not yet implemented. You can view measurements in the CLI but they won't be saved to Notion.
+
 ### Claude AI
 
 **What you'll get**: AI-powered task categorization, weekly retrospectives, insights

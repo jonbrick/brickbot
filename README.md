@@ -45,7 +45,7 @@ yarn tokens:check
 yarn collect
 ```
 
-Fetches data from Oura, Strava, Steam, and Withings for a selected date range and saves to Notion. You'll be prompted to select a source and date range.
+Fetches data from Oura, Strava, Steam, GitHub, and Withings for a selected date range and saves to Notion.
 
 #### 2. Sync to Google Calendar
 
@@ -116,6 +116,35 @@ yarn week:5-run-all # Run complete pipeline for current week
 yarn 3-sweep-notes   # Process Apple Notes to Notion tasks
 ```
 
+## Testing & Validation
+
+### Verify De-duplication
+
+Test that re-running sync operations safely skips existing records:
+
+```bash
+# First run - creates records
+yarn collect
+# Select: Yesterday, Oura
+
+# Second run - should skip all
+yarn collect
+# Select: Yesterday, Oura
+# Expected: "Skipped: 1 (already in Notion)"
+```
+
+### Verify Rate Limiting
+
+Test that batch operations respect API limits:
+
+```bash
+# Sync multiple days
+yarn collect
+# Select: Last 7 Days, any source
+# Watch for 350ms delays between Notion API calls
+# Should complete without rate limit errors
+```
+
 ## Troubleshooting
 
 ### Token Errors
@@ -165,7 +194,7 @@ Different data sources use different date formats and conventions:
 - **Strava**: Uses activity start date directly
 - **GitHub**: Converts UTC commits to Eastern Time
 - **Steam**: Converts UTC gaming sessions to Eastern Time (may adjust date if crossing midnight)
-- **Withings**: Converts Unix timestamps to dates
+- **Withings**: Converts Unix timestamps to local time (avoids UTC timezone issues)
 
 For details on date handling patterns, see [ARCHITECTURE.md](./ARCHITECTURE.md#date-handling-patterns).
 

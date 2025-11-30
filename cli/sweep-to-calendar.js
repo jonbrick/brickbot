@@ -13,6 +13,9 @@ const {
 } = require("../src/workflows/strava-to-calendar");
 const { syncSteamToCalendar } = require("../src/workflows/steam-to-calendar");
 const { syncPRsToCalendar } = require("../src/workflows/github-to-calendar");
+const {
+  syncBodyWeightToCalendar,
+} = require("../src/workflows/withings-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 
@@ -30,6 +33,7 @@ async function selectSourceAndAction() {
         { name: "Strava (Workouts)", value: "strava" },
         { name: "Steam (Video Games)", value: "steam" },
         { name: "GitHub (PRs)", value: "github" },
+        { name: "Withings (Body Weight)", value: "withings" },
       ],
     },
     {
@@ -425,6 +429,8 @@ async function main() {
       await handleSteamSync(startDate, endDate, action);
     } else if (source === "github") {
       await handleGitHubSync(startDate, endDate, action);
+    } else if (source === "withings") {
+      await handleBodyWeightSync(startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -547,6 +553,37 @@ async function handleGitHubSync(startDate, endDate, action) {
     console.log("\n📤 Syncing to Calendar...\n");
 
     const results = await syncPRsToCalendar(startDate, endDate);
+
+    printSyncResults(results);
+  }
+}
+
+/**
+ * Handle Body Weight sync
+ */
+async function handleBodyWeightSync(startDate, endDate, action) {
+  console.log("📊 Querying Notion for unsynced body weight records...\n");
+
+  const notionService = new NotionService();
+  const weightRecords = await notionService.getUnsyncedBodyWeight(
+    startDate,
+    endDate
+  );
+
+  if (weightRecords.length === 0) {
+    console.log("✅ No body weight records found without calendar events\n");
+    return;
+  }
+
+  // Format and display records
+  const formattedRecords = formatBodyWeightRecords(weightRecords, notionService);
+  displayBodyWeightRecordsTable(formattedRecords);
+
+  // Sync to calendar if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Calendar...\n");
+
+    const results = await syncBodyWeightToCalendar(startDate, endDate);
 
     printSyncResults(results);
   }

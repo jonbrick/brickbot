@@ -40,16 +40,29 @@ brickbot/
 │   │   ├── oura.js
 │   │   ├── strava.js
 │   │   ├── steam.js
-│   │   ├── withings.js
-│   │   └── apple-notes.js
+│   │   └── withings.js
 │   │
 │   ├── transformers/     # Data transformation layer
 │   │   ├── github-to-notion.js
+│   │   ├── github-to-calendar.js
 │   │   ├── oura-to-notion.js
 │   │   ├── strava-to-notion.js
+│   │   ├── strava-to-calendar.js
 │   │   ├── steam-to-notion.js
+│   │   ├── steam-to-calendar.js
 │   │   ├── withings-to-notion.js
-│   │   ├── notes-to-notion.js
+│   │   ├── withings-to-calendar.js
+│   │   └── notion-to-calendar.js
+│   │
+│   ├── workflows/        # Sync workflows with de-duplication
+│   │   ├── github-to-notion.js
+│   │   ├── github-to-calendar.js
+│   │   ├── oura-to-notion.js
+│   │   ├── strava-to-calendar.js
+│   │   ├── steam-to-notion.js
+│   │   ├── steam-to-calendar.js
+│   │   ├── withings-to-notion.js
+│   │   ├── withings-to-calendar.js
 │   │   └── notion-to-calendar.js
 │   │
 │   └── utils/           # Shared utilities
@@ -116,11 +129,12 @@ Different APIs use different date conventions and timezone formats. Each integra
 - Extracts date from converted start time: `actualDate = startTime.split("T")[0]`
 - Utility: `src/utils/date.js` → `getEasternOffset()`
 
-**Withings** - Unix timestamp conversion:
+**Withings** - Unix timestamp to local time:
 
 - API returns Unix timestamps (seconds since epoch)
 - Converts: `new Date(dateTimestamp * 1000)`
-- No offset needed
+- Extracts date using local time (not UTC) to avoid timezone issues
+- Example: Measurement at 7:07 PM EST → stored as same calendar day, not next day in UTC
 
 **Summary Table:**
 
@@ -130,9 +144,11 @@ Different APIs use different date conventions and timezone formats. Each integra
 | Strava      | Direct use      | Extracts date from `start_date_local`                      |
 | GitHub      | UTC → Eastern   | Timezone conversion, no day offset                         |
 | Steam       | UTC → Eastern   | Timezone conversion, may adjust date if crossing midnight  |
-| Withings    | Unix timestamp  | Converts timestamp to Date, no offset                      |
+| Withings    | Unix → Local    | Converts timestamp to Date, uses local time (not UTC)      |
 
 The actual offset logic is implemented in `src/utils/date.js` with utility functions like `calculateNightOf()` and `convertUTCToEasternDate()`, ensuring consistent date handling across the application.
+
+**Implementation Note**: The `calculateNightOf()` function was initially duplicated across multiple files. It was consolidated to `src/utils/date.js` as a shared utility to ensure consistent date handling, make the "night of" calculation explicit and testable, and maintain a single source of truth.
 
 ### Services (`src/services/`)
 
@@ -232,6 +248,40 @@ Collectors orchestrate services with business logic, display progress spinners, 
 
 Pure functions that map data structures. No side effects, easy to test, config-driven mappings.
 
+### Workflow Pattern
+
+Workflows orchestrate the complete sync pipeline. Key design decisions:
+
+**De-duplication Strategy**:
+- Each data source has a unique identifier field
+  - Oura: Sleep ID
+  - Strava: Activity ID
+  - GitHub: Unique ID (repo-date-sha/PR#)
+  - Steam: Activity ID (date-gameName)
+  - Withings: Measurement ID
+- Check for existing records before creating (`findXByYId()` methods)
+- Prevents duplicates when re-running sync operations
+- Safe to run multiple times - skips existing records
+
+**Error Handling Philosophy**:
+- Individual record failures don't stop batch operations
+- Errors collected in results object: `{created: [], skipped: [], errors: []}`
+- Allows partial success
+- User gets clear feedback on what succeeded/failed/skipped
+
+**Rate Limiting Implementation**:
+- Notion API: 350ms backoff (3 requests/second limit)
+- Google Calendar: 350ms backoff (3 requests/second limit)
+- External APIs: Variable based on provider (see `src/config/sources.js`)
+- Prevents rate limit errors during batch operations
+- Uses shared `delay()` function from `src/utils/async.js`
+
+**CLI Design**:
+- Two modes: "Display only (debug)" and "Sync to Notion/Calendar"
+- Display mode: Shows data without syncing (troubleshooting)
+- Sync mode: Creates records with clear results summary
+- Re-running sync safely skips duplicates
+
 ## Extension Guide
 
 ### Adding a New Data Source
@@ -248,6 +298,27 @@ Pure functions that map data structures. No side effects, easy to test, config-d
 2. Follow existing pattern (main function, error handling)
 3. Use utilities from `src/utils/cli.js`
 4. Add script to `package.json`
+
+## Withings Integration
+
+The Withings body weight integration is fully implemented and follows the same patterns as other data sources (Oura, Strava, Steam, GitHub).
+
+**Implementation**:
+- ✅ `src/services/WithingsService.js` - API client with OAuth token refresh
+- ✅ `src/collectors/withings.js` - Data fetching with unit conversions (kg → lbs)
+- ✅ `src/transformers/withings-to-notion.js` - Transform API data to Notion format
+- ✅ `src/workflows/withings-to-notion.js` - Sync workflow with de-duplication by Measurement ID
+- ✅ `src/transformers/withings-to-calendar.js` - Transform to all-day calendar events
+- ✅ `src/workflows/withings-to-calendar.js` - Calendar sync workflow
+- ✅ CLI sync modes in `cli/sweep-to-notion.js` and `cli/sweep-to-calendar.js`
+- ✅ Token management in `cli/tokens/setup.js` and `refresh.js`
+
+**Key Features**:
+   - De-duplication by Measurement ID (`grpid`)
+- Unit conversion: kg → lbs (handled in collector)
+- All-day calendar events (similar to GitHub PRs)
+- Rate limiting: 350ms delay for Notion API
+- Complete body composition tracking (weight, fat %, muscle mass, etc.)
 
 ## API Rate Limiting
 
@@ -289,32 +360,32 @@ Independent operations run in parallel using `Promise.all()`.
 
 ### Shared Utilities
 
-To maintain DRY (Don't Repeat Yourself) principles, common functionality is extracted into shared utilities:
+Common functionality is extracted into shared utilities to maintain consistency and reduce duplication:
 
 **`src/utils/async.js`**:
 
 - `delay(ms)` - Rate limiting delay function used across all workflows and services
-- Replaces duplicated `sleep()` functions that were previously copy-pasted 8+ times
-- Clear naming: "delay" instead of confusing "sleep" (important for a sleep tracking app!)
+- Provides consistent rate limiting behavior
+- Clear naming: "delay" instead of "sleep" (avoiding confusion in a sleep tracking app)
 
 **`src/utils/transformers.js`**:
 
 - `filterEnabledProperties()` - Property filtering logic for Notion transformers
-- Removes ~60 lines of duplicated code across 4 transformer files
-- Ensures consistent property filtering based on config
+- Ensures consistent property filtering based on config across all transformers
+- Single source of truth for property enable/disable logic
 
 **`src/utils/date.js`**:
 
 - `calculateNightOf()` - Converts Oura wake-up dates to "night of" dates
-- Centralized date handling logic for consistency
+- `convertUTCToEasternDate()` - Timezone conversion with DST handling
+- Centralized date handling logic for consistency across integrations
 
 ### Benefits
 
-✅ **~140 lines of duplicated code eliminated**  
-✅ **Single source of truth** for common operations  
-✅ **Easier maintenance** - changes in one place affect all usages  
-✅ **Better testing** - shared utilities can be tested once  
-✅ **Clear naming conventions** - `delay()` vs confusing `sleep()`
+- **Single source of truth** for common operations
+- **Easier maintenance** - changes in one place affect all usages
+- **Better testing** - shared utilities can be tested independently
+- **Consistent behavior** - same logic applied uniformly across integrations
 
 ---
 

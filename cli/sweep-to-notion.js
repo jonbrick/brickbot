@@ -298,11 +298,11 @@ async function handleWithingsData(startDate, endDate, action) {
   // Sync to Notion if requested
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
-    console.log("⚠️  Notion sync for Withings is not yet implemented");
-    // TODO: Implement syncWithingsToNotion workflow
-    // const processed = await fetchWithingsData(startDate, endDate);
-    // const results = await syncWithingsToNotion(processed);
-    // printSyncResults(results);
+
+    // Use the processed data from collector
+    const { syncWithingsToNotion } = require("../src/workflows/withings-to-notion");
+    const results = await syncWithingsToNotion(measurements);
+    printSyncResults(results);
   }
 }
 

@@ -11,6 +11,7 @@ const calendars = {
   videoGames: process.env.VIDEO_GAMES_CALENDAR_ID,
   personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID,
   workPRs: process.env.WORK_PRS_CALENDAR_ID,
+  bodyWeight: process.env.BODY_WEIGHT_CALENDAR_ID,
 };
 
 // OAuth credentials for personal account
@@ -94,6 +95,16 @@ function mapPRToCalendarId(projectType) {
   return null;
 }
 
+/**
+ * Map Withings body weight measurements to calendar ID
+ * All body weight measurements go to the body weight calendar
+ *
+ * @returns {string|null} Body weight calendar ID or null if not configured
+ */
+function mapWithingsToCalendarId() {
+  return calendars.bodyWeight || null;
+}
+
 module.exports = {
   calendars,
   personalCredentials,
@@ -104,4 +115,5 @@ module.exports = {
   mapStravaToCalendarId,
   mapSteamToCalendarId,
   mapPRToCalendarId,
+  mapWithingsToCalendarId,
 };

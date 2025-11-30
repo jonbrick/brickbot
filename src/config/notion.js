@@ -9,6 +9,7 @@ const databases = {
   workouts: process.env.NOTION_WORKOUTS_DATABASE_ID,
   steam: process.env.NOTION_VIDEO_GAMES_DATABASE_ID,
   prs: process.env.NOTION_PRS_DATABASE_ID,
+  bodyWeight: process.env.NOTION_BODY_WEIGHT_DATABASE_ID,
 };
 
 // Unified property configuration for sleep database
@@ -93,17 +94,26 @@ const properties = {
   withings: {
     measurementId: { name: "Measurement ID", type: "text", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
-    dateString: { name: "Date String", type: "text", enabled: true },
+    dateString: { name: "Date String", type: "text", enabled: false },
     name: { name: "Name", type: "title", enabled: true },
     weight: { name: "Weight", type: "number", enabled: true },
     fatFreeMass: { name: "Fat Free Mass", type: "number", enabled: true },
     fatPercentage: { name: "Fat Percentage", type: "number", enabled: true },
     fatMass: { name: "Fat Mass", type: "number", enabled: true },
     muscleMass: { name: "Muscle Mass", type: "number", enabled: true },
-    bodyWaterPercentage: { name: "Body Water Percentage", type: "number", enabled: true },
+    bodyWaterPercentage: {
+      name: "Body Water Percentage",
+      type: "number",
+      enabled: true,
+    },
     boneMass: { name: "Bone Mass", type: "number", enabled: true },
     measurementTime: { name: "Measurement Time", type: "text", enabled: true },
     deviceModel: { name: "Device Model", type: "text", enabled: true },
+    calendarCreated: {
+      name: "Calendar Created",
+      type: "checkbox",
+      enabled: true,
+    },
   },
   steam: {
     gameName: { name: "Game Name", type: "title", enabled: true },
@@ -111,7 +121,11 @@ const properties = {
     hoursPlayed: { name: "Hours Played", type: "number", enabled: true },
     minutesPlayed: { name: "Minutes Played", type: "number", enabled: true },
     sessionCount: { name: "Session Count", type: "number", enabled: true },
-    sessionDetails: { name: "Session Details", type: "rich_text", enabled: true },
+    sessionDetails: {
+      name: "Session Details",
+      type: "rich_text",
+      enabled: true,
+    },
     activityId: { name: "Activity ID", type: "rich_text", enabled: true },
     startTime: { name: "Start Time", type: "rich_text", enabled: true },
     endTime: { name: "End Time", type: "rich_text", enabled: true },
@@ -131,7 +145,11 @@ const properties = {
     repository: { name: "Repository", type: "title", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
     commitsCount: { name: "Commits Count", type: "number", enabled: true },
-    commitMessages: { name: "Commit Messages", type: "rich_text", enabled: true },
+    commitMessages: {
+      name: "Commit Messages",
+      type: "rich_text",
+      enabled: true,
+    },
     prTitles: { name: "PR Titles", type: "rich_text", enabled: true },
     pullRequestsCount: { name: "PRs Count", type: "number", enabled: true },
     filesChanged: { name: "Files Changed", type: "number", enabled: true },

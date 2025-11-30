@@ -5,7 +5,6 @@
 
 const WithingsService = require("../services/WithingsService");
 const { createSpinner } = require("../utils/cli");
-const { formatDate } = require("../utils/date");
 
 /**
  * Decode Withings measurement value
@@ -165,14 +164,39 @@ async function fetchWithingsData(startDate, endDate) {
       // Format measurement time as ISO timestamp
       const measurementTime = measurementDate.toISOString();
 
-      // Format readable date for name
-      const readableDate = formatDate(measurementDate);
+      // Extract date using local time (not UTC) to avoid timezone issues
+      // This matches how Strava and Steam handle dates
+      const localDateString = (() => {
+        const year = measurementDate.getFullYear();
+        const month = String(measurementDate.getMonth() + 1).padStart(2, "0");
+        const day = String(measurementDate.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      })();
+
+      // Format name as "Body Weight - [Day of Week], [Month] [Date], [Year]"
+      const formattedName = (() => {
+        const weekdayNames = [
+          "Sunday", "Monday", "Tuesday", "Wednesday",
+          "Thursday", "Friday", "Saturday"
+        ];
+        const monthNames = [
+          "January", "February", "March", "April", "May", "June",
+          "July", "August", "September", "October", "November", "December"
+        ];
+        
+        const dayOfWeek = weekdayNames[measurementDate.getDay()];
+        const month = monthNames[measurementDate.getMonth()];
+        const day = measurementDate.getDate();
+        const year = measurementDate.getFullYear();
+        
+        return `Body Weight - ${dayOfWeek}, ${month} ${day}, ${year}`;
+      })();
 
       return {
         measurementId: String(group.grpid || ""),
         date: measurementDate,
-        dateString: formatDate(measurementDate),
-        name: readableDate,
+        dateString: localDateString,
+        name: formattedName,
         weight: weight,
         fatFreeMass: fatFreeMass,
         fatPercentage: fatPercentage,

@@ -174,12 +174,14 @@ Session Times:
 
 **Data Flow:** Withings API → Decode values, convert kg→lbs → Notion DB → Google Calendar
 
+**Date Handling:** Unix timestamps are converted to JavaScript Date objects, then formatted using **local time** (not UTC) to avoid timezone issues with measurements taken in the evening.
+
 ### Field Mappings
 
 | API Source Field | Transformation | Notion Property | Type | Calendar Location |
 |-----------------|----------------|-----------------|------|-------------------|
-| `date` + formatted | Format readable date | **Name** | Title | N/A |
-| `date` | Unix timestamp → YYYY-MM-DD | **Date** | Date | N/A |
+| `date` | Unix timestamp → "Body Weight - [Day], [Month] [Date], [Year]" | **Name** | Title | N/A |
+| `date` | Unix timestamp → YYYY-MM-DD (local time) | **Date** | Date | N/A |
 | `measures[type=1].value` | Decode, kg→lbs, 1 decimal | **Weight** | Number | Title |
 | `measures[type=5].value` | Decode, kg→lbs, 1 decimal | **Fat Free Mass** | Number | N/A |
 | `measures[type=6].value` | Decode value, 1 decimal | **Fat Percentage** | Number | N/A |
@@ -201,6 +203,11 @@ Example: `value: 7856, unit: -2` → `78.56`
 - **kg to lbs:** `kg × 2.20462`
 - **All mass measurements** converted to pounds
 - **Percentages:** No conversion needed
+
+### Name Format
+Title format: `Body Weight - [Day of Week], [Month] [Date], [Year]`
+- Example: `Body Weight - Saturday, November 29, 2025`
+- Uses full month names and full day of week names
 
 ### Calendar Event Format
 

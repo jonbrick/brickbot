@@ -94,6 +94,38 @@ Single source of truth for all settings. Eliminates scattered `process.env` call
 - **calendar.js**: Calendar IDs, color mappings, OAuth credentials, event categorization
 - **sources.js**: API credentials, rate limits, retry configuration
 
+#### Customizing Notion Database Properties
+
+All Notion database column names and sync settings are centralized in `src/config/notion.js`.
+
+Each property in the `properties` object includes:
+
+```javascript
+// Example from properties.sleep:
+heartRateAvg: { name: "Heart Rate Avg", type: "number", enabled: true }
+```
+
+**Configuration options:**
+- `name`: Column name displayed in Notion - change this to relabel columns
+- `type`: Property type (number, text, date, checkbox, select, rich_text, title)
+- `enabled`: Set to `false` to stop syncing this property to Notion
+- `options`: For select types, defines the available dropdown choices
+
+**To rename a column:**
+Edit the `name` value in `src/config/notion.js`. The transformer will use the new label on the next sync.
+
+**To disable a property:**
+Set `enabled: false` to exclude it from Notion sync operations while keeping it in the config for reference.
+
+**Example:**
+```javascript
+// Change column name from "Heart Rate Avg" to "Avg HR"
+heartRateAvg: { name: "Avg HR", type: "number", enabled: true }
+
+// Disable a property from syncing
+sleepLatency: { name: "Sleep Latency", type: "number", enabled: false }
+```
+
 #### Date Handling Patterns
 
 Different APIs use different date conventions and timezone formats. Each integration handles dates appropriately:

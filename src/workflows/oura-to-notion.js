@@ -7,6 +7,7 @@ const NotionService = require("../services/NotionService");
 const { transformOuraToNotion } = require("../transformers/oura-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
+const { formatDate } = require("../utils/date");
 
 /**
  * Sync multiple Oura sleep sessions to Notion
@@ -62,6 +63,7 @@ async function syncSingleSession(session, notionService) {
       skipped: true,
       sleepId: session.sleepId,
       nightOf: session.nightOf,
+      displayName: formatDate(session.nightOf),
       existingPageId: existing.id,
     };
   }
@@ -76,6 +78,7 @@ async function syncSingleSession(session, notionService) {
     created: true,
     sleepId: session.sleepId,
     nightOf: session.nightOf,
+    displayName: formatDate(session.nightOf),
     pageId: page.id,
   };
 }

@@ -10,6 +10,8 @@ const {
 } = require("../transformers/notion-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
+const { getPropertyName } = require("../config/notion");
+const { formatDate } = require("../utils/date");
 
 /**
  * Sync sleep records from Notion to Google Calendar
@@ -94,10 +96,21 @@ async function syncSingleSleepRecord(
 
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
+    // Extract nightOf for display even when skipped
+    const props = config.notion.properties.sleep;
+    const nightOf = notionService.extractProperty(
+      sleepRecord,
+      getPropertyName(props.nightOfDate)
+    );
+    const displayName = nightOf
+      ? formatDate(nightOf instanceof Date ? nightOf : new Date(nightOf))
+      : "Unknown";
+
     return {
       skipped: true,
       pageId: sleepRecord.id,
       reason: "Missing bedtime or wake time",
+      displayName,
     };
   }
 
@@ -108,6 +121,16 @@ async function syncSingleSleepRecord(
     // Mark as synced in Notion
     await notionService.markSleepSynced(sleepRecord.id);
 
+    // Extract nightOf from Notion record and format for consistent display
+    const props = config.notion.properties.sleep;
+    const nightOf = notionService.extractProperty(
+      sleepRecord,
+      getPropertyName(props.nightOfDate)
+    );
+    const displayName = nightOf
+      ? formatDate(nightOf instanceof Date ? nightOf : new Date(nightOf))
+      : event.summary;
+
     return {
       skipped: false,
       created: true,
@@ -115,6 +138,7 @@ async function syncSingleSleepRecord(
       calendarId,
       eventId: createdEvent.id,
       summary: event.summary,
+      displayName,
     };
   } catch (error) {
     // Don't mark as synced if calendar creation failed

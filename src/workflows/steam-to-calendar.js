@@ -10,6 +10,7 @@ const {
 } = require("../transformers/steam-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
+const { getPropertyName } = require("../config/notion");
 
 /**
  * Sync Steam gaming session records from Notion to Google Calendar
@@ -96,10 +97,18 @@ async function syncSingleSteamSession(
 
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
+    // Extract gameName for display even when skipped
+    const props = config.notion.properties.steam;
+    const gameName = notionService.extractProperty(
+      steamRecord,
+      getPropertyName(props.gameName)
+    );
+
     return {
       skipped: true,
       pageId: steamRecord.id,
       reason: "Missing date, start time, or end time",
+      displayName: gameName || "Unknown",
     };
   }
 
@@ -110,6 +119,13 @@ async function syncSingleSteamSession(
     // Mark as synced in Notion
     await notionService.markSteamSynced(steamRecord.id);
 
+    // Extract gameName from Notion record for consistent display
+    const props = config.notion.properties.steam;
+    const gameName = notionService.extractProperty(
+      steamRecord,
+      getPropertyName(props.gameName)
+    );
+
     return {
       skipped: false,
       created: true,
@@ -117,6 +133,7 @@ async function syncSingleSteamSession(
       calendarId,
       eventId: createdEvent.id,
       summary: event.summary,
+      displayName: gameName || event.summary,
     };
   } catch (error) {
     // Don't mark as synced if calendar creation failed

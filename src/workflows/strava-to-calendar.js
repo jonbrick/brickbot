@@ -10,6 +10,7 @@ const {
 } = require("../transformers/strava-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
+const { getPropertyName } = require("../config/notion");
 
 /**
  * Sync workout records from Notion to Google Calendar
@@ -94,10 +95,18 @@ async function syncSingleWorkout(
 
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
+    // Extract name for display even when skipped
+    const props = config.notion.properties.strava;
+    const name = notionService.extractProperty(
+      workoutRecord,
+      getPropertyName(props.name)
+    );
+
     return {
       skipped: true,
       pageId: workoutRecord.id,
       reason: "Missing date, start time, or duration",
+      displayName: name || "Unknown",
     };
   }
 
@@ -108,6 +117,13 @@ async function syncSingleWorkout(
     // Mark as synced in Notion
     await notionService.markWorkoutSynced(workoutRecord.id);
 
+    // Extract name from Notion record for consistent display
+    const props = config.notion.properties.strava;
+    const name = notionService.extractProperty(
+      workoutRecord,
+      getPropertyName(props.name)
+    );
+
     return {
       skipped: false,
       created: true,
@@ -115,6 +131,7 @@ async function syncSingleWorkout(
       calendarId,
       eventId: createdEvent.id,
       summary: event.summary,
+      displayName: name || event.summary,
     };
   } catch (error) {
     // Don't mark as synced if calendar creation failed

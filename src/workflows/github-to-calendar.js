@@ -10,6 +10,8 @@ const {
 } = require("../transformers/github-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
+const { getPropertyName } = require("../config/notion");
+const { formatDateOnly } = require("../utils/date");
 
 /**
  * Sync PR records from Notion to Google Calendar
@@ -96,10 +98,30 @@ async function syncSinglePR(
 
   // Skip if missing required data
   if (!event.start.date || !event.end.date) {
+    // Extract repository and date for display even when skipped
+    const props = config.notion.properties.github;
+    const repository = notionService.extractProperty(
+      prRecord,
+      getPropertyName(props.repository)
+    );
+    const date = notionService.extractProperty(
+      prRecord,
+      getPropertyName(props.date)
+    );
+    const dateStr = date
+      ? typeof date === "string"
+        ? date.split("T")[0]
+        : formatDateOnly(date)
+      : null;
+    const displayName = dateStr
+      ? `${repository || "Unknown"} (${dateStr})`
+      : repository || "Unknown";
+
     return {
       skipped: true,
       pageId: prRecord.id,
       reason: "Missing date",
+      displayName,
     };
   }
 
@@ -116,6 +138,25 @@ async function syncSinglePR(
     // Mark as synced in Notion
     await notionService.markPRSynced(prRecord.id);
 
+    // Extract repository and date from Notion record for consistent display
+    const props = config.notion.properties.github;
+    const repository = notionService.extractProperty(
+      prRecord,
+      getPropertyName(props.repository)
+    );
+    const date = notionService.extractProperty(
+      prRecord,
+      getPropertyName(props.date)
+    );
+    const dateStr = date
+      ? typeof date === "string"
+        ? date.split("T")[0]
+        : formatDateOnly(date)
+      : null;
+    const displayName = dateStr
+      ? `${repository || "Unknown"} (${dateStr})`
+      : repository || event.summary;
+
     return {
       skipped: false,
       created: true,
@@ -124,6 +165,7 @@ async function syncSinglePR(
       eventId: createdEvent.id,
       summary: event.summary,
       accountType,
+      displayName,
     };
   } catch (error) {
     // Don't mark as synced if calendar creation failed

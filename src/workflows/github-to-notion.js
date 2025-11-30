@@ -58,11 +58,15 @@ async function syncSingleActivity(activity, notionService) {
   const existing = await notionService.findPRByUniqueId(activity.uniqueId);
 
   if (existing) {
+    const displayName = activity.date
+      ? `${activity.repository} (${activity.date})`
+      : activity.repository;
     return {
       skipped: true,
       uniqueId: activity.uniqueId,
       repository: activity.repository,
       date: activity.date,
+      displayName,
       existingPageId: existing.id,
     };
   }
@@ -72,12 +76,17 @@ async function syncSingleActivity(activity, notionService) {
   const databaseId = config.notion.databases.prs;
   const page = await notionService.createPage(databaseId, properties);
 
+  const displayName = activity.date
+    ? `${activity.repository} (${activity.date})`
+    : activity.repository;
+
   return {
     skipped: false,
     created: true,
     uniqueId: activity.uniqueId,
     repository: activity.repository,
     date: activity.date,
+    displayName,
     pageId: page.id,
   };
 }

@@ -18,6 +18,7 @@ const {
 } = require("../src/workflows/withings-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
+const { formatRecordForLogging } = require("../src/utils/display-names");
 
 /**
  * Select source (Oura or Strava) and action type (display only or sync to calendar)
@@ -431,9 +432,23 @@ function displayBodyWeightRecordsTable(records) {
 }
 
 /**
+ * Determine source type from a record
+ * @param {Object} record - Record object
+ * @returns {string} Source type
+ */
+function getSourceTypeFromRecord(record) {
+  if (record.measurementId) return "withings";
+  if (record.sleepId || record.nightOf) return "sleep";
+  if (record.gameName) return "steam";
+  if (record.repository) return "github";
+  if (record.activityId && record.name) return "strava";
+  return "unknown";
+}
+
+/**
  * Print sync results summary
  */
-function printSyncResults(results) {
+function printSyncResults(results, sourceType = null) {
   console.log("\n" + "=".repeat(80));
   console.log("📅 CALENDAR SYNC RESULTS");
   console.log("=".repeat(80) + "\n");
@@ -446,7 +461,14 @@ function printSyncResults(results) {
   if (results.created.length > 0) {
     console.log("Created events:");
     results.created.forEach((r) => {
-      console.log(`  ✅ ${r.summary}`);
+      // Use displayName if available, otherwise determine from record
+      if (r.displayName) {
+        const source = sourceType || getSourceTypeFromRecord(r);
+        console.log(`  ✅ ${formatRecordForLogging(r, source)}`);
+      } else {
+        // Fallback to summary for backward compatibility
+        console.log(`  ✅ ${r.summary || "Unknown"}`);
+      }
     });
     console.log();
   }
@@ -454,7 +476,14 @@ function printSyncResults(results) {
   if (results.skipped.length > 0) {
     console.log("Skipped records:");
     results.skipped.forEach((r) => {
-      console.log(`  ⏭️  Page ID: ${r.pageId} - ${r.reason}`);
+      // Use displayName if available
+      if (r.displayName) {
+        const source = sourceType || getSourceTypeFromRecord(r);
+        console.log(`  ⏭️  ${formatRecordForLogging(r, source)} - ${r.reason}`);
+      } else {
+        // Fallback to pageId for backward compatibility
+        console.log(`  ⏭️  Page ID: ${r.pageId} - ${r.reason}`);
+      }
     });
     console.log();
   }
@@ -615,7 +644,7 @@ async function handleOuraSync(startDate, endDate, action) {
 
     const results = await syncSleepToCalendar(startDate, endDate);
 
-    printSyncResults(results);
+    printSyncResults(results, "sleep");
   }
 }
 
@@ -646,7 +675,7 @@ async function handleStravaSync(startDate, endDate, action) {
 
     const results = await syncWorkoutsToCalendar(startDate, endDate);
 
-    printSyncResults(results);
+    printSyncResults(results, "strava");
   }
 }
 
@@ -674,7 +703,7 @@ async function handleSteamSync(startDate, endDate, action) {
 
     const results = await syncSteamToCalendar(startDate, endDate);
 
-    printSyncResults(results);
+    printSyncResults(results, "steam");
   }
 }
 
@@ -702,7 +731,7 @@ async function handleGitHubSync(startDate, endDate, action) {
 
     const results = await syncPRsToCalendar(startDate, endDate);
 
-    printSyncResults(results);
+    printSyncResults(results, "github");
   }
 }
 
@@ -733,7 +762,7 @@ async function handleBodyWeightSync(startDate, endDate, action) {
 
     const results = await syncBodyWeightToCalendar(startDate, endDate);
 
-    printSyncResults(results);
+    printSyncResults(results, "withings");
   }
 }
 

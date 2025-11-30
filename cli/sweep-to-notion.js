@@ -28,6 +28,7 @@ const {
 const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
 const { sleepCategorization } = require("../src/config/notion");
+const { formatRecordForLogging } = require("../src/utils/display-names");
 
 /**
  * Extract and format sleep data with only the specified fields
@@ -122,6 +123,20 @@ async function selectAction() {
 }
 
 /**
+ * Determine source type from a record
+ * @param {Object} record - Record object
+ * @returns {string} Source type
+ */
+function getSourceTypeFromRecord(record) {
+  if (record.measurementId) return "withings";
+  if (record.sleepId || record.nightOf) return "oura";
+  if (record.gameName) return "steam";
+  if (record.repository) return "github";
+  if (record.activityId && record.name) return "strava";
+  return "unknown";
+}
+
+/**
  * Print sync results summary
  */
 function printSyncResults(results) {
@@ -137,18 +152,8 @@ function printSyncResults(results) {
   if (results.created.length > 0) {
     console.log("Created records:");
     results.created.forEach((r) => {
-      // Handle both Oura (has nightOf) and Strava (has name/activityId)
-      if (r.nightOf) {
-        console.log(`  ✅ ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
-      } else if (r.activityId) {
-        console.log(`  ✅ ${r.name} (Activity ID: ${r.activityId})`);
-      } else if (r.measurementId) {
-        console.log(`  ✅ ${r.name || r.date || "Unknown"} (Measurement ID: ${r.measurementId})`);
-      } else if (r.gameName) {
-        console.log(`  ✅ ${r.gameName} (Activity ID: ${r.activityId})`);
-      } else if (r.repository) {
-        console.log(`  ✅ ${r.repository} (${r.date || "Unknown date"})`);
-      }
+      const sourceType = getSourceTypeFromRecord(r);
+      console.log(`  ✅ ${formatRecordForLogging(r, sourceType)}`);
     });
     console.log();
   }
@@ -156,18 +161,8 @@ function printSyncResults(results) {
   if (results.skipped.length > 0) {
     console.log("Skipped records (already exist):");
     results.skipped.forEach((r) => {
-      // Handle both Oura (has nightOf) and Strava (has name/activityId)
-      if (r.nightOf) {
-        console.log(`  ⏭️  ${formatDate(r.nightOf)} (Sleep ID: ${r.sleepId})`);
-      } else if (r.activityId) {
-        console.log(`  ⏭️  ${r.name} (Activity ID: ${r.activityId})`);
-      } else if (r.measurementId) {
-        console.log(`  ⏭️  ${r.name || r.date || "Unknown"} (Measurement ID: ${r.measurementId})`);
-      } else if (r.gameName) {
-        console.log(`  ⏭️  ${r.gameName} (Activity ID: ${r.activityId})`);
-      } else if (r.repository) {
-        console.log(`  ⏭️  ${r.repository} (${r.date || "Unknown date"})`);
-      }
+      const sourceType = getSourceTypeFromRecord(r);
+      console.log(`  ⏭️  ${formatRecordForLogging(r, sourceType)}`);
     });
     console.log();
   }
@@ -175,7 +170,7 @@ function printSyncResults(results) {
   if (results.errors.length > 0) {
     console.log("Errors:");
     results.errors.forEach((e) => {
-      const identifier = e.session || e.activity || "Unknown";
+      const identifier = e.session || e.activity || e.measurementId || "Unknown";
       console.log(`  ❌ ${identifier}: ${e.error}`);
     });
     console.log();

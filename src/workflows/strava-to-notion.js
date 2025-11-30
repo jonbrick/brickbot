@@ -64,6 +64,7 @@ async function syncSingleActivity(activity, notionService) {
       skipped: true,
       activityId: activity.activityId,
       name: activity.name,
+      displayName: activity.name,
       existingPageId: existing.id,
     };
   }
@@ -78,6 +79,7 @@ async function syncSingleActivity(activity, notionService) {
     created: true,
     activityId: activity.activityId,
     name: activity.name,
+    displayName: activity.name,
     pageId: page.id,
   };
 }

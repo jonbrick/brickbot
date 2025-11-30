@@ -10,6 +10,7 @@ const {
 } = require("../transformers/withings-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
+const { getPropertyName } = require("../config/notion");
 
 /**
  * Sync body weight records from Notion to Google Calendar
@@ -94,10 +95,18 @@ async function syncSingleBodyWeight(
 
   // Skip if missing required data
   if (!event.start.date) {
+    // Extract name for display even when skipped
+    const props = config.notion.properties.withings;
+    const name = notionService.extractProperty(
+      weightRecord,
+      getPropertyName(props.name)
+    );
+
     return {
       skipped: true,
       pageId: weightRecord.id,
       reason: "Missing date",
+      displayName: name || "Unknown",
     };
   }
 
@@ -108,6 +117,13 @@ async function syncSingleBodyWeight(
     // Mark as synced in Notion
     await notionService.markBodyWeightSynced(weightRecord.id);
 
+    // Extract name from Notion record for consistent display
+    const props = config.notion.properties.withings;
+    const name = notionService.extractProperty(
+      weightRecord,
+      getPropertyName(props.name)
+    );
+
     return {
       skipped: false,
       created: true,
@@ -115,6 +131,7 @@ async function syncSingleBodyWeight(
       calendarId,
       eventId: createdEvent.id,
       summary: event.summary,
+      displayName: name || event.summary,
     };
   } catch (error) {
     // Don't mark as synced if calendar creation failed

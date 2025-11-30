@@ -29,10 +29,10 @@ async function selectSourceAndAction() {
       name: "source",
       message: "Select data source:",
       choices: [
-        { name: "Oura (Sleep)", value: "oura" },
-        { name: "Strava (Workouts)", value: "strava" },
-        { name: "Steam (Video Games)", value: "steam" },
         { name: "GitHub (PRs)", value: "github" },
+        { name: "Oura (Sleep)", value: "oura" },
+        { name: "Steam (Video Games)", value: "steam" },
+        { name: "Strava (Workouts)", value: "strava" },
         { name: "Withings (Body Weight)", value: "withings" },
       ],
     },

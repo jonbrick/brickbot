@@ -460,6 +460,10 @@ APPLE_NOTES_PROCESSED_TAG=✅ Processed
 APPLE_NOTES_BATCH_SIZE=50
 ```
 
+## Weekly Analysis
+
+See [WEEK_ANALYSIS.md](./WEEK_ANALYSIS.md) for details.
+
 ## Testing Your Setup
 
 ### 1. Check Token Status

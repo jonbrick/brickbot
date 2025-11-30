@@ -95,6 +95,7 @@ async function selectAction() {
       name: "source",
       message: "Select data source:",
       choices: [
+        { name: "All Sources (GitHub, Oura, Steam, Strava, Withings)", value: "all" },
         { name: "GitHub (PRs)", value: "github" },
         { name: "Oura (Sleep)", value: "oura" },
         { name: "Steam (Video Games)", value: "steam" },
@@ -183,6 +184,83 @@ function printSyncResults(results) {
   console.log("=".repeat(80));
 }
 
+/**
+ * Handle all sources sequentially
+ */
+async function handleAllSources(startDate, endDate, action) {
+  console.log("\n" + "=".repeat(80));
+  console.log("🌟 RUNNING ALL SOURCES");
+  console.log("=".repeat(80));
+  console.log(`Date range: ${formatDate(startDate)} to ${formatDate(endDate)}`);
+  console.log(`Action: ${action === 'sync' ? 'Sync to Notion' : 'Display only'}`);
+  console.log("=".repeat(80) + "\n");
+
+  const sources = [
+    { name: "GitHub", handler: handleGitHubData },
+    { name: "Oura", handler: handleOuraData },
+    { name: "Steam", handler: handleSteamData },
+    { name: "Strava", handler: handleStravaData },
+    { name: "Withings", handler: handleWithingsData },
+  ];
+
+  const aggregatedResults = {
+    successful: [],
+    failed: [],
+  };
+
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    console.log(`\n[${i + 1}/${sources.length}] Processing ${source.name}...`);
+    console.log("-".repeat(80) + "\n");
+
+    try {
+      await source.handler(startDate, endDate, action);
+      aggregatedResults.successful.push(source.name);
+    } catch (error) {
+      console.error(`\n❌ ${source.name} failed:`, error.message);
+      aggregatedResults.failed.push({
+        source: source.name,
+        error: error.message,
+      });
+    }
+
+    // Add a small delay between sources to be respectful of rate limits
+    if (i < sources.length - 1) {
+      console.log("\n" + "-".repeat(80));
+      console.log("⏳ Waiting before next source...\n");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  // Print aggregated summary
+  printAggregatedResults(aggregatedResults);
+}
+
+/**
+ * Print aggregated results from all sources
+ */
+function printAggregatedResults(aggregatedResults) {
+  console.log("\n" + "=".repeat(80));
+  console.log("🌟 AGGREGATED RESULTS - ALL SOURCES");
+  console.log("=".repeat(80) + "\n");
+
+  console.log(`✅ Successful sources: ${aggregatedResults.successful.length}`);
+  if (aggregatedResults.successful.length > 0) {
+    aggregatedResults.successful.forEach(source => {
+      console.log(`   ✓ ${source}`);
+    });
+  }
+
+  console.log(`\n❌ Failed sources: ${aggregatedResults.failed.length}`);
+  if (aggregatedResults.failed.length > 0) {
+    aggregatedResults.failed.forEach(item => {
+      console.log(`   ✗ ${item.source}: ${item.error}`);
+    });
+  }
+
+  console.log("\n" + "=".repeat(80) + "\n");
+}
+
 async function main() {
   console.log("\n🤖 Brickbot - Data Collection Tool\n");
 
@@ -195,7 +273,9 @@ async function main() {
     const { startDate, endDate } = await selectDateRange();
 
     // Route to appropriate handler based on source
-    if (source === "oura") {
+    if (source === "all") {
+      await handleAllSources(startDate, endDate, action);
+    } else if (source === "oura") {
       await handleOuraData(startDate, endDate, action);
     } else if (source === "strava") {
       await handleStravaData(startDate, endDate, action);

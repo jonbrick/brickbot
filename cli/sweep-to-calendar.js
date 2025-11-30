@@ -29,6 +29,7 @@ async function selectSourceAndAction() {
       name: "source",
       message: "Select data source:",
       choices: [
+        { name: "All Sources (GitHub, Oura, Steam, Strava, Withings)", value: "all" },
         { name: "GitHub (PRs)", value: "github" },
         { name: "Oura (Sleep)", value: "oura" },
         { name: "Steam (Video Games)", value: "steam" },
@@ -469,6 +470,83 @@ function printSyncResults(results) {
   console.log("=".repeat(80) + "\n");
 }
 
+/**
+ * Handle all calendar syncs sequentially
+ */
+async function handleAllCalendarSyncs(startDate, endDate, action) {
+  console.log("\n" + "=".repeat(80));
+  console.log("🌟 SYNCING ALL SOURCES TO CALENDAR");
+  console.log("=".repeat(80));
+  console.log(`Date range: ${startDate} to ${endDate}`);
+  console.log(`Action: ${action === 'sync' ? 'Sync to Calendar' : 'Display only'}`);
+  console.log("=".repeat(80) + "\n");
+
+  const sources = [
+    { name: "GitHub", handler: handleGitHubSync },
+    { name: "Oura", handler: handleOuraSync },
+    { name: "Steam", handler: handleSteamSync },
+    { name: "Strava", handler: handleStravaSync },
+    { name: "Withings", handler: handleBodyWeightSync },
+  ];
+
+  const aggregatedResults = {
+    successful: [],
+    failed: [],
+  };
+
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    console.log(`\n[${i + 1}/${sources.length}] Processing ${source.name}...`);
+    console.log("-".repeat(80) + "\n");
+
+    try {
+      await source.handler(startDate, endDate, action);
+      aggregatedResults.successful.push(source.name);
+    } catch (error) {
+      console.error(`\n❌ ${source.name} failed:`, error.message);
+      aggregatedResults.failed.push({
+        source: source.name,
+        error: error.message,
+      });
+    }
+
+    // Add a small delay between sources
+    if (i < sources.length - 1) {
+      console.log("\n" + "-".repeat(80));
+      console.log("⏳ Waiting before next source...\n");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  // Print aggregated summary
+  printAggregatedCalendarResults(aggregatedResults);
+}
+
+/**
+ * Print aggregated calendar sync results
+ */
+function printAggregatedCalendarResults(aggregatedResults) {
+  console.log("\n" + "=".repeat(80));
+  console.log("🌟 AGGREGATED CALENDAR SYNC RESULTS");
+  console.log("=".repeat(80) + "\n");
+
+  console.log(`✅ Successful sources: ${aggregatedResults.successful.length}`);
+  if (aggregatedResults.successful.length > 0) {
+    aggregatedResults.successful.forEach(source => {
+      console.log(`   ✓ ${source}`);
+    });
+  }
+
+  console.log(`\n❌ Failed sources: ${aggregatedResults.failed.length}`);
+  if (aggregatedResults.failed.length > 0) {
+    aggregatedResults.failed.forEach(item => {
+      console.log(`   ✗ ${item.source}: ${item.error}`);
+    });
+  }
+
+  console.log("\n" + "=".repeat(80) + "\n");
+}
+
 async function main() {
   console.log("\n🤖 Brickbot - Sync to Calendar\n");
 
@@ -489,7 +567,9 @@ async function main() {
     const { startDate, endDate } = await selectCalendarDateRange();
 
     // Route to appropriate handler
-    if (source === "oura") {
+    if (source === "all") {
+      await handleAllCalendarSyncs(startDate, endDate, action);
+    } else if (source === "oura") {
       await handleOuraSync(startDate, endDate, action);
     } else if (source === "strava") {
       await handleStravaSync(startDate, endDate, action);

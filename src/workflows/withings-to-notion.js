@@ -64,6 +64,7 @@ async function syncSingleMeasurement(measurement, notionService) {
       skipped: true,
       measurementId: measurement.measurementId,
       date: measurement.dateString,
+      name: measurement.name,
       existingPageId: existing.id,
     };
   }
@@ -78,6 +79,7 @@ async function syncSingleMeasurement(measurement, notionService) {
     created: true,
     measurementId: measurement.measurementId,
     date: measurement.dateString,
+    name: measurement.name,
     pageId: page.id,
   };
 }

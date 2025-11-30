@@ -143,7 +143,7 @@ function printSyncResults(results) {
       } else if (r.activityId) {
         console.log(`  ✅ ${r.name} (Activity ID: ${r.activityId})`);
       } else if (r.measurementId) {
-        console.log(`  ✅ ${r.dateString} (Measurement ID: ${r.measurementId})`);
+        console.log(`  ✅ ${r.name || r.date || "Unknown"} (Measurement ID: ${r.measurementId})`);
       } else if (r.gameName) {
         console.log(`  ✅ ${r.gameName} (Activity ID: ${r.activityId})`);
       } else if (r.repository) {
@@ -162,7 +162,7 @@ function printSyncResults(results) {
       } else if (r.activityId) {
         console.log(`  ⏭️  ${r.name} (Activity ID: ${r.activityId})`);
       } else if (r.measurementId) {
-        console.log(`  ⏭️  ${r.dateString} (Measurement ID: ${r.measurementId})`);
+        console.log(`  ⏭️  ${r.name || r.date || "Unknown"} (Measurement ID: ${r.measurementId})`);
       } else if (r.gameName) {
         console.log(`  ⏭️  ${r.gameName} (Activity ID: ${r.activityId})`);
       } else if (r.repository) {

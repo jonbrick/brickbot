@@ -115,31 +115,35 @@ function getYesterday() {
 }
 
 /**
- * Parse week number to date range
- * @param {number} weekNumber - Week number (1-52)
+ * Parse week number to date range (Sunday-Saturday weeks)
+ * Week 1 is the first week containing January 1st
+ * Weeks start on Sunday and end on Saturday
+ * @param {number} weekNumber - Week number (1-52/53)
  * @param {number} year - Year (defaults to current year)
- * @returns {{startDate: Date, endDate: Date}} Week date range (Monday-Sunday)
+ * @returns {{startDate: Date, endDate: Date}} Week date range (Sunday-Saturday)
  */
 function parseWeekNumber(weekNumber, year = new Date().getFullYear()) {
-  if (weekNumber < 1 || weekNumber > 52) {
-    throw new Error("Week number must be between 1 and 52");
+  if (weekNumber < 1 || weekNumber > 53) {
+    throw new Error("Week number must be between 1 and 53");
   }
 
-  // Get January 1st of the year
+  // Find January 1st of the year
   const jan1 = new Date(year, 0, 1);
+  
+  // Find the Sunday of the week containing January 1st
+  // This is the start of week 1
+  const dayOfWeek = jan1.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const daysToSunday = dayOfWeek === 0 ? 0 : -dayOfWeek; // Convert to days from Sunday
+  const week1Sunday = new Date(jan1);
+  week1Sunday.setDate(jan1.getDate() + daysToSunday);
+  week1Sunday.setHours(0, 0, 0, 0);
 
-  // Find the first Monday of the year
-  const firstMonday = new Date(jan1);
-  const dayOfWeek = jan1.getDay();
-  const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
-  firstMonday.setDate(jan1.getDate() + daysUntilMonday);
-
-  // Calculate the start of the requested week
-  const startDate = new Date(firstMonday);
-  startDate.setDate(firstMonday.getDate() + (weekNumber - 1) * 7);
+  // Calculate the start of the requested week (Sunday)
+  const startDate = new Date(week1Sunday);
+  startDate.setDate(week1Sunday.getDate() + (weekNumber - 1) * 7);
   startDate.setHours(0, 0, 0, 0);
 
-  // Calculate the end of the week (Sunday)
+  // Calculate the end of the week (Saturday)
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 6);
   endDate.setHours(23, 59, 59, 999);
@@ -148,18 +152,31 @@ function parseWeekNumber(weekNumber, year = new Date().getFullYear()) {
 }
 
 /**
- * Get current week number (ISO 8601 week date system)
+ * Get current week number (Sunday-Saturday weeks)
+ * Week 1 is the first week containing January 1st
  * @param {Date} date - Date to get week number for (defaults to today)
- * @returns {number} Week number (1-52)
+ * @returns {number} Week number (1-52/53)
  */
 function getWeekNumber(date = new Date()) {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  );
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+  const year = date.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  
+  // Find the Sunday of the week containing January 1st
+  const dayOfWeek = jan1.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const daysToSunday = dayOfWeek === 0 ? 0 : -dayOfWeek;
+  const week1Sunday = new Date(jan1);
+  week1Sunday.setDate(jan1.getDate() + daysToSunday);
+  
+  // Calculate days from week 1 Sunday to the given date
+  const daysDiff = Math.floor((date - week1Sunday) / (1000 * 60 * 60 * 24));
+  const weekNumber = Math.floor(daysDiff / 7) + 1;
+  
+  // Handle edge case: if date is before week 1 Sunday, it's week 52/53 of previous year
+  if (weekNumber < 1) {
+    return getWeekNumber(new Date(year - 1, 11, 31));
+  }
+  
+  return weekNumber;
 }
 
 /**
@@ -339,23 +356,23 @@ function addMonths(date, months) {
 }
 
 /**
- * Get start of week (Monday) for a given date
+ * Get start of week (Sunday) for a given date
  * @param {Date} date - Date to get week start for
- * @returns {Date} Monday of that week
+ * @returns {Date} Sunday of that week
  */
 function getWeekStart(date) {
   const result = new Date(date);
-  const day = result.getDay();
-  const diff = result.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+  const day = result.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  const diff = result.getDate() - day; // Go back to Sunday
   result.setDate(diff);
   result.setHours(0, 0, 0, 0);
   return result;
 }
 
 /**
- * Get end of week (Sunday) for a given date
+ * Get end of week (Saturday) for a given date
  * @param {Date} date - Date to get week end for
- * @returns {Date} Sunday of that week
+ * @returns {Date} Saturday of that week
  */
 function getWeekEnd(date) {
   const result = getWeekStart(date);

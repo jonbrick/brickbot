@@ -31,7 +31,6 @@ brickbot/
 │   │   ├── StravaService.js
 │   │   ├── SteamService.js
 │   │   ├── WithingsService.js
-│   │   ├── ClaudeService.js
 │   │   ├── AppleNotesService.js
 │   │   └── TokenService.js
 │   │
@@ -294,7 +293,6 @@ User-facing command-line interfaces that:
 
 1. Collector fetches unprocessed notes
 2. For each note:
-   - ClaudeService categorizes (type, priority)
    - Transformer creates Notion task properties
    - NotionService creates task page
    - AppleNotesService marks note as processed
@@ -302,7 +300,7 @@ User-facing command-line interfaces that:
 ### Weekly Analysis Pipeline
 
 1. **pull-data.js**: Query all Notion databases for week, fetch calendar events, save to `data/weekly/`
-2. **summarize.js**: Generate AI summaries with Claude, save to `data/summaries/`
+2. **summarize.js**: Generate AI summaries, save to `data/summaries/`
 3. **retro.js**: Generate retrospective sections, save to `data/retros/`
 4. **recap.js**: Generate final recap, save to Notion
 

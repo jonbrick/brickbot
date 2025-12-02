@@ -10,6 +10,7 @@ const databases = {
   steam: process.env.NOTION_VIDEO_GAMES_DATABASE_ID,
   prs: process.env.NOTION_PRS_DATABASE_ID,
   bodyWeight: process.env.NOTION_BODY_WEIGHT_DATABASE_ID,
+  personalRecap: process.env.PERSONAL_WEEK_RECAP_DATABASE_ID,
 };
 
 // Unified property configuration for sleep database
@@ -170,6 +171,22 @@ const properties = {
       enabled: true,
     },
   },
+  personalRecap: {
+    earlyWakeupDays: {
+      name: "Early Wakeup - Days",
+      type: "number",
+      enabled: true,
+    },
+    sleepInDays: { name: "Sleep In - Days", type: "number", enabled: true },
+    sleepHoursTotal: {
+      name: "Sleep - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    date: { name: "Date", type: "date", enabled: true },
+    weekNumber: { name: "Week Number", type: "number", enabled: true },
+    year: { name: "Year", type: "number", enabled: true },
+  },
 };
 
 // Field mappings: maps config property keys to actual data field names in records
@@ -260,6 +277,14 @@ const fieldMappings = {
     projectType: "projectType",
     uniqueId: "uniqueId",
     calendarCreated: "calendarCreated",
+  },
+  personalRecap: {
+    earlyWakeupDays: "earlyWakeupDays",
+    sleepInDays: "sleepInDays",
+    sleepHoursTotal: "sleepHoursTotal",
+    date: "date",
+    weekNumber: "weekNumber",
+    year: "year",
   },
 };
 

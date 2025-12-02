@@ -10,6 +10,8 @@ const {
   parseDate,
   getToday,
   getYesterday,
+  parseWeekNumber,
+  getWeekNumber,
 } = require("./date");
 
 /**
@@ -542,6 +544,82 @@ async function promptMultiSelect(message, choices) {
   return values;
 }
 
+/**
+ * Select week by week number and year
+ * Prompts user to select a week using ISO-8601 week numbering
+ *
+ * @returns {Promise<{weekNumber: number, year: number, startDate: Date, endDate: Date}>} Week selection
+ */
+async function selectWeek() {
+  const currentDate = getToday();
+  const currentYear = currentDate.getFullYear();
+  const currentWeek = getWeekNumber(currentDate);
+
+  const { weekType } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "weekType",
+      message: "Select week:",
+      choices: [
+        {
+          name: `Current Week (Week ${currentWeek}, ${currentYear})`,
+          value: "current",
+        },
+        { name: "Custom Week", value: "custom" },
+      ],
+    },
+  ]);
+
+  let weekNumber, year;
+
+  if (weekType === "current") {
+    weekNumber = currentWeek;
+    year = currentYear;
+  } else {
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        name: "year",
+        message: "Year:",
+        default: currentYear.toString(),
+        validate: (input) => {
+          const yearNum = parseInt(input);
+          if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+            return "Please enter a valid year (2000-2100)";
+          }
+          return true;
+        },
+      },
+      {
+        type: "input",
+        name: "weekNumber",
+        message: "Week number (1-52/53):",
+        validate: (input) => {
+          const weekNum = parseInt(input);
+          if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
+            return "Please enter a valid week number (1-53)";
+          }
+          return true;
+        },
+      },
+    ]);
+
+    weekNumber = parseInt(answers.weekNumber);
+    year = parseInt(answers.year);
+  }
+
+  // Calculate week date range
+  const { startDate, endDate } = parseWeekNumber(weekNumber, year);
+
+  console.log(
+    `\n📅 Week selected: Week ${weekNumber}, ${year} (${formatDateLong(
+      startDate
+    )} to ${formatDateLong(endDate)})\n`
+  );
+
+  return { weekNumber, year, startDate, endDate };
+}
+
 module.exports = {
   selectDateRange,
   selectCalendarDateRange,
@@ -559,4 +637,5 @@ module.exports = {
   promptText,
   promptSelect,
   promptMultiSelect,
+  selectWeek,
 };

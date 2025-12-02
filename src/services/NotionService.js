@@ -415,7 +415,135 @@ class NotionService {
       config.notion.properties.withings.measurementId
     );
 
-    return await this.findPageByProperty(databaseId, propertyName, measurementId);
+    return await this.findPageByProperty(
+      databaseId,
+      propertyName,
+      measurementId
+    );
+  }
+
+  /**
+   * Find week recap record by week number and year
+   * Falls back to date range query if Week Number property doesn't exist
+   *
+   * @param {number} weekNumber - Week number (1-52/53)
+   * @param {number} year - Year
+   * @param {Date} startDate - Start date of week (for fallback)
+   * @param {Date} endDate - End date of week (for fallback)
+   * @returns {Promise<Object|null>} Existing page or null
+   */
+  async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
+    const databaseId = config.notion.databases.personalRecap;
+    if (!databaseId) {
+      return null;
+    }
+
+    const weekNumberProperty = config.notion.getPropertyName(
+      config.notion.properties.personalRecap.weekNumber
+    );
+    const yearProperty = config.notion.getPropertyName(
+      config.notion.properties.personalRecap.year
+    );
+    const dateProperty = config.notion.getPropertyName(
+      config.notion.properties.personalRecap.date
+    );
+
+    // Try querying by week number and year first
+    try {
+      const filter = {
+        and: [
+          {
+            property: weekNumberProperty,
+            number: {
+              equals:
+                typeof weekNumber === "string"
+                  ? parseFloat(weekNumber)
+                  : weekNumber,
+            },
+          },
+          {
+            property: yearProperty,
+            number: {
+              equals: typeof year === "string" ? parseFloat(year) : year,
+            },
+          },
+        ],
+      };
+
+      const results = await this.queryDatabase(databaseId, filter);
+      if (results.length > 0) {
+        return results[0];
+      }
+    } catch (error) {
+      // If Week Number property doesn't exist, fall back to date range query
+      if (
+        error.message.includes("Could not find property") &&
+        startDate &&
+        endDate
+      ) {
+        try {
+          return await this.filterByDateRange(
+            databaseId,
+            dateProperty,
+            startDate,
+            endDate
+          ).then((results) => (results.length > 0 ? results[0] : null));
+        } catch (dateError) {
+          // If date query also fails, return null
+          return null;
+        }
+      }
+      // Re-throw if it's a different error
+      throw error;
+    }
+
+    // If no results found and we have dates, try date range fallback
+    if (startDate && endDate) {
+      try {
+        const results = await this.filterByDateRange(
+          databaseId,
+          dateProperty,
+          startDate,
+          endDate
+        );
+        return results.length > 0 ? results[0] : null;
+      } catch (error) {
+        // If date query fails, return null
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Update week recap with summary data
+   *
+   * @param {string} pageId - Page ID to update
+   * @param {Object} summaryData - Summary data to update
+   * @returns {Promise<Object>} Updated page
+   */
+  async updateWeekRecap(pageId, summaryData) {
+    const props = config.notion.properties.personalRecap;
+
+    const properties = {};
+
+    if (summaryData.earlyWakeupDays !== undefined) {
+      properties[config.notion.getPropertyName(props.earlyWakeupDays)] =
+        summaryData.earlyWakeupDays;
+    }
+
+    if (summaryData.sleepInDays !== undefined) {
+      properties[config.notion.getPropertyName(props.sleepInDays)] =
+        summaryData.sleepInDays;
+    }
+
+    if (summaryData.sleepHoursTotal !== undefined) {
+      properties[config.notion.getPropertyName(props.sleepHoursTotal)] =
+        summaryData.sleepHoursTotal;
+    }
+
+    return await this.updatePage(pageId, properties);
   }
 
   /**
@@ -916,9 +1044,7 @@ class NotionService {
 
       return await this.queryDatabaseAll(databaseId, filter);
     } catch (error) {
-      throw new Error(
-        `Failed to get unsynced Steam records: ${error.message}`
-      );
+      throw new Error(`Failed to get unsynced Steam records: ${error.message}`);
     }
   }
 
@@ -985,9 +1111,7 @@ class NotionService {
 
       return await this.queryDatabaseAll(databaseId, filter);
     } catch (error) {
-      throw new Error(
-        `Failed to get unsynced PR records: ${error.message}`
-      );
+      throw new Error(`Failed to get unsynced PR records: ${error.message}`);
     }
   }
 
@@ -1023,7 +1147,6 @@ class NotionService {
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
-
 }
 
 module.exports = NotionService;

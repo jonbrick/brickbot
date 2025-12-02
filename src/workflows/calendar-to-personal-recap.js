@@ -295,8 +295,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
       console.log();
     }
 
-    // Calculate summary
-    const summary = calculateWeekSummary(calendarEvents, startDate, endDate);
+    // Calculate summary (only for selected calendars)
+    const summary = calculateWeekSummary(calendarEvents, startDate, endDate, calendarsToFetch);
     results.summary = summary;
 
     // If display only, return early without updating Notion

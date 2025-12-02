@@ -22,12 +22,15 @@
  *   }
  * @param {Date} weekStartDate - Start date of the week (Sunday)
  * @param {Date} weekEndDate - End date of the week (Saturday)
- * @returns {Object} Summary object with all calendar metrics
+ * @param {Array<string>} selectedCalendars - Array of calendar keys to include (e.g., ["sleep", "sober", "drinking"])
+ *   If not provided, calculates metrics for all calendars (backward compatible)
+ * @returns {Object} Summary object with calendar metrics for selected calendars only
  */
 function calculateWeekSummary(
   calendarEvents,
   weekStartDate = null,
-  weekEndDate = null
+  weekEndDate = null,
+  selectedCalendars = null
 ) {
   // Helper to check if a date string is within the week range
   const isDateInWeek = (dateStr) => {
@@ -77,98 +80,135 @@ function calculateWeekSummary(
     };
   };
 
-  // Calculate metrics for each calendar type
-  const earlyWakeup = calculateCalendarMetrics(
-    calendarEvents.earlyWakeup || [],
-    true,
-    false
-  );
-  const sleepIn = calculateCalendarMetrics(
-    calendarEvents.sleepIn || [],
-    true,
-    false
-  );
-  const sober = calculateCalendarMetrics(
-    calendarEvents.sober || [],
-    false,
-    false
-  );
-  const drinking = calculateCalendarMetrics(
-    calendarEvents.drinking || [],
-    false,
-    false
-  );
-  const workout = calculateCalendarMetrics(
-    calendarEvents.workout || [],
-    true,
-    true
-  );
-  const reading = calculateCalendarMetrics(
-    calendarEvents.reading || [],
-    true,
-    true
-  );
-  const coding = calculateCalendarMetrics(
-    calendarEvents.coding || [],
-    true,
-    true
-  );
-  const art = calculateCalendarMetrics(calendarEvents.art || [], true, true);
-  const videoGames = calculateCalendarMetrics(
-    calendarEvents.videoGames || [],
-    true,
-    true
-  );
-  const meditation = calculateCalendarMetrics(
-    calendarEvents.meditation || [],
-    true,
-    true
-  );
-
-  // Calculate total sleep hours
-  const sleepHoursTotal =
-    (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
-
-  return {
-    // Sleep metrics
-    earlyWakeupDays: earlyWakeup.days,
-    sleepInDays: sleepIn.days,
-    sleepHoursTotal: Math.round(sleepHoursTotal * 100) / 100,
-
-    // Sober and Drinking metrics
-    soberDays: sober.days,
-    drinkingDays: drinking.days,
-
-    // Workout metrics
-    workoutDays: workout.days,
-    workoutSessions: workout.sessions,
-    workoutHoursTotal: workout.hoursTotal,
-
-    // Reading metrics
-    readingDays: reading.days,
-    readingSessions: reading.sessions,
-    readingHoursTotal: reading.hoursTotal,
-
-    // Coding metrics
-    codingDays: coding.days,
-    codingSessions: coding.sessions,
-    codingHoursTotal: coding.hoursTotal,
-
-    // Art metrics
-    artDays: art.days,
-    artSessions: art.sessions,
-    artHoursTotal: art.hoursTotal,
-
-    // Video Games metrics
-    videoGamesDays: videoGames.days,
-    videoGamesSessions: videoGames.sessions,
-    videoGamesTotal: videoGames.hoursTotal, // Note: CSV uses "Total" not "Hours Total"
-
-    // Meditation metrics
-    meditationDays: meditation.days,
-    meditationSessions: meditation.sessions,
-    meditationHours: meditation.hoursTotal, // Note: CSV uses "Hours" not "Hours Total"
+  // Determine which calendars to calculate metrics for
+  // If selectedCalendars is null/undefined, calculate all (backward compatible)
+  const shouldCalculate = (calendarKey) => {
+    if (!selectedCalendars || selectedCalendars.length === 0) {
+      return true; // Calculate all if no selection provided
+    }
+    return selectedCalendars.includes(calendarKey);
   };
+
+  const summary = {};
+
+  // Sleep metrics (only if "sleep" is selected)
+  if (shouldCalculate("sleep")) {
+    const earlyWakeup = calculateCalendarMetrics(
+      calendarEvents.earlyWakeup || [],
+      true,
+      false
+    );
+    const sleepIn = calculateCalendarMetrics(
+      calendarEvents.sleepIn || [],
+      true,
+      false
+    );
+    const sleepHoursTotal =
+      (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
+
+    summary.earlyWakeupDays = earlyWakeup.days;
+    summary.sleepInDays = sleepIn.days;
+    summary.sleepHoursTotal = Math.round(sleepHoursTotal * 100) / 100;
+  }
+
+  // Sober metrics (only if "sober" is selected)
+  if (shouldCalculate("sober")) {
+    const sober = calculateCalendarMetrics(
+      calendarEvents.sober || [],
+      false,
+      false
+    );
+    summary.soberDays = sober.days;
+  }
+
+  // Drinking metrics (only if "drinking" is selected)
+  if (shouldCalculate("drinking")) {
+    const drinking = calculateCalendarMetrics(
+      calendarEvents.drinking || [],
+      false,
+      false
+    );
+    summary.drinkingDays = drinking.days;
+
+    // Calculate drinking blocks (event summaries) from drinking events
+    const drinkingEvents = calendarEvents.drinking || [];
+    const filteredDrinkingEvents = drinkingEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.drinkingBlocks = filteredDrinkingEvents
+      .map((event) => event.summary || "Untitled Event")
+      .join(", ") || "";
+  }
+
+  // Workout metrics (only if "workout" is selected)
+  if (shouldCalculate("workout")) {
+    const workout = calculateCalendarMetrics(
+      calendarEvents.workout || [],
+      true,
+      true
+    );
+    summary.workoutDays = workout.days;
+    summary.workoutSessions = workout.sessions;
+    summary.workoutHoursTotal = workout.hoursTotal;
+  }
+
+  // Reading metrics (only if "reading" is selected)
+  if (shouldCalculate("reading")) {
+    const reading = calculateCalendarMetrics(
+      calendarEvents.reading || [],
+      true,
+      true
+    );
+    summary.readingDays = reading.days;
+    summary.readingSessions = reading.sessions;
+    summary.readingHoursTotal = reading.hoursTotal;
+  }
+
+  // Coding metrics (only if "coding" is selected)
+  if (shouldCalculate("coding")) {
+    const coding = calculateCalendarMetrics(
+      calendarEvents.coding || [],
+      true,
+      true
+    );
+    summary.codingDays = coding.days;
+    summary.codingSessions = coding.sessions;
+    summary.codingHoursTotal = coding.hoursTotal;
+  }
+
+  // Art metrics (only if "art" is selected)
+  if (shouldCalculate("art")) {
+    const art = calculateCalendarMetrics(calendarEvents.art || [], true, true);
+    summary.artDays = art.days;
+    summary.artSessions = art.sessions;
+    summary.artHoursTotal = art.hoursTotal;
+  }
+
+  // Video Games metrics (only if "videoGames" is selected)
+  if (shouldCalculate("videoGames")) {
+    const videoGames = calculateCalendarMetrics(
+      calendarEvents.videoGames || [],
+      true,
+      true
+    );
+    summary.videoGamesDays = videoGames.days;
+    summary.videoGamesSessions = videoGames.sessions;
+    summary.videoGamesTotal = videoGames.hoursTotal; // Note: CSV uses "Total" not "Hours Total"
+  }
+
+  // Meditation metrics (only if "meditation" is selected)
+  if (shouldCalculate("meditation")) {
+    const meditation = calculateCalendarMetrics(
+      calendarEvents.meditation || [],
+      true,
+      true
+    );
+    summary.meditationDays = meditation.days;
+    summary.meditationSessions = meditation.sessions;
+    summary.meditationHours = meditation.hoursTotal; // Note: CSV uses "Hours" not "Hours Total"
+  }
+
+  return summary;
 }
 
 module.exports = {

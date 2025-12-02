@@ -28,6 +28,11 @@ module.exports = {
       type: "number",
       enabled: true,
     },
+    drinkingBlocks: {
+      name: "Drinking - Blocks",
+      type: "text",
+      enabled: true,
+    },
     workoutDays: {
       name: "Workout - Days",
       type: "number",
@@ -159,6 +164,7 @@ module.exports = {
     sleepHoursTotal: "sleepHoursTotal",
     soberDays: "soberDays",
     drinkingDays: "drinkingDays",
+    drinkingBlocks: "drinkingBlocks",
     workoutDays: "workoutDays",
     workoutSessions: "workoutSessions",
     workoutHoursTotal: "workoutHoursTotal",

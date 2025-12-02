@@ -169,6 +169,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.drinkingDays !== undefined) {
       console.log(`  Drinking Days: ${result.summary.drinkingDays}`);
     }
+    if (result.summary.drinkingBlocks !== undefined && result.summary.drinkingBlocks) {
+      console.log(`  Drinking Blocks: ${result.summary.drinkingBlocks}`);
+    }
   }
   
   if (selectedCalendar === "workout" || showAll) {
@@ -345,6 +348,9 @@ async function main() {
         }
         if (result.summary.drinkingDays !== undefined) {
           summaryData.drinkingDays = result.summary.drinkingDays;
+        }
+        if (result.summary.drinkingBlocks !== undefined) {
+          summaryData.drinkingBlocks = result.summary.drinkingBlocks;
         }
       }
       

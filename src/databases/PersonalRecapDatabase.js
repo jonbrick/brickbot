@@ -91,6 +91,11 @@ class PersonalRecapDatabase extends NotionDatabase {
         summaryData.drinkingDays;
     }
 
+    if (summaryData.drinkingBlocks !== undefined) {
+      properties[config.notion.getPropertyName(props.drinkingBlocks)] =
+        summaryData.drinkingBlocks;
+    }
+
     // Workout metrics
     if (summaryData.workoutDays !== undefined) {
       properties[config.notion.getPropertyName(props.workoutDays)] =

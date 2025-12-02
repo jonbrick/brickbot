@@ -444,12 +444,10 @@ class NotionDatabase {
                 select: { name: value },
               };
             } else {
-              // Skip empty strings for rich_text - Notion doesn't accept them
-              if (value === "") {
-                return;
-              }
+              // Allow empty strings for rich_text to enable clearing fields
+              // Notion API accepts empty rich_text arrays to clear fields
               formatted[key] = {
-                rich_text: [{ text: { content: value } }],
+                rich_text: value === "" ? [] : [{ text: { content: value } }],
               };
             }
           }

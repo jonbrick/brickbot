@@ -117,8 +117,9 @@ function calculateWeekSummary(
     const sleepHoursTotal =
       (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
 
-    summary.earlyWakeupDays = earlyWakeup.days;
-    summary.sleepInDays = sleepIn.days;
+    // Always include all fields for selected calendar (clean slate)
+    summary.earlyWakeupDays = earlyWakeup.days || 0;
+    summary.sleepInDays = sleepIn.days || 0;
     summary.sleepHoursTotal = Math.round(sleepHoursTotal * 100) / 100;
   }
 
@@ -129,7 +130,8 @@ function calculateWeekSummary(
       false,
       false
     );
-    summary.soberDays = sober.days;
+    // Always include all fields for selected calendar (clean slate)
+    summary.soberDays = sober.days || 0;
   }
 
   // Drinking metrics (only if "drinking" is selected)
@@ -139,7 +141,8 @@ function calculateWeekSummary(
       false,
       false
     );
-    summary.drinkingDays = drinking.days;
+    // Always include all fields for selected calendar (clean slate)
+    summary.drinkingDays = drinking.days || 0;
 
     // Calculate drinking blocks (event summaries) from drinking events
     const drinkingEvents = calendarEvents.drinking || [];
@@ -169,9 +172,10 @@ function calculateWeekSummary(
       true,
       true
     );
-    summary.workoutDays = workout.days;
-    summary.workoutSessions = workout.sessions;
-    summary.workoutHoursTotal = workout.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.workoutDays = workout.days || 0;
+    summary.workoutSessions = workout.sessions !== undefined ? workout.sessions : 0;
+    summary.workoutHoursTotal = workout.hoursTotal !== undefined ? workout.hoursTotal : 0;
 
     // Calculate workout blocks (event summaries) from workout events
     const workoutEvents = calendarEvents.workout || [];
@@ -197,9 +201,10 @@ function calculateWeekSummary(
       true,
       true
     );
-    summary.readingDays = reading.days;
-    summary.readingSessions = reading.sessions;
-    summary.readingHoursTotal = reading.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.readingDays = reading.days || 0;
+    summary.readingSessions = reading.sessions !== undefined ? reading.sessions : 0;
+    summary.readingHoursTotal = reading.hoursTotal !== undefined ? reading.hoursTotal : 0;
 
     // Calculate reading blocks (event summaries) from reading events
     const readingEvents = calendarEvents.reading || [];
@@ -225,9 +230,10 @@ function calculateWeekSummary(
       true,
       true
     );
-    summary.codingDays = coding.days;
-    summary.codingSessions = coding.sessions;
-    summary.codingHoursTotal = coding.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.codingDays = coding.days || 0;
+    summary.codingSessions = coding.sessions !== undefined ? coding.sessions : 0;
+    summary.codingHoursTotal = coding.hoursTotal !== undefined ? coding.hoursTotal : 0;
 
     // Calculate coding blocks (event summaries) from coding events
     const codingEvents = calendarEvents.coding || [];
@@ -249,9 +255,10 @@ function calculateWeekSummary(
   // Art metrics (only if "art" is selected)
   if (shouldCalculate("art")) {
     const art = calculateCalendarMetrics(calendarEvents.art || [], true, true);
-    summary.artDays = art.days;
-    summary.artSessions = art.sessions;
-    summary.artHoursTotal = art.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.artDays = art.days || 0;
+    summary.artSessions = art.sessions !== undefined ? art.sessions : 0;
+    summary.artHoursTotal = art.hoursTotal !== undefined ? art.hoursTotal : 0;
 
     // Calculate art blocks (event summaries) from art events
     const artEvents = calendarEvents.art || [];
@@ -277,9 +284,10 @@ function calculateWeekSummary(
       true,
       true
     );
-    summary.videoGamesDays = videoGames.days;
-    summary.videoGamesSessions = videoGames.sessions;
-    summary.videoGamesHoursTotal = videoGames.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.videoGamesDays = videoGames.days || 0;
+    summary.videoGamesSessions = videoGames.sessions !== undefined ? videoGames.sessions : 0;
+    summary.videoGamesHoursTotal = videoGames.hoursTotal !== undefined ? videoGames.hoursTotal : 0;
 
     // Calculate video games blocks (event summaries) from video games events
     const videoGamesEvents = calendarEvents.videoGames || [];
@@ -305,9 +313,10 @@ function calculateWeekSummary(
       true,
       true
     );
-    summary.meditationDays = meditation.days;
-    summary.meditationSessions = meditation.sessions;
-    summary.meditationHoursTotal = meditation.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.meditationDays = meditation.days || 0;
+    summary.meditationSessions = meditation.sessions !== undefined ? meditation.sessions : 0;
+    summary.meditationHoursTotal = meditation.hoursTotal !== undefined ? meditation.hoursTotal : 0;
 
     // Calculate meditation blocks (event summaries) from meditation events
     const meditationEvents = calendarEvents.meditation || [];
@@ -333,9 +342,10 @@ function calculateWeekSummary(
       true,
       true
     );
-    summary.musicDays = music.days;
-    summary.musicSessions = music.sessions;
-    summary.musicHoursTotal = music.hoursTotal;
+    // Always include all fields for selected calendar (clean slate)
+    summary.musicDays = music.days || 0;
+    summary.musicSessions = music.sessions !== undefined ? music.sessions : 0;
+    summary.musicHoursTotal = music.hoursTotal !== undefined ? music.hoursTotal : 0;
 
     // Calculate music blocks (event summaries) from music events
     const musicEvents = calendarEvents.music || [];
@@ -370,11 +380,37 @@ function calculateWeekSummary(
       })
       .filter((weight) => weight !== null);
 
+    // Always include field for selected calendar (clean slate)
     // Calculate average
     if (weights.length > 0) {
       const sum = weights.reduce((acc, weight) => acc + weight, 0);
       summary.bodyWeightAverage = Math.round((sum / weights.length) * 10) / 10; // Round to 1 decimal
+    } else {
+      // Set to 0 if no weights found (will need to handle null/undefined in property builder)
+      summary.bodyWeightAverage = 0;
     }
+  }
+
+  // Personal PRs metrics (only if "personalPRs" is selected)
+  if (shouldCalculate("personalPRs")) {
+    const prsEvents = calendarEvents.personalPRs || [];
+    const filteredPRsEvents = prsEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+
+    // Always include all fields for selected calendar (clean slate)
+    // Calculate sessions (count of events)
+    summary.prsSessions = filteredPRsEvents.length || 0;
+
+    // Calculate details (formatted as "title (day)" - no hours)
+    summary.prsDetails =
+      filteredPRsEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          return `${eventName} (${day})`;
+        })
+        .join(", ") || "";
   }
 
   // Personal Calendar blocks (only if "personalCalendar" is selected)
@@ -406,32 +442,49 @@ function calculateWeekSummary(
       "home",
       "physicalHealth",
       "mentalHealth",
+      "ignore",
     ];
 
     categories.forEach((category) => {
       const categoryEvents = eventsByCategory[category] || [];
 
-      // Calculate sessions (count of events)
-      summary[`${category}Sessions`] = categoryEvents.length;
+      // For "ignore" category, only calculate blocks
+      if (category === "ignore") {
+        // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
+        summary[`${category}Blocks`] =
+          categoryEvents
+            .map((event) => {
+              const eventName = event.summary || "Untitled Event";
+              const day = getDayAbbreviation(event.date);
+              const duration = event.durationHours || 0;
+              const durationRounded = Math.round(duration * 100) / 100;
+              return `${eventName} (${day} - ${durationRounded} hours)`;
+            })
+            .join(", ") || "";
+      } else {
+        // Always include all fields for selected calendar (clean slate)
+        // Calculate sessions (count of events)
+        summary[`${category}Sessions`] = categoryEvents.length || 0;
 
-      // Calculate hours total (sum of durationHours, rounded to 2 decimals)
-      const hoursTotal = categoryEvents.reduce(
-        (sum, event) => sum + (event.durationHours || 0),
-        0
-      );
-      summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
+        // Calculate hours total (sum of durationHours, rounded to 2 decimals)
+        const hoursTotal = categoryEvents.reduce(
+          (sum, event) => sum + (event.durationHours || 0),
+          0
+        );
+        summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
-      // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
-      summary[`${category}Blocks`] =
-        categoryEvents
-          .map((event) => {
-            const eventName = event.summary || "Untitled Event";
-            const day = getDayAbbreviation(event.date);
-            const duration = event.durationHours || 0;
-            const durationRounded = Math.round(duration * 100) / 100;
-            return `${eventName} (${day} - ${durationRounded} hours)`;
-          })
-          .join(", ") || "";
+        // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
+        summary[`${category}Blocks`] =
+          categoryEvents
+            .map((event) => {
+              const eventName = event.summary || "Untitled Event";
+              const day = getDayAbbreviation(event.date);
+              const duration = event.durationHours || 0;
+              const durationRounded = Math.round(duration * 100) / 100;
+              return `${eventName} (${day} - ${durationRounded} hours)`;
+            })
+            .join(", ") || "";
+      }
     });
   }
 

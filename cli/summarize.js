@@ -129,6 +129,13 @@ async function selectCalendars() {
     });
   }
 
+  if (process.env.PERSONAL_PRS_CALENDAR_ID) {
+    availableCalendars.push({
+      name: "Personal PRs",
+      value: "personalPRs",
+    });
+  }
+
   if (availableCalendars.length === 0) {
     throw new Error(
       "No calendars are configured. Please set calendar IDs in your .env file."
@@ -361,6 +368,18 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
+  if (selectedCalendar === "personalPRs" || showAll) {
+    if (result.summary.prsSessions !== undefined) {
+      console.log(`  PRs Sessions: ${result.summary.prsSessions}`);
+    }
+    if (
+      result.summary.prsDetails !== undefined &&
+      result.summary.prsDetails
+    ) {
+      console.log(`  PRs Details: ${result.summary.prsDetails}`);
+    }
+  }
+
   if (selectedCalendar === "personalCalendar" || showAll) {
     // Personal category metrics
     if (result.summary.personalSessions !== undefined) {
@@ -458,6 +477,14 @@ function displaySummaryResults(result, selectedCalendar = "all") {
         `  Mental Health Blocks: ${result.summary.mentalHealthBlocks}`
       );
     }
+
+    // Ignore category metrics
+    if (
+      result.summary.ignoreBlocks !== undefined &&
+      result.summary.ignoreBlocks
+    ) {
+      console.log(`  Ignore Blocks: ${result.summary.ignoreBlocks}`);
+    }
   }
 
   console.log("\n" + "=".repeat(80) + "\n");
@@ -524,6 +551,9 @@ async function main() {
       }
       if (process.env.PERSONAL_MAIN_CALENDAR_ID) {
         expandedCalendars.push("personalCalendar");
+      }
+      if (process.env.PERSONAL_PRS_CALENDAR_ID) {
+        expandedCalendars.push("personalPRs");
       }
     } else if (selectedCalendar === "drinkingDays") {
       expandedCalendars = ["sober", "drinking"];
@@ -695,6 +725,15 @@ async function main() {
         }
       }
 
+      if (selectedCalendar === "personalPRs" || showAll) {
+        if (result.summary.prsSessions !== undefined) {
+          summaryData.prsSessions = result.summary.prsSessions;
+        }
+        if (result.summary.prsDetails !== undefined) {
+          summaryData.prsDetails = result.summary.prsDetails;
+        }
+      }
+
       if (selectedCalendar === "personalCalendar" || showAll) {
         if (result.summary.personalSessions !== undefined) {
           summaryData.personalSessions = result.summary.personalSessions;
@@ -747,6 +786,9 @@ async function main() {
         }
         if (result.summary.mentalHealthBlocks !== undefined) {
           summaryData.mentalHealthBlocks = result.summary.mentalHealthBlocks;
+        }
+        if (result.summary.ignoreBlocks !== undefined) {
+          summaryData.ignoreBlocks = result.summary.ignoreBlocks;
         }
       }
 

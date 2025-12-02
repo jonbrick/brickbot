@@ -54,6 +54,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     const musicCalendarId = process.env.MUSIC_CALENDAR_ID;
     const bodyWeightCalendarId = process.env.BODY_WEIGHT_CALENDAR_ID;
     const personalMainCalendarId = process.env.PERSONAL_MAIN_CALENDAR_ID;
+    const personalPRsCalendarId = process.env.PERSONAL_PRS_CALENDAR_ID;
 
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
@@ -72,6 +73,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           ...(musicCalendarId ? ["music"] : []),
           ...(bodyWeightCalendarId ? ["bodyWeight"] : []),
           ...(personalMainCalendarId ? ["personalCalendar"] : []),
+          ...(personalPRsCalendarId ? ["personalPRs"] : []),
         ];
 
     // Build array of calendar fetch promises based on selection
@@ -308,6 +310,24 @@ async function summarizeWeek(weekNumber, year, options = {}) {
       });
     }
 
+    // Personal PRs calendar
+    if (calendarsToFetch.includes("personalPRs")) {
+      if (!personalPRsCalendarId) {
+        throw new Error("PERSONAL_PRS_CALENDAR_ID is not configured.");
+      }
+      calendarFetches.push({
+        key: "personalPRs",
+        promise: fetchCalendarSummary(
+          personalPRsCalendarId,
+          startDate,
+          endDate,
+          accountType,
+          false, // isSleepCalendar = false
+          false // ignoreAllDayEvents = false (keep all-day events)
+        ),
+      });
+    }
+
     if (calendarFetches.length === 0) {
       throw new Error("No calendars selected or available to fetch.");
     }
@@ -393,7 +413,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
 
     // Update week recap
     showProgress("Updating Personal Recap database...");
-    await personalRecapRepo.updateWeekRecap(weekRecap.id, summary);
+    await personalRecapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
 
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);
@@ -474,6 +494,10 @@ async function summarizeWeek(weekNumber, year, options = {}) {
       if (categoryMetrics.length > 0) {
         metrics.push(...categoryMetrics);
       }
+    }
+    
+    if (calendarsToFetch.includes("personalPRs")) {
+      if (summary.prsSessions !== undefined) metrics.push(`${summary.prsSessions} PR sessions`);
     }
     
     showSuccess(

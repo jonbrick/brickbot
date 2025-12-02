@@ -189,6 +189,17 @@ module.exports = {
       enabled: true,
     },
 
+    prsSessions: {
+      name: "PRs - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    prsDetails: {
+      name: "PRs - Details",
+      type: "text",
+      enabled: true,
+    },
+
     personalSessions: {
       name: "Personal - Sessions",
       type: "number",
@@ -269,6 +280,12 @@ module.exports = {
       enabled: true,
     },
 
+    ignoreBlocks: {
+      name: "Ignore - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
     date: { name: "Date", type: "date", enabled: true },
     weekNumber: { name: "Week Number", type: "number", enabled: true },
     year: { name: "Year", type: "number", enabled: true },
@@ -324,6 +341,9 @@ module.exports = {
     mentalHealthSessions: "mentalHealthSessions",
     mentalHealthHoursTotal: "mentalHealthHoursTotal",
     mentalHealthBlocks: "mentalHealthBlocks",
+    ignoreBlocks: "ignoreBlocks",
+    prsSessions: "prsSessions",
+    prsDetails: "prsDetails",
     date: "date",
     weekNumber: "weekNumber",
     year: "year",

@@ -60,13 +60,18 @@ class PersonalRecapDatabase extends NotionDatabase {
    *
    * @param {string} pageId - Page ID to update
    * @param {Object} summaryData - Summary data to update
+   * @param {Array<string>} selectedCalendars - Array of calendar keys to ensure all fields are included for (e.g., ["sleep", "workout"])
    * @returns {Promise<Object>} Updated page
    */
-  async updateWeekRecap(pageId, summaryData) {
+  async updateWeekRecap(pageId, summaryData, selectedCalendars = []) {
     const props = config.notion.properties.personalRecap;
 
     // Build properties with validation - throws clear error if config is missing
-    const properties = buildPersonalRecapProperties(summaryData, props);
+    const properties = buildPersonalRecapProperties(
+      summaryData,
+      props,
+      selectedCalendars
+    );
 
     return await this.updatePage(pageId, properties);
   }

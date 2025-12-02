@@ -11,12 +11,57 @@ const config = require("../config");
  *
  * @param {Object} summaryData - Summary data to convert to properties
  * @param {Object} props - Property configuration from config.notion.properties.personalRecap
+ * @param {Array<string>} selectedCalendars - Array of calendar keys to ensure all fields are included for (e.g., ["sleep", "workout"])
  * @returns {Object} Properties object ready for Notion API
  * @throws {Error} If any property configuration is missing
  */
-function buildPersonalRecapProperties(summaryData, props) {
+function buildPersonalRecapProperties(summaryData, props, selectedCalendars = []) {
   const properties = {};
   const missingProps = [];
+
+  // Map calendar keys to their field names for clean slate functionality
+  const calendarFieldMap = {
+    sleep: ["earlyWakeupDays", "sleepInDays", "sleepHoursTotal"],
+    sober: ["soberDays"],
+    drinking: ["drinkingDays", "drinkingBlocks"],
+    workout: ["workoutDays", "workoutSessions", "workoutHoursTotal", "workoutBlocks"],
+    reading: ["readingDays", "readingSessions", "readingHoursTotal", "readingBlocks"],
+    coding: ["codingDays", "codingSessions", "codingHoursTotal", "codingBlocks"],
+    art: ["artDays", "artSessions", "artHoursTotal", "artBlocks"],
+    videoGames: ["videoGamesDays", "videoGamesSessions", "videoGamesHoursTotal", "videoGamesBlocks"],
+    meditation: ["meditationDays", "meditationSessions", "meditationHoursTotal", "meditationBlocks"],
+    music: ["musicDays", "musicSessions", "musicHoursTotal", "musicBlocks"],
+    bodyWeight: ["bodyWeightAverage"],
+    personalPRs: ["prsSessions", "prsDetails"],
+    personalCalendar: [
+      "personalSessions", "personalHoursTotal", "personalBlocks",
+      "interpersonalSessions", "interpersonalHoursTotal", "interpersonalBlocks",
+      "homeSessions", "homeHoursTotal", "homeBlocks",
+      "physicalHealthSessions", "physicalHealthHoursTotal", "physicalHealthBlocks",
+      "mentalHealthSessions", "mentalHealthHoursTotal", "mentalHealthBlocks",
+      "ignoreBlocks"
+    ],
+  };
+
+  // Ensure all fields for selected calendars are included in summaryData (clean slate)
+  if (selectedCalendars && selectedCalendars.length > 0) {
+    selectedCalendars.forEach((calendarKey) => {
+      const fields = calendarFieldMap[calendarKey];
+      if (fields) {
+        fields.forEach((fieldKey) => {
+          // Only set default if field is not already in summaryData
+          if (summaryData[fieldKey] === undefined) {
+            // Determine default value based on field type
+            if (fieldKey.endsWith("Blocks") || fieldKey.endsWith("Details")) {
+              summaryData[fieldKey] = ""; // Empty string for text fields
+            } else {
+              summaryData[fieldKey] = 0; // Zero for number fields
+            }
+          }
+        });
+      }
+    });
+  }
 
   /**
    * Safely get property name and track missing configs
@@ -231,6 +276,17 @@ function buildPersonalRecapProperties(summaryData, props) {
     if (propName) properties[propName] = summaryData.bodyWeightAverage;
   }
 
+  // Personal PRs metrics
+  if (summaryData.prsSessions !== undefined) {
+    const propName = getPropName("prsSessions", props.prsSessions);
+    if (propName) properties[propName] = summaryData.prsSessions;
+  }
+
+  if (summaryData.prsDetails !== undefined) {
+    const propName = getPropName("prsDetails", props.prsDetails);
+    if (propName) properties[propName] = summaryData.prsDetails;
+  }
+
   // Personal category metrics
   if (summaryData.personalSessions !== undefined) {
     const propName = getPropName("personalSessions", props.personalSessions);
@@ -309,6 +365,12 @@ function buildPersonalRecapProperties(summaryData, props) {
   if (summaryData.mentalHealthBlocks !== undefined) {
     const propName = getPropName("mentalHealthBlocks", props.mentalHealthBlocks);
     if (propName) properties[propName] = summaryData.mentalHealthBlocks;
+  }
+
+  // Ignore category metrics (only blocks)
+  if (summaryData.ignoreBlocks !== undefined) {
+    const propName = getPropName("ignoreBlocks", props.ignoreBlocks);
+    if (propName) properties[propName] = summaryData.ignoreBlocks;
   }
 
   // Check for missing property configurations and throw clear error

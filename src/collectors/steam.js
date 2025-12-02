@@ -5,7 +5,8 @@
 
 const SteamService = require("../services/SteamService");
 const { createSpinner } = require("../utils/cli");
-const { formatDateOnly } = require("../utils/date");
+const { formatDate } = require("../utils/date");
+const { extractSourceDate } = require("../utils/date-handler");
 
 /**
  * Get Eastern Time offset for a given date
@@ -84,12 +85,26 @@ async function fetchSteamData(startDate, endDate) {
               .join(", ")
           : "";
 
-        // Determine start and end times from sessions with Eastern Time offset
-        // Steam API returns times in UTC, so we need to convert to Eastern Time
+        // TIMEZONE HANDLING FOR STEAM:
+        // 
+        // Steam API returns gaming session times in UTC. We need to handle two things:
+        // 1. Date extraction: Uses centralized handler (extractSourceDate) for consistency
+        // 2. Time formatting: Manual conversion for precise calendar event datetime strings
+        // 
+        // Why manual time formatting?
+        // - Calendar events need full ISO datetime strings with timezone offsets (e.g., "2025-10-28T16:00:00-04:00")
+        // - The centralized handler is designed for date extraction, not time formatting
+        // - We need precise control over the timezone offset format for Google Calendar API
+        // 
+        // Date extraction (line 92, 134): Uses extractSourceDate() which applies UTC→Eastern conversion
+        // Time formatting (lines 107-131): Manual conversion using getEasternOffset() helper
+        // 
+        // See config.sources.dateHandling.steam for date extraction configuration.
         let startTime = "";
         let endTime = "";
-        let dateObj = new Date(daySession.date);
-        let actualDate = daySession.date;
+        // Initial date extraction for date-only case (no sessions yet)
+        let dateObj = extractSourceDate('steam', `${daySession.date}T12:00:00Z`); // Uses centralized handler
+        let actualDate = formatDate(dateObj);
         
         if (game.sessions && game.sessions.length > 0) {
           const firstSession = game.sessions[0];
@@ -103,19 +118,22 @@ async function fetchSteamData(startDate, endDate) {
             return `${hours}:${minutes}`;
           };
           
-          // Parse UTC times from API and convert to Eastern Time
+          // Manual timezone conversion for time formatting (not date extraction)
+          // Parse UTC times from API
           const startUTC = new Date(`${daySession.date}T${normalizeTime(firstSession.start_time)}:00Z`);
           const endUTC = new Date(`${daySession.date}T${normalizeTime(lastSession.end_time)}:00Z`);
           
-          // Convert to Eastern Time by formatting with proper offset
+          // Get Eastern Time offset (handles DST automatically: -04:00 for EDT, -05:00 for EST)
           const offset = getEasternOffset(daySession.date);
           const offsetHours = parseInt(offset.split(':')[0]);
           
-          // Apply offset to get Eastern Time (subtract one additional hour as Steam times need -5 not -4)
+          // Apply offset to convert UTC to Eastern Time
+          // Note: Steam API times need an additional -1 hour adjustment (Steam-specific quirk)
           const startEDT = new Date(startUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
           const endEDT = new Date(endUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
           
-          // Format as ISO strings with Eastern Time offset
+          // Format as ISO datetime strings with timezone offset for calendar events
+          // This creates strings like "2025-10-28T16:00:00-04:00" for Google Calendar API
           const formatWithOffset = (date, offset) => {
             const year = date.getUTCFullYear();
             const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -129,16 +147,17 @@ async function fetchSteamData(startDate, endDate) {
           startTime = formatWithOffset(startEDT, offset);
           endTime = formatWithOffset(endEDT, offset);
           
-          // Create proper Date object from startTime and extract actual date
-          dateObj = startEDT;
-          actualDate = startTime.split("T")[0];
+          // Re-extract date using centralized handler now that we have actual session times
+          // This ensures the date accounts for timezone conversion (may shift if session crosses midnight)
+          dateObj = extractSourceDate('steam', startUTC); // Uses centralized handler for consistency
+          actualDate = formatDate(dateObj); // Format as YYYY-MM-DD string for grouping
         }
 
         // Create activity object
         const activity = {
           activityId,
           gameName: game.name,
-          date: actualDate,
+          date: dateObj, // Store Date object, transformer will format it
           dateObj: dateObj,
           hoursPlayed: game.minutes
             ? parseFloat((game.minutes / 60).toFixed(2))

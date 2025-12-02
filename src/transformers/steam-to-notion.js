@@ -4,9 +4,9 @@
  */
 
 const config = require("../config");
-const { formatDateOnly } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
+const { formatDateForNotion } = require("../utils/date-handler");
 
 /**
  * Transform Steam gaming activity to Notion properties
@@ -21,7 +21,7 @@ function transformSteamToNotion(activity) {
   const allProperties = {
     [getPropertyName(props.gameName)]: activity.gameName || "",
     [getPropertyName(props.date)]: activity.date
-      ? formatDateOnly(activity.date)
+      ? formatDateForNotion('steam', activity.date)
       : "",
     [getPropertyName(props.hoursPlayed)]: activity.hoursPlayed || 0,
     [getPropertyName(props.minutesPlayed)]: activity.minutesPlayed || 0,

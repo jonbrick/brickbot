@@ -8,11 +8,11 @@ const {
   formatDate,
   formatDateLong,
   formatTime,
-  formatDateOnly,
   isSleepIn,
 } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
+const { formatDateForNotion } = require("../utils/date-handler");
 
 /**
  * Transform Oura sleep session to Notion properties
@@ -38,10 +38,10 @@ function transformOuraToNotion(session) {
   const allProperties = {
     [getPropertyName(props.title)]: formatDateLong(session.nightOf),
     [getPropertyName(props.nightOfDate)]: session.nightOf
-      ? formatDateOnly(session.nightOf)
+      ? formatDateForNotion('oura', session.nightOf)
       : "",
     [getPropertyName(props.ouraDate)]: session.ouraDate
-      ? formatDateOnly(session.ouraDate)
+      ? formatDateForNotion('oura', session.ouraDate)
       : "",
     [getPropertyName(props.bedtime)]: session.bedtimeStart || "",
     [getPropertyName(props.wakeTime)]: session.bedtimeEnd || "",

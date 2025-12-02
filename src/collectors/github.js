@@ -5,7 +5,8 @@
 
 const GitHubService = require("../services/GitHubService");
 const { createSpinner } = require("../utils/cli");
-const { convertUTCToEasternDate } = require("../utils/date");
+const { formatDate } = require("../utils/date");
+const { extractSourceDate } = require("../utils/date-handler");
 
 /**
  * Get project type for a repository
@@ -30,8 +31,16 @@ async function processCommitsIntoActivities(commits, service) {
 
   for (const commitItem of commits) {
     const commit = commitItem.commit;
-    const commitDate = new Date(commit.committer.date); // UTC from GitHub
-    const estDateKey = convertUTCToEasternDate(commitDate);
+    const commitDate = new Date(commit.committer.date); // UTC from GitHub API
+    
+    // DATE EXTRACTION: Use centralized handler for source-specific transformation
+    // This converts UTC commit date to Eastern Time (handles DST automatically)
+    const estDate = extractSourceDate('github', commitDate);
+    
+    // DATE FORMATTING: Use date.js utility directly for simple formatting
+    // This is just converting Date object to YYYY-MM-DD string for grouping
+    // No source-specific logic needed, so we use formatDate() directly
+    const estDateKey = formatDate(estDate);
     const repoName = commitItem.repository.full_name;
 
     // Get detailed commit information (may return multiple commits for work PRs)
@@ -57,9 +66,13 @@ async function processCommitsIntoActivities(commits, service) {
       : [commitDetails];
 
     for (const commitDetail of commitsToProcess) {
-      // Convert commit date to Eastern Time for grouping
+      // DATE EXTRACTION: Convert commit date to Eastern Time using centralized handler
+      // This ensures commits are grouped by the correct calendar day in Eastern Time
       const commitUTCDate = new Date(commitDetail.date);
-      const commitEstDateKey = convertUTCToEasternDate(commitUTCDate);
+      const commitEstDate = extractSourceDate('github', commitUTCDate);
+      
+      // DATE FORMATTING: Simple formatting for grouping key (no source-specific logic)
+      const commitEstDateKey = formatDate(commitEstDate);
 
       // Check if this commit has PRs
       const hasPRs = commitDetail.prs && commitDetail.prs.length > 0;
@@ -72,9 +85,9 @@ async function processCommitsIntoActivities(commits, service) {
           if (!prGroups[prKey]) {
             prGroups[prKey] = {
               repository: repoName,
-              date: commitEstDateKey,
+              date: commitEstDate, // Store Date object
               commits: [],
-              eventDate: new Date(commitEstDateKey),
+              eventDate: commitEstDate,
               pr: pr,
               isPrRecord: true,
             };
@@ -89,9 +102,9 @@ async function processCommitsIntoActivities(commits, service) {
         if (!noPrGroups[noPrKey]) {
           noPrGroups[noPrKey] = {
             repository: repoName,
-            date: commitEstDateKey,
+            date: commitEstDate, // Store Date object
             commits: [],
-            eventDate: new Date(commitEstDateKey),
+            eventDate: commitEstDate,
             isPrRecord: false,
           };
         }

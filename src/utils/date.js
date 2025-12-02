@@ -1,6 +1,38 @@
 /**
  * Date Utilities
- * Unified date parsing and manipulation for entire app
+ * 
+ * Low-level date parsing, formatting, and manipulation utilities used throughout the application.
+ * These are general-purpose functions that don't contain source-specific logic.
+ * 
+ * **Purpose:**
+ * Provides building blocks for date operations: parsing various formats, formatting dates,
+ * timezone conversions, date arithmetic, and calendar calculations.
+ * 
+ * **When to use:**
+ * - For general date operations, formatting, and parsing that don't need source-specific logic
+ * - For date manipulation (addDays, getWeekStart, getMonthEnd, etc.)
+ * - For simple date formatting (formatDate, formatDateOnly, formatDateLong, formatTime)
+ * - For time formatting (formatTimestampWithOffset)
+ * - For calendar calculations (getWeekNumber, parseWeekNumber, etc.)
+ * 
+ * **When NOT to use:**
+ * - For extracting dates from API responses - use `date-handler.js` → `extractSourceDate()` instead
+ * - For source-specific date transformations - use `date-handler.js` instead
+ * 
+ * **Relationship to date-handler.js:**
+ * - `date.js` provides the low-level utilities
+ * - `date-handler.js` uses these utilities but applies source-specific transformations
+ * - Collectors typically use `date-handler.js` for extraction, and `date.js` for formatting/manipulation
+ * 
+ * **Key Functions:**
+ * - **Parsing**: `parseDate()` - parses various date string formats
+ * - **Formatting**: `formatDate()`, `formatDateOnly()`, `formatDateLong()`, `formatTime()`
+ * - **Timezone**: `convertUTCToEasternDate()` - converts UTC to Eastern Time with DST handling
+ * - **Special**: `calculateNightOf()` - Oura-specific "night of" calculation
+ * - **Calendar**: `buildDateTime()` - combines date and time strings for calendar events
+ * - **Manipulation**: `addDays()`, `addMonths()`, `getWeekStart()`, `getMonthEnd()`, etc.
+ * 
+ * @module date
  */
 
 /**
@@ -393,7 +425,13 @@ function formatDateOnly(date) {
     dateObj = date;
   } else if (typeof date === "string") {
     // Parse ISO string or YYYY-MM-DD string
-    dateObj = new Date(date);
+    // For YYYY-MM-DD format, append "T00:00:00" to create local midnight instead of UTC
+    // This prevents day shifts when converting to local time
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      dateObj = new Date(date + "T00:00:00"); // Local midnight, not UTC
+    } else {
+      dateObj = new Date(date);
+    }
   } else {
     throw new Error("Invalid date provided to formatDateOnly");
   }
@@ -483,6 +521,70 @@ function convertUTCToEasternDate(utcDate) {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Build ISO datetime string from date and time
+ * Combines a date string (YYYY-MM-DD) with a time string (HH:MM, HH:MM:SS, or ISO datetime)
+ * and returns an ISO datetime string with local timezone offset
+ *
+ * @param {string} date - Date string (YYYY-MM-DD)
+ * @param {string} time - Time string (HH:MM, HH:MM:SS, or ISO datetime string)
+ * @returns {string|null} ISO datetime string with timezone offset, or null if invalid
+ */
+function buildDateTime(date, time) {
+  if (!date || !time) {
+    return null;
+  }
+
+  try {
+    // If time is already an ISO datetime string, convert to local timezone
+    if (time.includes("T")) {
+      // If it ends with Z, treat the time portion as LOCAL time (not UTC)
+      // This fixes the issue where timestamp got serialized as UTC but actually represents local time
+      if (time.endsWith("Z")) {
+        // Remove the Z and parse the time as if it's local time
+        const timeWithoutZ = time.slice(0, -1); // "2025-10-27T16:51:40"
+
+        // Extract components
+        const [datePart, timePart] = timeWithoutZ.split("T");
+        const [year, month, day] = datePart.split("-");
+        const [hours, minutes, seconds] = timePart.split(":");
+
+        // Get the local timezone offset
+        const testDate = new Date(); // Use current date to get timezone
+        const offsetMinutes = testDate.getTimezoneOffset();
+        const offsetHours = Math.floor(Math.abs(offsetMinutes / 60));
+        const offsetMins = Math.abs(offsetMinutes % 60);
+        const offsetSign = offsetMinutes > 0 ? "-" : "+";
+        const offsetStr = `${offsetSign}${String(offsetHours).padStart(
+          2,
+          "0"
+        )}:${String(offsetMins).padStart(2, "0")}`;
+
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetStr}`;
+      }
+      return time;
+    }
+
+    // If time looks like a time (HH:MM or HH:MM:SS), combine with date
+    if (time.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+      const timeStr = time.length === 5 ? `${time}:00` : time;
+      // Get local timezone offset
+      const now = new Date();
+      const offsetMinutes = now.getTimezoneOffset();
+      const offsetHours = Math.abs(Math.floor(offsetMinutes / 60));
+      const offsetMins = Math.abs(offsetMinutes % 60);
+      const offsetStr = `${offsetMinutes > 0 ? "-" : "+"}${String(
+        offsetHours
+      ).padStart(2, "0")}:${String(offsetMins).padStart(2, "0")}`;
+      return `${date}T${timeStr}${offsetStr}`;
+    }
+
+    return time;
+  } catch (error) {
+    return null;
+  }
+}
+
 module.exports = {
   parseDate,
   getToday,
@@ -509,4 +611,5 @@ module.exports = {
   isSleepIn,
   formatTimestampWithOffset,
   convertUTCToEasternDate,
+  buildDateTime,
 };

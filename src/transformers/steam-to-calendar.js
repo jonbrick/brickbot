@@ -6,6 +6,7 @@
 const config = require("../config");
 const { getPropertyName } = require("../config/notion");
 const { mapSteamToCalendarId } = require("../config/calendar");
+const { buildDateTime } = require("../utils/date");
 
 /**
  * Format gaming session details for event description
@@ -136,67 +137,6 @@ function transformSteamToCalendarEvent(steamRecord, notionService) {
       },
     },
   };
-}
-
-/**
- * Build ISO datetime string from date and time
- *
- * @param {string} date - Date string (YYYY-MM-DD)
- * @param {string} time - Time string (HH:MM or HH:MM:SS or ISO string)
- * @returns {string} ISO datetime string
- */
-function buildDateTime(date, time) {
-  if (!date || !time) {
-    return null;
-  }
-
-  try {
-    // If time is already an ISO datetime string, use it directly
-    if (time.includes("T")) {
-      // If it ends with Z, treat the time portion as LOCAL time (not UTC)
-      if (time.endsWith("Z")) {
-        // Remove the Z and parse the time as if it's local time
-        const timeWithoutZ = time.slice(0, -1);
-
-        // Extract components
-        const [datePart, timePart] = timeWithoutZ.split("T");
-        const [year, month, day] = datePart.split("-");
-        const [hours, minutes, seconds] = timePart.split(":");
-
-        // Get the local timezone offset
-        const testDate = new Date();
-        const offsetMinutes = testDate.getTimezoneOffset();
-        const offsetHours = Math.floor(Math.abs(offsetMinutes / 60));
-        const offsetMins = Math.abs(offsetMinutes % 60);
-        const offsetSign = offsetMinutes > 0 ? "-" : "+";
-        const offsetStr = `${offsetSign}${String(offsetHours).padStart(
-          2,
-          "0"
-        )}:${String(offsetMins).padStart(2, "0")}`;
-
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetStr}`;
-      }
-      return time;
-    }
-
-    // If time looks like a time (HH:MM or HH:MM:SS), combine with date
-    if (time.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-      const timeStr = time.length === 5 ? `${time}:00` : time;
-      // Get local timezone offset
-      const now = new Date();
-      const offsetMinutes = now.getTimezoneOffset();
-      const offsetHours = Math.abs(Math.floor(offsetMinutes / 60));
-      const offsetMins = Math.abs(offsetMinutes % 60);
-      const offsetStr = `${offsetMinutes > 0 ? "-" : "+"}${String(
-        offsetHours
-      ).padStart(2, "0")}:${String(offsetMins).padStart(2, "0")}`;
-      return `${date}T${timeStr}${offsetStr}`;
-    }
-
-    return time;
-  } catch (error) {
-    return null;
-  }
 }
 
 module.exports = {

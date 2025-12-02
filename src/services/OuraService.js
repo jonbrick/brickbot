@@ -10,7 +10,7 @@ class OuraService {
   constructor() {
     this.baseURL = config.sources.oura.apiBaseUrl;
     this.token = config.sources.oura.token;
-    this.dateOffset = config.sources.oura.dateOffset;
+    // Date offset is now handled by centralized date handler in dateHandling config
 
     if (!this.token) {
       throw new Error("Oura token is required");

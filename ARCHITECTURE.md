@@ -126,61 +126,107 @@ heartRateAvg: { name: "Avg HR", type: "number", enabled: true }
 sleepLatency: { name: "Sleep Latency", type: "number", enabled: false }
 ```
 
+#### Date Handling Architecture
+
+The date handling system uses a two-layer architecture for separation of concerns:
+
+**Layer 1: `date.js` (Low-Level Utilities)**
+- Purpose: General-purpose date parsing, formatting, and manipulation
+- When to use: For date operations that don't need source-specific logic
+- Key functions: `parseDate()`, `formatDate()`, `formatDateOnly()`, `addDays()`, `getWeekStart()`, etc.
+- Examples: Formatting dates for display, date arithmetic, calendar calculations
+
+**Layer 2: `date-handler.js` (Config-Driven Extraction)**
+- Purpose: Source-specific date extraction and transformation
+- When to use: Always use `extractSourceDate()` in collectors for extracting dates from API responses
+- How it works: Reads `config.sources.dateHandling` to apply source-specific transformations
+- Pipeline: `sourceFormat` → `extractionMethod` → `dateOffset` → Date object
+
+**Flow:**
+```
+API Response → Collector → extractSourceDate(source, rawDate) → date-handler.js → date.js → Date object
+```
+
+**When to use which:**
+- **Date extraction from APIs**: Always use `extractSourceDate()` from `date-handler.js`
+- **Date formatting for grouping/display**: Use `formatDate()`, `formatDateOnly()` from `date.js`
+- **Time formatting**: Use `formatTimestampWithOffset()` from `date.js` (not date extraction)
+- **Date manipulation**: Use `addDays()`, `getWeekStart()`, etc. from `date.js`
+
+**Benefits:**
+- Centralized configuration: All source-specific logic in `config.sources.dateHandling`
+- Consistent extraction: All collectors use the same `extractSourceDate()` API
+- Easy to modify: Change date handling for a source by updating config, not code
+- Clear separation: Low-level utilities vs. source-specific transformations
+
 #### Date Handling Patterns
 
 Different APIs use different date conventions and timezone formats. Each integration handles dates appropriately:
 
-**Oura** - Subtracts 1 day (special case):
+**Oura** - Dual date extraction (special case):
 
 - Oura API returns dates representing the **wake-up morning** (end of sleep session)
 - We store the **"night of" date** (the night you went to sleep)
+- **Dual extraction pattern**: We extract both `ouraDate` (raw wake-up date) and `nightOf` (transformed date)
+  - `ouraDate`: Raw date from API for reference/debugging
+  - `nightOf`: Transformed date for storage (what we care about)
 - Logic: `calculateNightOf()` subtracts 1 day from the Oura date
 - Also adds 1 day to `endDate` when querying API (to include sessions that wake up on end date)
-- Config: `dateOffset: 1` in `sources.js`
+- Config: `dateOffset: 0` in `sources.js` (calculateNightOf already handles -1 day, setting dateOffset to -1 would cause double subtraction)
 - Utility: `src/utils/date.js` → `calculateNightOf()`
 
 **Strava** - Direct date extraction:
 
-- Uses `start_date_local` from API directly
-- Extracts date: `activity.start_date_local.split("T")[0]`
+- Uses `start_date_local` from API directly (already in local timezone)
+- Extracts date: Uses `extractSourceDate()` with "split" method to extract date from ISO string
 - No offset needed
+- **Note**: Time formatting uses `formatTimestampWithOffset()` directly (time formatting, not date extraction)
 
 **GitHub** - UTC to Eastern Time conversion:
 
 - Commits are in UTC from GitHub API
-- Converts to Eastern Time: `convertUTCToEasternDate(commitDate)`
-- Automatically handles DST transitions
+- Converts to Eastern Time: `extractSourceDate()` applies `convertUTCToEasternDate()` transformation
+- Automatically handles DST transitions (EDT vs EST)
 - No day offset, only timezone conversion
+- **Why convert?** Commits made late at night UTC might be on a different calendar day in Eastern Time
 - Utility: `src/utils/date.js` → `convertUTCToEasternDate()`
+- **Note**: Date formatting for grouping uses `formatDate()` directly (simple formatting, not extraction)
 
-**Steam** - Timezone conversion with potential date adjustment:
+**Steam** - Date extraction vs. time formatting:
 
 - API returns UTC times
-- Converts to Eastern Time with DST handling
-- May adjust date if gaming session crosses midnight
-- Extracts date from converted start time: `actualDate = startTime.split("T")[0]`
-- Utility: `src/utils/date.js` → `getEasternOffset()`
+- **Date extraction**: Uses `extractSourceDate()` which converts UTC to Eastern Time with DST handling
+- **Time formatting**: Manual conversion in collector for precise calendar event datetime strings
+- May adjust date if gaming session crosses midnight in Eastern Time
+- **Why manual time formatting?** Calendar events need full ISO datetime strings with timezone offsets, which is time formatting (not date extraction)
+- Utility: `src/utils/date.js` → `getEasternOffset()` for DST-aware offset calculation
 
 **Withings** - Unix timestamp to local time:
 
 - API returns Unix timestamps (seconds since epoch)
-- Converts: `new Date(dateTimestamp * 1000)`
+- Converts: `extractSourceDate()` handles conversion to local Date object (not UTC)
 - Extracts date using local time (not UTC) to avoid timezone issues
-- Example: Measurement at 7:07 PM EST → stored as same calendar day, not next day in UTC
+- **Why local time?** A measurement at 7:07 PM EST should be stored as the same calendar day
+- Example: Measurement at 7:07 PM EST → stored as Oct 28 (not Oct 29 in UTC)
 
 **Summary Table:**
 
-| Integration | Date Handling   | Special Logic                                              |
-| ----------- | --------------- | ---------------------------------------------------------- |
-| Oura        | Subtracts 1 day | `calculateNightOf()` - converts wake-up date to "night of" |
-| Strava      | Direct use      | Extracts date from `start_date_local`                      |
-| GitHub      | UTC → Eastern   | Timezone conversion, no day offset                         |
-| Steam       | UTC → Eastern   | Timezone conversion, may adjust date if crossing midnight  |
-| Withings    | Unix → Local    | Converts timestamp to Date, uses local time (not UTC)      |
+| Integration | Date Handling   | Special Logic                                              | Config Location |
+| ----------- | --------------- | ---------------------------------------------------------- | --------------- |
+| Oura        | Subtracts 1 day | `calculateNightOf()` - converts wake-up date to "night of" | `dateHandling.oura` |
+| Strava      | Direct use      | Extracts date from `start_date_local`                      | `dateHandling.strava` |
+| GitHub      | UTC → Eastern   | Timezone conversion, no day offset                         | `dateHandling.github` |
+| Steam       | UTC → Eastern   | Date extraction centralized, time formatting manual        | `dateHandling.steam` |
+| Withings    | Unix → Local    | Converts timestamp to Date, uses local time (not UTC)      | `dateHandling.withings` |
 
-The actual offset logic is implemented in `src/utils/date.js` with utility functions like `calculateNightOf()` and `convertUTCToEasternDate()`, ensuring consistent date handling across the application.
+**Configuration:**
+All date handling logic is configured in `src/config/sources.js` under `dateHandling`. Each source has:
+- `sourceFormat`: Format of raw date from API (date_string, iso_local, iso_utc, unix_timestamp)
+- `extractionMethod`: Transformation to apply (calculateNightOf, convertUTCToEasternDate, split, unixToLocal)
+- `dateOffset`: Additional day offset (usually 0, applied after extractionMethod)
+- `formatMethod`: Format for storage (currently all use "formatDateOnly")
 
-**Implementation Note**: The `calculateNightOf()` function was initially duplicated across multiple files. It was consolidated to `src/utils/date.js` as a shared utility to ensure consistent date handling, make the "night of" calculation explicit and testable, and maintain a single source of truth.
+See `src/config/sources.js` for detailed per-source configuration and explanations.
 
 ### Services (`src/services/`)
 

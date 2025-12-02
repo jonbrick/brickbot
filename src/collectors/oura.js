@@ -4,13 +4,9 @@
  */
 
 const OuraService = require("../services/OuraService");
-const {
-  parseDate,
-  addDays,
-  formatDate,
-  calculateNightOf,
-} = require("../utils/date");
+const { parseDate } = require("../utils/date");
 const { createSpinner } = require("../utils/cli");
+const { extractSourceDate } = require("../utils/date-handler");
 
 /**
  * Fetch Oura sleep data for date range
@@ -51,9 +47,23 @@ async function fetchOuraData(startDate, endDate) {
       }
 
       // Oura date is in the response as 'day'
-      // Convert to "Night of" date for consistency
-      const ouraDate = new Date(session.day);
-      const nightOf = calculateNightOf(ouraDate);
+      // 
+      // DUAL DATE EXTRACTION PATTERN:
+      // We extract both the raw Oura date and the transformed "night of" date.
+      // 
+      // - ouraDate: Raw wake-up date from API (e.g., "2025-10-28" = Oct 28 morning)
+      //   Used for reference/debugging. Extracted using parseDate() directly.
+      // 
+      // - nightOf: Transformed "night of" date (e.g., "2025-10-27" = night of Oct 27)
+      //   This is what we store in Notion. Extracted using extractSourceDate() which
+      //   applies the calculateNightOf() transformation (subtracts 1 day).
+      // 
+      // Why both? The raw date helps us understand when the sleep session ended,
+      // while the "night of" date represents when sleep actually started (what we care about).
+      // 
+      // See config.sources.dateHandling.oura for the transformation logic.
+      const ouraDate = parseDate(session.day); // Raw Oura date (wake-up date)
+      const nightOf = extractSourceDate('oura', session.day); // "Night of" date (transformed via config)
 
       return {
         nightOf,

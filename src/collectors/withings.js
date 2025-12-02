@@ -5,6 +5,7 @@
 
 const WithingsService = require("../services/WithingsService");
 const { createSpinner } = require("../utils/cli");
+const { extractSourceDate } = require("../utils/date-handler");
 
 /**
  * Decode Withings measurement value
@@ -98,9 +99,20 @@ async function fetchWithingsData(startDate, endDate) {
         console.log(`\n📋 Processing measurement group ${index + 1}:`, JSON.stringify(group, null, 2));
       }
 
-      // Extract date from Unix timestamp
-      const dateTimestamp = group.date;
-      const measurementDate = new Date(dateTimestamp * 1000);
+      // DATE EXTRACTION: Extract date from Unix timestamp using centralized handler
+      // 
+      // Withings API returns Unix timestamps (seconds since epoch). The centralized handler
+      // converts this to a local Date object (not UTC) to ensure measurements are stored
+      // on the correct calendar day.
+      // 
+      // Why local time, not UTC?
+      // - A measurement at 7:07 PM EST should be stored as the same calendar day
+      // - If we used UTC, 7:07 PM EST = 12:07 AM UTC (next day) would be wrong
+      // - Example: Measurement at 7:07 PM EST on Oct 28 → stored as Oct 28 (not Oct 29)
+      // 
+      // See config.sources.dateHandling.withings for the conversion logic.
+      const dateTimestamp = group.date; // Unix timestamp in seconds
+      const measurementDate = extractSourceDate('withings', dateTimestamp); // Local Date object
 
       // Extract measurements by type
       const measures = group.measures || [];
@@ -164,14 +176,8 @@ async function fetchWithingsData(startDate, endDate) {
       // Format measurement time as ISO timestamp
       const measurementTime = measurementDate.toISOString();
 
-      // Extract date using local time (not UTC) to avoid timezone issues
-      // This matches how Strava and Steam handle dates
-      const localDateString = (() => {
-        const year = measurementDate.getFullYear();
-        const month = String(measurementDate.getMonth() + 1).padStart(2, "0");
-        const day = String(measurementDate.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
-      })();
+      // Date is already extracted using centralized handler
+      // Store Date object, transformer will format it
 
       // Format name as "Body Weight - [Day of Week], [Month] [Date], [Year]"
       const formattedName = (() => {
@@ -194,8 +200,7 @@ async function fetchWithingsData(startDate, endDate) {
 
       return {
         measurementId: String(group.grpid || ""),
-        date: measurementDate,
-        dateString: localDateString,
+        date: measurementDate, // Date object, transformer will format it
         name: formattedName,
         weight: weight,
         fatFreeMass: fatFreeMass,

@@ -6,6 +6,7 @@
 const StravaService = require("../services/StravaService");
 const { createSpinner } = require("../utils/cli");
 const { formatTimestampWithOffset } = require("../utils/date");
+const { extractSourceDate } = require("../utils/date-handler");
 
 /**
  * Fetch Strava activities for date range
@@ -34,7 +35,14 @@ async function fetchStravaData(startDate, endDate) {
       activityId: activity.id,
       name: activity.name,
       type: activity.type,
-      date: activity.start_date_local.split("T")[0],
+      
+      // DATE EXTRACTION: Use centralized handler for source-specific date extraction
+      // Extracts date portion from ISO datetime string (start_date_local is already local time)
+      date: extractSourceDate('strava', activity.start_date_local),
+      
+      // TIME FORMATTING: Use date.js utility directly for time formatting
+      // This formats the timestamp with timezone offset for display/storage
+      // This is time formatting (not date extraction), so we use formatTimestampWithOffset() directly
       startTime: formatTimestampWithOffset(
         activity.start_date_local,
         activity.utc_offset

@@ -4,9 +4,9 @@
  */
 
 const config = require("../config");
-const { formatDateOnly } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
+const { formatDateForNotion } = require("../utils/date-handler");
 
 /**
  * Truncate text to Notion's 2000 character limit
@@ -42,7 +42,7 @@ function transformGitHubToNotion(activity) {
   const allProperties = {
     [getPropertyName(props.repository)]: repositoryName,
     [getPropertyName(props.date)]: activity.date
-      ? formatDateOnly(activity.date)
+      ? formatDateForNotion('github', activity.date)
       : "",
     [getPropertyName(props.commitsCount)]: activity.commitsCount || 0,
     [getPropertyName(props.commitMessages)]: truncateForNotion(activity.commitMessages || ""),

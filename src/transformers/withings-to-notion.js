@@ -4,9 +4,10 @@
  */
 
 const config = require("../config");
-const { formatDate, formatDateOnly } = require("../utils/date");
+const { formatDate } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
+const { formatDateForNotion } = require("../utils/date-handler");
 
 /**
  * Transform Withings measurement to Notion properties
@@ -21,9 +22,8 @@ function transformWithingsToNotion(measurement) {
   const allProperties = {
     [getPropertyName(props.name)]: measurement.name || "",
     [getPropertyName(props.date)]: measurement.date
-      ? formatDateOnly(measurement.date)
+      ? formatDateForNotion('withings', measurement.date)
       : "",
-    [getPropertyName(props.dateString)]: measurement.dateString || "",
     [getPropertyName(props.weight)]: measurement.weight || null,
     [getPropertyName(props.fatFreeMass)]: measurement.fatFreeMass || null,
     [getPropertyName(props.fatPercentage)]: measurement.fatPercentage || null,

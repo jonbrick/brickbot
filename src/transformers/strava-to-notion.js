@@ -4,9 +4,9 @@
  */
 
 const config = require("../config");
-const { formatDateOnly } = require("../utils/date");
 const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
+const { formatDateForNotion } = require("../utils/date-handler");
 
 /**
  * Transform Strava activity to Notion properties
@@ -22,7 +22,7 @@ function transformStravaToNotion(activity) {
     [getPropertyName(props.name)]: activity.name || "",
     [getPropertyName(props.activityId)]: activity.activityId || null,
     [getPropertyName(props.date)]: activity.date
-      ? formatDateOnly(activity.date)
+      ? formatDateForNotion('strava', activity.date)
       : "",
     [getPropertyName(props.type)]: activity.type || "",
     [getPropertyName(props.startTime)]: activity.startTime || "",

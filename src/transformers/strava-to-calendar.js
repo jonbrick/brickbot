@@ -6,6 +6,7 @@
 const config = require("../config");
 const { getPropertyName } = require("../config/notion");
 const { mapStravaToCalendarId } = require("../config/calendar");
+const { buildDateTime } = require("../utils/date");
 
 /**
  * Format workout details for event description
@@ -111,68 +112,6 @@ function transformWorkoutToCalendarEvent(workoutRecord, notionService) {
       },
     },
   };
-}
-
-/**
- * Build ISO datetime string from date and time
- *
- * @param {string} date - Date string (YYYY-MM-DD)
- * @param {string} startTime - Time string (HH:MM or HH:MM:SS or ISO string)
- * @returns {string} ISO datetime string
- */
-function buildDateTime(date, startTime) {
-  if (!date || !startTime) {
-    return null;
-  }
-
-  try {
-    // If startTime is already an ISO datetime string, convert to local timezone
-    if (startTime.includes("T")) {
-      // If it ends with Z, treat the time portion as LOCAL time (not UTC)
-      // This fixes the issue where timestamp got serialized as UTC but actually represents local time
-      if (startTime.endsWith("Z")) {
-        // Remove the Z and parse the time as if it's local time
-        const timeWithoutZ = startTime.slice(0, -1); // "2025-10-27T16:51:40"
-
-        // Extract components
-        const [datePart, timePart] = timeWithoutZ.split("T");
-        const [year, month, day] = datePart.split("-");
-        const [hours, minutes, seconds] = timePart.split(":");
-
-        // Get the local timezone offset
-        const testDate = new Date(); // Use current date to get timezone
-        const offsetMinutes = testDate.getTimezoneOffset();
-        const offsetHours = Math.floor(Math.abs(offsetMinutes / 60));
-        const offsetMins = Math.abs(offsetMinutes % 60);
-        const offsetSign = offsetMinutes > 0 ? "-" : "+";
-        const offsetStr = `${offsetSign}${String(offsetHours).padStart(
-          2,
-          "0"
-        )}:${String(offsetMins).padStart(2, "0")}`;
-
-        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetStr}`;
-      }
-      return startTime;
-    }
-
-    // If startTime looks like a time (HH:MM or HH:MM:SS), combine with date
-    if (startTime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-      const timeStr = startTime.length === 5 ? `${startTime}:00` : startTime;
-      // Get local timezone offset
-      const now = new Date();
-      const offsetMinutes = now.getTimezoneOffset();
-      const offsetHours = Math.abs(Math.floor(offsetMinutes / 60));
-      const offsetMins = Math.abs(offsetMinutes % 60);
-      const offsetStr = `${offsetMinutes > 0 ? "-" : "+"}${String(
-        offsetHours
-      ).padStart(2, "0")}:${String(offsetMins).padStart(2, "0")}`;
-      return `${date}T${timeStr}${offsetStr}`;
-    }
-
-    return startTime;
-  } catch (error) {
-    return null;
-  }
 }
 
 /**

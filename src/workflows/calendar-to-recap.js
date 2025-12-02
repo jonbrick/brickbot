@@ -3,7 +3,7 @@
  * Summarize calendar events and update Personal Recap database
  */
 
-const NotionService = require("../services/NotionService");
+const RecapRepository = require("../repositories/RecapRepository");
 const { fetchCalendarSummary } = require("../collectors/calendar-summary");
 const { calculateWeekSummary } = require("../transformers/calendar-to-recap");
 const config = require("../config");
@@ -148,8 +148,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     }
 
     // Find or get week recap record
-    const notionService = new NotionService();
-    const weekRecap = await notionService.findWeekRecap(
+    const recapRepo = new RecapRepository();
+    const weekRecap = await recapRepo.findWeekRecap(
       weekNumber,
       year,
       startDate,
@@ -166,7 +166,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
 
     // Update week recap
     showProgress("Updating Personal Recap database...");
-    await notionService.updateWeekRecap(weekRecap.id, summary);
+    await recapRepo.updateWeekRecap(weekRecap.id, summary);
 
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);

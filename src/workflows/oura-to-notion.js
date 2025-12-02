@@ -3,7 +3,7 @@
  * Sync Oura sleep data to Notion with de-duplication
  */
 
-const NotionService = require("../services/NotionService");
+const SleepRepository = require("../repositories/SleepRepository");
 const { transformOuraToNotion } = require("../transformers/oura-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -17,7 +17,7 @@ const { formatDate } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncOuraToNotion(sessions, options = {}) {
-  const notionService = new NotionService();
+  const sleepRepo = new SleepRepository();
   const results = {
     created: [],
     skipped: [],
@@ -27,7 +27,7 @@ async function syncOuraToNotion(sessions, options = {}) {
 
   for (const session of sessions) {
     try {
-      const result = await syncSingleSession(session, notionService);
+      const result = await syncSingleSession(session, sleepRepo);
       if (result.skipped) {
         results.skipped.push(result);
       } else {
@@ -51,12 +51,12 @@ async function syncOuraToNotion(sessions, options = {}) {
  * Sync a single sleep session to Notion
  *
  * @param {Object} session - Processed Oura sleep session
- * @param {NotionService} notionService - Notion service instance
+ * @param {SleepRepository} sleepRepo - Sleep repository instance
  * @returns {Promise<Object>} Sync result
  */
-async function syncSingleSession(session, notionService) {
+async function syncSingleSession(session, sleepRepo) {
   // Check for existing record
-  const existing = await notionService.findSleepBySleepId(session.sleepId);
+  const existing = await sleepRepo.findBySleepId(session.sleepId);
 
   if (existing) {
     return {
@@ -71,7 +71,7 @@ async function syncSingleSession(session, notionService) {
   // Transform and create
   const properties = transformOuraToNotion(session);
   const databaseId = config.notion.databases.sleep;
-  const page = await notionService.createPage(databaseId, properties);
+  const page = await sleepRepo.createPage(databaseId, properties);
 
   return {
     skipped: false,

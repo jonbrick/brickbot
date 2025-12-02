@@ -3,7 +3,7 @@
  * Sync Withings body weight data to Notion with de-duplication
  */
 
-const NotionService = require("../services/NotionService");
+const BodyWeightRepository = require("../repositories/BodyWeightRepository");
 const { transformWithingsToNotion } = require("../transformers/withings-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncWithingsToNotion(measurements, options = {}) {
-  const notionService = new NotionService();
+  const bodyWeightRepo = new BodyWeightRepository();
   const results = {
     created: [],
     skipped: [],
@@ -26,7 +26,7 @@ async function syncWithingsToNotion(measurements, options = {}) {
 
   for (const measurement of measurements) {
     try {
-      const result = await syncSingleMeasurement(measurement, notionService);
+      const result = await syncSingleMeasurement(measurement, bodyWeightRepo);
       if (result.skipped) {
         results.skipped.push(result);
       } else {
@@ -50,12 +50,12 @@ async function syncWithingsToNotion(measurements, options = {}) {
  * Sync a single measurement to Notion
  *
  * @param {Object} measurement - Processed Withings measurement
- * @param {NotionService} notionService - Notion service instance
+ * @param {BodyWeightRepository} bodyWeightRepo - Body weight repository instance
  * @returns {Promise<Object>} Sync result
  */
-async function syncSingleMeasurement(measurement, notionService) {
+async function syncSingleMeasurement(measurement, bodyWeightRepo) {
   // Check for existing record
-  const existing = await notionService.findBodyWeightByMeasurementId(
+  const existing = await bodyWeightRepo.findByMeasurementId(
     measurement.measurementId
   );
 
@@ -73,7 +73,7 @@ async function syncSingleMeasurement(measurement, notionService) {
   // Transform and create
   const properties = transformWithingsToNotion(measurement);
   const databaseId = config.notion.databases.bodyWeight;
-  const page = await notionService.createPage(databaseId, properties);
+  const page = await bodyWeightRepo.createPage(databaseId, properties);
 
   return {
     skipped: false,

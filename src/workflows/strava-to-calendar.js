@@ -3,7 +3,7 @@
  * Sync workout records from Notion to Google Calendar
  */
 
-const NotionService = require("../services/NotionService");
+const WorkoutRepository = require("../repositories/WorkoutRepository");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformWorkoutToCalendarEvent,
@@ -21,7 +21,7 @@ const { getPropertyName } = require("../config/notion");
  * @returns {Promise<Object>} Sync results
  */
 async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
-  const notionService = new NotionService();
+  const workoutRepo = new WorkoutRepository();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -33,7 +33,7 @@ async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
 
   try {
     // Get unsynced workout records
-    const workoutRecords = await notionService.getUnsyncedWorkouts(
+    const workoutRecords = await workoutRepo.getUnsynced(
       startDate,
       endDate
     );
@@ -48,7 +48,7 @@ async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
       try {
         const result = await syncSingleWorkout(
           workoutRecord,
-          notionService,
+          workoutRepo,
           calendarService
         );
 
@@ -78,26 +78,26 @@ async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
  * Sync a single workout record to calendar
  *
  * @param {Object} workoutRecord - Notion page object
- * @param {NotionService} notionService - Notion service instance
+ * @param {WorkoutRepository} workoutRepo - Workout repository instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleWorkout(
   workoutRecord,
-  notionService,
+  workoutRepo,
   calendarService
 ) {
   // Transform to calendar event format
   const { calendarId, event } = transformWorkoutToCalendarEvent(
     workoutRecord,
-    notionService
+    workoutRepo
   );
 
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
     // Extract name for display even when skipped
     const props = config.notion.properties.strava;
-    const name = notionService.extractProperty(
+    const name = workoutRepo.extractProperty(
       workoutRecord,
       getPropertyName(props.name)
     );
@@ -115,7 +115,7 @@ async function syncSingleWorkout(
     const createdEvent = await calendarService.createEvent(calendarId, event);
 
     // Mark as synced in Notion
-    await notionService.markWorkoutSynced(workoutRecord.id);
+    await workoutRepo.markSynced(workoutRecord.id);
 
     // Extract name from Notion record for consistent display
     const props = config.notion.properties.strava;

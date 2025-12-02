@@ -3,7 +3,7 @@
  * Sync body weight records from Notion to Google Calendar
  */
 
-const NotionService = require("../services/NotionService");
+const BodyWeightRepository = require("../repositories/BodyWeightRepository");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformBodyWeightToCalendarEvent,
@@ -21,7 +21,7 @@ const { getPropertyName } = require("../config/notion");
  * @returns {Promise<Object>} Sync results
  */
 async function syncBodyWeightToCalendar(startDate, endDate, options = {}) {
-  const notionService = new NotionService();
+  const bodyWeightRepo = new BodyWeightRepository();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -33,7 +33,7 @@ async function syncBodyWeightToCalendar(startDate, endDate, options = {}) {
 
   try {
     // Get unsynced body weight records
-    const weightRecords = await notionService.getUnsyncedBodyWeight(
+    const weightRecords = await bodyWeightRepo.getUnsynced(
       startDate,
       endDate
     );
@@ -48,7 +48,7 @@ async function syncBodyWeightToCalendar(startDate, endDate, options = {}) {
       try {
         const result = await syncSingleBodyWeight(
           weightRecord,
-          notionService,
+          bodyWeightRepo,
           calendarService
         );
 
@@ -78,26 +78,26 @@ async function syncBodyWeightToCalendar(startDate, endDate, options = {}) {
  * Sync a single body weight record to calendar
  *
  * @param {Object} weightRecord - Notion page object
- * @param {NotionService} notionService - Notion service instance
+ * @param {BodyWeightRepository} bodyWeightRepo - Body weight repository instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleBodyWeight(
   weightRecord,
-  notionService,
+  bodyWeightRepo,
   calendarService
 ) {
   // Transform to calendar event format
   const { calendarId, event } = transformBodyWeightToCalendarEvent(
     weightRecord,
-    notionService
+    bodyWeightRepo
   );
 
   // Skip if missing required data
   if (!event.start.date) {
     // Extract name for display even when skipped
     const props = config.notion.properties.withings;
-    const name = notionService.extractProperty(
+    const name = bodyWeightRepo.extractProperty(
       weightRecord,
       getPropertyName(props.name)
     );
@@ -115,7 +115,7 @@ async function syncSingleBodyWeight(
     const createdEvent = await calendarService.createEvent(calendarId, event);
 
     // Mark as synced in Notion
-    await notionService.markBodyWeightSynced(weightRecord.id);
+    await bodyWeightRepo.markSynced(weightRecord.id);
 
     // Extract name from Notion record for consistent display
     const props = config.notion.properties.withings;

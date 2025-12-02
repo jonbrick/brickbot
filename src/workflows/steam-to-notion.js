@@ -3,7 +3,7 @@
  * Sync Steam gaming data to Notion with de-duplication
  */
 
-const NotionService = require("../services/NotionService");
+const SteamRepository = require("../repositories/SteamRepository");
 const { transformSteamToNotion } = require("../transformers/steam-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSteamToNotion(activities, options = {}) {
-  const notionService = new NotionService();
+  const steamRepo = new SteamRepository();
   const results = {
     created: [],
     skipped: [],
@@ -26,7 +26,7 @@ async function syncSteamToNotion(activities, options = {}) {
 
   for (const activity of activities) {
     try {
-      const result = await syncSingleActivity(activity, notionService);
+      const result = await syncSingleActivity(activity, steamRepo);
       if (result.skipped) {
         results.skipped.push(result);
       } else {
@@ -50,12 +50,12 @@ async function syncSteamToNotion(activities, options = {}) {
  * Sync a single gaming activity to Notion
  *
  * @param {Object} activity - Processed Steam gaming activity
- * @param {NotionService} notionService - Notion service instance
+ * @param {SteamRepository} steamRepo - Steam repository instance
  * @returns {Promise<Object>} Sync result
  */
-async function syncSingleActivity(activity, notionService) {
+async function syncSingleActivity(activity, steamRepo) {
   // Check for existing record using Activity ID
-  const existing = await notionService.findSteamByActivityId(
+  const existing = await steamRepo.findByActivityId(
     activity.activityId
   );
 
@@ -72,7 +72,7 @@ async function syncSingleActivity(activity, notionService) {
   // Transform and create
   const properties = transformSteamToNotion(activity);
   const databaseId = config.notion.databases.steam;
-  const page = await notionService.createPage(databaseId, properties);
+  const page = await steamRepo.createPage(databaseId, properties);
 
   return {
     skipped: false,

@@ -3,7 +3,7 @@
  * Sync gaming session records from Notion to Google Calendar
  */
 
-const NotionService = require("../services/NotionService");
+const SteamRepository = require("../repositories/SteamRepository");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformSteamToCalendarEvent,
@@ -21,7 +21,7 @@ const { getPropertyName } = require("../config/notion");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSteamToCalendar(startDate, endDate, options = {}) {
-  const notionService = new NotionService();
+  const steamRepo = new SteamRepository();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -33,7 +33,7 @@ async function syncSteamToCalendar(startDate, endDate, options = {}) {
 
   try {
     // Get unsynced Steam gaming records
-    const steamRecords = await notionService.getUnsyncedSteam(
+    const steamRecords = await steamRepo.getUnsynced(
       startDate,
       endDate
     );
@@ -48,7 +48,7 @@ async function syncSteamToCalendar(startDate, endDate, options = {}) {
       try {
         const result = await syncSingleSteamSession(
           steamRecord,
-          notionService,
+          steamRepo,
           calendarService
         );
 
@@ -80,26 +80,26 @@ async function syncSteamToCalendar(startDate, endDate, options = {}) {
  * Sync a single Steam gaming session record to calendar
  *
  * @param {Object} steamRecord - Notion page object
- * @param {NotionService} notionService - Notion service instance
+ * @param {SteamRepository} steamRepo - Steam repository instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleSteamSession(
   steamRecord,
-  notionService,
+  steamRepo,
   calendarService
 ) {
   // Transform to calendar event format
   const { calendarId, event } = transformSteamToCalendarEvent(
     steamRecord,
-    notionService
+    steamRepo
   );
 
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
     // Extract gameName for display even when skipped
     const props = config.notion.properties.steam;
-    const gameName = notionService.extractProperty(
+    const gameName = steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.gameName)
     );
@@ -117,7 +117,7 @@ async function syncSingleSteamSession(
     const createdEvent = await calendarService.createEvent(calendarId, event);
 
     // Mark as synced in Notion
-    await notionService.markSteamSynced(steamRecord.id);
+    await steamRepo.markSynced(steamRecord.id);
 
     // Extract gameName from Notion record for consistent display
     const props = config.notion.properties.steam;

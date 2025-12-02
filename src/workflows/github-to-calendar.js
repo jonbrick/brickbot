@@ -3,7 +3,7 @@
  * Sync PR records from Notion to Google Calendar
  */
 
-const NotionService = require("../services/NotionService");
+const PRRepository = require("../repositories/PRRepository");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformPRToCalendarEvent,
@@ -22,7 +22,7 @@ const { formatDateOnly } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncPRsToCalendar(startDate, endDate, options = {}) {
-  const notionService = new NotionService();
+  const prRepo = new PRRepository();
 
   const results = {
     created: [],
@@ -39,7 +39,7 @@ async function syncPRsToCalendar(startDate, endDate, options = {}) {
 
   try {
     // Get unsynced PR records
-    const prRecords = await notionService.getUnsyncedPRs(startDate, endDate);
+    const prRecords = await prRepo.getUnsynced(startDate, endDate);
     results.total = prRecords.length;
 
     if (prRecords.length === 0) {
@@ -51,7 +51,7 @@ async function syncPRsToCalendar(startDate, endDate, options = {}) {
       try {
         const result = await syncSinglePR(
           prRecord,
-          notionService,
+          prRepo,
           calendarServices
         );
 
@@ -81,30 +81,30 @@ async function syncPRsToCalendar(startDate, endDate, options = {}) {
  * Sync a single PR record to calendar
  *
  * @param {Object} prRecord - Notion page object
- * @param {NotionService} notionService - Notion service instance
+ * @param {PRRepository} prRepo - PR repository instance
  * @param {Object} calendarServices - Object with 'personal' and 'work' calendar service instances
  * @returns {Promise<Object>} Sync result
  */
 async function syncSinglePR(
   prRecord,
-  notionService,
+  prRepo,
   calendarServices
 ) {
   // Transform to calendar event format
   const { calendarId, accountType, event } = transformPRToCalendarEvent(
     prRecord,
-    notionService
+    prRepo
   );
 
   // Skip if missing required data
   if (!event.start.date || !event.end.date) {
     // Extract repository and date for display even when skipped
     const props = config.notion.properties.github;
-    const repository = notionService.extractProperty(
+    const repository = prRepo.extractProperty(
       prRecord,
       getPropertyName(props.repository)
     );
-    const date = notionService.extractProperty(
+    const date = prRepo.extractProperty(
       prRecord,
       getPropertyName(props.date)
     );
@@ -136,15 +136,15 @@ async function syncSinglePR(
     const createdEvent = await calendarService.createEvent(calendarId, event);
 
     // Mark as synced in Notion
-    await notionService.markPRSynced(prRecord.id);
+    await prRepo.markSynced(prRecord.id);
 
     // Extract repository and date from Notion record for consistent display
     const props = config.notion.properties.github;
-    const repository = notionService.extractProperty(
+    const repository = prRepo.extractProperty(
       prRecord,
       getPropertyName(props.repository)
     );
-    const date = notionService.extractProperty(
+    const date = prRepo.extractProperty(
       prRecord,
       getPropertyName(props.date)
     );

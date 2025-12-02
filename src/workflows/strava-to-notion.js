@@ -3,7 +3,7 @@
  * Sync Strava activity data to Notion with de-duplication
  */
 
-const NotionService = require("../services/NotionService");
+const WorkoutRepository = require("../repositories/WorkoutRepository");
 const { transformStravaToNotion } = require("../transformers/strava-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncStravaToNotion(activities, options = {}) {
-  const notionService = new NotionService();
+  const workoutRepo = new WorkoutRepository();
   const results = {
     created: [],
     skipped: [],
@@ -26,7 +26,7 @@ async function syncStravaToNotion(activities, options = {}) {
 
   for (const activity of activities) {
     try {
-      const result = await syncSingleActivity(activity, notionService);
+      const result = await syncSingleActivity(activity, workoutRepo);
       if (result.skipped) {
         results.skipped.push(result);
       } else {
@@ -50,12 +50,12 @@ async function syncStravaToNotion(activities, options = {}) {
  * Sync a single activity to Notion
  *
  * @param {Object} activity - Processed Strava activity
- * @param {NotionService} notionService - Notion service instance
+ * @param {WorkoutRepository} workoutRepo - Workout repository instance
  * @returns {Promise<Object>} Sync result
  */
-async function syncSingleActivity(activity, notionService) {
+async function syncSingleActivity(activity, workoutRepo) {
   // Check for existing record
-  const existing = await notionService.findWorkoutByActivityId(
+  const existing = await workoutRepo.findByActivityId(
     activity.activityId
   );
 
@@ -72,7 +72,7 @@ async function syncSingleActivity(activity, notionService) {
   // Transform and create
   const properties = transformStravaToNotion(activity);
   const databaseId = config.notion.databases.workouts;
-  const page = await notionService.createPage(databaseId, properties);
+  const page = await workoutRepo.createPage(databaseId, properties);
 
   return {
     skipped: false,

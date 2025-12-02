@@ -6,7 +6,7 @@
 
 require("dotenv").config();
 
-const notion = require("./notion");
+const notion = require("./notion/index");
 const sources = require("./sources");
 const tokens = require("./tokens");
 const calendar = require("./calendar");

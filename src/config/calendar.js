@@ -1,9 +1,12 @@
 /**
  * Google Calendar Configuration
- * Configuration for syncing sleep data to Google Calendar
+ * OAuth credentials and calendar mapping utilities
  */
 
-// Calendar IDs from environment variables
+const calendarMappings = require("./calendar-mappings");
+const { resolveCalendarId, getCalendarIds, hasCalendarsConfigured } = require("../utils/calendar-mapper");
+
+// Calendar IDs from environment variables (for backward compatibility)
 const calendars = {
   normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
   sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
@@ -39,6 +42,7 @@ function getWorkCredentials() {
 }
 
 /**
+ * DEPRECATED: Use resolveCalendarId('sleep', record, notionService) instead
  * Map Notion Google Calendar field value to calendar ID
  *
  * @param {string} notionFieldValue - Value from Notion (e.g., "Normal Wake Up" or "Sleep In")
@@ -56,6 +60,7 @@ function mapNotionCalendarToId(notionFieldValue) {
 }
 
 /**
+ * DEPRECATED: Use resolveCalendarId('workouts', record, notionService) instead
  * Map Strava workout to calendar ID
  * All workouts go to the fitness calendar
  *
@@ -66,6 +71,7 @@ function mapStravaToCalendarId() {
 }
 
 /**
+ * DEPRECATED: Use resolveCalendarId('steam', record, notionService) instead
  * Map Steam gaming sessions to calendar ID
  * All gaming sessions go to the video games calendar
  *
@@ -76,6 +82,7 @@ function mapSteamToCalendarId() {
 }
 
 /**
+ * DEPRECATED: Use resolveCalendarId('github', record, notionService) instead
  * Map PR record to calendar ID based on Project Type
  *
  * @param {string} projectType - Project Type from Notion ("Personal" or "Work")
@@ -96,6 +103,7 @@ function mapPRToCalendarId(projectType) {
 }
 
 /**
+ * DEPRECATED: Use resolveCalendarId('bodyWeight', record, notionService) instead
  * Map Withings body weight measurements to calendar ID
  * All body weight measurements go to the body weight calendar
  *
@@ -111,9 +119,17 @@ module.exports = {
   workCredentials,
   getPersonalCredentials,
   getWorkCredentials,
+  
+  // Deprecated mapping functions (kept for backward compatibility)
   mapNotionCalendarToId,
   mapStravaToCalendarId,
   mapSteamToCalendarId,
   mapPRToCalendarId,
   mapWithingsToCalendarId,
+  
+  // New declarative mapping system
+  calendarMappings,
+  resolveCalendarId,
+  getCalendarIds,
+  hasCalendarsConfigured,
 };

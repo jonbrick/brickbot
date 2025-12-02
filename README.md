@@ -175,16 +175,38 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 
 - [SETUP.md](./SETUP.md) - Complete setup guide (Notion, Google Calendar, external APIs)
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture and design patterns
+- [HOW_IT_WORKS.md](./HOW_IT_WORKS.md) - System flow, data flows, and how components work together
+- [REFACTORING_SUMMARY.md](./REFACTORING_SUMMARY.md) - Recent architecture improvements
 
 ## Adding New Data Sources
 
-1. Create service in `src/services/`
-2. Create collector in `src/collectors/`
-3. Create transformer in `src/transformers/`
-4. Add config to `src/config/sources.js`
-5. Update CLI scripts to include new source
+The modular architecture makes adding new integrations straightforward:
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed extension guide.
+1. **Create Repository** (`src/repositories/`) - Domain-specific data access (~60 lines)
+2. **Create Domain Config** (`src/config/notion/`) - Database properties (~50 lines)
+3. **Create Service** (`src/services/`) - API client wrapper (if external API)
+4. **Create Collector** (`src/collectors/`) - Business logic for fetching data
+5. **Create Transformer** (`src/transformers/`) - Data transformation functions
+6. **Add Calendar Mapping** (`src/config/calendar-mappings.js`) - Just 5 lines!
+7. **Create Workflow** (`src/workflows/`) - Can leverage BaseWorkflow for batch logic
+8. **Update CLI Scripts** - Add new source to selection menus
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed extension guide and patterns.
+
+### Example: Adding a New Calendar
+
+Adding a new calendar integration is now configuration-driven:
+
+```javascript
+// In src/config/calendar-mappings.js
+meditation: {
+  type: 'direct',
+  sourceDatabase: 'meditation',
+  calendarId: process.env.MEDITATION_CALENDAR_ID,
+}
+```
+
+That's it! No new functions needed.
 
 ## Date Handling
 

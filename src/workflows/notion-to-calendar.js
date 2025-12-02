@@ -3,7 +3,7 @@
  * Sync sleep records from Notion to Google Calendar
  */
 
-const NotionService = require("../services/NotionService");
+const SleepRepository = require("../repositories/SleepRepository");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformSleepToCalendarEvent,
@@ -22,7 +22,7 @@ const { formatDate } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSleepToCalendar(startDate, endDate, options = {}) {
-  const notionService = new NotionService();
+  const sleepRepo = new SleepRepository();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -34,7 +34,7 @@ async function syncSleepToCalendar(startDate, endDate, options = {}) {
 
   try {
     // Get unsynced sleep records
-    const sleepRecords = await notionService.getUnsyncedSleep(
+    const sleepRecords = await sleepRepo.getUnsynced(
       startDate,
       endDate
     );
@@ -49,7 +49,7 @@ async function syncSleepToCalendar(startDate, endDate, options = {}) {
       try {
         const result = await syncSingleSleepRecord(
           sleepRecord,
-          notionService,
+          sleepRepo,
           calendarService
         );
 
@@ -79,26 +79,26 @@ async function syncSleepToCalendar(startDate, endDate, options = {}) {
  * Sync a single sleep record to calendar
  *
  * @param {Object} sleepRecord - Notion page object
- * @param {NotionService} notionService - Notion service instance
+ * @param {SleepRepository} sleepRepo - Sleep repository instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleSleepRecord(
   sleepRecord,
-  notionService,
+  sleepRepo,
   calendarService
 ) {
   // Transform to calendar event format
   const { calendarId, event } = transformSleepToCalendarEvent(
     sleepRecord,
-    notionService
+    sleepRepo
   );
 
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
     // Extract nightOf for display even when skipped
     const props = config.notion.properties.sleep;
-    const nightOf = notionService.extractProperty(
+    const nightOf = sleepRepo.extractProperty(
       sleepRecord,
       getPropertyName(props.nightOfDate)
     );
@@ -119,11 +119,11 @@ async function syncSingleSleepRecord(
     const createdEvent = await calendarService.createEvent(calendarId, event);
 
     // Mark as synced in Notion
-    await notionService.markSleepSynced(sleepRecord.id);
+    await sleepRepo.markSynced(sleepRecord.id);
 
     // Extract nightOf from Notion record and format for consistent display
     const props = config.notion.properties.sleep;
-    const nightOf = notionService.extractProperty(
+    const nightOf = sleepRepo.extractProperty(
       sleepRecord,
       getPropertyName(props.nightOfDate)
     );

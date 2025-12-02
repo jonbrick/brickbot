@@ -3,7 +3,7 @@
  * Sync GitHub activity data to Notion with de-duplication
  */
 
-const NotionService = require("../services/NotionService");
+const PRRepository = require("../repositories/PRRepository");
 const { transformGitHubToNotion } = require("../transformers/github-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncGitHubToNotion(activities, options = {}) {
-  const notionService = new NotionService();
+  const prRepo = new PRRepository();
   const results = {
     created: [],
     skipped: [],
@@ -26,7 +26,7 @@ async function syncGitHubToNotion(activities, options = {}) {
 
   for (const activity of activities) {
     try {
-      const result = await syncSingleActivity(activity, notionService);
+      const result = await syncSingleActivity(activity, prRepo);
       if (result.skipped) {
         results.skipped.push(result);
       } else {
@@ -50,12 +50,12 @@ async function syncGitHubToNotion(activities, options = {}) {
  * Sync a single GitHub activity to Notion
  *
  * @param {Object} activity - Processed GitHub activity
- * @param {NotionService} notionService - Notion service instance
+ * @param {PRRepository} prRepo - PR repository instance
  * @returns {Promise<Object>} Sync result
  */
-async function syncSingleActivity(activity, notionService) {
+async function syncSingleActivity(activity, prRepo) {
   // Check for existing record using Unique ID
-  const existing = await notionService.findPRByUniqueId(activity.uniqueId);
+  const existing = await prRepo.findByUniqueId(activity.uniqueId);
 
   if (existing) {
     const displayName = activity.date
@@ -74,7 +74,7 @@ async function syncSingleActivity(activity, notionService) {
   // Transform and create
   const properties = transformGitHubToNotion(activity);
   const databaseId = config.notion.databases.prs;
-  const page = await notionService.createPage(databaseId, properties);
+  const page = await prRepo.createPage(databaseId, properties);
 
   const displayName = activity.date
     ? `${activity.repository} (${activity.date})`

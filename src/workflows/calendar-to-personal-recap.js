@@ -92,7 +92,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
             startDate,
             endDate,
             accountType,
-            true // isSleepCalendar = true
+            true, // isSleepCalendar = true
+            true // ignoreAllDayEvents = true
           ),
         },
         {
@@ -102,7 +103,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
             startDate,
             endDate,
             accountType,
-            true // isSleepCalendar = true
+            true, // isSleepCalendar = true
+            true // ignoreAllDayEvents = true
           ),
         }
       );
@@ -120,7 +122,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false // isSleepCalendar = false
+          false, // isSleepCalendar = false
+          false // ignoreAllDayEvents = false (keep all-day events)
         ),
       });
     }
@@ -137,7 +140,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false // isSleepCalendar = false
+          false, // isSleepCalendar = false
+          false // ignoreAllDayEvents = false (keep all-day events)
         ),
       });
     }
@@ -154,7 +158,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -171,7 +176,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -188,7 +194,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -205,7 +212,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -222,7 +230,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -239,7 +248,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -256,7 +266,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }
@@ -273,7 +284,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          false // ignoreAllDayEvents = false (keep all-day events)
         ),
       });
     }
@@ -290,7 +302,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           startDate,
           endDate,
           accountType,
-          false
+          false, // isSleepCalendar = false
+          true // ignoreAllDayEvents = true
         ),
       });
     }

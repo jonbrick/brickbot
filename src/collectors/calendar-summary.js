@@ -47,6 +47,7 @@ function getEventDate(startDateTime, isSleepEvent) {
  * @param {Date} endDate - End date
  * @param {string} accountType - "personal" or "work" (default: "personal")
  * @param {boolean} isSleepCalendar - Whether this is a sleep calendar (Early Wake Up or Sleep In)
+ * @param {boolean} ignoreAllDayEvents - Whether to filter out all-day events (default: false)
  * @returns {Promise<Array>} Array of events with { date, durationHours }
  */
 async function fetchCalendarSummary(
@@ -54,7 +55,8 @@ async function fetchCalendarSummary(
   startDate,
   endDate,
   accountType = "personal",
-  isSleepCalendar = false
+  isSleepCalendar = false,
+  ignoreAllDayEvents = false
 ) {
   if (!calendarId) {
     throw new Error("Calendar ID is required");
@@ -82,6 +84,7 @@ async function fetchCalendarSummary(
         let durationHours = 0;
         let startDateTime = null;
         let endDateTime = null;
+        let isAllDayEvent = false;
 
         // Handle timed events (with dateTime)
         if (event.start.dateTime) {
@@ -97,6 +100,11 @@ async function fetchCalendarSummary(
         }
         // Handle all-day events (with date only)
         else if (event.start.date) {
+          isAllDayEvent = true;
+          // Skip all-day events if ignoreAllDayEvents is true
+          if (ignoreAllDayEvents) {
+            return null;
+          }
           eventDate = event.start.date;
           // For all-day events, default to 0 hours or handle as needed
           // You might want to adjust this based on requirements
@@ -114,6 +122,7 @@ async function fetchCalendarSummary(
           startDateTime: startDateTime ? startDateTime.toISOString() : null,
           endDateTime: endDateTime ? endDateTime.toISOString() : null,
           colorId: event.colorId || null,
+          isAllDayEvent,
         };
       })
       .filter((event) => event !== null); // Remove null entries

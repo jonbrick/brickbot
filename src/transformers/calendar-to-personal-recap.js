@@ -4,6 +4,17 @@
  */
 
 /**
+ * Get 3-letter day abbreviation from a date string (YYYY-MM-DD)
+ * @param {string} dateStr - Date string in YYYY-MM-DD format
+ * @returns {string} 3-letter day abbreviation (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
+ */
+function getDayAbbreviation(dateStr) {
+  const date = new Date(dateStr + "T00:00:00");
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return dayNames[date.getDay()];
+}
+
+/**
  * Calculate week summary from calendar events
  * Filters events to only include those within the week date range
  *
@@ -137,7 +148,17 @@ function calculateWeekSummary(
     );
     summary.drinkingBlocks =
       filteredDrinkingEvents
-        .map((event) => event.summary || "Untitled Event")
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          const duration = event.durationHours || 0;
+          if (duration > 0) {
+            const durationRounded = Math.round(duration * 100) / 100;
+            return `${eventName} (${day} - ${durationRounded} hours)`;
+          } else {
+            return `${eventName} (${day})`;
+          }
+        })
         .join(", ") || "";
   }
 
@@ -161,9 +182,10 @@ function calculateWeekSummary(
       filteredWorkoutEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -188,9 +210,10 @@ function calculateWeekSummary(
       filteredReadingEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -215,9 +238,10 @@ function calculateWeekSummary(
       filteredCodingEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -238,9 +262,10 @@ function calculateWeekSummary(
       filteredArtEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -265,9 +290,10 @@ function calculateWeekSummary(
       filteredVideoGamesEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -292,9 +318,10 @@ function calculateWeekSummary(
       filteredMeditationEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -319,9 +346,10 @@ function calculateWeekSummary(
       filteredMusicEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
           const duration = event.durationHours || 0;
           const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${durationRounded} hours)`;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
         })
         .join(", ") || "";
   }
@@ -393,14 +421,15 @@ function calculateWeekSummary(
       );
       summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
-      // Calculate blocks (formatted as "Event Name (X.XX hours), Event Name 2 (Y.YY hours)")
+      // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
       summary[`${category}Blocks`] =
         categoryEvents
           .map((event) => {
             const eventName = event.summary || "Untitled Event";
+            const day = getDayAbbreviation(event.date);
             const duration = event.durationHours || 0;
             const durationRounded = Math.round(duration * 100) / 100;
-            return `${eventName} (${durationRounded} hours)`;
+            return `${eventName} (${day} - ${durationRounded} hours)`;
           })
           .join(", ") || "";
     });

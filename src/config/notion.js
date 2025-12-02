@@ -211,7 +211,27 @@ const properties = {
     },
     workoutBlocks: {
       name: "Workout - Blocks",
+      type: "text",
+      enabled: true,
+    },
+    meditationDays: {
+      name: "Meditation - Days",
       type: "number",
+      enabled: true,
+    },
+    meditationSessions: {
+      name: "Meditation - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    meditationHoursTotal: {
+      name: "Meditation - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    meditationBlocks: {
+      name: "Meditation - Blocks",
+      type: "text",
       enabled: true,
     },
     readingDays: {
@@ -231,27 +251,7 @@ const properties = {
     },
     readingBlocks: {
       name: "Reading - Blocks",
-      type: "number",
-      enabled: true,
-    },
-    codingDays: {
-      name: "Coding - Days",
-      type: "number",
-      enabled: true,
-    },
-    codingSessions: {
-      name: "Coding - Sessions",
-      type: "number",
-      enabled: true,
-    },
-    codingHoursTotal: {
-      name: "Coding - Hours Total",
-      type: "number",
-      enabled: true,
-    },
-    codingBlocks: {
-      name: "Coding - Blocks",
-      type: "number",
+      type: "text",
       enabled: true,
     },
     artDays: {
@@ -271,7 +271,47 @@ const properties = {
     },
     artBlocks: {
       name: "Art - Blocks",
+      type: "text",
+      enabled: true,
+    },
+    musicDays: {
+      name: "Music - Days",
       type: "number",
+      enabled: true,
+    },
+    musicSessions: {
+      name: "Music - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    musicHoursTotal: {
+      name: "Music - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    musicBlocks: {
+      name: "Music - Blocks",
+      type: "text",
+      enabled: true,
+    },
+    codingDays: {
+      name: "Coding - Days",
+      type: "number",
+      enabled: true,
+    },
+    codingSessions: {
+      name: "Coding - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    codingHoursTotal: {
+      name: "Coding - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    codingBlocks: {
+      name: "Coding - Blocks",
+      type: "text",
       enabled: true,
     },
     videoGamesDays: {
@@ -284,33 +324,18 @@ const properties = {
       type: "number",
       enabled: true,
     },
-    videoGamesTotal: {
-      name: "Video Games - Total",
+    videoGamesHoursTotal: {
+      name: "Video Games - Hours Total",
       type: "number",
       enabled: true,
     },
     videoGamesBlocks: {
       name: "Video Games - Blocks",
-      type: "number",
+      type: "text",
       enabled: true,
     },
-    meditationDays: {
-      name: "Meditation - Days",
-      type: "number",
-      enabled: true,
-    },
-    meditationSessions: {
-      name: "Meditation - Sessions",
-      type: "number",
-      enabled: true,
-    },
-    meditationHours: {
-      name: "Hours",
-      type: "number",
-      enabled: true,
-    },
-    meditationBlocks: {
-      name: "Meditation - Blocks",
+    bodyWeightAverage: {
+      name: "Body Weight - Average",
       type: "number",
       enabled: true,
     },
@@ -433,12 +458,16 @@ const fieldMappings = {
     artBlocks: "artBlocks",
     videoGamesDays: "videoGamesDays",
     videoGamesSessions: "videoGamesSessions",
-    videoGamesTotal: "videoGamesTotal",
+    videoGamesHoursTotal: "videoGamesHoursTotal",
     videoGamesBlocks: "videoGamesBlocks",
     meditationDays: "meditationDays",
     meditationSessions: "meditationSessions",
-    meditationHours: "meditationHours",
+    meditationHoursTotal: "meditationHoursTotal",
     meditationBlocks: "meditationBlocks",
+    musicDays: "musicDays",
+    musicSessions: "musicSessions",
+    musicHoursTotal: "musicHoursTotal",
+    musicBlocks: "musicBlocks",
     date: "date",
     weekNumber: "weekNumber",
     year: "year",

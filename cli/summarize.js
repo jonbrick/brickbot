@@ -60,7 +60,7 @@ async function selectCalendars() {
     });
   }
 
-  if (process.env.FITNESS_CALENDAR_ID) {
+  if (process.env.WORKOUT_CALENDAR_ID) {
     availableCalendars.push({
       name: "Workout",
       value: "workout",
@@ -99,6 +99,20 @@ async function selectCalendars() {
     availableCalendars.push({
       name: "Meditation",
       value: "meditation",
+    });
+  }
+
+  if (process.env.MUSIC_CALENDAR_ID) {
+    availableCalendars.push({
+      name: "Music",
+      value: "music",
+    });
+  }
+
+  if (process.env.BODY_WEIGHT_CALENDAR_ID) {
+    availableCalendars.push({
+      name: "Body Weight",
+      value: "bodyWeight",
     });
   }
 
@@ -199,6 +213,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.readingHoursTotal !== undefined) {
       console.log(`  Reading Hours Total: ${result.summary.readingHoursTotal.toFixed(2)}`);
     }
+    if (result.summary.readingBlocks !== undefined && result.summary.readingBlocks) {
+      console.log(`  Reading Blocks: ${result.summary.readingBlocks}`);
+    }
   }
   
   if (selectedCalendar === "coding" || showAll) {
@@ -210,6 +227,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
     if (result.summary.codingHoursTotal !== undefined) {
       console.log(`  Coding Hours Total: ${result.summary.codingHoursTotal.toFixed(2)}`);
+    }
+    if (result.summary.codingBlocks !== undefined && result.summary.codingBlocks) {
+      console.log(`  Coding Blocks: ${result.summary.codingBlocks}`);
     }
   }
   
@@ -223,6 +243,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.artHoursTotal !== undefined) {
       console.log(`  Art Hours Total: ${result.summary.artHoursTotal.toFixed(2)}`);
     }
+    if (result.summary.artBlocks !== undefined && result.summary.artBlocks) {
+      console.log(`  Art Blocks: ${result.summary.artBlocks}`);
+    }
   }
   
   if (selectedCalendar === "videoGames" || showAll) {
@@ -232,8 +255,11 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.videoGamesSessions !== undefined) {
       console.log(`  Video Games Sessions: ${result.summary.videoGamesSessions}`);
     }
-    if (result.summary.videoGamesTotal !== undefined) {
-      console.log(`  Video Games Total: ${result.summary.videoGamesTotal.toFixed(2)}`);
+    if (result.summary.videoGamesHoursTotal !== undefined) {
+      console.log(`  Video Games Hours Total: ${result.summary.videoGamesHoursTotal.toFixed(2)}`);
+    }
+    if (result.summary.videoGamesBlocks !== undefined && result.summary.videoGamesBlocks) {
+      console.log(`  Video Games Blocks: ${result.summary.videoGamesBlocks}`);
     }
   }
   
@@ -244,8 +270,32 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.meditationSessions !== undefined) {
       console.log(`  Meditation Sessions: ${result.summary.meditationSessions}`);
     }
-    if (result.summary.meditationHours !== undefined) {
-      console.log(`  Meditation Hours: ${result.summary.meditationHours.toFixed(2)}`);
+    if (result.summary.meditationHoursTotal !== undefined) {
+      console.log(`  Meditation Hours Total: ${result.summary.meditationHoursTotal.toFixed(2)}`);
+    }
+    if (result.summary.meditationBlocks !== undefined && result.summary.meditationBlocks) {
+      console.log(`  Meditation Blocks: ${result.summary.meditationBlocks}`);
+    }
+  }
+
+  if (selectedCalendar === "music" || showAll) {
+    if (result.summary.musicDays !== undefined) {
+      console.log(`  Music Days: ${result.summary.musicDays}`);
+    }
+    if (result.summary.musicSessions !== undefined) {
+      console.log(`  Music Sessions: ${result.summary.musicSessions}`);
+    }
+    if (result.summary.musicHoursTotal !== undefined) {
+      console.log(`  Music Hours Total: ${result.summary.musicHoursTotal.toFixed(2)}`);
+    }
+    if (result.summary.musicBlocks !== undefined && result.summary.musicBlocks) {
+      console.log(`  Music Blocks: ${result.summary.musicBlocks}`);
+    }
+  }
+
+  if (selectedCalendar === "bodyWeight" || showAll) {
+    if (result.summary.bodyWeightAverage !== undefined) {
+      console.log(`  Body Weight Average: ${result.summary.bodyWeightAverage} lbs`);
     }
   }
 
@@ -284,7 +334,7 @@ async function main() {
       if (process.env.SOBER_CALENDAR_ID && process.env.DRINKING_CALENDAR_ID) {
         expandedCalendars.push("sober", "drinking");
       }
-      if (process.env.FITNESS_CALENDAR_ID) {
+      if (process.env.WORKOUT_CALENDAR_ID) {
         expandedCalendars.push("workout");
       }
       if (process.env.READING_CALENDAR_ID) {
@@ -301,6 +351,12 @@ async function main() {
       }
       if (process.env.MEDITATION_CALENDAR_ID) {
         expandedCalendars.push("meditation");
+      }
+      if (process.env.MUSIC_CALENDAR_ID) {
+        expandedCalendars.push("music");
+      }
+      if (process.env.BODY_WEIGHT_CALENDAR_ID) {
+        expandedCalendars.push("bodyWeight");
       }
     } else if (selectedCalendar === "drinkingDays") {
       expandedCalendars = ["sober", "drinking"];
@@ -382,6 +438,9 @@ async function main() {
         if (result.summary.readingHoursTotal !== undefined) {
           summaryData.readingHoursTotal = result.summary.readingHoursTotal;
         }
+        if (result.summary.readingBlocks !== undefined) {
+          summaryData.readingBlocks = result.summary.readingBlocks;
+        }
       }
       
       if (selectedCalendar === "coding" || showAll) {
@@ -393,6 +452,9 @@ async function main() {
         }
         if (result.summary.codingHoursTotal !== undefined) {
           summaryData.codingHoursTotal = result.summary.codingHoursTotal;
+        }
+        if (result.summary.codingBlocks !== undefined) {
+          summaryData.codingBlocks = result.summary.codingBlocks;
         }
       }
       
@@ -406,6 +468,9 @@ async function main() {
         if (result.summary.artHoursTotal !== undefined) {
           summaryData.artHoursTotal = result.summary.artHoursTotal;
         }
+        if (result.summary.artBlocks !== undefined) {
+          summaryData.artBlocks = result.summary.artBlocks;
+        }
       }
       
       if (selectedCalendar === "videoGames" || showAll) {
@@ -415,8 +480,11 @@ async function main() {
         if (result.summary.videoGamesSessions !== undefined) {
           summaryData.videoGamesSessions = result.summary.videoGamesSessions;
         }
-        if (result.summary.videoGamesTotal !== undefined) {
-          summaryData.videoGamesTotal = result.summary.videoGamesTotal;
+        if (result.summary.videoGamesHoursTotal !== undefined) {
+          summaryData.videoGamesHoursTotal = result.summary.videoGamesHoursTotal;
+        }
+        if (result.summary.videoGamesBlocks !== undefined) {
+          summaryData.videoGamesBlocks = result.summary.videoGamesBlocks;
         }
       }
       
@@ -427,8 +495,32 @@ async function main() {
         if (result.summary.meditationSessions !== undefined) {
           summaryData.meditationSessions = result.summary.meditationSessions;
         }
-        if (result.summary.meditationHours !== undefined) {
-          summaryData.meditationHours = result.summary.meditationHours;
+        if (result.summary.meditationHoursTotal !== undefined) {
+          summaryData.meditationHoursTotal = result.summary.meditationHoursTotal;
+        }
+        if (result.summary.meditationBlocks !== undefined) {
+          summaryData.meditationBlocks = result.summary.meditationBlocks;
+        }
+      }
+
+      if (selectedCalendar === "music" || showAll) {
+        if (result.summary.musicDays !== undefined) {
+          summaryData.musicDays = result.summary.musicDays;
+        }
+        if (result.summary.musicSessions !== undefined) {
+          summaryData.musicSessions = result.summary.musicSessions;
+        }
+        if (result.summary.musicHoursTotal !== undefined) {
+          summaryData.musicHoursTotal = result.summary.musicHoursTotal;
+        }
+        if (result.summary.musicBlocks !== undefined) {
+          summaryData.musicBlocks = result.summary.musicBlocks;
+        }
+      }
+
+      if (selectedCalendar === "bodyWeight" || showAll) {
+        if (result.summary.bodyWeightAverage !== undefined) {
+          summaryData.bodyWeightAverage = result.summary.bodyWeightAverage;
         }
       }
       

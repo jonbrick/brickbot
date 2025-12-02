@@ -76,7 +76,7 @@ function transformWorkoutToCalendarEvent(workoutRecord, workoutRepo) {
 
   if (!calendarId) {
     throw new Error(
-      "Fitness calendar ID not configured. Set FITNESS_CALENDAR_ID in .env file."
+      "Fitness calendar ID not configured. Set WORKOUT_CALENDAR_ID in .env file."
     );
   }
 

@@ -202,7 +202,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 - `SteamDatabase.js` - Gaming sessions
 - `PRDatabase.js` - GitHub pull requests
 - `BodyWeightDatabase.js` - Withings measurements
-- `RecapDatabase.js` - Weekly recaps
+- `PersonalRecapDatabase.js` - Weekly recaps
 
 **Benefits**:
 - **Small**: 60-100 lines each vs. 1104-line monolith

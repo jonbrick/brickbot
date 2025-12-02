@@ -7,6 +7,7 @@ module.exports = {
 
   properties: {
     title: { name: "Week Recap", type: "title", enabled: true },
+
     earlyWakeupDays: {
       name: "Early Wakeup - Days",
       type: "number",
@@ -18,6 +19,7 @@ module.exports = {
       type: "number",
       enabled: true,
     },
+
     soberDays: {
       name: "Sober - Days",
       type: "number",
@@ -33,6 +35,7 @@ module.exports = {
       type: "text",
       enabled: true,
     },
+
     workoutDays: {
       name: "Workout - Days",
       type: "number",
@@ -53,6 +56,28 @@ module.exports = {
       type: "text",
       enabled: true,
     },
+
+    meditationDays: {
+      name: "Meditation - Days",
+      type: "number",
+      enabled: true,
+    },
+    meditationSessions: {
+      name: "Meditation - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    meditationHoursTotal: {
+      name: "Meditation - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    meditationBlocks: {
+      name: "Meditation - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
     readingDays: {
       name: "Reading - Days",
       type: "number",
@@ -70,29 +95,10 @@ module.exports = {
     },
     readingBlocks: {
       name: "Reading - Blocks",
-      type: "number",
+      type: "text",
       enabled: true,
     },
-    codingDays: {
-      name: "Coding - Days",
-      type: "number",
-      enabled: true,
-    },
-    codingSessions: {
-      name: "Coding - Sessions",
-      type: "number",
-      enabled: true,
-    },
-    codingHoursTotal: {
-      name: "Coding - Hours Total",
-      type: "number",
-      enabled: true,
-    },
-    codingBlocks: {
-      name: "Coding - Blocks",
-      type: "number",
-      enabled: true,
-    },
+
     artDays: {
       name: "Art - Days",
       type: "number",
@@ -110,9 +116,52 @@ module.exports = {
     },
     artBlocks: {
       name: "Art - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    musicDays: {
+      name: "Music - Days",
       type: "number",
       enabled: true,
     },
+    musicSessions: {
+      name: "Music - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    musicHoursTotal: {
+      name: "Music - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    musicBlocks: {
+      name: "Music - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    codingDays: {
+      name: "Coding - Days",
+      type: "number",
+      enabled: true,
+    },
+    codingSessions: {
+      name: "Coding - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    codingHoursTotal: {
+      name: "Coding - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    codingBlocks: {
+      name: "Coding - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
     videoGamesDays: {
       name: "Video Games - Days",
       type: "number",
@@ -123,36 +172,23 @@ module.exports = {
       type: "number",
       enabled: true,
     },
-    videoGamesTotal: {
-      name: "Video Games - Total",
+    videoGamesHoursTotal: {
+      name: "Video Games - Hours Total",
       type: "number",
       enabled: true,
     },
     videoGamesBlocks: {
       name: "Video Games - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    bodyWeightAverage: {
+      name: "Body Weight - Average",
       type: "number",
       enabled: true,
     },
-    meditationDays: {
-      name: "Meditation - Days",
-      type: "number",
-      enabled: true,
-    },
-    meditationSessions: {
-      name: "Meditation - Sessions",
-      type: "number",
-      enabled: true,
-    },
-    meditationHours: {
-      name: "Hours",
-      type: "number",
-      enabled: true,
-    },
-    meditationBlocks: {
-      name: "Meditation - Blocks",
-      type: "number",
-      enabled: true,
-    },
+
     date: { name: "Date", type: "date", enabled: true },
     weekNumber: { name: "Week Number", type: "number", enabled: true },
     year: { name: "Year", type: "number", enabled: true },
@@ -183,12 +219,16 @@ module.exports = {
     artBlocks: "artBlocks",
     videoGamesDays: "videoGamesDays",
     videoGamesSessions: "videoGamesSessions",
-    videoGamesTotal: "videoGamesTotal",
+    videoGamesHoursTotal: "videoGamesHoursTotal",
     videoGamesBlocks: "videoGamesBlocks",
     meditationDays: "meditationDays",
     meditationSessions: "meditationSessions",
-    meditationHours: "meditationHours",
+    meditationHoursTotal: "meditationHoursTotal",
     meditationBlocks: "meditationBlocks",
+    musicDays: "musicDays",
+    musicSessions: "musicSessions",
+    musicHoursTotal: "musicHoursTotal",
+    musicBlocks: "musicBlocks",
     date: "date",
     weekNumber: "weekNumber",
     year: "year",

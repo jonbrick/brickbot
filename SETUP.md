@@ -255,7 +255,7 @@ Get each calendar ID:
    ```bash
    PERSONAL_PRS_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
    WORK_PRS_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
-   FITNESS_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
+   WORKOUT_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
    SLEEP_IN_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
    NORMAL_WAKE_UP_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
    BODY_WEIGHT_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
@@ -410,7 +410,7 @@ GOOGLE_REDIRECT_URI=urn:ietf:wg:oauth:2.0:oob
 # Calendar IDs
 PERSONAL_PRS_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
 WORK_PRS_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
-FITNESS_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
+WORKOUT_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
 SLEEP_IN_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
 NORMAL_WAKE_UP_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com
 BODY_WEIGHT_CALENDAR_ID=xxxxxxxxxxxxx@group.calendar.google.com

@@ -176,6 +176,20 @@ function calculateWeekSummary(
     summary.readingDays = reading.days;
     summary.readingSessions = reading.sessions;
     summary.readingHoursTotal = reading.hoursTotal;
+
+    // Calculate reading blocks (event summaries) from reading events
+    const readingEvents = calendarEvents.reading || [];
+    const filteredReadingEvents = readingEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.readingBlocks = filteredReadingEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
   }
 
   // Coding metrics (only if "coding" is selected)
@@ -188,6 +202,20 @@ function calculateWeekSummary(
     summary.codingDays = coding.days;
     summary.codingSessions = coding.sessions;
     summary.codingHoursTotal = coding.hoursTotal;
+
+    // Calculate coding blocks (event summaries) from coding events
+    const codingEvents = calendarEvents.coding || [];
+    const filteredCodingEvents = codingEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.codingBlocks = filteredCodingEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
   }
 
   // Art metrics (only if "art" is selected)
@@ -196,6 +224,20 @@ function calculateWeekSummary(
     summary.artDays = art.days;
     summary.artSessions = art.sessions;
     summary.artHoursTotal = art.hoursTotal;
+
+    // Calculate art blocks (event summaries) from art events
+    const artEvents = calendarEvents.art || [];
+    const filteredArtEvents = artEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.artBlocks = filteredArtEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
   }
 
   // Video Games metrics (only if "videoGames" is selected)
@@ -207,7 +249,21 @@ function calculateWeekSummary(
     );
     summary.videoGamesDays = videoGames.days;
     summary.videoGamesSessions = videoGames.sessions;
-    summary.videoGamesTotal = videoGames.hoursTotal; // Note: CSV uses "Total" not "Hours Total"
+    summary.videoGamesHoursTotal = videoGames.hoursTotal;
+
+    // Calculate video games blocks (event summaries) from video games events
+    const videoGamesEvents = calendarEvents.videoGames || [];
+    const filteredVideoGamesEvents = videoGamesEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.videoGamesBlocks = filteredVideoGamesEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
   }
 
   // Meditation metrics (only if "meditation" is selected)
@@ -219,7 +275,70 @@ function calculateWeekSummary(
     );
     summary.meditationDays = meditation.days;
     summary.meditationSessions = meditation.sessions;
-    summary.meditationHours = meditation.hoursTotal; // Note: CSV uses "Hours" not "Hours Total"
+    summary.meditationHoursTotal = meditation.hoursTotal;
+
+    // Calculate meditation blocks (event summaries) from meditation events
+    const meditationEvents = calendarEvents.meditation || [];
+    const filteredMeditationEvents = meditationEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.meditationBlocks = filteredMeditationEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
+  }
+
+  // Music metrics (only if "music" is selected)
+  if (shouldCalculate("music")) {
+    const music = calculateCalendarMetrics(
+      calendarEvents.music || [],
+      true,
+      true
+    );
+    summary.musicDays = music.days;
+    summary.musicSessions = music.sessions;
+    summary.musicHoursTotal = music.hoursTotal;
+
+    // Calculate music blocks (event summaries) from music events
+    const musicEvents = calendarEvents.music || [];
+    const filteredMusicEvents = musicEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.musicBlocks = filteredMusicEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
+  }
+
+  // Body Weight metrics (only if "bodyWeight" is selected)
+  if (shouldCalculate("bodyWeight")) {
+    const bodyWeightEvents = calendarEvents.bodyWeight || [];
+    const filteredBodyWeightEvents = bodyWeightEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    
+    // Extract weight values from event summaries using regex
+    // Matches patterns like "Weight: 201.4 lbs" or "201.4 lbs"
+    const weights = filteredBodyWeightEvents
+      .map((event) => {
+        const match = event.summary.match(/(\d+\.?\d*)\s*lbs?/i);
+        return match ? parseFloat(match[1]) : null;
+      })
+      .filter((weight) => weight !== null);
+    
+    // Calculate average
+    if (weights.length > 0) {
+      const sum = weights.reduce((acc, weight) => acc + weight, 0);
+      summary.bodyWeightAverage = Math.round((sum / weights.length) * 10) / 10; // Round to 1 decimal
+    }
   }
 
   return summary;

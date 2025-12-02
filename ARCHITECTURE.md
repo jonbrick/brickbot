@@ -26,7 +26,7 @@ brickbot/
 │   │   ├── SteamDatabase.js        # Gaming operations (95 lines)
 │   │   ├── PRDatabase.js           # GitHub PR operations (100 lines)
 │   │   ├── BodyWeightDatabase.js   # Body weight operations (106 lines)
-│   │   └── RecapDatabase.js        # Week recap operations (88 lines)
+│   │   └── PersonalRecapDatabase.js # Week recap operations (76 lines)
 │   │
 │   ├── config/           # Configuration (split by domain)
 │   │   ├── index.js                 # Main config loader & validator
@@ -37,7 +37,7 @@ brickbot/
 │   │   │   ├── games.js             # Steam gaming config (51 lines)
 │   │   │   ├── prs.js               # GitHub PRs config (60 lines)
 │   │   │   ├── body-weight.js       # Withings config (59 lines)
-│   │   │   └── recap.js             # Personal recap config (33 lines)
+│   │   │   └── personal-recap.js    # Personal recap config (~237 lines)
 │   │   ├── calendar-mappings.js     # NEW: Declarative calendar mappings
 │   │   ├── calendar.js              # Google Calendar settings (updated)
 │   │   └── sources.js               # External API credentials
@@ -71,7 +71,7 @@ brickbot/
 │   │   ├── withings-to-notion.js
 │   │   ├── notion-bodyweight-to-calendar.js
 │   │   ├── notion-sleep-to-calendar.js
-│   │   └── calendar-to-recap.js
+│   │   └── calendar-to-personal-recap.js
 │   │
 │   ├── workflows/        # Sync workflows with de-duplication
 │   │   ├── BaseWorkflow.js          # NEW: Reusable batch logic (190 lines)
@@ -85,7 +85,7 @@ brickbot/
 │   │   ├── notion-steam-to-calendar.js     # UPDATED: Uses SteamDatabase
 │   │   ├── withings-to-notion.js    # UPDATED: Uses BodyWeightDatabase
 │   │   ├── notion-bodyweight-to-calendar.js  # UPDATED: Uses BodyWeightDatabase
-│   │   └── calendar-to-recap.js     # UPDATED: Uses RecapDatabase
+│   │   └── calendar-to-personal-recap.js     # UPDATED: Uses PersonalRecapDatabase
 │   │
 │   └── utils/           # Shared utilities
 │       ├── async.js               # Async helpers (delay, rate limiting)
@@ -94,6 +94,7 @@ brickbot/
 │       ├── calendar-mapper.js     # NEW: Generic calendar ID resolver
 │       ├── formatting.js          # Display formatting
 │       ├── transformers.js        # Transformer utilities (property filtering)
+│       ├── personal-recap-properties.js # Property builder with validation
 │       └── validation.js          # Input validation
 │
 ├── cli/                  # User-facing command-line scripts
@@ -126,7 +127,7 @@ Domain-specific data access layer that encapsulates all Notion database operatio
 - **SteamDatabase**: `findByActivityId`, `getUnsynced`, `markSynced`
 - **PRDatabase**: `findByUniqueId`, `getUnsynced`, `markSynced`
 - **BodyWeightDatabase**: `findByMeasurementId`, `getUnsynced`, `markSynced`
-- **RecapDatabase**: `findWeekRecap`, `updateWeekRecap`
+- **PersonalRecapDatabase**: `findWeekRecap`, `updateWeekRecap`
 
 **Benefits:**
 
@@ -172,7 +173,7 @@ Each domain has its own focused configuration file:
 - **games.js**: Steam gaming database properties (~51 lines)
 - **prs.js**: GitHub PRs database properties (~60 lines)
 - **body-weight.js**: Withings database properties (~59 lines)
-- **recap.js**: Personal recap database properties (~33 lines)
+- **personal-recap.js**: Personal recap database properties (~237 lines, includes all metrics)
 
 **Structure:**
 
@@ -234,7 +235,7 @@ Calendar ID routing is now configuration-driven instead of function-based.
 workouts: {
   type: 'direct',
   sourceDatabase: 'workouts',
-  calendarId: process.env.FITNESS_CALENDAR_ID,
+    calendarId: process.env.WORKOUT_CALENDAR_ID,
 }
 ```
 
@@ -439,6 +440,8 @@ Pure functions that transform data between formats (API format → Notion proper
 Design pattern: No side effects, easy to test, clear input/output contracts, config-driven mappings.
 
 **Shared Utilities**: Property filtering logic extracted to `src/utils/transformers.js` for DRY code across all transformers.
+
+**Personal Recap Properties Builder**: `src/utils/personal-recap-properties.js` provides validated property building with clear error messages. Instead of cryptic "undefined is not a property" errors, it throws descriptive errors listing which property configurations are missing from the config file.
 
 ### CLI Scripts (`cli/`)
 
@@ -929,6 +932,13 @@ Common functionality is extracted into shared utilities to maintain consistency 
 - `calculateNightOf()` - Converts Oura wake-up dates to "night of" dates
 - `convertUTCToEasternDate()` - Timezone conversion with DST handling
 - Centralized date handling logic for consistency across integrations
+
+**`src/utils/personal-recap-properties.js`**:
+
+- `buildPersonalRecapProperties()` - Builds Notion properties object with validation
+- Validates all property configurations exist before use
+- Throws clear error messages listing missing properties (e.g., "Missing property configuration(s): bodyWeightAverage")
+- Prevents cryptic "undefined is not a property" errors from Notion API
 
 ### Benefits
 

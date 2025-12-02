@@ -25,7 +25,7 @@ const calendarMappings = {
   workouts: {
     type: "direct",
     sourceDatabase: "workouts",
-    calendarId: process.env.FITNESS_CALENDAR_ID,
+    calendarId: process.env.WORKOUT_CALENDAR_ID,
   },
 
   /**

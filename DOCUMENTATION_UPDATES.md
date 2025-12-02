@@ -215,5 +215,52 @@ brickbot/
 
 ---
 
+## Recent Updates (Latest Round)
+
+### Personal Recap Database Improvements
+
+**Date**: Latest update
+
+**Changes**:
+
+1. **New Utility File**: `src/utils/personal-recap-properties.js`
+   - Extracted property building logic from `PersonalRecapDatabase.js`
+   - Provides validated property building with clear error messages
+   - Validates all property configurations exist before use
+   - Throws descriptive errors listing missing properties
+
+2. **Refactored PersonalRecapDatabase**:
+   - Reduced from ~257 lines to 76 lines (70% reduction)
+   - Now uses `buildPersonalRecapProperties()` utility
+   - Cleaner, more maintainable code
+   - Better separation of concerns
+
+3. **Improved Error Handling**:
+   - **Before**: Cryptic "undefined is not a property that exists" from Notion API
+   - **After**: Clear error: "Missing property configuration(s) in personalRecap config: bodyWeightAverage. Please add these properties to src/config/notion/personal-recap.js"
+   - Helps developers quickly identify and fix configuration issues
+
+4. **Added bodyWeightAverage Property**:
+   - Added to `src/config/notion/personal-recap.js`
+   - Supports body weight tracking in weekly recaps
+
+**Files Updated**:
+- `src/databases/PersonalRecapDatabase.js` - Refactored to use utility
+- `src/config/notion/personal-recap.js` - Added bodyWeightAverage property
+- `src/utils/personal-recap-properties.js` - NEW: Property builder utility
+
+**Documentation Updated**:
+- `ARCHITECTURE.md` - Updated file sizes, added utility documentation
+- `HOW_IT_WORKS.md` - Updated database name reference
+- `DOCUMENTATION_UPDATES.md` - This section
+
+**Benefits**:
+- **Better Error Messages**: Developers can quickly identify missing configs
+- **Maintainability**: Property building logic isolated in dedicated file
+- **Scalability**: Easy to add new properties without bloating database class
+- **Code Quality**: 70% reduction in database class size
+
+---
+
 **Documentation complete and ready for use! 🎉**
 

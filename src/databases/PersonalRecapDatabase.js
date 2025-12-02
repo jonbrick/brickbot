@@ -5,6 +5,9 @@
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
+const {
+  buildPersonalRecapProperties,
+} = require("../utils/personal-recap-properties");
 
 class PersonalRecapDatabase extends NotionDatabase {
   /**
@@ -62,165 +65,8 @@ class PersonalRecapDatabase extends NotionDatabase {
   async updateWeekRecap(pageId, summaryData) {
     const props = config.notion.properties.personalRecap;
 
-    const properties = {};
-
-    // Sleep metrics
-    if (summaryData.earlyWakeupDays !== undefined) {
-      properties[config.notion.getPropertyName(props.earlyWakeupDays)] =
-        summaryData.earlyWakeupDays;
-    }
-
-    if (summaryData.sleepInDays !== undefined) {
-      properties[config.notion.getPropertyName(props.sleepInDays)] =
-        summaryData.sleepInDays;
-    }
-
-    if (summaryData.sleepHoursTotal !== undefined) {
-      properties[config.notion.getPropertyName(props.sleepHoursTotal)] =
-        summaryData.sleepHoursTotal;
-    }
-
-    // Sober and Drinking metrics
-    if (summaryData.soberDays !== undefined) {
-      properties[config.notion.getPropertyName(props.soberDays)] =
-        summaryData.soberDays;
-    }
-
-    if (summaryData.drinkingDays !== undefined) {
-      properties[config.notion.getPropertyName(props.drinkingDays)] =
-        summaryData.drinkingDays;
-    }
-
-    if (summaryData.drinkingBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.drinkingBlocks)] =
-        summaryData.drinkingBlocks;
-    }
-
-    // Workout metrics
-    if (summaryData.workoutDays !== undefined) {
-      properties[config.notion.getPropertyName(props.workoutDays)] =
-        summaryData.workoutDays;
-    }
-
-    if (summaryData.workoutSessions !== undefined) {
-      properties[config.notion.getPropertyName(props.workoutSessions)] =
-        summaryData.workoutSessions;
-    }
-
-    if (summaryData.workoutHoursTotal !== undefined) {
-      properties[config.notion.getPropertyName(props.workoutHoursTotal)] =
-        summaryData.workoutHoursTotal;
-    }
-
-    if (summaryData.workoutBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.workoutBlocks)] =
-        summaryData.workoutBlocks;
-    }
-
-    // Reading metrics
-    if (summaryData.readingDays !== undefined) {
-      properties[config.notion.getPropertyName(props.readingDays)] =
-        summaryData.readingDays;
-    }
-
-    if (summaryData.readingSessions !== undefined) {
-      properties[config.notion.getPropertyName(props.readingSessions)] =
-        summaryData.readingSessions;
-    }
-
-    if (summaryData.readingHoursTotal !== undefined) {
-      properties[config.notion.getPropertyName(props.readingHoursTotal)] =
-        summaryData.readingHoursTotal;
-    }
-
-    if (summaryData.readingBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.readingBlocks)] =
-        summaryData.readingBlocks;
-    }
-
-    // Coding metrics
-    if (summaryData.codingDays !== undefined) {
-      properties[config.notion.getPropertyName(props.codingDays)] =
-        summaryData.codingDays;
-    }
-
-    if (summaryData.codingSessions !== undefined) {
-      properties[config.notion.getPropertyName(props.codingSessions)] =
-        summaryData.codingSessions;
-    }
-
-    if (summaryData.codingHoursTotal !== undefined) {
-      properties[config.notion.getPropertyName(props.codingHoursTotal)] =
-        summaryData.codingHoursTotal;
-    }
-
-    if (summaryData.codingBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.codingBlocks)] =
-        summaryData.codingBlocks;
-    }
-
-    // Art metrics
-    if (summaryData.artDays !== undefined) {
-      properties[config.notion.getPropertyName(props.artDays)] =
-        summaryData.artDays;
-    }
-
-    if (summaryData.artSessions !== undefined) {
-      properties[config.notion.getPropertyName(props.artSessions)] =
-        summaryData.artSessions;
-    }
-
-    if (summaryData.artHoursTotal !== undefined) {
-      properties[config.notion.getPropertyName(props.artHoursTotal)] =
-        summaryData.artHoursTotal;
-    }
-
-    if (summaryData.artBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.artBlocks)] =
-        summaryData.artBlocks;
-    }
-
-    // Video Games metrics
-    if (summaryData.videoGamesDays !== undefined) {
-      properties[config.notion.getPropertyName(props.videoGamesDays)] =
-        summaryData.videoGamesDays;
-    }
-
-    if (summaryData.videoGamesSessions !== undefined) {
-      properties[config.notion.getPropertyName(props.videoGamesSessions)] =
-        summaryData.videoGamesSessions;
-    }
-
-    if (summaryData.videoGamesTotal !== undefined) {
-      properties[config.notion.getPropertyName(props.videoGamesTotal)] =
-        summaryData.videoGamesTotal;
-    }
-
-    if (summaryData.videoGamesBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.videoGamesBlocks)] =
-        summaryData.videoGamesBlocks;
-    }
-
-    // Meditation metrics
-    if (summaryData.meditationDays !== undefined) {
-      properties[config.notion.getPropertyName(props.meditationDays)] =
-        summaryData.meditationDays;
-    }
-
-    if (summaryData.meditationSessions !== undefined) {
-      properties[config.notion.getPropertyName(props.meditationSessions)] =
-        summaryData.meditationSessions;
-    }
-
-    if (summaryData.meditationHours !== undefined) {
-      properties[config.notion.getPropertyName(props.meditationHours)] =
-        summaryData.meditationHours;
-    }
-
-    if (summaryData.meditationBlocks !== undefined) {
-      properties[config.notion.getPropertyName(props.meditationBlocks)] =
-        summaryData.meditationBlocks;
-    }
+    // Build properties with validation - throws clear error if config is missing
+    const properties = buildPersonalRecapProperties(summaryData, props);
 
     return await this.updatePage(pageId, properties);
   }

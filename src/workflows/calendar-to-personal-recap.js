@@ -45,12 +45,14 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     const sleepInCalendarId = config.calendar.calendars.sleepIn;
     const soberCalendarId = process.env.SOBER_CALENDAR_ID;
     const alcoholCalendarId = process.env.DRINKING_CALENDAR_ID;
-    const workoutCalendarId = process.env.FITNESS_CALENDAR_ID;
+    const workoutCalendarId = process.env.WORKOUT_CALENDAR_ID;
     const readingCalendarId = process.env.READING_CALENDAR_ID;
     const codingCalendarId = process.env.CODING_CALENDAR_ID;
     const artCalendarId = process.env.ART_CALENDAR_ID;
     const videoGamesCalendarId = process.env.VIDEO_GAMES_CALENDAR_ID;
     const meditationCalendarId = process.env.MEDITATION_CALENDAR_ID;
+    const musicCalendarId = process.env.MUSIC_CALENDAR_ID;
+    const bodyWeightCalendarId = process.env.BODY_WEIGHT_CALENDAR_ID;
 
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
@@ -66,6 +68,8 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           ...(artCalendarId ? ["art"] : []),
           ...(videoGamesCalendarId ? ["videoGames"] : []),
           ...(meditationCalendarId ? ["meditation"] : []),
+          ...(musicCalendarId ? ["music"] : []),
+          ...(bodyWeightCalendarId ? ["bodyWeight"] : []),
         ];
 
     // Build array of calendar fetch promises based on selection
@@ -139,7 +143,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     // Workout calendar
     if (calendarsToFetch.includes("workout")) {
       if (!workoutCalendarId) {
-        throw new Error("FITNESS_CALENDAR_ID is not configured.");
+        throw new Error("WORKOUT_CALENDAR_ID is not configured.");
       }
       calendarFetches.push({
         key: "workout",
@@ -230,6 +234,40 @@ async function summarizeWeek(weekNumber, year, options = {}) {
         key: "meditation",
         promise: fetchCalendarSummary(
           meditationCalendarId,
+          startDate,
+          endDate,
+          accountType,
+          false
+        ),
+      });
+    }
+
+    // Music calendar
+    if (calendarsToFetch.includes("music")) {
+      if (!musicCalendarId) {
+        throw new Error("MUSIC_CALENDAR_ID is not configured.");
+      }
+      calendarFetches.push({
+        key: "music",
+        promise: fetchCalendarSummary(
+          musicCalendarId,
+          startDate,
+          endDate,
+          accountType,
+          false
+        ),
+      });
+    }
+
+    // Body Weight calendar
+    if (calendarsToFetch.includes("bodyWeight")) {
+      if (!bodyWeightCalendarId) {
+        throw new Error("BODY_WEIGHT_CALENDAR_ID is not configured.");
+      }
+      calendarFetches.push({
+        key: "bodyWeight",
+        promise: fetchCalendarSummary(
+          bodyWeightCalendarId,
           startDate,
           endDate,
           accountType,
@@ -375,13 +413,23 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     if (calendarsToFetch.includes("videoGames")) {
       if (summary.videoGamesDays !== undefined) metrics.push(`${summary.videoGamesDays} video games days`);
       if (summary.videoGamesSessions !== undefined) metrics.push(`${summary.videoGamesSessions} video games sessions`);
-      if (summary.videoGamesTotal !== undefined) metrics.push(`${summary.videoGamesTotal} video games hours`);
+      if (summary.videoGamesHoursTotal !== undefined) metrics.push(`${summary.videoGamesHoursTotal} video games hours`);
     }
     
     if (calendarsToFetch.includes("meditation")) {
       if (summary.meditationDays !== undefined) metrics.push(`${summary.meditationDays} meditation days`);
       if (summary.meditationSessions !== undefined) metrics.push(`${summary.meditationSessions} meditation sessions`);
-      if (summary.meditationHours !== undefined) metrics.push(`${summary.meditationHours} meditation hours`);
+      if (summary.meditationHoursTotal !== undefined) metrics.push(`${summary.meditationHoursTotal} meditation hours`);
+    }
+    
+    if (calendarsToFetch.includes("music")) {
+      if (summary.musicDays !== undefined) metrics.push(`${summary.musicDays} music days`);
+      if (summary.musicSessions !== undefined) metrics.push(`${summary.musicSessions} music sessions`);
+      if (summary.musicHoursTotal !== undefined) metrics.push(`${summary.musicHoursTotal} music hours`);
+    }
+    
+    if (calendarsToFetch.includes("bodyWeight") && summary.bodyWeightAverage !== undefined) {
+      metrics.push(`${summary.bodyWeightAverage} lbs average weight`);
     }
     
     showSuccess(

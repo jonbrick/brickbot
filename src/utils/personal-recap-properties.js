@@ -41,6 +41,13 @@ function buildPersonalRecapProperties(summaryData, props, selectedCalendars = []
       "mentalHealthSessions", "mentalHealthHoursTotal", "mentalHealthBlocks",
       "ignoreBlocks"
     ],
+    tasks: [
+      "personalTasksComplete", "personalTaskDetails",
+      "interpersonalTasksComplete", "interpersonalTaskDetails",
+      "homeTasksComplete", "homeTaskDetails",
+      "physicalHealthTasksComplete", "physicalHealthTaskDetails",
+      "mentalHealthTasksComplete", "mentalHealthTaskDetails",
+    ],
   };
 
   // Ensure all fields for selected calendars are included in summaryData (clean slate)
@@ -371,6 +378,57 @@ function buildPersonalRecapProperties(summaryData, props, selectedCalendars = []
   if (summaryData.ignoreBlocks !== undefined) {
     const propName = getPropName("ignoreBlocks", props.ignoreBlocks);
     if (propName) properties[propName] = summaryData.ignoreBlocks;
+  }
+
+  // Task metrics
+  if (summaryData.personalTasksComplete !== undefined) {
+    const propName = getPropName("personalTasksComplete", props.personalTasksComplete);
+    if (propName) properties[propName] = summaryData.personalTasksComplete;
+  }
+
+  if (summaryData.personalTaskDetails !== undefined) {
+    const propName = getPropName("personalTaskDetails", props.personalTaskDetails);
+    if (propName) properties[propName] = summaryData.personalTaskDetails;
+  }
+
+  if (summaryData.interpersonalTasksComplete !== undefined) {
+    const propName = getPropName("interpersonalTasksComplete", props.interpersonalTasksComplete);
+    if (propName) properties[propName] = summaryData.interpersonalTasksComplete;
+  }
+
+  if (summaryData.interpersonalTaskDetails !== undefined) {
+    const propName = getPropName("interpersonalTaskDetails", props.interpersonalTaskDetails);
+    if (propName) properties[propName] = summaryData.interpersonalTaskDetails;
+  }
+
+  if (summaryData.homeTasksComplete !== undefined) {
+    const propName = getPropName("homeTasksComplete", props.homeTasksComplete);
+    if (propName) properties[propName] = summaryData.homeTasksComplete;
+  }
+
+  if (summaryData.homeTaskDetails !== undefined) {
+    const propName = getPropName("homeTaskDetails", props.homeTaskDetails);
+    if (propName) properties[propName] = summaryData.homeTaskDetails;
+  }
+
+  if (summaryData.physicalHealthTasksComplete !== undefined) {
+    const propName = getPropName("physicalHealthTasksComplete", props.physicalHealthTasksComplete);
+    if (propName) properties[propName] = summaryData.physicalHealthTasksComplete;
+  }
+
+  if (summaryData.physicalHealthTaskDetails !== undefined) {
+    const propName = getPropName("physicalHealthTaskDetails", props.physicalHealthTaskDetails);
+    if (propName) properties[propName] = summaryData.physicalHealthTaskDetails;
+  }
+
+  if (summaryData.mentalHealthTasksComplete !== undefined) {
+    const propName = getPropName("mentalHealthTasksComplete", props.mentalHealthTasksComplete);
+    if (propName) properties[propName] = summaryData.mentalHealthTasksComplete;
+  }
+
+  if (summaryData.mentalHealthTaskDetails !== undefined) {
+    const propName = getPropName("mentalHealthTaskDetails", props.mentalHealthTaskDetails);
+    if (propName) properties[propName] = summaryData.mentalHealthTaskDetails;
   }
 
   // Check for missing property configurations and throw clear error

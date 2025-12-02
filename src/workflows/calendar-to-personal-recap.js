@@ -386,7 +386,14 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     }
 
     // Calculate summary (only for selected calendars)
-    const summary = calculateWeekSummary(calendarEvents, startDate, endDate, calendarsToFetch);
+    // Note: tasks are handled by notion-to-personal-recap workflow
+    const summary = calculateWeekSummary(
+      calendarEvents,
+      startDate,
+      endDate,
+      calendarsToFetch,
+      [] // No tasks in calendar workflow
+    );
     results.summary = summary;
 
     // If display only, return early without updating Notion

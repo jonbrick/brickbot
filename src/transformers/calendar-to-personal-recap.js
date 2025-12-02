@@ -35,13 +35,15 @@ function getDayAbbreviation(dateStr) {
  * @param {Date} weekEndDate - End date of the week (Saturday)
  * @param {Array<string>} selectedCalendars - Array of calendar keys to include (e.g., ["sleep", "sober", "drinking"])
  *   If not provided, calculates metrics for all calendars (backward compatible)
+ * @param {Array<Object>} tasks - Array of completed tasks (default: [])
  * @returns {Object} Summary object with calendar metrics for selected calendars only
  */
 function calculateWeekSummary(
   calendarEvents,
   weekStartDate = null,
   weekEndDate = null,
-  selectedCalendars = null
+  selectedCalendars = null,
+  tasks = []
 ) {
   // Helper to check if a date string is within the week range
   const isDateInWeek = (dateStr) => {
@@ -485,6 +487,49 @@ function calculateWeekSummary(
             })
             .join(", ") || "";
       }
+    });
+  }
+
+  // Task metrics (only if "tasks" is selected)
+  if (shouldCalculate("tasks") && tasks.length > 0) {
+    const { getCategoryKey } = require("../config/task-categories");
+
+    // Group tasks by category
+    const tasksByCategory = {};
+    tasks.forEach((task) => {
+      const categoryKey = getCategoryKey(task.type);
+      if (categoryKey && categoryKey !== "work") {
+        // Skip work tasks (not in CSV)
+        if (!tasksByCategory[categoryKey]) {
+          tasksByCategory[categoryKey] = [];
+        }
+        tasksByCategory[categoryKey].push(task);
+      }
+    });
+
+    // Calculate metrics for each category
+    const taskCategories = [
+      "personal",
+      "interpersonal",
+      "home",
+      "physicalHealth",
+      "mentalHealth",
+    ];
+
+    taskCategories.forEach((category) => {
+      const categoryTasks = tasksByCategory[category] || [];
+
+      // Count completed tasks
+      summary[`${category}TasksComplete`] = categoryTasks.length || 0;
+
+      // Build task details string (format: "Task name (Day)" - no duration)
+      summary[`${category}TaskDetails`] =
+        categoryTasks
+          .map((task) => {
+            const day = getDayAbbreviation(task.dueDate);
+            return `${task.title} (${day})`;
+          })
+          .join(", ") || "";
     });
   }
 

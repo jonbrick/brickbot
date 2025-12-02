@@ -8,8 +8,11 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const {
-  summarizeWeek,
+  summarizeWeek: summarizeCalendarWeek,
 } = require("../src/workflows/calendar-to-personal-recap");
+const {
+  summarizeWeek: summarizeNotionWeek,
+} = require("../src/workflows/notion-to-personal-recap");
 const {
   selectWeek,
   showSuccess,
@@ -133,6 +136,13 @@ async function selectCalendars() {
     availableCalendars.push({
       name: "Personal PRs",
       value: "personalPRs",
+    });
+  }
+
+  if (process.env.TASKS_DATABASE_ID) {
+    availableCalendars.push({
+      name: "Tasks",
+      value: "tasks",
     });
   }
 
@@ -487,6 +497,77 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
+  if (selectedCalendar === "tasks" || showAll) {
+    // Personal tasks
+    if (result.summary.personalTasksComplete !== undefined) {
+      console.log(
+        `  Personal Tasks Complete: ${result.summary.personalTasksComplete}`
+      );
+    }
+    if (
+      result.summary.personalTaskDetails !== undefined &&
+      result.summary.personalTaskDetails
+    ) {
+      console.log(`  Personal Task Details: ${result.summary.personalTaskDetails}`);
+    }
+
+    // Interpersonal tasks
+    if (result.summary.interpersonalTasksComplete !== undefined) {
+      console.log(
+        `  Interpersonal Tasks Complete: ${result.summary.interpersonalTasksComplete}`
+      );
+    }
+    if (
+      result.summary.interpersonalTaskDetails !== undefined &&
+      result.summary.interpersonalTaskDetails
+    ) {
+      console.log(
+        `  Interpersonal Task Details: ${result.summary.interpersonalTaskDetails}`
+      );
+    }
+
+    // Home tasks
+    if (result.summary.homeTasksComplete !== undefined) {
+      console.log(`  Home Tasks Complete: ${result.summary.homeTasksComplete}`);
+    }
+    if (
+      result.summary.homeTaskDetails !== undefined &&
+      result.summary.homeTaskDetails
+    ) {
+      console.log(`  Home Task Details: ${result.summary.homeTaskDetails}`);
+    }
+
+    // Physical Health tasks
+    if (result.summary.physicalHealthTasksComplete !== undefined) {
+      console.log(
+        `  Physical Health Tasks Complete: ${result.summary.physicalHealthTasksComplete}`
+      );
+    }
+    if (
+      result.summary.physicalHealthTaskDetails !== undefined &&
+      result.summary.physicalHealthTaskDetails
+    ) {
+      console.log(
+        `  Physical Health Task Details: ${result.summary.physicalHealthTaskDetails}`
+      );
+    }
+
+    // Mental Health tasks
+    if (result.summary.mentalHealthTasksComplete !== undefined) {
+      console.log(
+        `  Mental Health Tasks Complete: ${result.summary.mentalHealthTasksComplete}`
+      );
+    }
+    if (
+      result.summary.mentalHealthTaskDetails !== undefined &&
+      result.summary.mentalHealthTaskDetails
+    ) {
+      console.log(
+        `  Mental Health Task Details: ${result.summary.mentalHealthTaskDetails}`
+      );
+    }
+  }
+
   console.log("\n" + "=".repeat(80) + "\n");
 }
 
@@ -511,8 +592,10 @@ async function main() {
       showInfo("Display mode: Results will not be saved to Notion\n");
     }
 
-    // Expand calendar selection for the workflow
+    // Separate calendar sources from Notion sources
     let expandedCalendars = [];
+    let expandedNotionSources = [];
+    
     if (selectedCalendar === "all") {
       // Get all available calendar keys
       const config = require("../src/config");
@@ -555,20 +638,59 @@ async function main() {
       if (process.env.PERSONAL_PRS_CALENDAR_ID) {
         expandedCalendars.push("personalPRs");
       }
+      if (process.env.TASKS_DATABASE_ID) {
+        expandedNotionSources.push("tasks");
+      }
     } else if (selectedCalendar === "drinkingDays") {
       expandedCalendars = ["sober", "drinking"];
     } else if (selectedCalendar === "personalCalendar") {
       expandedCalendars = ["personalCalendar"];
+    } else if (selectedCalendar === "tasks") {
+      expandedNotionSources = ["tasks"];
     } else {
       expandedCalendars = [selectedCalendar];
     }
 
-    // Summarize week
-    const result = await summarizeWeek(weekNumber, year, {
-      accountType: "personal",
-      displayOnly,
-      calendars: expandedCalendars,
-    });
+    // Run appropriate workflow(s)
+    let calendarResult = null;
+    let notionResult = null;
+
+    if (expandedCalendars.length > 0) {
+      calendarResult = await summarizeCalendarWeek(weekNumber, year, {
+        accountType: "personal",
+        displayOnly,
+        calendars: expandedCalendars,
+      });
+    }
+
+    if (expandedNotionSources.length > 0) {
+      notionResult = await summarizeNotionWeek(weekNumber, year, {
+        displayOnly,
+        sources: expandedNotionSources,
+      });
+    }
+
+    // Merge results
+    let result;
+    if (calendarResult && notionResult) {
+      // Merge both results
+      result = {
+        weekNumber,
+        year,
+        summary: {
+          ...calendarResult.summary,
+          ...notionResult.summary,
+        },
+        updated: calendarResult.updated || notionResult.updated,
+        error: calendarResult.error || notionResult.error,
+      };
+    } else if (calendarResult) {
+      result = calendarResult;
+    } else if (notionResult) {
+      result = notionResult;
+    } else {
+      throw new Error("No sources selected");
+    }
 
     // Display results
     if (displayOnly) {
@@ -789,6 +911,45 @@ async function main() {
         }
         if (result.summary.ignoreBlocks !== undefined) {
           summaryData.ignoreBlocks = result.summary.ignoreBlocks;
+        }
+      }
+
+      if (selectedCalendar === "tasks" || showAll) {
+        if (result.summary.personalTasksComplete !== undefined) {
+          summaryData.personalTasksComplete = result.summary.personalTasksComplete;
+        }
+        if (result.summary.personalTaskDetails !== undefined) {
+          summaryData.personalTaskDetails = result.summary.personalTaskDetails;
+        }
+        if (result.summary.interpersonalTasksComplete !== undefined) {
+          summaryData.interpersonalTasksComplete =
+            result.summary.interpersonalTasksComplete;
+        }
+        if (result.summary.interpersonalTaskDetails !== undefined) {
+          summaryData.interpersonalTaskDetails =
+            result.summary.interpersonalTaskDetails;
+        }
+        if (result.summary.homeTasksComplete !== undefined) {
+          summaryData.homeTasksComplete = result.summary.homeTasksComplete;
+        }
+        if (result.summary.homeTaskDetails !== undefined) {
+          summaryData.homeTaskDetails = result.summary.homeTaskDetails;
+        }
+        if (result.summary.physicalHealthTasksComplete !== undefined) {
+          summaryData.physicalHealthTasksComplete =
+            result.summary.physicalHealthTasksComplete;
+        }
+        if (result.summary.physicalHealthTaskDetails !== undefined) {
+          summaryData.physicalHealthTaskDetails =
+            result.summary.physicalHealthTaskDetails;
+        }
+        if (result.summary.mentalHealthTasksComplete !== undefined) {
+          summaryData.mentalHealthTasksComplete =
+            result.summary.mentalHealthTasksComplete;
+        }
+        if (result.summary.mentalHealthTaskDetails !== undefined) {
+          summaryData.mentalHealthTaskDetails =
+            result.summary.mentalHealthTaskDetails;
         }
       }
 

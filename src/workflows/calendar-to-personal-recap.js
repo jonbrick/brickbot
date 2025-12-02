@@ -53,6 +53,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     const meditationCalendarId = process.env.MEDITATION_CALENDAR_ID;
     const musicCalendarId = process.env.MUSIC_CALENDAR_ID;
     const bodyWeightCalendarId = process.env.BODY_WEIGHT_CALENDAR_ID;
+    const personalMainCalendarId = process.env.PERSONAL_MAIN_CALENDAR_ID;
 
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
@@ -70,6 +71,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
           ...(meditationCalendarId ? ["meditation"] : []),
           ...(musicCalendarId ? ["music"] : []),
           ...(bodyWeightCalendarId ? ["bodyWeight"] : []),
+          ...(personalMainCalendarId ? ["personalCalendar"] : []),
         ];
 
     // Build array of calendar fetch promises based on selection
@@ -276,6 +278,23 @@ async function summarizeWeek(weekNumber, year, options = {}) {
       });
     }
 
+    // Personal Calendar (single calendar with color-based categorization)
+    if (calendarsToFetch.includes("personalCalendar")) {
+      if (!personalMainCalendarId) {
+        throw new Error("PERSONAL_MAIN_CALENDAR_ID is not configured.");
+      }
+      calendarFetches.push({
+        key: "personalCalendar",
+        promise: fetchCalendarSummary(
+          personalMainCalendarId,
+          startDate,
+          endDate,
+          accountType,
+          false
+        ),
+      });
+    }
+
     if (calendarFetches.length === 0) {
       throw new Error("No calendars selected or available to fetch.");
     }
@@ -430,6 +449,18 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     
     if (calendarsToFetch.includes("bodyWeight") && summary.bodyWeightAverage !== undefined) {
       metrics.push(`${summary.bodyWeightAverage} lbs average weight`);
+    }
+    
+    if (calendarsToFetch.includes("personalCalendar")) {
+      const categoryMetrics = [];
+      if (summary.personalSessions !== undefined) categoryMetrics.push(`${summary.personalSessions} personal sessions`);
+      if (summary.interpersonalSessions !== undefined) categoryMetrics.push(`${summary.interpersonalSessions} interpersonal sessions`);
+      if (summary.homeSessions !== undefined) categoryMetrics.push(`${summary.homeSessions} home sessions`);
+      if (summary.physicalHealthSessions !== undefined) categoryMetrics.push(`${summary.physicalHealthSessions} physical health sessions`);
+      if (summary.mentalHealthSessions !== undefined) categoryMetrics.push(`${summary.mentalHealthSessions} mental health sessions`);
+      if (categoryMetrics.length > 0) {
+        metrics.push(...categoryMetrics);
+      }
     }
     
     showSuccess(

@@ -231,6 +231,86 @@ function buildPersonalRecapProperties(summaryData, props) {
     if (propName) properties[propName] = summaryData.bodyWeightAverage;
   }
 
+  // Personal category metrics
+  if (summaryData.personalSessions !== undefined) {
+    const propName = getPropName("personalSessions", props.personalSessions);
+    if (propName) properties[propName] = summaryData.personalSessions;
+  }
+
+  if (summaryData.personalHoursTotal !== undefined) {
+    const propName = getPropName("personalHoursTotal", props.personalHoursTotal);
+    if (propName) properties[propName] = summaryData.personalHoursTotal;
+  }
+
+  if (summaryData.personalBlocks !== undefined) {
+    const propName = getPropName("personalBlocks", props.personalBlocks);
+    if (propName) properties[propName] = summaryData.personalBlocks;
+  }
+
+  // Interpersonal category metrics
+  if (summaryData.interpersonalSessions !== undefined) {
+    const propName = getPropName("interpersonalSessions", props.interpersonalSessions);
+    if (propName) properties[propName] = summaryData.interpersonalSessions;
+  }
+
+  if (summaryData.interpersonalHoursTotal !== undefined) {
+    const propName = getPropName("interpersonalHoursTotal", props.interpersonalHoursTotal);
+    if (propName) properties[propName] = summaryData.interpersonalHoursTotal;
+  }
+
+  if (summaryData.interpersonalBlocks !== undefined) {
+    const propName = getPropName("interpersonalBlocks", props.interpersonalBlocks);
+    if (propName) properties[propName] = summaryData.interpersonalBlocks;
+  }
+
+  // Home category metrics
+  if (summaryData.homeSessions !== undefined) {
+    const propName = getPropName("homeSessions", props.homeSessions);
+    if (propName) properties[propName] = summaryData.homeSessions;
+  }
+
+  if (summaryData.homeHoursTotal !== undefined) {
+    const propName = getPropName("homeHoursTotal", props.homeHoursTotal);
+    if (propName) properties[propName] = summaryData.homeHoursTotal;
+  }
+
+  if (summaryData.homeBlocks !== undefined) {
+    const propName = getPropName("homeBlocks", props.homeBlocks);
+    if (propName) properties[propName] = summaryData.homeBlocks;
+  }
+
+  // Physical Health category metrics
+  if (summaryData.physicalHealthSessions !== undefined) {
+    const propName = getPropName("physicalHealthSessions", props.physicalHealthSessions);
+    if (propName) properties[propName] = summaryData.physicalHealthSessions;
+  }
+
+  if (summaryData.physicalHealthHoursTotal !== undefined) {
+    const propName = getPropName("physicalHealthHoursTotal", props.physicalHealthHoursTotal);
+    if (propName) properties[propName] = summaryData.physicalHealthHoursTotal;
+  }
+
+  if (summaryData.physicalHealthBlocks !== undefined) {
+    const propName = getPropName("physicalHealthBlocks", props.physicalHealthBlocks);
+    if (propName) properties[propName] = summaryData.physicalHealthBlocks;
+  }
+
+  // Mental Health category metrics
+  if (summaryData.mentalHealthSessions !== undefined) {
+    const propName = getPropName("mentalHealthSessions", props.mentalHealthSessions);
+    if (propName) properties[propName] = summaryData.mentalHealthSessions;
+  }
+
+  if (summaryData.mentalHealthHoursTotal !== undefined) {
+    const propName = getPropName("mentalHealthHoursTotal", props.mentalHealthHoursTotal);
+    if (propName) properties[propName] = summaryData.mentalHealthHoursTotal;
+  }
+
+  if (summaryData.mentalHealthBlocks !== undefined) {
+    const propName = getPropName("mentalHealthBlocks", props.mentalHealthBlocks);
+    if (propName) properties[propName] = summaryData.mentalHealthBlocks;
+  }
+
   // Check for missing property configurations and throw clear error
   if (missingProps.length > 0) {
     throw new Error(

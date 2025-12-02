@@ -7,7 +7,9 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { summarizeWeek } = require("../src/workflows/calendar-to-personal-recap");
+const {
+  summarizeWeek,
+} = require("../src/workflows/calendar-to-personal-recap");
 const {
   selectWeek,
   showSuccess,
@@ -45,7 +47,10 @@ async function selectCalendars() {
 
   // Sleep is always available (requires both calendars to be configured)
   const config = require("../src/config");
-  if (config.calendar.calendars.normalWakeUp && config.calendar.calendars.sleepIn) {
+  if (
+    config.calendar.calendars.normalWakeUp &&
+    config.calendar.calendars.sleepIn
+  ) {
     availableCalendars.push({
       name: "Sleep (Early Wakeup + Sleep In)",
       value: "sleep",
@@ -116,8 +121,18 @@ async function selectCalendars() {
     });
   }
 
+  // Personal Calendar is available if PERSONAL_MAIN_CALENDAR_ID is configured
+  if (process.env.PERSONAL_MAIN_CALENDAR_ID) {
+    availableCalendars.push({
+      name: "Personal Calendar",
+      value: "personalCalendar",
+    });
+  }
+
   if (availableCalendars.length === 0) {
-    throw new Error("No calendars are configured. Please set calendar IDs in your .env file.");
+    throw new Error(
+      "No calendars are configured. Please set calendar IDs in your .env file."
+    );
   }
 
   // Sort calendars alphabetically by name
@@ -159,9 +174,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
 
   console.log(`Week: ${result.weekNumber} of ${result.year}`);
   console.log(`\nCalendar Event Summary:`);
-  
+
   const showAll = selectedCalendar === "all";
-  
+
   // Show sleep metrics if sleep calendar is selected
   if (selectedCalendar === "sleep" || showAll) {
     if (result.summary.earlyWakeupDays !== undefined) {
@@ -171,10 +186,12 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       console.log(`  Sleep In Days: ${result.summary.sleepInDays}`);
     }
     if (result.summary.sleepHoursTotal !== undefined) {
-      console.log(`  Sleep Hours Total: ${result.summary.sleepHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Sleep Hours Total: ${result.summary.sleepHoursTotal.toFixed(2)}`
+      );
     }
   }
-  
+
   // Show drinking days metrics if selected (includes both sober and drinking)
   if (selectedCalendar === "drinkingDays" || showAll) {
     if (result.summary.soberDays !== undefined) {
@@ -183,11 +200,14 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.drinkingDays !== undefined) {
       console.log(`  Drinking Days: ${result.summary.drinkingDays}`);
     }
-    if (result.summary.drinkingBlocks !== undefined && result.summary.drinkingBlocks) {
+    if (
+      result.summary.drinkingBlocks !== undefined &&
+      result.summary.drinkingBlocks
+    ) {
       console.log(`  Drinking Blocks: ${result.summary.drinkingBlocks}`);
     }
   }
-  
+
   if (selectedCalendar === "workout" || showAll) {
     if (result.summary.workoutDays !== undefined) {
       console.log(`  Workout Days: ${result.summary.workoutDays}`);
@@ -196,13 +216,18 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       console.log(`  Workout Sessions: ${result.summary.workoutSessions}`);
     }
     if (result.summary.workoutHoursTotal !== undefined) {
-      console.log(`  Workout Hours Total: ${result.summary.workoutHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Workout Hours Total: ${result.summary.workoutHoursTotal.toFixed(2)}`
+      );
     }
-    if (result.summary.workoutBlocks !== undefined && result.summary.workoutBlocks) {
+    if (
+      result.summary.workoutBlocks !== undefined &&
+      result.summary.workoutBlocks
+    ) {
       console.log(`  Workout Blocks: ${result.summary.workoutBlocks}`);
     }
   }
-  
+
   if (selectedCalendar === "reading" || showAll) {
     if (result.summary.readingDays !== undefined) {
       console.log(`  Reading Days: ${result.summary.readingDays}`);
@@ -211,13 +236,18 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       console.log(`  Reading Sessions: ${result.summary.readingSessions}`);
     }
     if (result.summary.readingHoursTotal !== undefined) {
-      console.log(`  Reading Hours Total: ${result.summary.readingHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Reading Hours Total: ${result.summary.readingHoursTotal.toFixed(2)}`
+      );
     }
-    if (result.summary.readingBlocks !== undefined && result.summary.readingBlocks) {
+    if (
+      result.summary.readingBlocks !== undefined &&
+      result.summary.readingBlocks
+    ) {
       console.log(`  Reading Blocks: ${result.summary.readingBlocks}`);
     }
   }
-  
+
   if (selectedCalendar === "coding" || showAll) {
     if (result.summary.codingDays !== undefined) {
       console.log(`  Coding Days: ${result.summary.codingDays}`);
@@ -226,13 +256,18 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       console.log(`  Coding Sessions: ${result.summary.codingSessions}`);
     }
     if (result.summary.codingHoursTotal !== undefined) {
-      console.log(`  Coding Hours Total: ${result.summary.codingHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Coding Hours Total: ${result.summary.codingHoursTotal.toFixed(2)}`
+      );
     }
-    if (result.summary.codingBlocks !== undefined && result.summary.codingBlocks) {
+    if (
+      result.summary.codingBlocks !== undefined &&
+      result.summary.codingBlocks
+    ) {
       console.log(`  Coding Blocks: ${result.summary.codingBlocks}`);
     }
   }
-  
+
   if (selectedCalendar === "art" || showAll) {
     if (result.summary.artDays !== undefined) {
       console.log(`  Art Days: ${result.summary.artDays}`);
@@ -241,39 +276,59 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       console.log(`  Art Sessions: ${result.summary.artSessions}`);
     }
     if (result.summary.artHoursTotal !== undefined) {
-      console.log(`  Art Hours Total: ${result.summary.artHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Art Hours Total: ${result.summary.artHoursTotal.toFixed(2)}`
+      );
     }
     if (result.summary.artBlocks !== undefined && result.summary.artBlocks) {
       console.log(`  Art Blocks: ${result.summary.artBlocks}`);
     }
   }
-  
+
   if (selectedCalendar === "videoGames" || showAll) {
     if (result.summary.videoGamesDays !== undefined) {
       console.log(`  Video Games Days: ${result.summary.videoGamesDays}`);
     }
     if (result.summary.videoGamesSessions !== undefined) {
-      console.log(`  Video Games Sessions: ${result.summary.videoGamesSessions}`);
+      console.log(
+        `  Video Games Sessions: ${result.summary.videoGamesSessions}`
+      );
     }
     if (result.summary.videoGamesHoursTotal !== undefined) {
-      console.log(`  Video Games Hours Total: ${result.summary.videoGamesHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Video Games Hours Total: ${result.summary.videoGamesHoursTotal.toFixed(
+          2
+        )}`
+      );
     }
-    if (result.summary.videoGamesBlocks !== undefined && result.summary.videoGamesBlocks) {
+    if (
+      result.summary.videoGamesBlocks !== undefined &&
+      result.summary.videoGamesBlocks
+    ) {
       console.log(`  Video Games Blocks: ${result.summary.videoGamesBlocks}`);
     }
   }
-  
+
   if (selectedCalendar === "meditation" || showAll) {
     if (result.summary.meditationDays !== undefined) {
       console.log(`  Meditation Days: ${result.summary.meditationDays}`);
     }
     if (result.summary.meditationSessions !== undefined) {
-      console.log(`  Meditation Sessions: ${result.summary.meditationSessions}`);
+      console.log(
+        `  Meditation Sessions: ${result.summary.meditationSessions}`
+      );
     }
     if (result.summary.meditationHoursTotal !== undefined) {
-      console.log(`  Meditation Hours Total: ${result.summary.meditationHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Meditation Hours Total: ${result.summary.meditationHoursTotal.toFixed(
+          2
+        )}`
+      );
     }
-    if (result.summary.meditationBlocks !== undefined && result.summary.meditationBlocks) {
+    if (
+      result.summary.meditationBlocks !== undefined &&
+      result.summary.meditationBlocks
+    ) {
       console.log(`  Meditation Blocks: ${result.summary.meditationBlocks}`);
     }
   }
@@ -286,16 +341,122 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       console.log(`  Music Sessions: ${result.summary.musicSessions}`);
     }
     if (result.summary.musicHoursTotal !== undefined) {
-      console.log(`  Music Hours Total: ${result.summary.musicHoursTotal.toFixed(2)}`);
+      console.log(
+        `  Music Hours Total: ${result.summary.musicHoursTotal.toFixed(2)}`
+      );
     }
-    if (result.summary.musicBlocks !== undefined && result.summary.musicBlocks) {
+    if (
+      result.summary.musicBlocks !== undefined &&
+      result.summary.musicBlocks
+    ) {
       console.log(`  Music Blocks: ${result.summary.musicBlocks}`);
     }
   }
 
   if (selectedCalendar === "bodyWeight" || showAll) {
     if (result.summary.bodyWeightAverage !== undefined) {
-      console.log(`  Body Weight Average: ${result.summary.bodyWeightAverage} lbs`);
+      console.log(
+        `  Body Weight Average: ${result.summary.bodyWeightAverage} lbs`
+      );
+    }
+  }
+
+  if (selectedCalendar === "personalCalendar" || showAll) {
+    // Personal category metrics
+    if (result.summary.personalSessions !== undefined) {
+      console.log(`  Personal Sessions: ${result.summary.personalSessions}`);
+    }
+    if (result.summary.personalHoursTotal !== undefined) {
+      console.log(
+        `  Personal Hours Total: ${result.summary.personalHoursTotal.toFixed(
+          2
+        )}`
+      );
+    }
+    if (
+      result.summary.personalBlocks !== undefined &&
+      result.summary.personalBlocks
+    ) {
+      console.log(`  Personal Blocks: ${result.summary.personalBlocks}`);
+    }
+
+    // Interpersonal category metrics
+    if (result.summary.interpersonalSessions !== undefined) {
+      console.log(
+        `  Interpersonal Sessions: ${result.summary.interpersonalSessions}`
+      );
+    }
+    if (result.summary.interpersonalHoursTotal !== undefined) {
+      console.log(
+        `  Interpersonal Hours Total: ${result.summary.interpersonalHoursTotal.toFixed(
+          2
+        )}`
+      );
+    }
+    if (
+      result.summary.interpersonalBlocks !== undefined &&
+      result.summary.interpersonalBlocks
+    ) {
+      console.log(
+        `  Interpersonal Blocks: ${result.summary.interpersonalBlocks}`
+      );
+    }
+
+    // Home category metrics
+    if (result.summary.homeSessions !== undefined) {
+      console.log(`  Home Sessions: ${result.summary.homeSessions}`);
+    }
+    if (result.summary.homeHoursTotal !== undefined) {
+      console.log(
+        `  Home Hours Total: ${result.summary.homeHoursTotal.toFixed(2)}`
+      );
+    }
+    if (result.summary.homeBlocks !== undefined && result.summary.homeBlocks) {
+      console.log(`  Home Blocks: ${result.summary.homeBlocks}`);
+    }
+
+    // Physical Health category metrics
+    if (result.summary.physicalHealthSessions !== undefined) {
+      console.log(
+        `  Physical Health Sessions: ${result.summary.physicalHealthSessions}`
+      );
+    }
+    if (result.summary.physicalHealthHoursTotal !== undefined) {
+      console.log(
+        `  Physical Health Hours Total: ${result.summary.physicalHealthHoursTotal.toFixed(
+          2
+        )}`
+      );
+    }
+    if (
+      result.summary.physicalHealthBlocks !== undefined &&
+      result.summary.physicalHealthBlocks
+    ) {
+      console.log(
+        `  Physical Health Blocks: ${result.summary.physicalHealthBlocks}`
+      );
+    }
+
+    // Mental Health category metrics
+    if (result.summary.mentalHealthSessions !== undefined) {
+      console.log(
+        `  Mental Health Sessions: ${result.summary.mentalHealthSessions}`
+      );
+    }
+    if (result.summary.mentalHealthHoursTotal !== undefined) {
+      console.log(
+        `  Mental Health Hours Total: ${result.summary.mentalHealthHoursTotal.toFixed(
+          2
+        )}`
+      );
+    }
+    if (
+      result.summary.mentalHealthBlocks !== undefined &&
+      result.summary.mentalHealthBlocks
+    ) {
+      console.log(
+        `  Mental Health Blocks: ${result.summary.mentalHealthBlocks}`
+      );
     }
   }
 
@@ -328,7 +489,10 @@ async function main() {
     if (selectedCalendar === "all") {
       // Get all available calendar keys
       const config = require("../src/config");
-      if (config.calendar.calendars.normalWakeUp && config.calendar.calendars.sleepIn) {
+      if (
+        config.calendar.calendars.normalWakeUp &&
+        config.calendar.calendars.sleepIn
+      ) {
         expandedCalendars.push("sleep");
       }
       if (process.env.SOBER_CALENDAR_ID && process.env.DRINKING_CALENDAR_ID) {
@@ -358,8 +522,13 @@ async function main() {
       if (process.env.BODY_WEIGHT_CALENDAR_ID) {
         expandedCalendars.push("bodyWeight");
       }
+      if (process.env.PERSONAL_MAIN_CALENDAR_ID) {
+        expandedCalendars.push("personalCalendar");
+      }
     } else if (selectedCalendar === "drinkingDays") {
       expandedCalendars = ["sober", "drinking"];
+    } else if (selectedCalendar === "personalCalendar") {
+      expandedCalendars = ["personalCalendar"];
     } else {
       expandedCalendars = [selectedCalendar];
     }
@@ -385,9 +554,9 @@ async function main() {
         weekNumber: result.weekNumber,
         year: result.year,
       };
-      
+
       const showAll = selectedCalendar === "all";
-      
+
       // Only include metrics for selected calendar
       if (selectedCalendar === "sleep" || showAll) {
         if (result.summary.earlyWakeupDays !== undefined) {
@@ -400,7 +569,7 @@ async function main() {
           summaryData.sleepHoursTotal = result.summary.sleepHoursTotal;
         }
       }
-      
+
       if (selectedCalendar === "drinkingDays" || showAll) {
         if (result.summary.soberDays !== undefined) {
           summaryData.soberDays = result.summary.soberDays;
@@ -412,7 +581,7 @@ async function main() {
           summaryData.drinkingBlocks = result.summary.drinkingBlocks;
         }
       }
-      
+
       if (selectedCalendar === "workout" || showAll) {
         if (result.summary.workoutDays !== undefined) {
           summaryData.workoutDays = result.summary.workoutDays;
@@ -427,7 +596,7 @@ async function main() {
           summaryData.workoutBlocks = result.summary.workoutBlocks;
         }
       }
-      
+
       if (selectedCalendar === "reading" || showAll) {
         if (result.summary.readingDays !== undefined) {
           summaryData.readingDays = result.summary.readingDays;
@@ -442,7 +611,7 @@ async function main() {
           summaryData.readingBlocks = result.summary.readingBlocks;
         }
       }
-      
+
       if (selectedCalendar === "coding" || showAll) {
         if (result.summary.codingDays !== undefined) {
           summaryData.codingDays = result.summary.codingDays;
@@ -457,7 +626,7 @@ async function main() {
           summaryData.codingBlocks = result.summary.codingBlocks;
         }
       }
-      
+
       if (selectedCalendar === "art" || showAll) {
         if (result.summary.artDays !== undefined) {
           summaryData.artDays = result.summary.artDays;
@@ -472,7 +641,7 @@ async function main() {
           summaryData.artBlocks = result.summary.artBlocks;
         }
       }
-      
+
       if (selectedCalendar === "videoGames" || showAll) {
         if (result.summary.videoGamesDays !== undefined) {
           summaryData.videoGamesDays = result.summary.videoGamesDays;
@@ -481,13 +650,14 @@ async function main() {
           summaryData.videoGamesSessions = result.summary.videoGamesSessions;
         }
         if (result.summary.videoGamesHoursTotal !== undefined) {
-          summaryData.videoGamesHoursTotal = result.summary.videoGamesHoursTotal;
+          summaryData.videoGamesHoursTotal =
+            result.summary.videoGamesHoursTotal;
         }
         if (result.summary.videoGamesBlocks !== undefined) {
           summaryData.videoGamesBlocks = result.summary.videoGamesBlocks;
         }
       }
-      
+
       if (selectedCalendar === "meditation" || showAll) {
         if (result.summary.meditationDays !== undefined) {
           summaryData.meditationDays = result.summary.meditationDays;
@@ -496,7 +666,8 @@ async function main() {
           summaryData.meditationSessions = result.summary.meditationSessions;
         }
         if (result.summary.meditationHoursTotal !== undefined) {
-          summaryData.meditationHoursTotal = result.summary.meditationHoursTotal;
+          summaryData.meditationHoursTotal =
+            result.summary.meditationHoursTotal;
         }
         if (result.summary.meditationBlocks !== undefined) {
           summaryData.meditationBlocks = result.summary.meditationBlocks;
@@ -523,7 +694,62 @@ async function main() {
           summaryData.bodyWeightAverage = result.summary.bodyWeightAverage;
         }
       }
-      
+
+      if (selectedCalendar === "personalCalendar" || showAll) {
+        if (result.summary.personalSessions !== undefined) {
+          summaryData.personalSessions = result.summary.personalSessions;
+        }
+        if (result.summary.personalHoursTotal !== undefined) {
+          summaryData.personalHoursTotal = result.summary.personalHoursTotal;
+        }
+        if (result.summary.personalBlocks !== undefined) {
+          summaryData.personalBlocks = result.summary.personalBlocks;
+        }
+        if (result.summary.interpersonalSessions !== undefined) {
+          summaryData.interpersonalSessions =
+            result.summary.interpersonalSessions;
+        }
+        if (result.summary.interpersonalHoursTotal !== undefined) {
+          summaryData.interpersonalHoursTotal =
+            result.summary.interpersonalHoursTotal;
+        }
+        if (result.summary.interpersonalBlocks !== undefined) {
+          summaryData.interpersonalBlocks = result.summary.interpersonalBlocks;
+        }
+        if (result.summary.homeSessions !== undefined) {
+          summaryData.homeSessions = result.summary.homeSessions;
+        }
+        if (result.summary.homeHoursTotal !== undefined) {
+          summaryData.homeHoursTotal = result.summary.homeHoursTotal;
+        }
+        if (result.summary.homeBlocks !== undefined) {
+          summaryData.homeBlocks = result.summary.homeBlocks;
+        }
+        if (result.summary.physicalHealthSessions !== undefined) {
+          summaryData.physicalHealthSessions =
+            result.summary.physicalHealthSessions;
+        }
+        if (result.summary.physicalHealthHoursTotal !== undefined) {
+          summaryData.physicalHealthHoursTotal =
+            result.summary.physicalHealthHoursTotal;
+        }
+        if (result.summary.physicalHealthBlocks !== undefined) {
+          summaryData.physicalHealthBlocks =
+            result.summary.physicalHealthBlocks;
+        }
+        if (result.summary.mentalHealthSessions !== undefined) {
+          summaryData.mentalHealthSessions =
+            result.summary.mentalHealthSessions;
+        }
+        if (result.summary.mentalHealthHoursTotal !== undefined) {
+          summaryData.mentalHealthHoursTotal =
+            result.summary.mentalHealthHoursTotal;
+        }
+        if (result.summary.mentalHealthBlocks !== undefined) {
+          summaryData.mentalHealthBlocks = result.summary.mentalHealthBlocks;
+        }
+      }
+
       showSummary(summaryData);
       showSuccess("Week summary completed successfully!");
     } else if (result.error) {
@@ -549,4 +775,3 @@ if (require.main === module) {
 }
 
 module.exports = { main };
-

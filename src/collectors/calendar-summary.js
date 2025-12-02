@@ -113,6 +113,7 @@ async function fetchCalendarSummary(
           summary: event.summary || "Untitled Event",
           startDateTime: startDateTime ? startDateTime.toISOString() : null,
           endDateTime: endDateTime ? endDateTime.toISOString() : null,
+          colorId: event.colorId || null,
         };
       })
       .filter((event) => event !== null); // Remove null entries

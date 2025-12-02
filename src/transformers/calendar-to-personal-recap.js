@@ -135,9 +135,10 @@ function calculateWeekSummary(
     const filteredDrinkingEvents = drinkingEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.drinkingBlocks = filteredDrinkingEvents
-      .map((event) => event.summary || "Untitled Event")
-      .join(", ") || "";
+    summary.drinkingBlocks =
+      filteredDrinkingEvents
+        .map((event) => event.summary || "Untitled Event")
+        .join(", ") || "";
   }
 
   // Workout metrics (only if "workout" is selected)
@@ -156,14 +157,15 @@ function calculateWeekSummary(
     const filteredWorkoutEvents = workoutEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.workoutBlocks = filteredWorkoutEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.workoutBlocks =
+      filteredWorkoutEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Reading metrics (only if "reading" is selected)
@@ -182,14 +184,15 @@ function calculateWeekSummary(
     const filteredReadingEvents = readingEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.readingBlocks = filteredReadingEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.readingBlocks =
+      filteredReadingEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Coding metrics (only if "coding" is selected)
@@ -208,14 +211,15 @@ function calculateWeekSummary(
     const filteredCodingEvents = codingEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.codingBlocks = filteredCodingEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.codingBlocks =
+      filteredCodingEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Art metrics (only if "art" is selected)
@@ -230,14 +234,15 @@ function calculateWeekSummary(
     const filteredArtEvents = artEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.artBlocks = filteredArtEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.artBlocks =
+      filteredArtEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Video Games metrics (only if "videoGames" is selected)
@@ -256,14 +261,15 @@ function calculateWeekSummary(
     const filteredVideoGamesEvents = videoGamesEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.videoGamesBlocks = filteredVideoGamesEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.videoGamesBlocks =
+      filteredVideoGamesEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Meditation metrics (only if "meditation" is selected)
@@ -282,14 +288,15 @@ function calculateWeekSummary(
     const filteredMeditationEvents = meditationEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.meditationBlocks = filteredMeditationEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.meditationBlocks =
+      filteredMeditationEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Music metrics (only if "music" is selected)
@@ -308,14 +315,15 @@ function calculateWeekSummary(
     const filteredMusicEvents = musicEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    summary.musicBlocks = filteredMusicEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const duration = event.durationHours || 0;
-        const durationRounded = Math.round(duration * 100) / 100;
-        return `${eventName} (${durationRounded} hours)`;
-      })
-      .join(", ") || "";
+    summary.musicBlocks =
+      filteredMusicEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${durationRounded} hours)`;
+        })
+        .join(", ") || "";
   }
 
   // Body Weight metrics (only if "bodyWeight" is selected)
@@ -324,7 +332,7 @@ function calculateWeekSummary(
     const filteredBodyWeightEvents = bodyWeightEvents.filter((event) =>
       isDateInWeek(event.date)
     );
-    
+
     // Extract weight values from event summaries using regex
     // Matches patterns like "Weight: 201.4 lbs" or "201.4 lbs"
     const weights = filteredBodyWeightEvents
@@ -333,12 +341,69 @@ function calculateWeekSummary(
         return match ? parseFloat(match[1]) : null;
       })
       .filter((weight) => weight !== null);
-    
+
     // Calculate average
     if (weights.length > 0) {
       const sum = weights.reduce((acc, weight) => acc + weight, 0);
       summary.bodyWeightAverage = Math.round((sum / weights.length) * 10) / 10; // Round to 1 decimal
     }
+  }
+
+  // Personal Calendar blocks (only if "personalCalendar" is selected)
+  if (shouldCalculate("personalCalendar")) {
+    const { getPersonalCategoryByColor } = require("../config/color-mappings");
+
+    // Get all events from the single Personal Calendar
+    const personalCalendarEvents = calendarEvents.personalCalendar || [];
+
+    // Filter events within week date range
+    const filteredEvents = personalCalendarEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+
+    // Group events by category for per-category metrics
+    const eventsByCategory = {};
+    filteredEvents.forEach((event) => {
+      const category = getPersonalCategoryByColor(event.colorId);
+      if (!eventsByCategory[category]) {
+        eventsByCategory[category] = [];
+      }
+      eventsByCategory[category].push(event);
+    });
+
+    // Calculate metrics for each category
+    const categories = [
+      "personal",
+      "interpersonal",
+      "home",
+      "physicalHealth",
+      "mentalHealth",
+    ];
+
+    categories.forEach((category) => {
+      const categoryEvents = eventsByCategory[category] || [];
+
+      // Calculate sessions (count of events)
+      summary[`${category}Sessions`] = categoryEvents.length;
+
+      // Calculate hours total (sum of durationHours, rounded to 2 decimals)
+      const hoursTotal = categoryEvents.reduce(
+        (sum, event) => sum + (event.durationHours || 0),
+        0
+      );
+      summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
+
+      // Calculate blocks (formatted as "Event Name (X.XX hours), Event Name 2 (Y.YY hours)")
+      summary[`${category}Blocks`] =
+        categoryEvents
+          .map((event) => {
+            const eventName = event.summary || "Untitled Event";
+            const duration = event.durationHours || 0;
+            const durationRounded = Math.round(duration * 100) / 100;
+            return `${eventName} (${durationRounded} hours)`;
+          })
+          .join(", ") || "";
+    });
   }
 
   return summary;

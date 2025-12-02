@@ -189,6 +189,86 @@ module.exports = {
       enabled: true,
     },
 
+    personalSessions: {
+      name: "Personal - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    personalHoursTotal: {
+      name: "Personal - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    personalBlocks: {
+      name: "Personal - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    interpersonalSessions: {
+      name: "Interpersonal - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    interpersonalHoursTotal: {
+      name: "Interpersonal - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    interpersonalBlocks: {
+      name: "Interpersonal - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    homeSessions: {
+      name: "Home - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    homeHoursTotal: {
+      name: "Home - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    homeBlocks: {
+      name: "Home - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    physicalHealthSessions: {
+      name: "Physical Health - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    physicalHealthHoursTotal: {
+      name: "Physical Health - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    physicalHealthBlocks: {
+      name: "Physical Health - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
+    mentalHealthSessions: {
+      name: "Mental Health - Sessions",
+      type: "number",
+      enabled: true,
+    },
+    mentalHealthHoursTotal: {
+      name: "Mental Health - Hours Total",
+      type: "number",
+      enabled: true,
+    },
+    mentalHealthBlocks: {
+      name: "Mental Health - Blocks",
+      type: "text",
+      enabled: true,
+    },
+
     date: { name: "Date", type: "date", enabled: true },
     weekNumber: { name: "Week Number", type: "number", enabled: true },
     year: { name: "Year", type: "number", enabled: true },
@@ -229,6 +309,21 @@ module.exports = {
     musicSessions: "musicSessions",
     musicHoursTotal: "musicHoursTotal",
     musicBlocks: "musicBlocks",
+    personalSessions: "personalSessions",
+    personalHoursTotal: "personalHoursTotal",
+    personalBlocks: "personalBlocks",
+    interpersonalSessions: "interpersonalSessions",
+    interpersonalHoursTotal: "interpersonalHoursTotal",
+    interpersonalBlocks: "interpersonalBlocks",
+    homeSessions: "homeSessions",
+    homeHoursTotal: "homeHoursTotal",
+    homeBlocks: "homeBlocks",
+    physicalHealthSessions: "physicalHealthSessions",
+    physicalHealthHoursTotal: "physicalHealthHoursTotal",
+    physicalHealthBlocks: "physicalHealthBlocks",
+    mentalHealthSessions: "mentalHealthSessions",
+    mentalHealthHoursTotal: "mentalHealthHoursTotal",
+    mentalHealthBlocks: "mentalHealthBlocks",
     date: "date",
     weekNumber: "weekNumber",
     year: "year",

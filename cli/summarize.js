@@ -184,6 +184,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     if (result.summary.workoutHoursTotal !== undefined) {
       console.log(`  Workout Hours Total: ${result.summary.workoutHoursTotal.toFixed(2)}`);
     }
+    if (result.summary.workoutBlocks !== undefined && result.summary.workoutBlocks) {
+      console.log(`  Workout Blocks: ${result.summary.workoutBlocks}`);
+    }
   }
   
   if (selectedCalendar === "reading" || showAll) {
@@ -363,6 +366,9 @@ async function main() {
         }
         if (result.summary.workoutHoursTotal !== undefined) {
           summaryData.workoutHoursTotal = result.summary.workoutHoursTotal;
+        }
+        if (result.summary.workoutBlocks !== undefined) {
+          summaryData.workoutBlocks = result.summary.workoutBlocks;
         }
       }
       

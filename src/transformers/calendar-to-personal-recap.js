@@ -150,6 +150,20 @@ function calculateWeekSummary(
     summary.workoutDays = workout.days;
     summary.workoutSessions = workout.sessions;
     summary.workoutHoursTotal = workout.hoursTotal;
+
+    // Calculate workout blocks (event summaries) from workout events
+    const workoutEvents = calendarEvents.workout || [];
+    const filteredWorkoutEvents = workoutEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+    summary.workoutBlocks = filteredWorkoutEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const duration = event.durationHours || 0;
+        const durationRounded = Math.round(duration * 100) / 100;
+        return `${eventName} (${durationRounded} hours)`;
+      })
+      .join(", ") || "";
   }
 
   // Reading metrics (only if "reading" is selected)

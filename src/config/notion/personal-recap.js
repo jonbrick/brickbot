@@ -50,7 +50,7 @@ module.exports = {
     },
     workoutBlocks: {
       name: "Workout - Blocks",
-      type: "number",
+      type: "text",
       enabled: true,
     },
     readingDays: {

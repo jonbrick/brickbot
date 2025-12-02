@@ -172,6 +172,7 @@ const properties = {
     },
   },
   personalRecap: {
+    title: { name: "Week Recap", type: "title", enabled: true },
     earlyWakeupDays: {
       name: "Early Wakeup - Days",
       type: "number",

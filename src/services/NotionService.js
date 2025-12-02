@@ -438,36 +438,21 @@ class NotionService {
       return null;
     }
 
-    const weekNumberProperty = config.notion.getPropertyName(
-      config.notion.properties.personalRecap.weekNumber
-    );
-    const yearProperty = config.notion.getPropertyName(
-      config.notion.properties.personalRecap.year
-    );
-    const dateProperty = config.notion.getPropertyName(
-      config.notion.properties.personalRecap.date
+    const titleProperty = config.notion.getPropertyName(
+      config.notion.properties.personalRecap.title
     );
 
-    // Try querying by week number and year first
+    // Format week number with zero-padding (e.g., "01", "48")
+    const weekNumberStr = String(weekNumber).padStart(2, "0");
+    const titleValue = `Week ${weekNumberStr} Recap`;
+
+    // Query by title property
     try {
       const filter = {
-        and: [
-          {
-            property: weekNumberProperty,
-            number: {
-              equals:
-                typeof weekNumber === "string"
-                  ? parseFloat(weekNumber)
-                  : weekNumber,
-            },
-          },
-          {
-            property: yearProperty,
-            number: {
-              equals: typeof year === "string" ? parseFloat(year) : year,
-            },
-          },
-        ],
+        property: titleProperty,
+        title: {
+          equals: titleValue,
+        },
       };
 
       const results = await this.queryDatabase(databaseId, filter);
@@ -475,42 +460,8 @@ class NotionService {
         return results[0];
       }
     } catch (error) {
-      // If Week Number property doesn't exist, fall back to date range query
-      if (
-        error.message.includes("Could not find property") &&
-        startDate &&
-        endDate
-      ) {
-        try {
-          return await this.filterByDateRange(
-            databaseId,
-            dateProperty,
-            startDate,
-            endDate
-          ).then((results) => (results.length > 0 ? results[0] : null));
-        } catch (dateError) {
-          // If date query also fails, return null
-          return null;
-        }
-      }
-      // Re-throw if it's a different error
-      throw error;
-    }
-
-    // If no results found and we have dates, try date range fallback
-    if (startDate && endDate) {
-      try {
-        const results = await this.filterByDateRange(
-          databaseId,
-          dateProperty,
-          startDate,
-          endDate
-        );
-        return results.length > 0 ? results[0] : null;
-      } catch (error) {
-        // If date query fails, return null
-        return null;
-      }
+      // If title property query fails, return null
+      return null;
     }
 
     return null;

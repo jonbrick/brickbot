@@ -9,7 +9,7 @@ const WorkoutDatabase = require("../databases/WorkoutDatabase");
 const SteamDatabase = require("../databases/SteamDatabase");
 const PRDatabase = require("../databases/PRDatabase");
 const BodyWeightDatabase = require("../databases/BodyWeightDatabase");
-const RecapDatabase = require("../databases/RecapDatabase");
+const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const NotionDatabase = require("../databases/NotionDatabase");
 
 class NotionService extends NotionDatabase {
@@ -22,7 +22,7 @@ class NotionService extends NotionDatabase {
     this.steamRepo = new SteamDatabase();
     this.prRepo = new PRDatabase();
     this.bodyWeightRepo = new BodyWeightDatabase();
-    this.recapRepo = new RecapDatabase();
+    this.personalRecapRepo = new PersonalRecapDatabase();
   }
 
   // ========================================
@@ -70,11 +70,20 @@ class NotionService extends NotionDatabase {
   }
 
   /**
-   * Get Recap database
-   * @returns {RecapDatabase}
+   * Get Personal Recap database
+   * @returns {PersonalRecapDatabase}
+   */
+  getPersonalRecapRepository() {
+    return this.personalRecapRepo;
+  }
+
+  /**
+   * Get Recap database (deprecated - use getPersonalRecapRepository)
+   * @deprecated Use getPersonalRecapRepository() instead
+   * @returns {PersonalRecapDatabase}
    */
   getRecapRepository() {
-    return this.recapRepo;
+    return this.personalRecapRepo;
   }
 
   // ========================================
@@ -203,18 +212,18 @@ class NotionService extends NotionDatabase {
 
   /**
    * Find week recap record
-   * @deprecated Use getRecapRepository().findWeekRecap() instead
+   * @deprecated Use getPersonalRecapRepository().findWeekRecap() instead
    */
   async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
-    return await this.recapRepo.findWeekRecap(weekNumber, year, startDate, endDate);
+    return await this.personalRecapRepo.findWeekRecap(weekNumber, year, startDate, endDate);
   }
 
   /**
    * Update week recap with summary data
-   * @deprecated Use getRecapRepository().updateWeekRecap() instead
+   * @deprecated Use getPersonalRecapRepository().updateWeekRecap() instead
    */
   async updateWeekRecap(pageId, summaryData) {
-    return await this.recapRepo.updateWeekRecap(pageId, summaryData);
+    return await this.personalRecapRepo.updateWeekRecap(pageId, summaryData);
   }
 }
 

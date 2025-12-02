@@ -77,7 +77,7 @@ const calendarMappings = {
   alcohol: {
     type: "direct",
     sourceDatabase: "alcohol",
-    calendarId: process.env.ALCOHOL_CALENDAR_ID,
+    calendarId: process.env.DRINKING_CALENDAR_ID,
   },
 
   // Meditation calendar

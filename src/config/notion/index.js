@@ -8,7 +8,7 @@ const workouts = require("./workouts");
 const games = require("./games");
 const prs = require("./prs");
 const bodyWeight = require("./body-weight");
-const recap = require("./recap");
+const personalRecap = require("./personal-recap");
 
 // Aggregate database IDs
 const databases = {
@@ -17,7 +17,7 @@ const databases = {
   steam: games.database, // Keep 'steam' key for backward compatibility
   prs: prs.database,
   bodyWeight: bodyWeight.database,
-  personalRecap: recap.database,
+  personalRecap: personalRecap.database,
 };
 
 // Aggregate properties
@@ -27,7 +27,7 @@ const properties = {
   steam: games.properties,
   github: prs.properties, // Keep 'github' key for backward compatibility
   withings: bodyWeight.properties, // Keep 'withings' key for backward compatibility
-  personalRecap: recap.properties,
+  personalRecap: personalRecap.properties,
 };
 
 // Aggregate field mappings
@@ -37,7 +37,7 @@ const fieldMappings = {
   steam: games.fieldMappings,
   github: prs.fieldMappings,
   withings: bodyWeight.fieldMappings,
-  personalRecap: recap.fieldMappings,
+  personalRecap: personalRecap.fieldMappings,
 };
 
 // Color mappings (for categorization and display)

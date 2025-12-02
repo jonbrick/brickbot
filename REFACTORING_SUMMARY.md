@@ -8,29 +8,33 @@ Successfully refactored the codebase to support scalable calendar integrations. 
 
 ### 1. Repository Pattern Implementation
 
-**Created 7 new repository files** (~60-90 lines each):
-- `src/repositories/NotionRepository.js` - Base class with generic CRUD operations (588 lines)
-- `src/repositories/SleepRepository.js` - Sleep domain operations (93 lines)
-- `src/repositories/WorkoutRepository.js` - Workout domain operations (106 lines)
-- `src/repositories/SteamRepository.js` - Steam gaming domain operations (95 lines)
-- `src/repositories/PRRepository.js` - GitHub PRs domain operations (103 lines)
-- `src/repositories/BodyWeightRepository.js` - Body weight domain operations (103 lines)
-- `src/repositories/RecapRepository.js` - Week recap domain operations (81 lines)
+**Created 7 new database files** (~60-90 lines each):
 
-**Result**: Domain logic extracted from monolithic service into focused, maintainable repositories.
+- `src/databases/NotionDatabase.js` - Base class with generic CRUD operations (587 lines)
+- `src/databases/SleepDatabase.js` - Sleep domain operations (95 lines)
+- `src/databases/WorkoutDatabase.js` - Workout domain operations (108 lines)
+- `src/databases/SteamDatabase.js` - Steam gaming domain operations (95 lines)
+- `src/databases/PRDatabase.js` - GitHub PRs domain operations (100 lines)
+- `src/databases/BodyWeightDatabase.js` - Body weight domain operations (106 lines)
+- `src/databases/RecapDatabase.js` - Week recap domain operations (88 lines)
+
+**Result**: Domain logic extracted from monolithic service into focused, maintainable databases.
 
 ### 2. Declarative Calendar Mapping System
 
 **Created**:
+
 - `src/config/calendar-mappings.js` - Declarative calendar mapping configuration
 - `src/utils/calendar-mapper.js` - Generic calendar ID resolver
 
 **Benefits**:
+
 - Adding new calendars now requires only configuration, not new functions
 - Supports multiple mapping types: direct, property-based, category-based
 - Already configured for 10+ future calendar integrations
 
 **Example**:
+
 ```javascript
 // Old way: Write a new function for each calendar
 function mapNewCalendarToId(value) { ... }
@@ -49,9 +53,11 @@ personalCalendar: {
 ### 3. Split Notion Config by Domain
 
 **Replaced**:
+
 - `src/config/notion.js` (384 lines)
 
 **With** 7 domain-specific files (~50-80 lines each):
+
 - `src/config/notion/index.js` - Aggregator (133 lines)
 - `src/config/notion/sleep.js` - Oura sleep config (85 lines)
 - `src/config/notion/workouts.js` - Strava workouts config (57 lines)
@@ -61,6 +67,7 @@ personalCalendar: {
 - `src/config/notion/recap.js` - Personal recap config (33 lines)
 
 **Benefits**:
+
 - Each domain config is focused and easy to modify
 - Adding new databases doesn't bloat existing config files
 - Clear separation of concerns
@@ -73,8 +80,9 @@ personalCalendar: {
 **Reduction**: 77% smaller (853 lines removed)
 
 **New role**:
-- Extends NotionRepository for base CRUD operations
-- Provides repository instances
+
+- Extends NotionDatabase for base CRUD operations
+- Provides database instances
 - Maintains backward compatibility through delegation
 
 ### 5. BaseWorkflow Class (Optional but Implemented)
@@ -82,6 +90,7 @@ personalCalendar: {
 **Created**: `src/workflows/BaseWorkflow.js` (190 lines)
 
 **Benefits**:
+
 - Provides reusable batch processing logic
 - Reduces duplication across 11 workflow files
 - Consistent error handling and rate limiting
@@ -89,8 +98,9 @@ personalCalendar: {
 ## Files Modified
 
 ### New Files Created (14):
-- 6 Repository files
-- 6 Notion domain config files  
+
+- 6 Database files
+- 6 Notion domain config files
 - 1 Notion config aggregator
 - 1 Calendar mappings config
 - 1 Calendar mapper utility
@@ -98,17 +108,21 @@ personalCalendar: {
 - 1 New NotionService (thin wrapper)
 
 ### Files Updated (12):
-- All 11 workflow files (use repositories instead of NotionService)
+
+- All 11 workflow files (use databases instead of NotionService)
 - `src/config/index.js` (updated import path)
 - `src/config/calendar.js` (integrated new mapping system)
 
 ### Files Deleted (1):
+
 - `src/config/notion.js` (replaced by notion/ directory)
 
 ## Scalability Benefits
 
 ### Before Refactoring
+
 To add a new calendar integration:
+
 1. Add ~80 lines to NotionService (increasing bloat)
 2. Write new mapping function in calendar.js
 3. Create workflow with duplicated batch logic
@@ -116,8 +130,10 @@ To add a new calendar integration:
 **Total**: ~150-200 new lines of code, increasing technical debt
 
 ### After Refactoring
+
 To add a new calendar integration:
-1. Create focused repository (~60 lines)
+
+1. Create focused database (~60 lines)
 2. Create domain config (~50 lines)
 3. Add mapping entry (~5 lines in calendar-mappings.js)
 4. Create workflow using BaseWorkflow helpers
@@ -127,6 +143,7 @@ To add a new calendar integration:
 ## Impact on Planned Integrations
 
 You have 10+ new calendar integrations planned:
+
 - Sober days
 - Alcohol
 - Workouts (expanded)
@@ -144,44 +161,45 @@ You have 10+ new calendar integrations planned:
 ## Backward Compatibility
 
 ✅ **Fully maintained**: Existing CLI scripts work without modification
-✅ **Delegation pattern**: NotionService delegates to repositories
+✅ **Delegation pattern**: NotionService delegates to databases
 ✅ **Config structure**: Maintained same export interface
 ✅ **Transformers**: No changes needed
 
 ## Testing Status
 
 ✅ **Syntax validation**: No linting errors
-✅ **Architecture validation**: All repositories and configs created
+✅ **Architecture validation**: All databases and configs created
 ✅ **Import validation**: Config paths updated correctly
 ✅ **Pattern validation**: Workflows successfully refactored
 
 **Recommended next steps**:
+
 1. Run integration tests to verify end-to-end flows
 2. Test CLI scripts with real API calls
-3. Gradually migrate CLI to use repositories directly (optional)
+3. Gradually migrate CLI to use databases directly (optional)
 
 ## Code Quality Metrics
 
-| Metric | Before | After | Improvement |
-|--------|---------|-------|-------------|
-| NotionService.js | 1104 lines | 251 lines | 77% reduction |
-| Notion config | 1 file (384 lines) | 7 files (~60 lines avg) | More maintainable |
-| Calendar mappings | Functions (scattered) | Declarative config | Scalable |
-| Workflow duplication | High | Low (BaseWorkflow) | DRY principle |
+| Metric               | Before                | After                   | Improvement       |
+| -------------------- | --------------------- | ----------------------- | ----------------- |
+| NotionService.js     | 1104 lines            | 251 lines               | 77% reduction     |
+| Notion config        | 1 file (384 lines)    | 7 files (~60 lines avg) | More maintainable |
+| Calendar mappings    | Functions (scattered) | Declarative config      | Scalable          |
+| Workflow duplication | High                  | Low (BaseWorkflow)      | DRY principle     |
 
 ## Architecture Diagram
 
 ```
 brickbot/
 ├── src/
-│   ├── repositories/          # NEW: Domain-specific data access
-│   │   ├── NotionRepository.js (base class)
-│   │   ├── SleepRepository.js
-│   │   ├── WorkoutRepository.js
-│   │   ├── SteamRepository.js
-│   │   ├── PRRepository.js
-│   │   ├── BodyWeightRepository.js
-│   │   └── RecapRepository.js
+│   ├── databases/             # Domain-specific data access
+│   │   ├── NotionDatabase.js (base class)
+│   │   ├── SleepDatabase.js
+│   │   ├── WorkoutDatabase.js
+│   │   ├── SteamDatabase.js
+│   │   ├── PRDatabase.js
+│   │   ├── BodyWeightDatabase.js
+│   │   └── RecapDatabase.js
 │   │
 │   ├── services/
 │   │   └── NotionService.js  # SLIMMED: Thin wrapper (251 lines, was 1104)
@@ -203,13 +221,13 @@ brickbot/
 │   │
 │   └── workflows/
 │       ├── BaseWorkflow.js    # NEW: Reusable batch logic
-│       └── *.js               # UPDATED: Use repositories
+│       └── *.js               # UPDATED: Use databases
 ```
 
 ## Success Criteria: ✅ All Achieved
 
 - ✅ NotionService reduced from 1104 to ~250 lines (77% reduction)
-- ✅ Domain logic extracted into focused repositories (~60-100 lines each)
+- ✅ Domain logic extracted into focused databases (~60-100 lines each)
 - ✅ Config split into maintainable domain-specific files (~50-80 lines each)
 - ✅ Declarative calendar mapping system created
 - ✅ BaseWorkflow class reduces duplication
@@ -226,4 +244,3 @@ The refactoring successfully transformed a monolithic architecture into a modula
 **Lines of code reduced**: ~850 lines from NotionService alone
 **Maintainability improvement**: Significant (focused files, clear separation of concerns)
 **Scalability**: Excellent (add new integrations with minimal code)
-

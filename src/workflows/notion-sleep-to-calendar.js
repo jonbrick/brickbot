@@ -1,13 +1,16 @@
 /**
- * Notion to Calendar Workflow
- * Sync sleep records from Notion to Google Calendar
+ * Notion Sleep to Calendar Workflow
+ * Sync sleep records from Notion database to Google Calendar
+ * 
+ * Note: This workflow reads from the Notion Sleep database.
+ * The data flow is: Oura → (oura-to-notion) → Notion → (this workflow) → Calendar
  */
 
-const SleepRepository = require("../repositories/SleepRepository");
+const SleepDatabase = require("../databases/SleepDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformSleepToCalendarEvent,
-} = require("../transformers/notion-to-calendar");
+} = require("../transformers/notion-sleep-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
 const { getPropertyName } = require("../config/notion");
@@ -22,7 +25,7 @@ const { formatDate } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSleepToCalendar(startDate, endDate, options = {}) {
-  const sleepRepo = new SleepRepository();
+  const sleepRepo = new SleepDatabase();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -79,7 +82,7 @@ async function syncSleepToCalendar(startDate, endDate, options = {}) {
  * Sync a single sleep record to calendar
  *
  * @param {Object} sleepRecord - Notion page object
- * @param {SleepRepository} sleepRepo - Sleep repository instance
+ * @param {SleepDatabase} sleepRepo - Sleep database instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */

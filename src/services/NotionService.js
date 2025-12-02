@@ -1,84 +1,84 @@
 /**
  * Notion Service (Thin Wrapper)
- * Provides access to domain-specific repositories
- * Maintains backward compatibility while delegating to repositories
+ * Provides access to domain-specific databases
+ * Maintains backward compatibility while delegating to databases
  */
 
-const SleepRepository = require("../repositories/SleepRepository");
-const WorkoutRepository = require("../repositories/WorkoutRepository");
-const SteamRepository = require("../repositories/SteamRepository");
-const PRRepository = require("../repositories/PRRepository");
-const BodyWeightRepository = require("../repositories/BodyWeightRepository");
-const RecapRepository = require("../repositories/RecapRepository");
-const NotionRepository = require("../repositories/NotionRepository");
+const SleepDatabase = require("../databases/SleepDatabase");
+const WorkoutDatabase = require("../databases/WorkoutDatabase");
+const SteamDatabase = require("../databases/SteamDatabase");
+const PRDatabase = require("../databases/PRDatabase");
+const BodyWeightDatabase = require("../databases/BodyWeightDatabase");
+const RecapDatabase = require("../databases/RecapDatabase");
+const NotionDatabase = require("../databases/NotionDatabase");
 
-class NotionService extends NotionRepository {
+class NotionService extends NotionDatabase {
   constructor() {
     super();
     
-    // Initialize domain repositories
-    this.sleepRepo = new SleepRepository();
-    this.workoutRepo = new WorkoutRepository();
-    this.steamRepo = new SteamRepository();
-    this.prRepo = new PRRepository();
-    this.bodyWeightRepo = new BodyWeightRepository();
-    this.recapRepo = new RecapRepository();
+    // Initialize domain databases
+    this.sleepRepo = new SleepDatabase();
+    this.workoutRepo = new WorkoutDatabase();
+    this.steamRepo = new SteamDatabase();
+    this.prRepo = new PRDatabase();
+    this.bodyWeightRepo = new BodyWeightDatabase();
+    this.recapRepo = new RecapDatabase();
   }
 
   // ========================================
-  // Repository Access (Preferred API)
+  // Database Access (Preferred API)
   // ========================================
 
   /**
-   * Get Sleep repository
-   * @returns {SleepRepository}
+   * Get Sleep database
+   * @returns {SleepDatabase}
    */
   getSleepRepository() {
     return this.sleepRepo;
   }
 
   /**
-   * Get Workout repository
-   * @returns {WorkoutRepository}
+   * Get Workout database
+   * @returns {WorkoutDatabase}
    */
   getWorkoutRepository() {
     return this.workoutRepo;
   }
 
   /**
-   * Get Steam repository
-   * @returns {SteamRepository}
+   * Get Steam database
+   * @returns {SteamDatabase}
    */
   getSteamRepository() {
     return this.steamRepo;
   }
 
   /**
-   * Get PR repository
-   * @returns {PRRepository}
+   * Get PR database
+   * @returns {PRDatabase}
    */
   getPRRepository() {
     return this.prRepo;
   }
 
   /**
-   * Get Body Weight repository
-   * @returns {BodyWeightRepository}
+   * Get Body Weight database
+   * @returns {BodyWeightDatabase}
    */
   getBodyWeightRepository() {
     return this.bodyWeightRepo;
   }
 
   /**
-   * Get Recap repository
-   * @returns {RecapRepository}
+   * Get Recap database
+   * @returns {RecapDatabase}
    */
   getRecapRepository() {
     return this.recapRepo;
   }
 
   // ========================================
-  // Backward Compatibility Methods (Delegates to Repositories)
+  // Backward Compatibility Methods (Delegates to Databases)
   // ========================================
 
   /**

@@ -1,13 +1,16 @@
 /**
- * Steam to Calendar Workflow
- * Sync gaming session records from Notion to Google Calendar
+ * Notion Steam to Calendar Workflow
+ * Sync gaming session records from Notion database to Google Calendar
+ * 
+ * Note: This workflow reads from the Notion Steam database.
+ * The data flow is: Steam → (steam-to-notion) → Notion → (this workflow) → Calendar
  */
 
-const SteamRepository = require("../repositories/SteamRepository");
+const SteamDatabase = require("../databases/SteamDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformSteamToCalendarEvent,
-} = require("../transformers/steam-to-calendar");
+} = require("../transformers/notion-steam-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
 const { getPropertyName } = require("../config/notion");
@@ -21,7 +24,7 @@ const { getPropertyName } = require("../config/notion");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSteamToCalendar(startDate, endDate, options = {}) {
-  const steamRepo = new SteamRepository();
+  const steamRepo = new SteamDatabase();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -80,7 +83,7 @@ async function syncSteamToCalendar(startDate, endDate, options = {}) {
  * Sync a single Steam gaming session record to calendar
  *
  * @param {Object} steamRecord - Notion page object
- * @param {SteamRepository} steamRepo - Steam repository instance
+ * @param {SteamDatabase} steamRepo - Steam database instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */

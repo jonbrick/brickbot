@@ -1,13 +1,16 @@
 /**
- * GitHub to Calendar Workflow
- * Sync PR records from Notion to Google Calendar
+ * Notion PRs to Calendar Workflow
+ * Sync PR records from Notion database to Google Calendar
+ * 
+ * Note: This workflow reads from the Notion PRs database.
+ * The data flow is: GitHub → (github-to-notion) → Notion → (this workflow) → Calendar
  */
 
-const PRRepository = require("../repositories/PRRepository");
+const PRDatabase = require("../databases/PRDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
   transformPRToCalendarEvent,
-} = require("../transformers/github-to-calendar");
+} = require("../transformers/notion-prs-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
 const { getPropertyName } = require("../config/notion");
@@ -22,7 +25,7 @@ const { formatDateOnly } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncPRsToCalendar(startDate, endDate, options = {}) {
-  const prRepo = new PRRepository();
+  const prRepo = new PRDatabase();
 
   const results = {
     created: [],
@@ -81,7 +84,7 @@ async function syncPRsToCalendar(startDate, endDate, options = {}) {
  * Sync a single PR record to calendar
  *
  * @param {Object} prRecord - Notion page object
- * @param {PRRepository} prRepo - PR repository instance
+ * @param {PRDatabase} prRepo - PR database instance
  * @param {Object} calendarServices - Object with 'personal' and 'work' calendar service instances
  * @returns {Promise<Object>} Sync result
  */

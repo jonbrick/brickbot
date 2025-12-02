@@ -1,12 +1,12 @@
 /**
- * Recap Repository
+ * Recap Database
  * Domain-specific operations for Personal Recap database
  */
 
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 
-class RecapRepository extends NotionRepository {
+class RecapDatabase extends NotionDatabase {
   /**
    * Find week recap record by week number and year
    * Falls back to date range query if Week Number property doesn't exist
@@ -83,5 +83,5 @@ class RecapRepository extends NotionRepository {
   }
 }
 
-module.exports = RecapRepository;
+module.exports = RecapDatabase;
 

@@ -1,5 +1,5 @@
 /**
- * Strava to Calendar Transformer
+ * Notion Workouts to Calendar Transformer
  * Transform Notion workout records to Google Calendar event format
  */
 
@@ -12,24 +12,24 @@ const { buildDateTime } = require("../utils/date");
  * Format workout details for event description
  *
  * @param {Object} workoutRecord - Notion workout record
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {WorkoutDatabase} workoutRepo - Workout database instance for extracting properties
  * @returns {string} Formatted description
  */
-function formatWorkoutDescription(workoutRecord, notionService) {
+function formatWorkoutDescription(workoutRecord, workoutRepo) {
   const props = config.notion.properties.strava;
 
   const activityName =
-    notionService.extractProperty(workoutRecord, getPropertyName(props.name)) ||
+    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.name)) ||
     "Workout";
 
   const duration =
-    notionService.extractProperty(
+    workoutRepo.extractProperty(
       workoutRecord,
       getPropertyName(props.duration)
     ) || "N/A";
 
   const activityType =
-    notionService.extractProperty(workoutRecord, getPropertyName(props.type)) ||
+    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.type)) ||
     "Workout";
 
   return `🏃‍♂️ ${activityName}
@@ -41,34 +41,34 @@ function formatWorkoutDescription(workoutRecord, notionService) {
  * Transform Notion workout record to Google Calendar event
  *
  * @param {Object} workoutRecord - Notion page object
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {WorkoutDatabase} workoutRepo - Workout database instance for extracting properties
  * @returns {Object} Google Calendar event data
  */
-function transformWorkoutToCalendarEvent(workoutRecord, notionService) {
+function transformWorkoutToCalendarEvent(workoutRecord, workoutRepo) {
   const props = config.notion.properties.strava;
 
   // Extract properties from Notion page
   const activityName =
-    notionService.extractProperty(workoutRecord, getPropertyName(props.name)) ||
+    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.name)) ||
     "Workout";
 
-  const date = notionService.extractProperty(
+  const date = workoutRepo.extractProperty(
     workoutRecord,
     getPropertyName(props.date)
   );
 
-  const startTime = notionService.extractProperty(
+  const startTime = workoutRepo.extractProperty(
     workoutRecord,
     getPropertyName(props.startTime)
   );
 
-  const duration = notionService.extractProperty(
+  const duration = workoutRepo.extractProperty(
     workoutRecord,
     getPropertyName(props.duration)
   );
 
   const activityType =
-    notionService.extractProperty(workoutRecord, getPropertyName(props.type)) ||
+    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.type)) ||
     "Workout";
 
   // Get fitness calendar ID
@@ -95,7 +95,7 @@ function transformWorkoutToCalendarEvent(workoutRecord, notionService) {
   const endDateTime = calculateEndTime(startDateTime, duration);
 
   // Create description with workout details
-  const description = formatWorkoutDescription(workoutRecord, notionService);
+  const description = formatWorkoutDescription(workoutRecord, workoutRepo);
 
   return {
     calendarId,
@@ -135,3 +135,4 @@ module.exports = {
   transformWorkoutToCalendarEvent,
   formatWorkoutDescription,
 };
+

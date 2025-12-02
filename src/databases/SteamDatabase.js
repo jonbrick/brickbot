@@ -1,13 +1,13 @@
 /**
- * Steam Repository
+ * Steam Database
  * Domain-specific operations for Steam gaming database
  */
 
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class SteamRepository extends NotionRepository {
+class SteamDatabase extends NotionDatabase {
   /**
    * Find Steam gaming record by Activity ID
    *
@@ -90,5 +90,5 @@ class SteamRepository extends NotionRepository {
   }
 }
 
-module.exports = SteamRepository;
+module.exports = SteamDatabase;
 

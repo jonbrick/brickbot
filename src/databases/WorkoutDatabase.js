@@ -1,13 +1,13 @@
 /**
- * Workout Repository
+ * Workout Database
  * Domain-specific operations for Workouts database (Strava)
  */
 
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class WorkoutRepository extends NotionRepository {
+class WorkoutDatabase extends NotionDatabase {
   /**
    * Find workout record by Activity ID
    *
@@ -103,5 +103,5 @@ class WorkoutRepository extends NotionRepository {
   }
 }
 
-module.exports = WorkoutRepository;
+module.exports = WorkoutDatabase;
 

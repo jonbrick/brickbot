@@ -1,5 +1,5 @@
 /**
- * GitHub to Calendar Transformer
+ * Notion PRs to Calendar Transformer
  * Transform Notion PR records to Google Calendar event format (all-day events)
  */
 
@@ -12,30 +12,35 @@ const { formatDateOnly } = require("../utils/date");
  * Format PR description for event description
  *
  * @param {Object} prRecord - Notion PR record
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {PRDatabase} prRepo - PR database instance for extracting properties
  * @returns {string} Formatted description
  */
-function formatPRDescription(prRecord, notionService) {
+function formatPRDescription(prRecord, prRepo) {
   const props = config.notion.properties.github;
 
   const repository =
-    notionService.extractProperty(prRecord, getPropertyName(props.repository)) ||
+    prRepo.extractProperty(prRecord, getPropertyName(props.repository)) ||
     "Unknown Repository";
 
   const commitsCount =
-    notionService.extractProperty(prRecord, getPropertyName(props.commitsCount)) || 0;
+    prRepo.extractProperty(prRecord, getPropertyName(props.commitsCount)) || 0;
 
   const totalLinesAdded =
-    notionService.extractProperty(prRecord, getPropertyName(props.totalLinesAdded)) || 0;
+    prRepo.extractProperty(prRecord, getPropertyName(props.totalLinesAdded)) ||
+    0;
 
   const totalLinesDeleted =
-    notionService.extractProperty(prRecord, getPropertyName(props.totalLinesDeleted)) || 0;
+    prRepo.extractProperty(
+      prRecord,
+      getPropertyName(props.totalLinesDeleted)
+    ) || 0;
 
   const prTitles =
-    notionService.extractProperty(prRecord, getPropertyName(props.prTitles)) || "";
+    prRepo.extractProperty(prRecord, getPropertyName(props.prTitles)) || "";
 
   const commitMessages =
-    notionService.extractProperty(prRecord, getPropertyName(props.commitMessages)) || "";
+    prRepo.extractProperty(prRecord, getPropertyName(props.commitMessages)) ||
+    "";
 
   let description = `💻 ${repository}
 📊 ${commitsCount} commit${commitsCount === 1 ? "" : "s"}
@@ -79,30 +84,35 @@ function extractRepoName(repository) {
  * Transform Notion PR record to Google Calendar event (all-day)
  *
  * @param {Object} prRecord - Notion page object
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {PRDatabase} prRepo - PR database instance for extracting properties
  * @returns {Object} Google Calendar event data
  */
-function transformPRToCalendarEvent(prRecord, notionService) {
+function transformPRToCalendarEvent(prRecord, prRepo) {
   const props = config.notion.properties.github;
 
   // Extract properties from Notion page
   const repository =
-    notionService.extractProperty(prRecord, getPropertyName(props.repository)) ||
+    prRepo.extractProperty(prRecord, getPropertyName(props.repository)) ||
     "Unknown Repository";
 
-  const date = notionService.extractProperty(prRecord, getPropertyName(props.date));
+  const date = prRepo.extractProperty(prRecord, getPropertyName(props.date));
 
   const commitsCount =
-    notionService.extractProperty(prRecord, getPropertyName(props.commitsCount)) || 0;
+    prRepo.extractProperty(prRecord, getPropertyName(props.commitsCount)) || 0;
 
   const totalLinesAdded =
-    notionService.extractProperty(prRecord, getPropertyName(props.totalLinesAdded)) || 0;
+    prRepo.extractProperty(prRecord, getPropertyName(props.totalLinesAdded)) ||
+    0;
 
   const totalLinesDeleted =
-    notionService.extractProperty(prRecord, getPropertyName(props.totalLinesDeleted)) || 0;
+    prRepo.extractProperty(
+      prRecord,
+      getPropertyName(props.totalLinesDeleted)
+    ) || 0;
 
   const projectType =
-    notionService.extractProperty(prRecord, getPropertyName(props.projectType)) || "Personal";
+    prRepo.extractProperty(prRecord, getPropertyName(props.projectType)) ||
+    "Personal";
 
   // Get calendar ID based on project type
   const calendarId = mapPRToCalendarId(projectType);
@@ -118,7 +128,9 @@ function transformPRToCalendarEvent(prRecord, notionService) {
   const repoName = extractRepoName(repository);
 
   // Format event title per API_MAPPINGS_COMPLETE.md
-  const summary = `${repoName}: ${commitsCount} commit${commitsCount === 1 ? "" : "s"} (+${totalLinesAdded}/-${totalLinesDeleted} lines)`;
+  const summary = `${repoName}: ${commitsCount} commit${
+    commitsCount === 1 ? "" : "s"
+  } (+${totalLinesAdded}/-${totalLinesDeleted} lines)`;
 
   // Format date as YYYY-MM-DD for all-day event
   let dateStr = null;
@@ -138,7 +150,7 @@ function transformPRToCalendarEvent(prRecord, notionService) {
   }
 
   // Create description with PR details
-  const description = formatPRDescription(prRecord, notionService);
+  const description = formatPRDescription(prRecord, prRepo);
 
   return {
     calendarId,

@@ -57,7 +57,7 @@ class BaseWorkflow {
    * Checks for existing record, transforms, and creates
    *
    * @param {Array} items - Array of items to sync
-   * @param {Object} repository - Repository instance
+   * @param {Object} repository - Database instance (Notion database)
    * @param {Function} findExistingFn - Function to find existing record
    * @param {Function} transformFn - Function to transform item to Notion properties
    * @param {string} databaseId - Notion database ID
@@ -102,7 +102,7 @@ class BaseWorkflow {
    *
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
-   * @param {Object} repository - Repository instance
+   * @param {Object} repository - Database instance (Notion database)
    * @param {Object} calendarService - Calendar service instance
    * @param {Function} transformFn - Function to transform record to calendar event
    * @param {Function} validateFn - Function to validate transformed event

@@ -182,7 +182,7 @@ For detailed setup instructions, see [SETUP.md](./SETUP.md).
 
 The modular architecture makes adding new integrations straightforward:
 
-1. **Create Repository** (`src/repositories/`) - Domain-specific data access (~60 lines)
+1. **Create Database** (`src/databases/`) - Domain-specific data access (~60 lines)
 2. **Create Domain Config** (`src/config/notion/`) - Database properties (~50 lines)
 3. **Create Service** (`src/services/`) - API client wrapper (if external API)
 4. **Create Collector** (`src/collectors/`) - Business logic for fetching data

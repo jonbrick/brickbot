@@ -1,27 +1,30 @@
 /**
- * Strava to Calendar Workflow
- * Sync workout records from Notion to Google Calendar
+ * Notion Body Weight to Calendar Workflow
+ * Sync body weight records from Notion database to Google Calendar
+ * 
+ * Note: This workflow reads from the Notion Body Weight database.
+ * The data flow is: Withings → (withings-to-notion) → Notion → (this workflow) → Calendar
  */
 
-const WorkoutRepository = require("../repositories/WorkoutRepository");
+const BodyWeightDatabase = require("../databases/BodyWeightDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const {
-  transformWorkoutToCalendarEvent,
-} = require("../transformers/strava-to-calendar");
+  transformBodyWeightToCalendarEvent,
+} = require("../transformers/notion-bodyweight-to-calendar");
 const config = require("../config");
 const { delay } = require("../utils/async");
 const { getPropertyName } = require("../config/notion");
 
 /**
- * Sync workout records from Notion to Google Calendar
+ * Sync body weight records from Notion to Google Calendar
  *
  * @param {Date} startDate - Start date
  * @param {Date} endDate - End date
  * @param {Object} options - Sync options
  * @returns {Promise<Object>} Sync results
  */
-async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
-  const workoutRepo = new WorkoutRepository();
+async function syncBodyWeightToCalendar(startDate, endDate, options = {}) {
+  const bodyWeightRepo = new BodyWeightDatabase();
   const calendarService = new GoogleCalendarService("personal");
 
   const results = {
@@ -32,23 +35,23 @@ async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
   };
 
   try {
-    // Get unsynced workout records
-    const workoutRecords = await workoutRepo.getUnsynced(
+    // Get unsynced body weight records
+    const weightRecords = await bodyWeightRepo.getUnsynced(
       startDate,
       endDate
     );
-    results.total = workoutRecords.length;
+    results.total = weightRecords.length;
 
-    if (workoutRecords.length === 0) {
+    if (weightRecords.length === 0) {
       return results;
     }
 
     // Process each record
-    for (const workoutRecord of workoutRecords) {
+    for (const weightRecord of weightRecords) {
       try {
-        const result = await syncSingleWorkout(
-          workoutRecord,
-          workoutRepo,
+        const result = await syncSingleBodyWeight(
+          weightRecord,
+          bodyWeightRepo,
           calendarService
         );
 
@@ -62,50 +65,50 @@ async function syncWorkoutsToCalendar(startDate, endDate, options = {}) {
         await delay(config.sources.rateLimits.googleCalendar.backoffMs);
       } catch (error) {
         results.errors.push({
-          pageId: workoutRecord.id,
+          pageId: weightRecord.id,
           error: error.message,
         });
       }
     }
   } catch (error) {
-    throw new Error(`Failed to sync workouts to calendar: ${error.message}`);
+    throw new Error(`Failed to sync body weight to calendar: ${error.message}`);
   }
 
   return results;
 }
 
 /**
- * Sync a single workout record to calendar
+ * Sync a single body weight record to calendar
  *
- * @param {Object} workoutRecord - Notion page object
- * @param {WorkoutRepository} workoutRepo - Workout repository instance
+ * @param {Object} weightRecord - Notion page object
+ * @param {BodyWeightDatabase} bodyWeightRepo - Body weight database instance
  * @param {GoogleCalendarService} calendarService - Calendar service instance
  * @returns {Promise<Object>} Sync result
  */
-async function syncSingleWorkout(
-  workoutRecord,
-  workoutRepo,
+async function syncSingleBodyWeight(
+  weightRecord,
+  bodyWeightRepo,
   calendarService
 ) {
   // Transform to calendar event format
-  const { calendarId, event } = transformWorkoutToCalendarEvent(
-    workoutRecord,
-    workoutRepo
+  const { calendarId, event } = transformBodyWeightToCalendarEvent(
+    weightRecord,
+    bodyWeightRepo
   );
 
   // Skip if missing required data
-  if (!event.start.dateTime || !event.end.dateTime) {
+  if (!event.start.date) {
     // Extract name for display even when skipped
-    const props = config.notion.properties.strava;
-    const name = workoutRepo.extractProperty(
-      workoutRecord,
+    const props = config.notion.properties.withings;
+    const name = bodyWeightRepo.extractProperty(
+      weightRecord,
       getPropertyName(props.name)
     );
 
     return {
       skipped: true,
-      pageId: workoutRecord.id,
-      reason: "Missing date, start time, or duration",
+      pageId: weightRecord.id,
+      reason: "Missing date",
       displayName: name || "Unknown",
     };
   }
@@ -115,19 +118,19 @@ async function syncSingleWorkout(
     const createdEvent = await calendarService.createEvent(calendarId, event);
 
     // Mark as synced in Notion
-    await workoutRepo.markSynced(workoutRecord.id);
+    await bodyWeightRepo.markSynced(weightRecord.id);
 
     // Extract name from Notion record for consistent display
-    const props = config.notion.properties.strava;
-    const name = notionService.extractProperty(
-      workoutRecord,
+    const props = config.notion.properties.withings;
+    const name = bodyWeightRepo.extractProperty(
+      weightRecord,
       getPropertyName(props.name)
     );
 
     return {
       skipped: false,
       created: true,
-      pageId: workoutRecord.id,
+      pageId: weightRecord.id,
       calendarId,
       eventId: createdEvent.id,
       summary: event.summary,
@@ -140,6 +143,7 @@ async function syncSingleWorkout(
 }
 
 module.exports = {
-  syncWorkoutsToCalendar,
-  syncSingleWorkout,
+  syncBodyWeightToCalendar,
+  syncSingleBodyWeight,
 };
+

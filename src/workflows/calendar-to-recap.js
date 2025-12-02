@@ -3,7 +3,7 @@
  * Summarize calendar events and update Personal Recap database
  */
 
-const RecapRepository = require("../repositories/RecapRepository");
+const RecapDatabase = require("../databases/RecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/calendar-summary");
 const { calculateWeekSummary } = require("../transformers/calendar-to-recap");
 const config = require("../config");
@@ -148,7 +148,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     }
 
     // Find or get week recap record
-    const recapRepo = new RecapRepository();
+    const recapRepo = new RecapDatabase();
     const weekRecap = await recapRepo.findWeekRecap(
       weekNumber,
       year,

@@ -36,7 +36,7 @@ That's it! No new functions needed.
 **Changes**:
 
 #### System Architecture Section
-- Updated directory tree to show new `repositories/` folder
+- Updated directory tree to show new `databases/` folder
 - Added domain-specific config structure (`config/notion/`)
 - Added `calendar-mappings.js` and `calendar-mapper.js`
 - Updated file sizes (NotionService: 1104 → 251 lines)

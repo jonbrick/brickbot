@@ -1,5 +1,5 @@
 /**
- * Withings to Calendar Transformer
+ * Notion Body Weight to Calendar Transformer
  * Transform Notion body weight records to Google Calendar event format (all-day events)
  */
 
@@ -12,30 +12,30 @@ const { formatDateOnly } = require("../utils/date");
  * Format body weight description for event description
  *
  * @param {Object} weightRecord - Notion body weight record
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {BodyWeightDatabase} bodyWeightRepo - Body weight database instance for extracting properties
  * @returns {string} Formatted description
  */
-function formatBodyWeightDescription(weightRecord, notionService) {
+function formatBodyWeightDescription(weightRecord, bodyWeightRepo) {
   const props = config.notion.properties.withings;
 
   const weight =
-    notionService.extractProperty(weightRecord, getPropertyName(props.weight)) ||
+    bodyWeightRepo.extractProperty(weightRecord, getPropertyName(props.weight)) ||
     "N/A";
 
   const measurementTime =
-    notionService.extractProperty(
+    bodyWeightRepo.extractProperty(
       weightRecord,
       getPropertyName(props.measurementTime)
     ) || "N/A";
 
   const fatPercentage =
-    notionService.extractProperty(
+    bodyWeightRepo.extractProperty(
       weightRecord,
       getPropertyName(props.fatPercentage)
     );
 
   const muscleMass =
-    notionService.extractProperty(
+    bodyWeightRepo.extractProperty(
       weightRecord,
       getPropertyName(props.muscleMass)
     );
@@ -61,18 +61,18 @@ function formatBodyWeightDescription(weightRecord, notionService) {
  * Transform Notion body weight record to Google Calendar event (all-day)
  *
  * @param {Object} weightRecord - Notion page object
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {BodyWeightDatabase} bodyWeightRepo - Body weight database instance for extracting properties
  * @returns {Object} Google Calendar event data
  */
-function transformBodyWeightToCalendarEvent(weightRecord, notionService) {
+function transformBodyWeightToCalendarEvent(weightRecord, bodyWeightRepo) {
   const props = config.notion.properties.withings;
 
   // Extract properties from Notion page
   const weight =
-    notionService.extractProperty(weightRecord, getPropertyName(props.weight)) ||
+    bodyWeightRepo.extractProperty(weightRecord, getPropertyName(props.weight)) ||
     null;
 
-  const date = notionService.extractProperty(
+  const date = bodyWeightRepo.extractProperty(
     weightRecord,
     getPropertyName(props.date)
   );
@@ -107,7 +107,7 @@ function transformBodyWeightToCalendarEvent(weightRecord, notionService) {
   }
 
   // Create description with measurement details
-  const description = formatBodyWeightDescription(weightRecord, notionService);
+  const description = formatBodyWeightDescription(weightRecord, bodyWeightRepo);
 
   return {
     calendarId,

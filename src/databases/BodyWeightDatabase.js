@@ -1,13 +1,13 @@
 /**
- * Body Weight Repository
+ * Body Weight Database
  * Domain-specific operations for Body Weight database (Withings)
  */
 
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class BodyWeightRepository extends NotionRepository {
+class BodyWeightDatabase extends NotionDatabase {
   /**
    * Find body weight record by Measurement ID
    *
@@ -101,5 +101,5 @@ class BodyWeightRepository extends NotionRepository {
   }
 }
 
-module.exports = BodyWeightRepository;
+module.exports = BodyWeightDatabase;
 

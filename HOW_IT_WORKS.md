@@ -29,7 +29,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
         ┌───────────────────┴───────────────────┐
         │                                       │
 ┌───────────────────┐                 ┌────────────────────┐
-│  Collector Layer  │                 │ Repository Layer   │
+│  Collector Layer  │                 │ Database Layer     │
 │  (Fetch from APIs)│                 │ (Notion data access│
 └───────────────────┘                 │  by domain)        │
         │                             └────────────────────┘
@@ -70,7 +70,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    - Returns structured data array
 
 3. **Workflow** (`src/workflows/oura-to-notion.js`):
-   - Creates `SleepRepository` instance
+   - Creates `SleepDatabase` instance
    - For each session:
      - Checks if exists: `sleepRepo.findBySleepId(session.sleepId)`
      - If exists: Skip
@@ -81,8 +81,8 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    - Uses config: `config.notion.sleep.properties`
    - Returns formatted properties object
 
-5. **Repository** (`src/repositories/SleepRepository.js`):
-   - Extends `NotionRepository` base class
+5. **Database** (`src/databases/SleepDatabase.js`):
+   - Extends `NotionDatabase` base class
    - Calls `createPage()` with database ID and properties
    - Base class handles API call with rate limiting
 
@@ -100,8 +100,8 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    - Prompts user for date range and database
    - Calls calendar sync workflow
 
-2. **Workflow** (`src/workflows/notion-to-calendar.js`):
-   - Creates `SleepRepository` instance
+2. **Workflow** (`src/workflows/notion-sleep-to-calendar.js`):
+   - Creates `SleepDatabase` instance
    - Creates `GoogleCalendarService` instance
    - Gets unsynced records: `sleepRepo.getUnsynced(startDate, endDate)`
    - For each record:
@@ -110,7 +110,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
      - Create calendar event
      - Mark as synced: `sleepRepo.markSynced(pageId)`
 
-3. **Transformer** (`src/transformers/notion-to-calendar.js`):
+3. **Transformer** (`src/transformers/notion-sleep-to-calendar.js`):
    - Extracts properties from Notion page using repository
    - Determines which calendar based on wake time
    - Formats event with sleep metrics in description
@@ -125,7 +125,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    - Creates event via Google Calendar API
    - Handles OAuth, retry logic, rate limiting
 
-6. **Repository** (`src/repositories/SleepRepository.js`):
+6. **Database** (`src/databases/SleepDatabase.js`):
    - Updates Notion page: Sets "Calendar Created" checkbox to true
    - Prevents re-syncing same record
 
@@ -143,9 +143,9 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 1. **Create Notion Database** (in Notion):
    - Properties: Title, Date, Duration, Notes, Calendar Created
 
-2. **Create Repository** (`src/repositories/MeditationRepository.js`):
+2. **Create Database** (`src/databases/MeditationDatabase.js`):
    ```javascript
-   class MeditationRepository extends NotionRepository {
+   class MeditationDatabase extends NotionDatabase {
      async findByUniqueId(uniqueId) { /* ... */ }
      async getUnsynced(startDate, endDate) { /* ... */ }
      async markSynced(pageId) { /* ... */ }
@@ -187,22 +187,22 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 
 ## Key Components
 
-### Repositories (Domain Data Access)
+### Databases (Domain Data Access)
 
 **Purpose**: Encapsulate all Notion database operations for a specific domain
 
-**Base Class**: `NotionRepository.js`
+**Base Class**: `NotionDatabase.js`
 - Generic CRUD operations
 - Property formatting
 - Filtering and querying
 
-**Domain Repositories**:
-- `SleepRepository.js` - Oura sleep data
-- `WorkoutRepository.js` - Strava workouts
-- `SteamRepository.js` - Gaming sessions
-- `PRRepository.js` - GitHub pull requests
-- `BodyWeightRepository.js` - Withings measurements
-- `RecapRepository.js` - Weekly recaps
+**Domain Databases**:
+- `SleepDatabase.js` - Oura sleep data
+- `WorkoutDatabase.js` - Strava workouts
+- `SteamDatabase.js` - Gaming sessions
+- `PRDatabase.js` - GitHub pull requests
+- `BodyWeightDatabase.js` - Withings measurements
+- `RecapDatabase.js` - Weekly recaps
 
 **Benefits**:
 - **Small**: 60-100 lines each vs. 1104-line monolith
@@ -271,7 +271,7 @@ const calendarId = resolveCalendarId('meditation', record, repository);
 **Common Pattern**:
 ```javascript
 async function syncDataToNotion(items) {
-  const repo = new DomainRepository();
+  const repo = new DomainDatabase();
   const results = { created: [], skipped: [], errors: [], total: items.length };
 
   for (const item of items) {
@@ -402,7 +402,7 @@ const delay = config.sources.rateLimits.notion.backoffMs;
 ### Maintainability
 
 - **Find & Fix**: Changes isolated to specific domain files
-- **Test**: Easy to mock repositories and test workflows
+- **Test**: Easy to mock databases and test workflows
 - **Understand**: Clear separation of concerns, small files
 - **Extend**: Add features without modifying existing code
 

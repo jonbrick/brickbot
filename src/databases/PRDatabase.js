@@ -1,13 +1,13 @@
 /**
- * PR Repository
+ * PR Database
  * Domain-specific operations for GitHub PRs database
  */
 
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class PRRepository extends NotionRepository {
+class PRDatabase extends NotionDatabase {
   /**
    * Find PR record by Unique ID
    *
@@ -95,5 +95,5 @@ class PRRepository extends NotionRepository {
   }
 }
 
-module.exports = PRRepository;
+module.exports = PRDatabase;
 

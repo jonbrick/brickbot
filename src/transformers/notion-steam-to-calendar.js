@@ -1,5 +1,5 @@
 /**
- * Steam to Calendar Transformer
+ * Notion Steam to Calendar Transformer
  * Transform Notion Steam gaming records to Google Calendar event format
  */
 
@@ -12,38 +12,38 @@ const { buildDateTime } = require("../utils/date");
  * Format gaming session details for event description
  *
  * @param {Object} steamRecord - Notion Steam record
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {SteamDatabase} steamRepo - Steam database instance for extracting properties
  * @returns {string} Formatted description
  */
-function formatSteamDescription(steamRecord, notionService) {
+function formatSteamDescription(steamRecord, steamRepo) {
   const props = config.notion.properties.steam;
 
   const gameName =
-    notionService.extractProperty(
+    steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.gameName)
     ) || "Gaming Session";
 
   const hoursPlayed =
-    notionService.extractProperty(
+    steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.hoursPlayed)
     ) || 0;
 
   const minutesPlayed =
-    notionService.extractProperty(
+    steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.minutesPlayed)
     ) || 0;
 
   const sessionCount =
-    notionService.extractProperty(
+    steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.sessionCount)
     ) || 0;
 
   const sessionDetails =
-    notionService.extractProperty(
+    steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.sessionDetails)
     ) || "";
@@ -71,30 +71,30 @@ function formatSteamDescription(steamRecord, notionService) {
  * Transform Notion Steam record to Google Calendar event
  *
  * @param {Object} steamRecord - Notion page object
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {SteamDatabase} steamRepo - Steam database instance for extracting properties
  * @returns {Object} Google Calendar event data
  */
-function transformSteamToCalendarEvent(steamRecord, notionService) {
+function transformSteamToCalendarEvent(steamRecord, steamRepo) {
   const props = config.notion.properties.steam;
 
   // Extract properties from Notion page
   const gameName =
-    notionService.extractProperty(
+    steamRepo.extractProperty(
       steamRecord,
       getPropertyName(props.gameName)
     ) || "Gaming Session";
 
-  const date = notionService.extractProperty(
+  const date = steamRepo.extractProperty(
     steamRecord,
     getPropertyName(props.date)
   );
 
-  const startTime = notionService.extractProperty(
+  const startTime = steamRepo.extractProperty(
     steamRecord,
     getPropertyName(props.startTime)
   );
 
-  const endTime = notionService.extractProperty(
+  const endTime = steamRepo.extractProperty(
     steamRecord,
     getPropertyName(props.endTime)
   );
@@ -120,7 +120,7 @@ function transformSteamToCalendarEvent(steamRecord, notionService) {
   }
 
   // Create description with gaming details
-  const description = formatSteamDescription(steamRecord, notionService);
+  const description = formatSteamDescription(steamRecord, steamRepo);
 
   return {
     calendarId,

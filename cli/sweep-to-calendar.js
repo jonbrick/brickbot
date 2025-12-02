@@ -7,15 +7,15 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
-const { syncSleepToCalendar } = require("../src/workflows/notion-to-calendar");
+const { syncSleepToCalendar } = require("../src/workflows/notion-sleep-to-calendar");
 const {
   syncWorkoutsToCalendar,
-} = require("../src/workflows/strava-to-calendar");
-const { syncSteamToCalendar } = require("../src/workflows/steam-to-calendar");
-const { syncPRsToCalendar } = require("../src/workflows/github-to-calendar");
+} = require("../src/workflows/notion-workouts-to-calendar");
+const { syncSteamToCalendar } = require("../src/workflows/notion-steam-to-calendar");
+const { syncPRsToCalendar } = require("../src/workflows/notion-prs-to-calendar");
 const {
   syncBodyWeightToCalendar,
-} = require("../src/workflows/withings-to-calendar");
+} = require("../src/workflows/notion-bodyweight-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");

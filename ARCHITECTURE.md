@@ -19,14 +19,14 @@ Brickbot follows a modular, repository-based architecture with clear separation 
 ```
 brickbot/
 ├── src/
-│   ├── repositories/     # NEW: Domain-specific data access
-│   │   ├── NotionRepository.js      # Base class with generic CRUD (588 lines)
-│   │   ├── SleepRepository.js       # Sleep operations (93 lines)
-│   │   ├── WorkoutRepository.js     # Workout operations (106 lines)
-│   │   ├── SteamRepository.js       # Gaming operations (95 lines)
-│   │   ├── PRRepository.js          # GitHub PR operations (103 lines)
-│   │   ├── BodyWeightRepository.js  # Body weight operations (103 lines)
-│   │   └── RecapRepository.js       # Week recap operations (81 lines)
+│   ├── databases/        # Domain-specific data access
+│   │   ├── NotionDatabase.js       # Base class with generic CRUD (587 lines)
+│   │   ├── SleepDatabase.js        # Sleep operations (95 lines)
+│   │   ├── WorkoutDatabase.js      # Workout operations (108 lines)
+│   │   ├── SteamDatabase.js        # Gaming operations (95 lines)
+│   │   ├── PRDatabase.js           # GitHub PR operations (100 lines)
+│   │   ├── BodyWeightDatabase.js   # Body weight operations (106 lines)
+│   │   └── RecapDatabase.js        # Week recap operations (88 lines)
 │   │
 │   ├── config/           # Configuration (split by domain)
 │   │   ├── index.js                 # Main config loader & validator
@@ -62,30 +62,30 @@ brickbot/
 │   │
 │   ├── transformers/     # Data transformation layer
 │   │   ├── github-to-notion.js
-│   │   ├── github-to-calendar.js
+│   │   ├── notion-prs-to-calendar.js
 │   │   ├── oura-to-notion.js
 │   │   ├── strava-to-notion.js
-│   │   ├── strava-to-calendar.js
+│   │   ├── notion-workouts-to-calendar.js
 │   │   ├── steam-to-notion.js
-│   │   ├── steam-to-calendar.js
+│   │   ├── notion-steam-to-calendar.js
 │   │   ├── withings-to-notion.js
-│   │   ├── withings-to-calendar.js
-│   │   ├── notion-to-calendar.js
+│   │   ├── notion-bodyweight-to-calendar.js
+│   │   ├── notion-sleep-to-calendar.js
 │   │   └── calendar-to-recap.js
 │   │
 │   ├── workflows/        # Sync workflows with de-duplication
 │   │   ├── BaseWorkflow.js          # NEW: Reusable batch logic (190 lines)
-│   │   ├── github-to-notion.js      # UPDATED: Uses PRRepository
-│   │   ├── github-to-calendar.js    # UPDATED: Uses PRRepository
-│   │   ├── oura-to-notion.js        # UPDATED: Uses SleepRepository
-│   │   ├── notion-to-calendar.js    # UPDATED: Uses SleepRepository
-│   │   ├── strava-to-notion.js      # UPDATED: Uses WorkoutRepository
-│   │   ├── strava-to-calendar.js    # UPDATED: Uses WorkoutRepository
-│   │   ├── steam-to-notion.js       # UPDATED: Uses SteamRepository
-│   │   ├── steam-to-calendar.js     # UPDATED: Uses SteamRepository
-│   │   ├── withings-to-notion.js    # UPDATED: Uses BodyWeightRepository
-│   │   ├── withings-to-calendar.js  # UPDATED: Uses BodyWeightRepository
-│   │   └── calendar-to-recap.js     # UPDATED: Uses RecapRepository
+│   │   ├── github-to-notion.js      # UPDATED: Uses PRDatabase
+│   │   ├── notion-prs-to-calendar.js    # UPDATED: Uses PRDatabase
+│   │   ├── oura-to-notion.js        # UPDATED: Uses SleepDatabase
+│   │   ├── notion-sleep-to-calendar.js    # UPDATED: Uses SleepDatabase
+│   │   ├── strava-to-notion.js      # UPDATED: Uses WorkoutDatabase
+│   │   ├── notion-workouts-to-calendar.js    # UPDATED: Uses WorkoutDatabase
+│   │   ├── steam-to-notion.js       # UPDATED: Uses SteamDatabase
+│   │   ├── notion-steam-to-calendar.js     # UPDATED: Uses SteamDatabase
+│   │   ├── withings-to-notion.js    # UPDATED: Uses BodyWeightDatabase
+│   │   ├── notion-bodyweight-to-calendar.js  # UPDATED: Uses BodyWeightDatabase
+│   │   └── calendar-to-recap.js     # UPDATED: Uses RecapDatabase
 │   │
 │   └── utils/           # Shared utilities
 │       ├── async.js               # Async helpers (delay, rate limiting)
@@ -108,38 +108,42 @@ brickbot/
 
 ## Module Responsibilities
 
-### Repositories (`src/repositories/`) - NEW!
+### Databases (`src/databases/`)
 
 Domain-specific data access layer that encapsulates all Notion database operations for each domain.
 
-**NotionRepository** (Base Class):
+**NotionDatabase** (Base Class):
+
 - Generic CRUD operations: `queryDatabase`, `createPage`, `updatePage`, `getPage`, `archivePage`
 - Batch operations: `batchCreatePages`, `batchUpdatePages`
 - Property utilities: `extractProperty`, `_formatProperties`
 - Shared filtering: `filterByDateRange`, `filterByCheckbox`, `findPageByProperty`
 
-**Domain Repositories** (extend NotionRepository):
-- **SleepRepository**: `findBySleepId`, `getUnsynced`, `markSynced`
-- **WorkoutRepository**: `findByActivityId`, `getUnsynced`, `markSynced`
-- **SteamRepository**: `findByActivityId`, `getUnsynced`, `markSynced`
-- **PRRepository**: `findByUniqueId`, `getUnsynced`, `markSynced`
-- **BodyWeightRepository**: `findByMeasurementId`, `getUnsynced`, `markSynced`
-- **RecapRepository**: `findWeekRecap`, `updateWeekRecap`
+**Domain Databases** (extend NotionDatabase):
+
+- **SleepDatabase**: `findBySleepId`, `getUnsynced`, `markSynced`
+- **WorkoutDatabase**: `findByActivityId`, `getUnsynced`, `markSynced`
+- **SteamDatabase**: `findByActivityId`, `getUnsynced`, `markSynced`
+- **PRDatabase**: `findByUniqueId`, `getUnsynced`, `markSynced`
+- **BodyWeightDatabase**: `findByMeasurementId`, `getUnsynced`, `markSynced`
+- **RecapDatabase**: `findWeekRecap`, `updateWeekRecap`
 
 **Benefits:**
+
 - **Focused**: Each repository ~60-100 lines vs. 1104-line monolith
 - **Maintainable**: Domain logic isolated in dedicated files
 - **Testable**: Easy to mock and test individual domains
 - **Scalable**: Add new domains without modifying existing code
 
 **Usage Example:**
+
 ```javascript
 // Old way (monolithic)
 const notionService = new NotionService();
 await notionService.findSleepBySleepId(sleepId);
 
-// New way (repository pattern)
-const sleepRepo = new SleepRepository();
+// New way (database pattern)
+const sleepRepo = new SleepDatabase();
 await sleepRepo.findBySleepId(sleepId);
 
 // Or via NotionService wrapper (backward compatible)
@@ -171,6 +175,7 @@ Each domain has its own focused configuration file:
 - **recap.js**: Personal recap database properties (~33 lines)
 
 **Structure:**
+
 ```javascript
 // Example: src/config/notion/sleep.js
 module.exports = {
@@ -180,8 +185,12 @@ module.exports = {
     nightOfDate: { name: "Night of Date", type: "date", enabled: true },
     // ... more properties
   },
-  fieldMappings: { /* ... */ },
-  categorization: { /* domain-specific config */ }
+  fieldMappings: {
+    /* ... */
+  },
+  categorization: {
+    /* domain-specific config */
+  },
 };
 ```
 
@@ -190,6 +199,7 @@ module.exports = {
 All Notion database column names are now in domain-specific config files (`src/config/notion/`).
 
 **Configuration options:**
+
 - `name`: Column name displayed in Notion - change this to relabel columns
 - `type`: Property type (number, text, date, checkbox, select, rich_text, title)
 - `enabled`: Set to `false` to stop syncing this property to Notion
@@ -202,6 +212,7 @@ Edit the `name` value in the appropriate domain config file. The transformer wil
 Set `enabled: false` to exclude it from Notion sync operations.
 
 **Example:**
+
 ```javascript
 // In src/config/notion/sleep.js
 // Change column name from "Heart Rate Avg" to "Avg HR"
@@ -218,6 +229,7 @@ Calendar ID routing is now configuration-driven instead of function-based.
 **Mapping Types:**
 
 1. **Direct Mapping**: One database → one calendar
+
 ```javascript
 workouts: {
   type: 'direct',
@@ -227,6 +239,7 @@ workouts: {
 ```
 
 2. **Property-Based Mapping**: Routes based on Notion property value
+
 ```javascript
 sleep: {
   type: 'property-based',
@@ -240,6 +253,7 @@ sleep: {
 ```
 
 3. **Category-Based Mapping**: Routes based on category property
+
 ```javascript
 personalCalendar: {
   type: 'category-based',
@@ -254,14 +268,16 @@ personalCalendar: {
 ```
 
 **Usage:**
+
 ```javascript
-const { resolveCalendarId } = require('../utils/calendar-mapper');
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 
 // Automatically routes to correct calendar based on record properties
-const calendarId = resolveCalendarId('sleep', record, repository);
+const calendarId = resolveCalendarId("sleep", record, repository);
 ```
 
 **Benefits:**
+
 - **Scalable**: Add new calendars by adding config entries, not writing new functions
 - **Maintainable**: All calendar routing logic in one place
 - **Declarative**: Easy to understand and modify
@@ -272,29 +288,34 @@ const calendarId = resolveCalendarId('sleep', record, repository);
 The date handling system uses a two-layer architecture for separation of concerns:
 
 **Layer 1: `date.js` (Low-Level Utilities)**
+
 - Purpose: General-purpose date parsing, formatting, and manipulation
 - When to use: For date operations that don't need source-specific logic
 - Key functions: `parseDate()`, `formatDate()`, `formatDateOnly()`, `addDays()`, `getWeekStart()`, etc.
 - Examples: Formatting dates for display, date arithmetic, calendar calculations
 
 **Layer 2: `date-handler.js` (Config-Driven Extraction)**
+
 - Purpose: Source-specific date extraction and transformation
 - When to use: Always use `extractSourceDate()` in collectors for extracting dates from API responses
 - How it works: Reads `config.sources.dateHandling` to apply source-specific transformations
 - Pipeline: `sourceFormat` → `extractionMethod` → `dateOffset` → Date object
 
 **Flow:**
+
 ```
 API Response → Collector → extractSourceDate(source, rawDate) → date-handler.js → date.js → Date object
 ```
 
 **When to use which:**
+
 - **Date extraction from APIs**: Always use `extractSourceDate()` from `date-handler.js`
 - **Date formatting for grouping/display**: Use `formatDate()`, `formatDateOnly()` from `date.js`
 - **Time formatting**: Use `formatTimestampWithOffset()` from `date.js` (not date extraction)
 - **Date manipulation**: Use `addDays()`, `getWeekStart()`, etc. from `date.js`
 
 **Benefits:**
+
 - Centralized configuration: All source-specific logic in `config.sources.dateHandling`
 - Consistent extraction: All collectors use the same `extractSourceDate()` API
 - Easy to modify: Change date handling for a source by updating config, not code
@@ -352,16 +373,17 @@ Different APIs use different date conventions and timezone formats. Each integra
 
 **Summary Table:**
 
-| Integration | Date Handling   | Special Logic                                              | Config Location |
-| ----------- | --------------- | ---------------------------------------------------------- | --------------- |
-| Oura        | Subtracts 1 day | `calculateNightOf()` - converts wake-up date to "night of" | `dateHandling.oura` |
-| Strava      | Direct use      | Extracts date from `start_date_local`                      | `dateHandling.strava` |
-| GitHub      | UTC → Eastern   | Timezone conversion, no day offset                         | `dateHandling.github` |
-| Steam       | UTC → Eastern   | Date extraction centralized, time formatting manual        | `dateHandling.steam` |
+| Integration | Date Handling   | Special Logic                                              | Config Location         |
+| ----------- | --------------- | ---------------------------------------------------------- | ----------------------- |
+| Oura        | Subtracts 1 day | `calculateNightOf()` - converts wake-up date to "night of" | `dateHandling.oura`     |
+| Strava      | Direct use      | Extracts date from `start_date_local`                      | `dateHandling.strava`   |
+| GitHub      | UTC → Eastern   | Timezone conversion, no day offset                         | `dateHandling.github`   |
+| Steam       | UTC → Eastern   | Date extraction centralized, time formatting manual        | `dateHandling.steam`    |
 | Withings    | Unix → Local    | Converts timestamp to Date, uses local time (not UTC)      | `dateHandling.withings` |
 
 **Configuration:**
 All date handling logic is configured in `src/config/sources.js` under `dateHandling`. Each source has:
+
 - `sourceFormat`: Format of raw date from API (date_string, iso_local, iso_utc, unix_timestamp)
 - `extractionMethod`: Transformation to apply (calculateNightOf, convertUTCToEasternDate, split, unixToLocal)
 - `dateOffset`: Additional day offset (usually 0, applied after extractionMethod)
@@ -374,11 +396,10 @@ See `src/config/sources.js` for detailed per-source configuration and explanatio
 Thin wrappers around external APIs. Each service handles authentication, HTTP requests, error handling, retry logic, and rate limiting.
 
 - **NotionService**: REFACTORED - Now a thin wrapper (~251 lines, was 1104)
-  - Extends NotionRepository for base CRUD operations
-  - Provides access to domain repositories via getter methods
+  - Extends NotionDatabase for base CRUD operations
+  - Provides access to domain databases via getter methods
   - Maintains backward compatibility through delegation
   - Example: `notionService.getSleepRepository().findBySleepId(id)`
-  
 - **GoogleCalendarService**: Event creation and management
 - **GitHubService**, **OuraService**, etc.: External API clients
 - **TokenService**: OAuth token management and refresh
@@ -386,7 +407,7 @@ Thin wrappers around external APIs. Each service handles authentication, HTTP re
 Design pattern: Each service is a class with methods for API operations, automatic retry with exponential backoff, and rate limit awareness.
 
 **NotionService Refactoring:**
-The NotionService was refactored from a 1104-line monolith into a thin wrapper that delegates to domain repositories. All domain-specific logic now lives in focused repository classes, making the codebase more maintainable and testable.
+The NotionService was refactored from a 1104-line monolith into a thin wrapper that delegates to domain databases. All domain-specific logic now lives in focused database classes, making the codebase more maintainable and testable.
 
 ```javascript
 // Old way (still works - backward compatible)
@@ -394,7 +415,7 @@ const notionService = new NotionService();
 await notionService.findSleepBySleepId(sleepId);
 
 // New way (preferred)
-const sleepRepo = new SleepRepository();
+const sleepRepo = new SleepDatabase();
 await sleepRepo.findBySleepId(sleepId);
 ```
 
@@ -436,27 +457,29 @@ User-facing command-line interfaces that:
 2. For each selected source:
    - Collector fetches data from API
    - Transformer converts to Notion format
-   - **Repository** creates pages in batch (via workflow)
+   - **Database** creates pages in batch (via workflow)
 3. Display summary
 
-**New Flow with Repositories:**
+**New Flow with Databases:**
+
 ```
-Collector → Transformer → Workflow → Repository → Notion API
+Collector → Transformer → Workflow → Database → Notion API
 ```
 
 ### Notion → Calendar
 
 1. CLI prompts for date range and databases
 2. For each database:
-   - **Repository** queries Notion for unsynced records
+   - **Database** queries Notion for unsynced records
    - Transformer converts to Calendar event format
    - GoogleCalendarService creates events
-   - **Repository** marks records as synced
+   - **Database** marks records as synced
 3. Display summary
 
-**New Flow with Repositories:**
+**New Flow with Databases:**
+
 ```
-Repository → Transformer → Calendar Service → Repository (mark synced)
+Database → Transformer → Calendar Service → Database (mark synced)
 ```
 
 ### Apple Notes → Notion Tasks
@@ -499,29 +522,35 @@ Pure functions that map data structures. No side effects, easy to test, config-d
 Domain-specific data access layer that separates database concerns from business logic.
 
 **Key Principles**:
-- **Single Responsibility**: Each repository handles one domain (Sleep, Workouts, etc.)
-- **Inheritance**: Domain repositories extend NotionRepository base class
-- **Focused Files**: Each repository is ~60-100 lines vs. 1104-line monolith
-- **Testability**: Easy to mock repositories for testing workflows
+
+- **Single Responsibility**: Each database handles one domain (Sleep, Workouts, etc.)
+- **Inheritance**: Domain databases extend NotionDatabase base class
+- **Focused Files**: Each database is ~60-100 lines vs. 1104-line monolith
+- **Testability**: Easy to mock databases for testing workflows
 - **Maintainability**: Changes to one domain don't affect others
 
-**Example Repository:**
+**Example Database:**
+
 ```javascript
-class SleepRepository extends NotionRepository {
+class SleepDatabase extends NotionDatabase {
   async findBySleepId(sleepId) {
     const databaseId = config.notion.sleep.database;
     const propertyName = config.notion.sleep.properties.sleepId.name;
     return await this.findPageByProperty(databaseId, propertyName, sleepId);
   }
-  
-  async getUnsynced(startDate, endDate) { /* ... */ }
-  async markSynced(pageId) { /* ... */ }
+
+  async getUnsynced(startDate, endDate) {
+    /* ... */
+  }
+  async markSynced(pageId) {
+    /* ... */
+  }
 }
 ```
 
 ### Workflow Pattern
 
-Workflows orchestrate the complete sync pipeline using repositories and BaseWorkflow helpers.
+Workflows orchestrate the complete sync pipeline using databases and BaseWorkflow helpers.
 
 **BaseWorkflow Class** - NEW!:
 Provides reusable batch processing logic to reduce duplication across workflows.
@@ -538,11 +567,13 @@ const results = await BaseWorkflow.syncBatch(
 ```
 
 **Benefits:**
+
 - **DRY**: ~50 lines saved per workflow × 11 workflows = ~550 lines saved
 - **Consistency**: Same error handling and rate limiting across all workflows
 - **Maintainability**: Update batch logic in one place
 
 **De-duplication Strategy**:
+
 - Each data source has a unique identifier field
   - Oura: Sleep ID
   - Strava: Activity ID
@@ -554,12 +585,14 @@ const results = await BaseWorkflow.syncBatch(
 - Safe to run multiple times - skips existing records
 
 **Error Handling Philosophy**:
+
 - Individual record failures don't stop batch operations
 - Errors collected in results object: `{created: [], skipped: [], errors: []}`
 - Allows partial success
 - User gets clear feedback on what succeeded/failed/skipped
 
 **Rate Limiting Implementation**:
+
 - Notion API: 350ms backoff (3 requests/second limit)
 - Google Calendar: 350ms backoff (3 requests/second limit)
 - External APIs: Variable based on provider (see `src/config/sources.js`)
@@ -567,6 +600,7 @@ const results = await BaseWorkflow.syncBatch(
 - Uses shared `delay()` function from `src/utils/async.js`
 
 **CLI Design**:
+
 - Two modes: "Display only (debug)" and "Sync to Notion/Calendar"
 - Display mode: Shows data without syncing (troubleshooting)
 - Sync mode: Creates records with clear results summary
@@ -578,16 +612,16 @@ const results = await BaseWorkflow.syncBatch(
 
 The modular architecture makes adding new integrations straightforward. Follow this pattern:
 
-#### 1. Create Domain Repository (`src/repositories/`)
+#### 1. Create Domain Database (`src/databases/`)
 
-**File**: `src/repositories/NewRepository.js` (~60-80 lines)
+**File**: `src/databases/NewDatabase.js` (~60-80 lines)
 
 ```javascript
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class NewRepository extends NotionRepository {
+class NewDatabase extends NotionDatabase {
   async findByUniqueId(uniqueId) {
     const databaseId = config.notion.new.database;
     const propertyName = config.notion.new.properties.uniqueId.name;
@@ -612,7 +646,7 @@ class NewRepository extends NotionRepository {
   }
 }
 
-module.exports = NewRepository;
+module.exports = NewDatabase;
 ```
 
 #### 2. Create Domain Config (`src/config/notion/`)
@@ -622,12 +656,16 @@ module.exports = NewRepository;
 ```javascript
 module.exports = {
   database: process.env.NOTION_NEW_DATABASE_ID,
-  
+
   properties: {
     title: { name: "Title", type: "title", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
     uniqueId: { name: "Unique ID", type: "text", enabled: true },
-    calendarCreated: { name: "Calendar Created", type: "checkbox", enabled: true },
+    calendarCreated: {
+      name: "Calendar Created",
+      type: "checkbox",
+      enabled: true,
+    },
     // ... more properties
   },
 
@@ -642,7 +680,7 @@ module.exports = {
 **Update**: `src/config/notion/index.js`
 
 ```javascript
-const newData = require('./new');
+const newData = require("./new");
 
 module.exports = {
   databases: {
@@ -707,7 +745,7 @@ async function collectNewData(startDate, endDate) {
   const service = new NewService();
   const rawData = await service.fetchData(startDate, endDate);
   // Process and return structured data
-  return rawData.map(item => ({
+  return rawData.map((item) => ({
     uniqueId: item.id,
     title: item.name,
     date: extractDate(item),
@@ -736,13 +774,13 @@ function transformNewToNotion(item) {
 **File**: `src/workflows/new-to-notion.js`
 
 ```javascript
-const NewRepository = require("../repositories/NewRepository");
+const NewDatabase = require("../databases/NewDatabase");
 const { transformNewToNotion } = require("../transformers/new-to-notion");
 const { delay } = require("../utils/async");
 const config = require("../config");
 
 async function syncNewToNotion(items) {
-  const newRepo = new NewRepository();
+  const newRepo = new NewDatabase();
   const results = { created: [], skipped: [], errors: [], total: items.length };
 
   for (const item of items) {
@@ -756,7 +794,10 @@ async function syncNewToNotion(items) {
 
       // Transform and create
       const properties = transformNewToNotion(item);
-      const page = await newRepo.createPage(config.notion.new.database, properties);
+      const page = await newRepo.createPage(
+        config.notion.new.database,
+        properties
+      );
       results.created.push({ uniqueId: item.uniqueId, pageId: page.id });
 
       await delay(config.sources.rateLimits.notion.backoffMs);
@@ -785,13 +826,15 @@ NEW_CALENDAR_ID=xxxxx@group.calendar.google.com  # If calendar sync
 ### Benefits of This Architecture
 
 **Before Refactoring**:
+
 - Add ~80 lines to 1104-line NotionService (increasing bloat)
 - Write new mapping function
 - Duplicate batch processing logic
 - **Total**: ~150-200 lines, increasing technical debt
 
 **After Refactoring**:
-- Repository: ~60 lines (focused, testable)
+
+- Database: ~60 lines (focused, testable)
 - Config: ~50 lines (declarative, clear)
 - Mapping: ~5 lines (configuration only)
 - Workflow: ~80 lines (uses BaseWorkflow patterns)
@@ -809,17 +852,19 @@ NEW_CALENDAR_ID=xxxxx@group.calendar.google.com  # If calendar sync
 The Withings body weight integration is fully implemented and follows the same patterns as other data sources (Oura, Strava, Steam, GitHub).
 
 **Implementation**:
+
 - ✅ `src/services/WithingsService.js` - API client with OAuth token refresh
 - ✅ `src/collectors/withings.js` - Data fetching with unit conversions (kg → lbs)
 - ✅ `src/transformers/withings-to-notion.js` - Transform API data to Notion format
 - ✅ `src/workflows/withings-to-notion.js` - Sync workflow with de-duplication by Measurement ID
-- ✅ `src/transformers/withings-to-calendar.js` - Transform to all-day calendar events
-- ✅ `src/workflows/withings-to-calendar.js` - Calendar sync workflow
+- ✅ `src/transformers/notion-bodyweight-to-calendar.js` - Transform to all-day calendar events
+- ✅ `src/workflows/notion-bodyweight-to-calendar.js` - Calendar sync workflow
 - ✅ CLI sync modes in `cli/sweep-to-notion.js` and `cli/sweep-to-calendar.js`
 - ✅ Token management in `cli/tokens/setup.js` and `refresh.js`
 
 **Key Features**:
-   - De-duplication by Measurement ID (`grpid`)
+
+- De-duplication by Measurement ID (`grpid`)
 - Unit conversion: kg → lbs (handled in collector)
 - All-day calendar events (similar to GitHub PRs)
 - Rate limiting: 350ms delay for Notion API

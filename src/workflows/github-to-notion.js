@@ -3,7 +3,7 @@
  * Sync GitHub activity data to Notion with de-duplication
  */
 
-const PRRepository = require("../repositories/PRRepository");
+const PRDatabase = require("../databases/PRDatabase");
 const { transformGitHubToNotion } = require("../transformers/github-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncGitHubToNotion(activities, options = {}) {
-  const prRepo = new PRRepository();
+  const prRepo = new PRDatabase();
   const results = {
     created: [],
     skipped: [],
@@ -50,7 +50,7 @@ async function syncGitHubToNotion(activities, options = {}) {
  * Sync a single GitHub activity to Notion
  *
  * @param {Object} activity - Processed GitHub activity
- * @param {PRRepository} prRepo - PR repository instance
+ * @param {PRDatabase} prRepo - PR database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleActivity(activity, prRepo) {

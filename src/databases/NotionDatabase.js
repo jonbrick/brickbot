@@ -1,5 +1,5 @@
 /**
- * Notion Repository Base Class
+ * Notion Database Base Class
  * Generic CRUD operations for Notion databases
  */
 
@@ -8,7 +8,7 @@ const config = require("../config");
 const { formatDate, formatDateOnly } = require("../utils/date");
 const { delay } = require("../utils/async");
 
-class NotionRepository {
+class NotionDatabase {
   constructor() {
     this.client = new Client({
       auth: config.notion.getToken(),
@@ -582,5 +582,5 @@ class NotionRepository {
   }
 }
 
-module.exports = NotionRepository;
+module.exports = NotionDatabase;
 

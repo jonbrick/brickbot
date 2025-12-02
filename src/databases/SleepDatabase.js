@@ -1,13 +1,13 @@
 /**
- * Sleep Repository
+ * Sleep Database
  * Domain-specific operations for Sleep database
  */
 
-const NotionRepository = require("./NotionRepository");
+const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class SleepRepository extends NotionRepository {
+class SleepDatabase extends NotionDatabase {
   /**
    * Find sleep record by Sleep ID
    *
@@ -90,5 +90,5 @@ class SleepRepository extends NotionRepository {
   }
 }
 
-module.exports = SleepRepository;
+module.exports = SleepDatabase;
 

@@ -1,5 +1,5 @@
 /**
- * Notion to Calendar Transformer
+ * Notion Sleep to Calendar Transformer
  * Transform Notion sleep records to Google Calendar event format
  */
 
@@ -63,40 +63,40 @@ Metrics:
  * Transform Notion sleep record to Google Calendar event
  *
  * @param {Object} sleepRecord - Notion page object
- * @param {NotionService} notionService - Notion service for extracting properties
+ * @param {SleepDatabase} sleepRepo - Sleep database instance for extracting properties
  * @returns {Object} Google Calendar event data
  */
-function transformSleepToCalendarEvent(sleepRecord, notionService) {
+function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
   const props = config.notion.properties.sleep;
 
   // Extract properties from Notion page
-  const title = notionService.extractProperty(
+  const title = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.title)
   );
-  const nightOfDate = notionService.extractProperty(
+  const nightOfDate = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.nightOfDate)
   );
-  const bedtime = notionService.extractProperty(
+  const bedtime = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.bedtime)
   );
-  const wakeTime = notionService.extractProperty(
+  const wakeTime = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.wakeTime)
   );
-  const sleepDuration = notionService.extractProperty(
+  const sleepDuration = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.sleepDuration)
   );
-  const efficiency = notionService.extractProperty(
+  const efficiency = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.efficiency)
   );
 
   // Extract Google Calendar field from Notion and map to calendar ID
-  const googleCalendarField = notionService.extractProperty(
+  const googleCalendarField = sleepRepo.extractProperty(
     sleepRecord,
     getPropertyName(props.googleCalendar)
   );
@@ -122,23 +122,23 @@ function transformSleepToCalendarEvent(sleepRecord, notionService) {
     const record = {
       [getPropertyName(props.wakeTime)]: wakeTime,
       [getPropertyName(props.bedtime)]: bedtime,
-      [getPropertyName(props.deepSleep)]: notionService.extractProperty(
+      [getPropertyName(props.deepSleep)]: sleepRepo.extractProperty(
         sleepRecord,
         getPropertyName(props.deepSleep)
       ),
-      [getPropertyName(props.remSleep)]: notionService.extractProperty(
+      [getPropertyName(props.remSleep)]: sleepRepo.extractProperty(
         sleepRecord,
         getPropertyName(props.remSleep)
       ),
-      [getPropertyName(props.lightSleep)]: notionService.extractProperty(
+      [getPropertyName(props.lightSleep)]: sleepRepo.extractProperty(
         sleepRecord,
         getPropertyName(props.lightSleep)
       ),
-      [getPropertyName(props.heartRateAvg)]: notionService.extractProperty(
+      [getPropertyName(props.heartRateAvg)]: sleepRepo.extractProperty(
         sleepRecord,
         getPropertyName(props.heartRateAvg)
       ),
-      [getPropertyName(props.hrv)]: notionService.extractProperty(
+      [getPropertyName(props.hrv)]: sleepRepo.extractProperty(
         sleepRecord,
         getPropertyName(props.hrv)
       ),
@@ -167,3 +167,4 @@ module.exports = {
   transformSleepToCalendarEvent,
   formatSleepStages,
 };
+

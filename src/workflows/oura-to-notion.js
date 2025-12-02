@@ -3,7 +3,7 @@
  * Sync Oura sleep data to Notion with de-duplication
  */
 
-const SleepRepository = require("../repositories/SleepRepository");
+const SleepDatabase = require("../databases/SleepDatabase");
 const { transformOuraToNotion } = require("../transformers/oura-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -17,7 +17,7 @@ const { formatDate } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncOuraToNotion(sessions, options = {}) {
-  const sleepRepo = new SleepRepository();
+  const sleepRepo = new SleepDatabase();
   const results = {
     created: [],
     skipped: [],
@@ -51,7 +51,7 @@ async function syncOuraToNotion(sessions, options = {}) {
  * Sync a single sleep session to Notion
  *
  * @param {Object} session - Processed Oura sleep session
- * @param {SleepRepository} sleepRepo - Sleep repository instance
+ * @param {SleepDatabase} sleepRepo - Sleep database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleSession(session, sleepRepo) {

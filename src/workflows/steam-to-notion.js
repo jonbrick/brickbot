@@ -3,7 +3,7 @@
  * Sync Steam gaming data to Notion with de-duplication
  */
 
-const SteamRepository = require("../repositories/SteamRepository");
+const SteamDatabase = require("../databases/SteamDatabase");
 const { transformSteamToNotion } = require("../transformers/steam-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSteamToNotion(activities, options = {}) {
-  const steamRepo = new SteamRepository();
+  const steamRepo = new SteamDatabase();
   const results = {
     created: [],
     skipped: [],
@@ -50,7 +50,7 @@ async function syncSteamToNotion(activities, options = {}) {
  * Sync a single gaming activity to Notion
  *
  * @param {Object} activity - Processed Steam gaming activity
- * @param {SteamRepository} steamRepo - Steam repository instance
+ * @param {SteamDatabase} steamRepo - Steam database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleActivity(activity, steamRepo) {

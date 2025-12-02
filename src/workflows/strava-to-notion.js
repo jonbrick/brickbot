@@ -3,7 +3,7 @@
  * Sync Strava activity data to Notion with de-duplication
  */
 
-const WorkoutRepository = require("../repositories/WorkoutRepository");
+const WorkoutDatabase = require("../databases/WorkoutDatabase");
 const { transformStravaToNotion } = require("../transformers/strava-to-notion");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -16,7 +16,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncStravaToNotion(activities, options = {}) {
-  const workoutRepo = new WorkoutRepository();
+  const workoutRepo = new WorkoutDatabase();
   const results = {
     created: [],
     skipped: [],
@@ -50,7 +50,7 @@ async function syncStravaToNotion(activities, options = {}) {
  * Sync a single activity to Notion
  *
  * @param {Object} activity - Processed Strava activity
- * @param {WorkoutRepository} workoutRepo - Workout repository instance
+ * @param {WorkoutDatabase} workoutRepo - Workout database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleActivity(activity, workoutRepo) {

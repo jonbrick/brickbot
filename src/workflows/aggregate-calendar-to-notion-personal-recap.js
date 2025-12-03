@@ -3,18 +3,18 @@
  * @layer 3 - Calendar → Recap (Domain name)
  *
  * Purpose: Orchestrates fetching calendar events from multiple Google Calendars
- * and aggregating them into weekly metrics for the Personal Recap database.
+ * and aggregating them into weekly data for the Personal Recap database.
  *
  * Responsibilities:
  * - Fetch events from 13+ different calendar sources (sleep, workout, reading, etc.)
- * - Aggregate events into weekly metrics (days active, total hours, session counts)
+ * - Aggregate events into weekly data (days active, total hours, session counts)
  * - Update Personal Recap database with aggregated data
  * - Handle calendar selection (specific sources or all available)
  *
  * Data Flow:
  * - Input: Week number, year, selected calendar sources (optional)
  * - Fetches: Calendar events from Google Calendar API (domain-named calendars)
- * - Transforms: Events → Weekly metrics (via transform-calendar-to-notion-personal-recap.js)
+ * - Transforms: Events → Weekly data (via transform-calendar-to-notion-personal-recap.js)
  * - Outputs: Updates Personal Recap database in Notion
  * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games) NOT integration names
  *
@@ -29,7 +29,7 @@
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");
-const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-notion-personal-recap");
+const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-personal-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
@@ -38,27 +38,27 @@ const {
   getAvailableRecapSources,
   getRecapSourceConfig,
   buildCalendarFetches,
-  getRecapSourceMetrics,
+  getRecapSourceData,
   PERSONAL_RECAP_SOURCES
 } = require("../config/calendar/mappings");
 
 /**
- * Format a metric key and value into human-readable display text
- * @param {string} metricKey - Metric key (e.g., "workoutDays", "bodyWeightAverage")
- * @param {number|string} value - Metric value
+ * Format a data key and value into human-readable display text
+ * @param {string} dataKey - Data key (e.g., "workoutDays", "bodyWeightAverage")
+ * @param {number|string} value - Data value
  * @returns {string} Formatted display text (e.g., "5 workout days", "201.4 lbs average weight")
  */
-function formatMetricForDisplay(metricKey, value) {
+function formatDataForDisplay(dataKey, value) {
   // Special cases with custom formatting
-  if (metricKey === "bodyWeightAverage") {
+  if (dataKey === "bodyWeightAverage") {
     return `${value} lbs average weight`;
   }
   
-  if (metricKey === "prsSessions") {
+  if (dataKey === "prsSessions") {
     return `${value} PR sessions`;
   }
   
-  // Handle personalCalendar category metrics
+  // Handle personalCalendar category data
   const categoryPatterns = {
     personalSessions: "personal sessions",
     interpersonalSessions: "interpersonal sessions",
@@ -72,28 +72,28 @@ function formatMetricForDisplay(metricKey, value) {
     mentalHealthHoursTotal: "mental health hours",
   };
   
-  if (categoryPatterns[metricKey]) {
-    return `${value} ${categoryPatterns[metricKey]}`;
+  if (categoryPatterns[dataKey]) {
+    return `${value} ${categoryPatterns[dataKey]}`;
   }
   
-  // Pattern-based formatting for standard metrics
-  // Extract base name and metric type
-  let baseName = metricKey;
-  let metricType = "";
+  // Pattern-based formatting for standard data
+  // Extract base name and data type
+  let baseName = dataKey;
+  let dataType = "";
   
   // Remove common suffixes
-  if (metricKey.endsWith("Days")) {
-    baseName = metricKey.slice(0, -4); // Remove "Days"
-    metricType = "days";
-  } else if (metricKey.endsWith("HoursTotal")) {
-    baseName = metricKey.slice(0, -10); // Remove "HoursTotal"
-    metricType = "hours";
-  } else if (metricKey.endsWith("Sessions")) {
-    baseName = metricKey.slice(0, -8); // Remove "Sessions"
-    metricType = "sessions";
-  } else if (metricKey.endsWith("Hours")) {
-    baseName = metricKey.slice(0, -5); // Remove "Hours"
-    metricType = "hours";
+  if (dataKey.endsWith("Days")) {
+    baseName = dataKey.slice(0, -4); // Remove "Days"
+    dataType = "days";
+  } else if (dataKey.endsWith("HoursTotal")) {
+    baseName = dataKey.slice(0, -10); // Remove "HoursTotal"
+    dataType = "hours";
+  } else if (dataKey.endsWith("Sessions")) {
+    baseName = dataKey.slice(0, -8); // Remove "Sessions"
+    dataType = "sessions";
+  } else if (dataKey.endsWith("Hours")) {
+    baseName = dataKey.slice(0, -5); // Remove "Hours"
+    dataType = "hours";
   }
   
   // Convert camelCase to space-separated words
@@ -102,20 +102,20 @@ function formatMetricForDisplay(metricKey, value) {
     .toLowerCase()
     .trim();
   
-  return `${value} ${displayName} ${metricType}`;
+  return `${value} ${displayName} ${dataType}`;
 }
 
 /**
- * Build success message metrics array from selected calendars and summary data
- * Uses config-driven approach with metrics derived from DATA_SOURCES
+ * Build success message data array from selected calendars and summary data
+ * Uses config-driven approach with data derived from DATA_SOURCES
  * @param {Array<string>} calendarsToFetch - Array of source IDs to include
- * @param {Object} summary - Summary object with metric values
- * @returns {Array<string>} Array of formatted metric strings
+ * @param {Object} summary - Summary object with data values
+ * @returns {Array<string>} Array of formatted data strings
  */
-function buildSuccessMetrics(calendarsToFetch, summary) {
-  const metrics = [];
+function buildSuccessData(calendarsToFetch, summary) {
+  const data = [];
   
-  // Import DATA_SOURCES to check metric types
+  // Import DATA_SOURCES to check data types
   const { DATA_SOURCES } = require("../config/main");
   
   // Iterate through selected calendars
@@ -123,39 +123,39 @@ function buildSuccessMetrics(calendarsToFetch, summary) {
     const source = PERSONAL_RECAP_SOURCES[sourceId];
     if (!source) return;
     
-    // Get metrics for this source from DATA_SOURCES (single source of truth)
-    const sourceMetrics = getRecapSourceMetrics(sourceId);
+    // Get data for this source from DATA_SOURCES (single source of truth)
+    const sourceData = getRecapSourceData(sourceId);
     
-    // For each metric, check if it exists in summary and format for display
-    sourceMetrics.forEach((metricKey) => {
-      // Skip if metric doesn't exist in summary
-      if (summary[metricKey] === undefined || summary[metricKey] === null) return;
+    // For each data field, check if it exists in summary and format for display
+    sourceData.forEach((dataKey) => {
+      // Skip if data doesn't exist in summary
+      if (summary[dataKey] === undefined || summary[dataKey] === null) return;
       
-      // Get metric config to check type
+      // Get data config to check type
       const sourceConfig = DATA_SOURCES[sourceId];
-      let metricConfig = null;
+      let dataConfig = null;
       
-      if (sourceConfig?.metrics?.[metricKey]) {
-        metricConfig = sourceConfig.metrics[metricKey];
+      if (sourceConfig?.data?.[dataKey]) {
+        dataConfig = sourceConfig.data[dataKey];
       } else if (sourceConfig?.categories) {
-        // Check category-based metrics
+        // Check category-based data
         for (const category of Object.values(sourceConfig.categories)) {
-          if (category.metrics?.[metricKey]) {
-            metricConfig = category.metrics[metricKey];
+          if (category.data?.[dataKey]) {
+            dataConfig = category.data[dataKey];
             break;
           }
         }
       }
       
       // Skip optional text fields that are empty
-      if (metricConfig?.type === "optionalText" && !summary[metricKey]) return;
+      if (dataConfig?.type === "optionalText" && !summary[dataKey]) return;
       
-      const displayText = formatMetricForDisplay(metricKey, summary[metricKey]);
-      metrics.push(displayText);
+      const displayText = formatDataForDisplay(dataKey, summary[dataKey]);
+      data.push(displayText);
     });
   });
   
-  return metrics;
+  return data;
 }
 
 /**
@@ -278,7 +278,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
 
     // Calculate summary (only for selected calendars)
     // Note: tasks are handled by notion-tasks-to-notion-personal-recap workflow
-    const summary = transformCalendarEventsToRecapMetrics(
+    const summary = transformCalendarEventsToRecapData(
       calendarEvents,
       startDate,
       endDate,
@@ -319,11 +319,11 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     results.updated = true;
     results.selectedCalendars = calendarsToFetch;
     
-    // Build success message with available metrics for selected calendars (config-driven)
-    const metrics = buildSuccessMetrics(calendarsToFetch, summary);
+    // Build success message with available data for selected calendars (config-driven)
+    const data = buildSuccessData(calendarsToFetch, summary);
     
     showSuccess(
-      `Updated week ${weekNumber} of ${year}: ${metrics.join(", ")}`
+      `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
     );
 
     return results;

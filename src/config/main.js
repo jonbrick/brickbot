@@ -1,16 +1,16 @@
 /**
  * Data Source Registry
- * Single source of truth for all data sources, their metrics, and how they're handled
+ * Single source of truth for all data sources, their data, and how they're handled
  *
  * This config drives:
  * - Display/formatting logic in CLI tools
  * - Property building for Notion
- * - Metric collection and summarization
+ * - Data collection and summarization
  * - Record formatting and validation
  */
 
 /**
- * Metric field types and their display formatting
+ * Data field types and their display formatting
  */
 const FIELD_TYPES = {
   // Numbers (integers)
@@ -44,7 +44,7 @@ const FIELD_TYPES = {
 
 /**
  * Data Source Registry
- * Each source defines its metadata, metrics, and how they're handled
+ * Each source defines its metadata, data, and how they're handled
  */
 const DATA_SOURCES = {
   // ===== CALENDAR SOURCES =====
@@ -62,8 +62,8 @@ const DATA_SOURCES = {
       sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
     },
 
-    // Metrics this source produces
-    metrics: {
+    // Data this source produces
+    data: {
       earlyWakeupDays: {
         label: "Early Wakeup - Days",
         type: "count",
@@ -94,7 +94,7 @@ const DATA_SOURCES = {
       drinking: process.env.DRINKING_CALENDAR_ID,
     },
 
-    metrics: {
+    data: {
       soberDays: {
         label: "Sober - Days",
         type: "count",
@@ -124,7 +124,7 @@ const DATA_SOURCES = {
       workout: process.env.WORKOUT_CALENDAR_ID,
     },
 
-    metrics: {
+    data: {
       workoutDays: {
         label: "Workout - Days",
         type: "count",
@@ -155,7 +155,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { meditation: process.env.MEDITATION_CALENDAR_ID },
-    metrics: {
+    data: {
       meditationDays: {
         label: "Meditation - Days",
         type: "count",
@@ -186,7 +186,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { reading: process.env.READING_CALENDAR_ID },
-    metrics: {
+    data: {
       readingDays: {
         label: "Reading - Days",
         type: "count",
@@ -217,7 +217,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { art: process.env.ART_CALENDAR_ID },
-    metrics: {
+    data: {
       artDays: {
         label: "Art - Days",
         type: "count",
@@ -248,7 +248,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { music: process.env.MUSIC_CALENDAR_ID },
-    metrics: {
+    data: {
       musicDays: {
         label: "Music - Days",
         type: "count",
@@ -279,7 +279,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { coding: process.env.CODING_CALENDAR_ID },
-    metrics: {
+    data: {
       codingDays: {
         label: "Coding - Days",
         type: "count",
@@ -310,7 +310,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { videoGames: process.env.VIDEO_GAMES_CALENDAR_ID },
-    metrics: {
+    data: {
       videoGamesDays: {
         label: "Video Games - Days",
         type: "count",
@@ -341,7 +341,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID },
-    metrics: {
+    data: {
       prsSessions: {
         label: "PRs - Sessions",
         type: "count",
@@ -362,7 +362,7 @@ const DATA_SOURCES = {
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { bodyWeight: process.env.BODY_WEIGHT_CALENDAR_ID },
-    metrics: {
+    data: {
       bodyWeightAverage: {
         label: "Body Weight - Average",
         type: "decimal",
@@ -383,7 +383,7 @@ const DATA_SOURCES = {
     // Personal calendar has nested categories
     categories: {
       personal: {
-        metrics: {
+        data: {
           personalSessions: {
             label: "Personal - Sessions",
             type: "count",
@@ -402,7 +402,7 @@ const DATA_SOURCES = {
         },
       },
       interpersonal: {
-        metrics: {
+        data: {
           interpersonalSessions: {
             label: "Interpersonal - Sessions",
             type: "count",
@@ -421,7 +421,7 @@ const DATA_SOURCES = {
         },
       },
       home: {
-        metrics: {
+        data: {
           homeSessions: {
             label: "Home - Sessions",
             type: "count",
@@ -440,7 +440,7 @@ const DATA_SOURCES = {
         },
       },
       physicalHealth: {
-        metrics: {
+        data: {
           physicalHealthSessions: {
             label: "Physical Health - Sessions",
             type: "count",
@@ -459,7 +459,7 @@ const DATA_SOURCES = {
         },
       },
       mentalHealth: {
-        metrics: {
+        data: {
           mentalHealthSessions: {
             label: "Mental Health - Sessions",
             type: "count",
@@ -478,7 +478,7 @@ const DATA_SOURCES = {
         },
       },
       ignore: {
-        metrics: {
+        data: {
           ignoreBlocks: {
             label: "Ignore - Blocks",
             type: "optionalText",
@@ -502,7 +502,7 @@ const DATA_SOURCES = {
     // Task categories mirror personal calendar structure
     categories: {
       personal: {
-        metrics: {
+        data: {
           personalTasksComplete: {
             label: "Personal - Tasks Complete",
             type: "count",
@@ -516,7 +516,7 @@ const DATA_SOURCES = {
         },
       },
       interpersonal: {
-        metrics: {
+        data: {
           interpersonalTasksComplete: {
             label: "Interpersonal - Tasks Complete",
             type: "count",
@@ -530,7 +530,7 @@ const DATA_SOURCES = {
         },
       },
       home: {
-        metrics: {
+        data: {
           homeTasksComplete: {
             label: "Home - Tasks Complete",
             type: "count",
@@ -544,7 +544,7 @@ const DATA_SOURCES = {
         },
       },
       physicalHealth: {
-        metrics: {
+        data: {
           physicalHealthTasksComplete: {
             label: "Physical Health - Tasks Complete",
             type: "count",
@@ -558,7 +558,7 @@ const DATA_SOURCES = {
         },
       },
       mentalHealth: {
-        metrics: {
+        data: {
           mentalHealthTasksComplete: {
             label: "Mental Health - Tasks Complete",
             type: "count",
@@ -595,21 +595,21 @@ function mapToNotionType(displayType) {
 }
 
 /**
- * Get all metric keys for a source (flattened)
+ * Get all data keys for a source (flattened)
  * @param {string} sourceId - Source ID
- * @returns {string[]} Array of metric keys
+ * @returns {string[]} Array of data keys
  */
-function getSourceMetricKeys(sourceId) {
+function getSourceDataKeys(sourceId) {
   const source = DATA_SOURCES[sourceId];
   if (!source) return [];
 
-  if (source.metrics) {
-    return Object.keys(source.metrics);
+  if (source.data) {
+    return Object.keys(source.data);
   }
 
   if (source.categories) {
     return Object.values(source.categories).flatMap((cat) =>
-      Object.keys(cat.metrics)
+      Object.keys(cat.data)
     );
   }
 
@@ -617,21 +617,21 @@ function getSourceMetricKeys(sourceId) {
 }
 
 /**
- * Get all metrics for a source (flattened with configs)
+ * Get all data for a source (flattened with configs)
  * @param {string} sourceId - Source ID
- * @returns {Object} Flattened metrics object with configs
+ * @returns {Object} Flattened data object with configs
  */
-function getSourceMetrics(sourceId) {
+function getSourceData(sourceId) {
   const source = DATA_SOURCES[sourceId];
   if (!source) return {};
 
-  if (source.metrics) {
-    return source.metrics;
+  if (source.data) {
+    return source.data;
   }
 
   if (source.categories) {
     return Object.values(source.categories).reduce(
-      (acc, cat) => ({ ...acc, ...cat.metrics }),
+      (acc, cat) => ({ ...acc, ...cat.data }),
       {}
     );
   }
@@ -695,26 +695,26 @@ function generatePersonalRecapProperties() {
 
   // Generate properties from all data sources
   Object.values(DATA_SOURCES).forEach((source) => {
-    if (source.metrics) {
-      // Direct metrics
-      Object.entries(source.metrics).forEach(([metricKey, metricConfig]) => {
-        properties[metricConfig.notionProperty] = {
-          name: metricConfig.label, // Use label as Notion property name
-          type: mapToNotionType(metricConfig.type),
+    if (source.data) {
+      // Direct data
+      Object.entries(source.data).forEach(([dataKey, dataConfig]) => {
+        properties[dataConfig.notionProperty] = {
+          name: dataConfig.label, // Use label as Notion property name
+          type: mapToNotionType(dataConfig.type),
           enabled: true,
         };
       });
     }
 
     if (source.categories) {
-      // Category-based metrics (personalCalendar, tasks)
+      // Category-based data (personalCalendar, tasks)
       Object.values(source.categories).forEach((category) => {
-        if (category.metrics) {
-          Object.entries(category.metrics).forEach(
-            ([metricKey, metricConfig]) => {
-              properties[metricConfig.notionProperty] = {
-                name: metricConfig.label,
-                type: mapToNotionType(metricConfig.type),
+        if (category.data) {
+          Object.entries(category.data).forEach(
+            ([dataKey, dataConfig]) => {
+              properties[dataConfig.notionProperty] = {
+                name: dataConfig.label,
+                type: mapToNotionType(dataConfig.type),
                 enabled: true,
               };
             }
@@ -730,8 +730,8 @@ function generatePersonalRecapProperties() {
 module.exports = {
   DATA_SOURCES,
   FIELD_TYPES,
-  getSourceMetricKeys,
-  getSourceMetrics,
+  getSourceDataKeys,
+  getSourceData,
   isSourceAvailable,
   getAvailableSources,
   generatePersonalRecapProperties,

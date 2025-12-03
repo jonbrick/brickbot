@@ -6,11 +6,11 @@
  *
  * Responsibilities:
  * - Find week recap records by week number/year
- * - Update week recap with aggregated metrics
- * - Build metric properties from summary data
+ * - Update week recap with aggregated data
+ * - Build data properties from summary data
  *
  * Data Flow:
- * - Input: Week number, year, summary metrics (domain names)
+ * - Input: Week number, year, summary data (domain names)
  * - Output: Notion database updates
  * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games)
  *
@@ -23,7 +23,7 @@
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
-const { buildMetricProperties } = require("../utils/metric-properties");
+const { buildDataProperties } = require("../utils/data-properties");
 
 class PersonalRecapDatabase extends NotionDatabase {
   /**
@@ -83,7 +83,7 @@ class PersonalRecapDatabase extends NotionDatabase {
     const props = config.notion.properties.personalRecap;
 
     // Build properties with validation - throws clear error if config is missing
-    const properties = buildMetricProperties(
+    const properties = buildDataProperties(
       summaryData,
       props,
       selectedCalendars

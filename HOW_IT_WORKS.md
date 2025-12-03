@@ -113,7 +113,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 3. **Transformer** (`src/transformers/notion-oura-to-calendar-sleep.js`):
    - Extracts properties from Notion page using repository
    - Determines which calendar based on wake time
-   - Formats event with sleep metrics in description
+   - Formats event with sleep data in description
    - Returns `{ calendarId, event }`
 
 4. **Calendar Mapping** (`src/utils/calendar-mapper.js`):

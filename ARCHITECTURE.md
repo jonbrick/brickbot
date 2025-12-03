@@ -114,7 +114,7 @@ config.calendar.calendars.sleep; // Correct! Domain name
 
 ### Layer 3: Calendar → Recap (Domain Names Maintained)
 
-**Purpose**: Aggregate calendar events into weekly Personal Recap metrics.
+**Purpose**: Aggregate calendar events into weekly Personal Recap data.
 
 Calendar events are aggregated into Personal Recap using **domain names**:
 
@@ -130,7 +130,7 @@ Games Calendar → aggregate → Personal Recap
 
 - Uses domain names from Google Calendar (Layer 2)
 - No integration names - data is fully abstracted at this point
-- Metrics are domain-based, not integration-based
+- Data is domain-based, not integration-based
 
 **Files in Layer 3**:
 
@@ -158,9 +158,9 @@ config.calendar.calendars.workouts; // Domain name
 config.calendar.calendars.sleep; // Domain name
 
 // ✅ Layer 3: Domain names (from calendars)
-config.dataSources.bodyWeight.metrics; // Domain name
-config.dataSources.workouts.metrics; // Domain name
-config.dataSources.sleep.metrics; // Domain name
+config.dataSources.bodyWeight.data; // Domain name
+config.dataSources.workouts.data; // Domain name
+config.dataSources.sleep.data; // Domain name
 ```
 
 ### Current Violations (To Be Fixed)
@@ -217,7 +217,7 @@ const databases = {
 - ✅ `WithingsDatabase.js` (Layer 1)
 - ✅ `notion-withings-to-calendar-bodyweight.js` (Layer 2 - notice the transition!)
 - ✅ `BODY_WEIGHT_CALENDAR_ID` (Layer 2)
-- ✅ `bodyWeightMetrics` in recap (Layer 3)
+- ✅ `bodyWeightData` in recap (Layer 3)
 - ✅ All database classes now use integration names (WithingsDatabase, StravaDatabase, OuraDatabase, GitHubDatabase)
 - ✅ All config files now use integration names (withings.js, strava.js, oura.js, github.js, steam.js)
 - ❌ `sleep` key in `config.notion.databases` (WRONG - domain name in Layer 1)
@@ -292,7 +292,7 @@ brickbot/
 │   │   ├── collect-tasks.js                                # Layer 3: Notion aggregation
 │   │   └── collect-calendar.js                             # Layer 3: Calendar aggregation
 │   │
-│   ├── config/                                           # Configuration (split by domain)
+│   ├── config/                                             # Configuration (split by domain)
 │   │   ├── calendar/                                       # Layer 2: Calendar configs
 │   │   │   ├── mappings.js                                 # Declarative calendar mappings
 │   │   │   ├── credentials.js                              # OAuth credentials
@@ -425,7 +425,7 @@ Single source of truth for all settings, now split by domain for better maintain
 #### Main Configuration Files
 
 - **index.js**: Loads sub-configs, validates environment variables, fails fast on misconfiguration
-- **main.js**: Data sources registry (DATA_SOURCES) with metrics and field types - **single source of truth for all metric definitions** (see [Data Source Configuration Architecture](#data-source-configuration-architecture))
+- **main.js**: Data sources registry (DATA_SOURCES) with data and field types - **single source of truth for all data definitions** (see [Data Source Configuration Architecture](#data-source-configuration-architecture))
 - **tokens.js**: Token management configuration for all services
 - **notion/index.js**: Aggregates domain-specific Notion configs
 - **calendar/mappings.js**: Contains both Layer 2 calendar routing (`calendarMappings`) and Layer 3 fetch configuration (`PERSONAL_RECAP_SOURCES`) - see [Data Source Configuration Architecture](#data-source-configuration-architecture)
@@ -444,7 +444,7 @@ Each integration has its own focused configuration file (Layer 1 - uses integrat
 - **steam.js**: Steam gaming database properties (~51 lines)
 - **github.js**: GitHub PRs database properties (~60 lines)
 - **withings.js**: Withings database properties (~59 lines)
-- **personal-recap.js**: Personal recap database properties (~237 lines, includes all metrics) - Layer 3
+- **personal-recap.js**: Personal recap database properties (~237 lines, includes all data) - Layer 3
 
 **Structure:**
 
@@ -559,7 +559,7 @@ const calendarId = resolveCalendarId("sleep", record, repository);
 
 #### Data Source Configuration Architecture
 
-Brickbot uses three complementary configuration systems that work together to define data sources, their metrics, and how they're accessed:
+Brickbot uses three complementary configuration systems that work together to define data sources, their data, and how they're accessed:
 
 1. **DATA_SOURCES** (`main.js`) - Data definitions (WHAT data exists)
 2. **PERSONAL_RECAP_SOURCES** (`mappings.js`) - Fetch configuration (HOW to fetch it)
@@ -570,13 +570,13 @@ Brickbot uses three complementary configuration systems that work together to de
 ```
 DATA_SOURCES (main.js)
     │
-    │ defines metrics (WHAT)
-    │ - Metric keys (earlyWakeupDays, sleepHoursTotal, etc.)
+    │ defines data (WHAT)
+    │ - Data keys (earlyWakeupDays, sleepHoursTotal, etc.)
     │ - Types (count, decimal, optionalText)
     │ - Labels and Notion property mappings
     │
     ▼
-getRecapSourceMetrics() ──► PERSONAL_RECAP_SOURCES (mappings.js)
+getRecapSourceData() ──► PERSONAL_RECAP_SOURCES (mappings.js)
     │                              │
     │                              │ defines fetch config (HOW)
     │                              │ - Calendar IDs (envVar)
@@ -587,8 +587,8 @@ getRecapSourceMetrics() ──► PERSONAL_RECAP_SOURCES (mappings.js)
     │                    Calendar Fetching & Aggregation (Layer 3)
     │
     └──► Also used by:
-         - Display logic (metric-display.js)
-         - Property building (metric-properties.js)
+         - Display logic (data-display.js)
+         - Property building (data-properties.js)
          - Validation (FIELD_TYPES)
 
 calendarMappings (mappings.js) ──► Layer 2: Notion → Calendar routing
@@ -599,8 +599,8 @@ calendarMappings (mappings.js) ──► Layer 2: Notion → Calendar routing
 
 Each config serves a distinct purpose:
 
-- **DATA_SOURCES**: Defines the data model (what metrics exist, their types, labels). This is the **single source of truth** for metric definitions.
-- **PERSONAL_RECAP_SOURCES**: Defines how to fetch calendar data (which calendars to read from, their IDs, fetch keys). It **derives** metric keys from `DATA_SOURCES` to avoid duplication.
+- **DATA_SOURCES**: Defines the data model (what data exists, their types, labels). This is the **single source of truth** for data definitions.
+- **PERSONAL_RECAP_SOURCES**: Defines how to fetch calendar data (which calendars to read from, their IDs, fetch keys). It **derives** data keys from `DATA_SOURCES` to avoid duplication.
 - **calendarMappings**: Defines how to route Notion records to calendars when syncing (Layer 2). This is a separate concern from fetching.
 
 **Comparison Table:**
@@ -610,16 +610,16 @@ Each config serves a distinct purpose:
 | **File**      | `main.js`                                | `mappings.js`                            | `mappings.js`                           |
 | **Layer**     | Layer 3 (definitions)                    | Layer 3 (fetching)                       | Layer 2 (routing)                       |
 | **Purpose**   | Define WHAT data exists                  | Define HOW to fetch data                 | Define WHERE to route data              |
-| **Contains**  | Metric definitions (keys, types, labels) | Calendar fetch config (envVar, fetchKey) | Calendar routing rules (type, mappings) |
+| **Contains**  | Data definitions (keys, types, labels) | Calendar fetch config (envVar, fetchKey) | Calendar routing rules (type, mappings) |
 | **Direction** | N/A (definitions)                        | Calendar → Recap (reading)               | Notion → Calendar (writing)             |
 | **Used by**   | Display, properties, validation          | Calendar aggregation workflows           | Calendar sync workflows                 |
-| **Metrics**   | Full definitions                         | Derived from DATA_SOURCES                | N/A                                     |
+| **Data**   | Full definitions                         | Derived from DATA_SOURCES                | N/A                                     |
 
 ##### DATA_SOURCES: The Source of Truth
 
 **Location**: `src/config/main.js`
 
-**Purpose**: Defines all data sources and their metric definitions. This is the **single source of truth** for what metrics exist, their types, labels, and Notion property mappings.
+**Purpose**: Defines all data sources and their data definitions. This is the **single source of truth** for what data exists, their types, labels, and Notion property mappings.
 
 **Structure Example:**
 
@@ -637,8 +637,8 @@ const DATA_SOURCES = {
       sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
     },
 
-    // Metrics this source produces
-    metrics: {
+    // Data this source produces
+    data: {
       earlyWakeupDays: {
         label: "Early Wakeup - Days",
         type: "count",
@@ -662,15 +662,15 @@ const DATA_SOURCES = {
 
 **Used For:**
 
-- **Display Logic**: `metric-display.js` uses `getSourceMetrics()` to format and display metrics
-- **Property Building**: `metric-properties.js` uses `getSourceMetricKeys()` to build Notion properties
-- **Validation**: `FIELD_TYPES` validates metric values based on their type definitions
-- **Notion Property Generation**: `generatePersonalRecapProperties()` creates Notion property configs from metric definitions
+- **Display Logic**: `data-display.js` uses `getSourceData()` to format and display data
+- **Property Building**: `data-properties.js` uses `getSourceDataKeys()` to build Notion properties
+- **Validation**: `FIELD_TYPES` validates data values based on their type definitions
+- **Notion Property Generation**: `generatePersonalRecapProperties()` creates Notion property configs from data definitions
 
 **Key Functions:**
 
-- `getSourceMetricKeys(sourceId)` - Returns array of metric keys for a source
-- `getSourceMetrics(sourceId)` - Returns full metric configs for a source
+- `getSourceDataKeys(sourceId)` - Returns array of data keys for a source
+- `getSourceData(sourceId)` - Returns full data configs for a source
 - `generatePersonalRecapProperties()` - Generates Notion property definitions from all sources
 
 ##### PERSONAL_RECAP_SOURCES: Fetch Configuration
@@ -704,7 +704,7 @@ const PERSONAL_RECAP_SOURCES = {
     ],
     isSleepCalendar: true,
     ignoreAllDayEvents: true,
-    // Note: Metrics are derived from DATA_SOURCES via getRecapSourceMetrics()
+    // Note: Data is derived from DATA_SOURCES via getRecapSourceData()
   },
   // ... more sources
 };
@@ -715,66 +715,66 @@ const PERSONAL_RECAP_SOURCES = {
 - **Calendar Fetching**: `buildCalendarFetches()` uses this to determine which calendars to fetch
 - **Aggregation**: `aggregate-calendar-to-notion-personal-recap.js` uses this to know which sources to process
 - **Display**: `getAvailableRecapSources()` uses this for CLI source selection
-- **Success Messages**: `buildSuccessMetrics()` uses derived metrics to format success messages
+- **Success Messages**: `buildSuccessData()` uses derived data to format success messages
 
 **Key Functions:**
 
-- `getRecapSourceMetrics(sourceId)` - Derives metric keys from `DATA_SOURCES` (no duplication!)
+- `getRecapSourceData(sourceId)` - Derives data keys from `DATA_SOURCES` (no duplication!)
 - `getAvailableRecapSources()` - Returns available sources with metadata
 - `buildCalendarFetches(selectedSources, accountType)` - Builds fetch configs for selected sources
 
-##### The Bridge: getRecapSourceMetrics()
+##### The Bridge: getRecapSourceData()
 
 **Location**: `src/config/calendar/mappings.js`
 
-**Purpose**: Connects `DATA_SOURCES` (definitions) with `PERSONAL_RECAP_SOURCES` (fetch config) by deriving metric keys from the single source of truth.
+**Purpose**: Connects `DATA_SOURCES` (definitions) with `PERSONAL_RECAP_SOURCES` (fetch config) by deriving data keys from the single source of truth.
 
 **Implementation:**
 
 ```javascript
-const { getSourceMetricKeys } = require("../main");
+const { getSourceDataKeys } = require("../main");
 
-function getRecapSourceMetrics(sourceId) {
-  return getSourceMetricKeys(sourceId);
+function getRecapSourceData(sourceId) {
+  return getSourceDataKeys(sourceId);
 }
 ```
 
 **How It Works:**
 
 1. `PERSONAL_RECAP_SOURCES` defines calendar fetch configuration (which calendars to read)
-2. When metrics are needed, `getRecapSourceMetrics()` calls `getSourceMetricKeys()` from `main.js`
-3. This returns the metric keys defined in `DATA_SOURCES` for that source
-4. No duplication - metrics are defined once in `DATA_SOURCES`, used everywhere
+2. When data is needed, `getRecapSourceData()` calls `getSourceDataKeys()` from `main.js`
+3. This returns the data keys defined in `DATA_SOURCES` for that source
+4. No duplication - data is defined once in `DATA_SOURCES`, used everywhere
 
 **Benefits:**
 
-- **DRY Principle**: Metrics defined once, used everywhere
-- **Single Source of Truth**: Add a metric to `DATA_SOURCES`, it automatically appears in recap sources
-- **Type Safety**: Reduces risk of typos in metric key names
-- **Maintainability**: Change metric definition in one place, affects all consumers
+- **DRY Principle**: Data defined once, used everywhere
+- **Single Source of Truth**: Add data to `DATA_SOURCES`, it automatically appears in recap sources
+- **Type Safety**: Reduces risk of typos in data key names
+- **Maintainability**: Change data definition in one place, affects all consumers
 
 **Usage Example:**
 
 ```javascript
-// In buildSuccessMetrics()
-const sourceMetrics = getRecapSourceMetrics(sourceId);
+// In buildSuccessData()
+const sourceData = getRecapSourceData(sourceId);
 // Returns: ['earlyWakeupDays', 'sleepInDays', 'sleepHoursTotal']
 // These keys come from DATA_SOURCES, not hardcoded in PERSONAL_RECAP_SOURCES
 ```
 
 **Before This Pattern:**
 
-- `PERSONAL_RECAP_SOURCES` had hardcoded `metrics: [...]` arrays
+- `PERSONAL_RECAP_SOURCES` had hardcoded `data: [...]` arrays
 - These arrays often didn't match `DATA_SOURCES` definitions
-- Required manual `metricKeyMapping` workaround to fix mismatches
-- Maintenance burden when adding/removing metrics
+- Required manual `dataKeyMapping` workaround to fix mismatches
+- Maintenance burden when adding/removing data
 
 **After This Pattern:**
 
-- `PERSONAL_RECAP_SOURCES` has no hardcoded metrics
-- Metrics automatically derived from `DATA_SOURCES`
+- `PERSONAL_RECAP_SOURCES` has no hardcoded data
+- Data automatically derived from `DATA_SOURCES`
 - No mapping needed - keys match exactly
-- Add metric to `DATA_SOURCES`, it appears everywhere automatically
+- Add data to `DATA_SOURCES`, it appears everywhere automatically
 
 #### Date Handling Architecture
 
@@ -974,7 +974,7 @@ Consistent naming patterns make the codebase more intuitive and self-documenting
 - **aggregate**: Combining data from multiple sources → `aggregateCalendarDataForWeek()`
 - **sync**: Coordinating data between systems → `syncOuraToNotion()`
 - **collect**: Gathering data from APIs → `collectOuraSleepData()`, `fetchOuraData()`
-- **transform**: Converting between formats → `transformOuraToNotion()`, `transformCalendarEventsToRecapMetrics()`
+- **transform**: Converting between formats → `transformOuraToNotion()`, `transformCalendarEventsToRecapData()`
 - **fetch**: Low-level API calls → `fetchCalendarSummary()`
 - **query**: Database queries → `queryNotionDatabase()`
 
@@ -994,7 +994,7 @@ Consistent naming patterns make the codebase more intuitive and self-documenting
 **Layer 3 Functions** (use domain names):
 
 - Workflow functions: `aggregateCalendarDataForWeek()` (uses domain names in logic)
-- Transformer functions: `transformCalendarEventsToRecapMetrics()` (uses domain names in logic)
+- Transformer functions: `transformCalendarEventsToRecapData()` (uses domain names in logic)
 
 ### Layer-Aware Variable Naming
 
@@ -1024,8 +1024,8 @@ await syncToBodyWeightCalendar(bodyWeightEvents);
 ```javascript
 // ✅ GOOD: Use domain names
 const bodyWeightCalendarEvents = await fetchBodyWeightCalendar(start, end);
-const bodyWeightMetrics = calculateBodyWeightMetrics(bodyWeightCalendarEvents);
-await recapDatabase.updateMetrics({ bodyWeight: bodyWeightMetrics });
+const bodyWeightData = calculateBodyWeightData(bodyWeightCalendarEvents);
+await recapDatabase.updateData({ bodyWeight: bodyWeightData });
 ```
 
 **Key Patterns**:
@@ -1033,7 +1033,7 @@ await recapDatabase.updateMetrics({ bodyWeight: bodyWeightMetrics });
 - Layer 1: `withingsData`, `stravaActivity`, `ouraSession`
 - Layer 2 Input: `withingsRecords`, `stravaRecords` (reading from Notion)
 - Layer 2 Output: `bodyWeightEvents`, `workoutEvents` (writing to Calendar)
-- Layer 3: `bodyWeightMetrics`, `workoutMetrics`, `sleepMetrics`
+- Layer 3: `bodyWeightData`, `workoutData`, `sleepData`
 
 ### Config Naming Patterns by Layer
 
@@ -1055,8 +1055,8 @@ config.calendar.calendars.workouts; // Workouts calendar ID
 **Layer 3 Config** (Domain-specific):
 
 ```javascript
-config.dataSources.bodyWeight.metrics; // Body weight metrics
-config.dataSources.workouts.metrics; // Workout metrics
+config.dataSources.bodyWeight.data; // Body weight data
+config.dataSources.workouts.data; // Workout data
 ```
 
 ## Current Layer Violations
@@ -1180,14 +1180,14 @@ OuraDatabase (Notion) → notion-oura-to-calendar-sleep.js → Sleep Calendar
 **Layer**: Layer 3 - Domain names maintained (`bodyWeight`, `workouts`, `sleep`, `prs`, `games`)
 
 1. Fetch calendar events from domain-named calendars
-2. Aggregate events into weekly metrics
-3. Update Personal Recap database with domain-named metrics
+2. Aggregate events into weekly data
+3. Update Personal Recap database with domain-named data
 
 **Data Flow:**
 
 ```
-Body Weight Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (bodyWeight metrics)
-Workouts Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (workout metrics)
+Body Weight Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (bodyWeight data)
+Workouts Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (workout data)
 ```
 
 **Key Point**: All naming uses **domain names** at this layer. Integration source is no longer relevant.
@@ -1642,9 +1642,9 @@ Common functionality is extracted into shared utilities to maintain consistency 
 - `convertUTCToEasternDate()` - Timezone conversion with DST handling
 - Centralized date handling logic for consistency across integrations
 
-**`src/utils/metric-properties.js`**:
+**`src/utils/data-properties.js`**:
 
-- `buildMetricProperties()` - Builds Notion properties object with validation (config-driven)
+- `buildDataProperties()` - Builds Notion properties object with validation (config-driven)
 - Uses data source registry to automatically build properties from summary data
 - Validates all property configurations exist before use
 - Throws clear error messages listing missing properties (e.g., "Missing property configuration(s): bodyWeightAverage")

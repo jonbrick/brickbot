@@ -27,9 +27,9 @@ const {
 } = require("../src/utils/cli");
 const { formatDateLong } = require("../src/utils/date");
 const {
-  displaySourceMetrics,
-  collectSourceMetrics,
-} = require("../src/utils/metric-display");
+  displaySourceData,
+  collectSourceData,
+} = require("../src/utils/data-display");
 const {
   DATA_SOURCES,
   getAvailableSources,
@@ -119,8 +119,9 @@ async function main() {
     const action = await selectAction();
     const displayOnly = action === "display";
 
-    // Select week
-    const { weekNumber, year, startDate, endDate } = await selectWeek();
+    // Select week(s) - normalize to array
+    const weekSelection = await selectWeek();
+    const weeks = Array.isArray(weekSelection) ? weekSelection : [weekSelection];
 
     if (displayOnly) {
       showInfo("Display mode: Results will not be saved to Notion\n");
@@ -159,72 +160,137 @@ async function main() {
       }
     }
 
-    // Run appropriate workflow(s)
-    // Google Calendar API calls
-    let calendarResult = null;
-    // Notion Database API calls
-    let notionResult = null;
+    // Process each week
+    const results = [];
+    let successCount = 0;
+    let failureCount = 0;
 
-    if (expandedCalendars.length > 0) {
-      // Fetch from Google Calendar API
-      calendarResult = await summarizeCalendarWeek(weekNumber, year, {
-        accountType: "personal",
-        displayOnly,
-        calendars: expandedCalendars,
-      });
-    }
+    for (let i = 0; i < weeks.length; i++) {
+      const { weekNumber, year, startDate, endDate } = weeks[i];
+      
+      console.log(
+        `\n${"=".repeat(60)}\nProcessing week ${i + 1}/${weeks.length}: Week ${weekNumber}, ${year}\n${"=".repeat(60)}\n`
+      );
 
-    if (expandedNotionSources.length > 0) {
-      // Fetch from Notion Database API (e.g., Tasks)
-      notionResult = await summarizeNotionWeek(weekNumber, year, {
-        displayOnly,
-        sources: expandedNotionSources,
-      });
-    }
+      try {
+        // Run appropriate workflow(s)
+        // Google Calendar API calls
+        let calendarResult = null;
+        // Notion Database API calls
+        let notionResult = null;
 
-    // Merge results
-    let result;
-    if (calendarResult && notionResult) {
-      // Merge both results
-      result = {
-        weekNumber,
-        year,
-        summary: {
-          ...calendarResult.summary,
-          ...notionResult.summary,
-        },
-        updated: calendarResult.updated || notionResult.updated,
-        error: calendarResult.error || notionResult.error,
-      };
-    } else if (calendarResult) {
-      result = calendarResult;
-    } else if (notionResult) {
-      result = notionResult;
-    } else {
-      throw new Error("No sources selected");
+        if (expandedCalendars.length > 0) {
+          // Fetch from Google Calendar API
+          calendarResult = await summarizeCalendarWeek(weekNumber, year, {
+            accountType: "personal",
+            displayOnly,
+            calendars: expandedCalendars,
+          });
+        }
+
+        if (expandedNotionSources.length > 0) {
+          // Fetch from Notion Database API (e.g., Tasks)
+          notionResult = await summarizeNotionWeek(weekNumber, year, {
+            displayOnly,
+            sources: expandedNotionSources,
+          });
+        }
+
+        // Merge results
+        let result;
+        if (calendarResult && notionResult) {
+          // Merge both results
+          result = {
+            weekNumber,
+            year,
+            summary: {
+              ...calendarResult.summary,
+              ...notionResult.summary,
+            },
+            updated: calendarResult.updated || notionResult.updated,
+            error: calendarResult.error || notionResult.error,
+          };
+        } else if (calendarResult) {
+          result = calendarResult;
+        } else if (notionResult) {
+          result = notionResult;
+        } else {
+          throw new Error("No sources selected");
+        }
+
+        results.push({ weekNumber, year, success: true, result });
+        successCount++;
+      } catch (error) {
+        const errorMessage = error.message || "Unknown error";
+        results.push({
+          weekNumber,
+          year,
+          success: false,
+          error: errorMessage,
+        });
+        failureCount++;
+        showError(
+          `Failed to process Week ${weekNumber}, ${year}: ${errorMessage}`
+        );
+        // Continue to next week instead of exiting
+      }
     }
 
     // Display results
     if (displayOnly) {
-      displaySourceMetrics(result, selectedSource);
-      if (result.error) {
-        showError(`Warning: ${result.error}`);
-      } else {
-        showSuccess("Summary calculated successfully!");
-      }
-    } else if (result.updated) {
-      console.log("\n" + "=".repeat(60));
-      const summaryData = collectSourceMetrics(result, selectedSource);
+      // Display each week's results
+      results.forEach((weekResult) => {
+        if (weekResult.success && weekResult.result) {
+          displaySourceData(weekResult.result, selectedSource);
+          if (weekResult.result.error) {
+            showError(`Warning: ${weekResult.result.error}`);
+          }
+        } else {
+          showError(
+            `Week ${weekResult.weekNumber}, ${weekResult.year}: ${weekResult.error}`
+          );
+        }
+      });
 
-      showSummary(summaryData);
-      showSuccess("Week summary completed successfully!");
-    } else if (result.error) {
-      displaySourceMetrics(result, selectedSource);
-      showError(`Failed to update: ${result.error}`);
-      process.exit(1);
+      if (successCount > 0) {
+        showSuccess(
+          `${successCount} week${successCount !== 1 ? "s" : ""} calculated successfully!`
+        );
+      }
+      if (failureCount > 0) {
+        showError(
+          `${failureCount} week${failureCount !== 1 ? "s" : ""} failed to process.`
+        );
+      }
     } else {
-      showError("Unknown error occurred");
-      process.exit(1);
+      // Update mode - show summary for each successful week
+      const successfulResults = results.filter((r) => r.success && r.result);
+      
+      successfulResults.forEach((weekResult) => {
+        if (weekResult.result.updated) {
+          console.log("\n" + "=".repeat(60));
+          const summaryData = collectSourceData(weekResult.result, selectedSource);
+          showSummary(summaryData);
+        } else if (weekResult.result.error) {
+          displaySourceData(weekResult.result, selectedSource);
+          showError(`Failed to update: ${weekResult.result.error}`);
+        }
+      });
+
+      // Final summary
+      if (successCount > 0 && failureCount === 0) {
+        showSuccess(
+          `All ${successCount} week${successCount !== 1 ? "s" : ""} completed successfully!`
+        );
+      } else if (successCount > 0 && failureCount > 0) {
+        showSuccess(
+          `${successCount} week${successCount !== 1 ? "s" : ""} completed successfully, ${failureCount} failed.`
+        );
+        process.exit(1);
+      } else {
+        showError("All weeks failed to process.");
+        process.exit(1);
+      }
     }
   } catch (error) {
     showError(`Error: ${error.message}`);

@@ -1,8 +1,8 @@
 /**
- * @fileoverview Transform Calendar Events to Personal Recap Metrics
+ * @fileoverview Transform Calendar Events to Personal Recap Data
  * @layer 3 - Calendar → Recap (Domain name)
  *
- * Purpose: Converts raw Google Calendar events into aggregated weekly metrics
+ * Purpose: Converts raw Google Calendar events into aggregated weekly data
  * for the Personal Recap database (days active, hours, sessions, averages).
  *
  * Responsibilities:
@@ -15,13 +15,13 @@
  *
  * Data Flow:
  * - Input: Calendar events object (domain-named keys), date range, selected sources
- * - Transforms: Events → Metrics (counts, hours, formatted text)
- * - Output: Metric object ready for Notion database update
+ * - Transforms: Events → Data (counts, hours, formatted text)
+ * - Output: Data object ready for Notion database update
  * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games) NOT integration names
  *
  * Example:
  * ```
- * const metrics = transformCalendarEventsToRecapMetrics(
+ * const data = transformCalendarEventsToRecapData(
  *   { workout: [...], reading: [...] },
  *   startDate,
  *   endDate,
@@ -45,7 +45,7 @@ function getDayAbbreviation(dateStr) {
 }
 
 /**
- * Transform calendar events to weekly recap metrics
+ * Transform calendar events to weekly recap data
  * Filters events to only include those within the week date range
  *
  * @param {Object} calendarEvents - Object with calendar event arrays
@@ -64,11 +64,11 @@ function getDayAbbreviation(dateStr) {
  * @param {Date} weekStartDate - Start date of the week (Sunday)
  * @param {Date} weekEndDate - End date of the week (Saturday)
  * @param {Array<string>} selectedCalendars - Array of calendar keys to include (e.g., ["sleep", "sober", "drinking"])
- *   If not provided, calculates metrics for all calendars (backward compatible)
+ *   If not provided, calculates data for all calendars (backward compatible)
  * @param {Array<Object>} tasks - Array of completed tasks (default: [])
- * @returns {Object} Summary object with calendar metrics for selected calendars only
+ * @returns {Object} Summary object with calendar data for selected calendars only
  */
-function transformCalendarEventsToRecapMetrics(
+function transformCalendarEventsToRecapData(
   calendarEvents,
   weekStartDate = null,
   weekEndDate = null,
@@ -82,8 +82,8 @@ function transformCalendarEventsToRecapMetrics(
     return eventDate >= weekStartDate && eventDate <= weekEndDate;
   };
 
-  // Helper function to calculate metrics for a calendar
-  const calculateCalendarMetrics = (
+  // Helper function to calculate data for a calendar
+  const calculateCalendarData = (
     events,
     includeHours = false,
     includeSessions = false
@@ -154,14 +154,14 @@ function transformCalendarEventsToRecapMetrics(
 
   const summary = {};
 
-  // Sleep metrics (only if "sleep" is selected)
+  // Sleep data (only if "sleep" is selected)
   if (shouldCalculate("sleep")) {
-    const earlyWakeup = calculateCalendarMetrics(
+    const earlyWakeup = calculateCalendarData(
       calendarEvents.earlyWakeup || [],
       true,
       false
     );
-    const sleepIn = calculateCalendarMetrics(
+    const sleepIn = calculateCalendarData(
       calendarEvents.sleepIn || [],
       true,
       false
@@ -175,9 +175,9 @@ function transformCalendarEventsToRecapMetrics(
     summary.sleepHoursTotal = Math.round(sleepHoursTotal * 100) / 100;
   }
 
-  // Sober metrics (only if "sober" is selected)
+  // Sober data (only if "sober" is selected)
   if (shouldCalculate("sober")) {
-    const sober = calculateCalendarMetrics(
+    const sober = calculateCalendarData(
       calendarEvents.sober || [],
       false,
       false
@@ -186,9 +186,9 @@ function transformCalendarEventsToRecapMetrics(
     summary.soberDays = sober.days || 0;
   }
 
-  // Drinking metrics (only if "drinking" is selected)
+  // Drinking data (only if "drinking" is selected)
   if (shouldCalculate("drinking")) {
-    const drinking = calculateCalendarMetrics(
+    const drinking = calculateCalendarData(
       calendarEvents.drinking || [],
       false,
       false
@@ -217,9 +217,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Workout metrics (only if "workout" is selected)
+  // Workout data (only if "workout" is selected)
   if (shouldCalculate("workout")) {
-    const workout = calculateCalendarMetrics(
+    const workout = calculateCalendarData(
       calendarEvents.workout || [],
       true,
       true
@@ -246,9 +246,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Reading metrics (only if "reading" is selected)
+  // Reading data (only if "reading" is selected)
   if (shouldCalculate("reading")) {
-    const reading = calculateCalendarMetrics(
+    const reading = calculateCalendarData(
       calendarEvents.reading || [],
       true,
       true
@@ -275,9 +275,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Coding metrics (only if "coding" is selected)
+  // Coding data (only if "coding" is selected)
   if (shouldCalculate("coding")) {
-    const coding = calculateCalendarMetrics(
+    const coding = calculateCalendarData(
       calendarEvents.coding || [],
       true,
       true
@@ -304,9 +304,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Art metrics (only if "art" is selected)
+  // Art data (only if "art" is selected)
   if (shouldCalculate("art")) {
-    const art = calculateCalendarMetrics(calendarEvents.art || [], true, true);
+    const art = calculateCalendarData(calendarEvents.art || [], true, true);
     // Always include all fields for selected calendar (clean slate)
     summary.artDays = art.days || 0;
     summary.artSessions = art.sessions !== undefined ? art.sessions : 0;
@@ -329,9 +329,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Video Games metrics (only if "videoGames" is selected)
+  // Video Games data (only if "videoGames" is selected)
   if (shouldCalculate("videoGames")) {
-    const videoGames = calculateCalendarMetrics(
+    const videoGames = calculateCalendarData(
       calendarEvents.videoGames || [],
       true,
       true
@@ -358,9 +358,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Meditation metrics (only if "meditation" is selected)
+  // Meditation data (only if "meditation" is selected)
   if (shouldCalculate("meditation")) {
-    const meditation = calculateCalendarMetrics(
+    const meditation = calculateCalendarData(
       calendarEvents.meditation || [],
       true,
       true
@@ -387,9 +387,9 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Music metrics (only if "music" is selected)
+  // Music data (only if "music" is selected)
   if (shouldCalculate("music")) {
-    const music = calculateCalendarMetrics(
+    const music = calculateCalendarData(
       calendarEvents.music || [],
       true,
       true
@@ -416,7 +416,7 @@ function transformCalendarEventsToRecapMetrics(
         .join(", ") || "";
   }
 
-  // Body Weight metrics (only if "bodyWeight" is selected)
+  // Body Weight data (only if "bodyWeight" is selected)
   if (shouldCalculate("bodyWeight")) {
     const bodyWeightEvents = calendarEvents.bodyWeight || [];
     const filteredBodyWeightEvents = bodyWeightEvents.filter((event) =>
@@ -443,7 +443,7 @@ function transformCalendarEventsToRecapMetrics(
     }
   }
 
-  // Personal PRs metrics (only if "personalPRs" is selected)
+  // Personal PRs data (only if "personalPRs" is selected)
   if (shouldCalculate("personalPRs")) {
     const prsEvents = calendarEvents.personalPRs || [];
     const filteredPRsEvents = prsEvents.filter((event) =>
@@ -477,7 +477,7 @@ function transformCalendarEventsToRecapMetrics(
       isDateInWeek(event.date)
     );
 
-    // Group events by category for per-category metrics
+    // Group events by category for per-category data
     const eventsByCategory = {};
     filteredEvents.forEach((event) => {
       const category = getPersonalCategoryByColor(event.colorId);
@@ -487,7 +487,7 @@ function transformCalendarEventsToRecapMetrics(
       eventsByCategory[category].push(event);
     });
 
-    // Calculate metrics for each category
+    // Calculate data for each category
     const categories = [
       "personal",
       "interpersonal",
@@ -540,7 +540,7 @@ function transformCalendarEventsToRecapMetrics(
     });
   }
 
-  // Task metrics (only if "tasks" is selected)
+  // Task data (only if "tasks" is selected)
   if (shouldCalculate("tasks") && tasks.length > 0) {
     const { getCategoryKey } = require("../config/notion/task-categories");
 
@@ -557,7 +557,7 @@ function transformCalendarEventsToRecapMetrics(
       }
     });
 
-    // Calculate metrics for each category
+    // Calculate data for each category
     const taskCategories = [
       "personal",
       "interpersonal",
@@ -587,6 +587,6 @@ function transformCalendarEventsToRecapMetrics(
 }
 
 module.exports = {
-  transformCalendarEventsToRecapMetrics,
+  transformCalendarEventsToRecapData,
 };
 

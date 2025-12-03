@@ -3,7 +3,7 @@
  * Declarative configuration for mapping Notion records to Google Calendar IDs
  */
 
-const { getSourceMetricKeys } = require("../main");
+const { getSourceDataKeys } = require("../main");
 
 const calendarMappings = {
   /**
@@ -140,19 +140,19 @@ const calendarMappings = {
 };
 
 /**
- * Get metrics for a Personal Recap source
- * Derives metrics from DATA_SOURCES to avoid duplication
+ * Get data for a Personal Recap source
+ * Derives data from DATA_SOURCES to avoid duplication
  * @param {string} sourceId - Source identifier (e.g., 'sleep', 'workout')
- * @returns {Array<string>} Array of metric keys for this source
+ * @returns {Array<string>} Array of data keys for this source
  */
-function getRecapSourceMetrics(sourceId) {
-  return getSourceMetricKeys(sourceId);
+function getRecapSourceData(sourceId) {
+  return getSourceDataKeys(sourceId);
 }
 
 /**
  * Personal Recap Data Sources Configuration
  * Defines which calendars feed into Personal Recap database and their metadata
- * Note: Metrics are derived from DATA_SOURCES via getRecapSourceMetrics() - do not hardcode here
+ * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
  */
 const PERSONAL_RECAP_SOURCES = {
   sleep: {
@@ -470,5 +470,5 @@ module.exports = {
   getRecapSourceConfig,
   getCalendarIdsForSource,
   buildCalendarFetches,
-  getRecapSourceMetrics,
+  getRecapSourceData,
 };

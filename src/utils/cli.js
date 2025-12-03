@@ -41,10 +41,21 @@ async function selectDateRange() {
   // Handle week picker option
   if (rangeType === "weekPicker") {
     const weekSelection = await selectWeek();
-    return {
-      startDate: weekSelection.startDate,
-      endDate: weekSelection.endDate,
-    };
+    // Handle both single week and multiple weeks
+    if (Array.isArray(weekSelection)) {
+      // Multiple weeks: calculate combined date range
+      const startDates = weekSelection.map((w) => w.startDate);
+      const endDates = weekSelection.map((w) => w.endDate);
+      const startDate = new Date(Math.min(...startDates.map((d) => d.getTime())));
+      const endDate = new Date(Math.max(...endDates.map((d) => d.getTime())));
+      return { startDate, endDate };
+    } else {
+      // Single week
+      return {
+        startDate: weekSelection.startDate,
+        endDate: weekSelection.endDate,
+      };
+    }
   }
 
   let startDate, endDate;
@@ -179,10 +190,21 @@ async function selectCalendarDateRange() {
   // Handle week picker option
   if (rangeType === "weekPicker") {
     const weekSelection = await selectWeek();
-    return {
-      startDate: weekSelection.startDate,
-      endDate: weekSelection.endDate,
-    };
+    // Handle both single week and multiple weeks
+    if (Array.isArray(weekSelection)) {
+      // Multiple weeks: calculate combined date range
+      const startDates = weekSelection.map((w) => w.startDate);
+      const endDates = weekSelection.map((w) => w.endDate);
+      const startDate = new Date(Math.min(...startDates.map((d) => d.getTime())));
+      const endDate = new Date(Math.max(...endDates.map((d) => d.getTime())));
+      return { startDate, endDate };
+    } else {
+      // Single week
+      return {
+        startDate: weekSelection.startDate,
+        endDate: weekSelection.endDate,
+      };
+    }
   }
 
   let startDate, endDate;
@@ -586,8 +608,9 @@ async function promptMultiSelect(message, choices) {
 /**
  * Select week by week number and year
  * Prompts user to select a week using ISO-8601 week numbering
+ * Supports single week or multiple weeks (comma-separated)
  *
- * @returns {Promise<{weekNumber: number, year: number, startDate: Date, endDate: Date}>} Week selection
+ * @returns {Promise<{weekNumber: number, year: number, startDate: Date, endDate: Date}|Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>>} Week selection (single object or array)
  */
 async function selectWeek() {
   const currentDate = getToday();
@@ -605,16 +628,68 @@ async function selectWeek() {
           value: "current",
         },
         { name: "Custom Week", value: "custom" },
+        { name: "Multiple Weeks", value: "multiple" },
       ],
     },
   ]);
 
   let weekNumber, year;
+  let weekNumbers = [];
 
   if (weekType === "current") {
     weekNumber = currentWeek;
     year = currentYear;
+  } else if (weekType === "multiple") {
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        name: "year",
+        message: "Year:",
+        default: currentYear.toString(),
+        validate: (input) => {
+          const yearNum = parseInt(input);
+          if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+            return "Please enter a valid year (2000-2100)";
+          }
+          return true;
+        },
+      },
+      {
+        type: "input",
+        name: "weekNumbers",
+        message: "Week numbers (comma-separated, e.g., 1,2,3 or 13,14,50):",
+        validate: (input) => {
+          if (!input || !input.trim()) {
+            return "Please enter at least one week number";
+          }
+          const weeks = input
+            .split(",")
+            .map((w) => parseInt(w.trim()))
+            .filter((w) => !isNaN(w));
+          if (weeks.length === 0) {
+            return "Please enter at least one valid week number";
+          }
+          const invalid = weeks.filter((w) => w < 1 || w > 53);
+          if (invalid.length > 0) {
+            return `Invalid week numbers: ${invalid.join(", ")}. Must be 1-53.`;
+          }
+          return true;
+        },
+      },
+    ]);
+
+    year = parseInt(answers.year);
+    // Parse, deduplicate, and sort week numbers
+    weekNumbers = [
+      ...new Set(
+        answers.weekNumbers
+          .split(",")
+          .map((w) => parseInt(w.trim()))
+          .filter((w) => !isNaN(w) && w >= 1 && w <= 53)
+      ),
+    ].sort((a, b) => a - b);
   } else {
+    // Custom single week
     const answers = await inquirer.prompt([
       {
         type: "input",
@@ -647,6 +722,31 @@ async function selectWeek() {
     year = parseInt(answers.year);
   }
 
+  // Handle multiple weeks
+  if (weekType === "multiple" && weekNumbers.length > 0) {
+    const weeks = weekNumbers.map((wn) => {
+      const { startDate, endDate } = parseWeekNumber(wn, year);
+      return { weekNumber: wn, year, startDate, endDate };
+    });
+
+    console.log(
+      `\n📅 Weeks selected: ${weekNumbers
+        .map((wn) => `Week ${wn}`)
+        .join(", ")} of ${year}\n`
+    );
+    weeks.forEach((week) => {
+      console.log(
+        `  Week ${week.weekNumber}: ${formatDateLong(
+          week.startDate
+        )} to ${formatDateLong(week.endDate)}`
+      );
+    });
+    console.log();
+
+    return weeks;
+  }
+
+  // Handle single week
   // Calculate week date range
   const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 

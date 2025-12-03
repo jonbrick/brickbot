@@ -5,7 +5,7 @@
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCompletedTasks } = require("../collectors/collect-tasks");
-const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-notion-personal-recap");
+const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-personal-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
@@ -72,7 +72,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
 
     // Calculate summary (empty calendar events, just tasks)
     const calendarEvents = {}; // Empty since this is Notion-only workflow
-    const summary = transformCalendarEventsToRecapMetrics(
+    const summary = transformCalendarEventsToRecapData(
       calendarEvents,
       startDate,
       endDate,
@@ -113,23 +113,23 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     results.updated = true;
     results.selectedSources = sourcesToFetch;
     
-    // Build success message with available metrics for selected sources
-    const metrics = [];
+    // Build success message with available data for selected sources
+    const data = [];
     
     if (sourcesToFetch.includes("tasks")) {
-      const taskMetrics = [];
-      if (summary.personalTasksComplete !== undefined) taskMetrics.push(`${summary.personalTasksComplete} personal tasks`);
-      if (summary.interpersonalTasksComplete !== undefined) taskMetrics.push(`${summary.interpersonalTasksComplete} interpersonal tasks`);
-      if (summary.homeTasksComplete !== undefined) taskMetrics.push(`${summary.homeTasksComplete} home tasks`);
-      if (summary.physicalHealthTasksComplete !== undefined) taskMetrics.push(`${summary.physicalHealthTasksComplete} physical health tasks`);
-      if (summary.mentalHealthTasksComplete !== undefined) taskMetrics.push(`${summary.mentalHealthTasksComplete} mental health tasks`);
-      if (taskMetrics.length > 0) {
-        metrics.push(...taskMetrics);
+      const taskData = [];
+      if (summary.personalTasksComplete !== undefined) taskData.push(`${summary.personalTasksComplete} personal tasks`);
+      if (summary.interpersonalTasksComplete !== undefined) taskData.push(`${summary.interpersonalTasksComplete} interpersonal tasks`);
+      if (summary.homeTasksComplete !== undefined) taskData.push(`${summary.homeTasksComplete} home tasks`);
+      if (summary.physicalHealthTasksComplete !== undefined) taskData.push(`${summary.physicalHealthTasksComplete} physical health tasks`);
+      if (summary.mentalHealthTasksComplete !== undefined) taskData.push(`${summary.mentalHealthTasksComplete} mental health tasks`);
+      if (taskData.length > 0) {
+        data.push(...taskData);
       }
     }
     
     showSuccess(
-      `Updated week ${weekNumber} of ${year}: ${metrics.join(", ")}`
+      `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
     );
 
     return results;

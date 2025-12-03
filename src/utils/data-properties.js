@@ -1,11 +1,11 @@
 /**
- * Metric Properties Builder
+ * Data Properties Builder
  * Config-driven property building using the data source registry
  * Replaces the repetitive if-block pattern in personal-recap-properties.js
  */
 
 const config = require('../config');
-const { getSourceMetricKeys } = require('../config/main');
+const { getSourceDataKeys } = require('../config/main');
 
 /**
  * Build properties object for Personal Recap database update
@@ -17,16 +17,16 @@ const { getSourceMetricKeys } = require('../config/main');
  * @returns {Object} Properties object ready for Notion API
  * @throws {Error} If any property configuration is missing
  */
-function buildMetricProperties(summaryData, props, selectedSources = []) {
+function buildDataProperties(summaryData, props, selectedSources = []) {
   const properties = {};
   const missingProps = [];
   
   // Ensure clean slate for selected sources (set defaults for missing fields)
   if (selectedSources && selectedSources.length > 0) {
     selectedSources.forEach((sourceKey) => {
-      const metricKeys = getSourceMetricKeys(sourceKey);
-      if (metricKeys) {
-        metricKeys.forEach((fieldKey) => {
+      const dataKeys = getSourceDataKeys(sourceKey);
+      if (dataKeys) {
+        dataKeys.forEach((fieldKey) => {
           // Only set default if field is not already in summaryData
           if (summaryData[fieldKey] === undefined) {
             // Determine default value based on field type
@@ -86,6 +86,6 @@ function buildMetricProperties(summaryData, props, selectedSources = []) {
 }
 
 module.exports = {
-  buildMetricProperties,
+  buildDataProperties,
 };
 

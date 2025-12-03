@@ -40,12 +40,13 @@ Each phase is designed to be:
 ### Milestone 1.3: Add Work Data Sources to main.js
 
 - [ ] Add `workCalendar` to `DATA_SOURCES` with category structure:
-  - Categories: meetings, design, coding, crit, sketch, research, personal, rituals, qa, ignore
+  - Categories: meetings, design, coding, crit, sketch, research, personalAndSocial, rituals, qa
   - Each category: Sessions, Hours Total, Blocks (similar to personalCalendar)
+  - Note: No "ignore" category - work calendar captures everything (personalAndSocial handles personal/social work events)
 - [ ] Add `workPRs` to `DATA_SOURCES`:
   - Sessions, Details (similar to personalPRs)
 - [ ] Add `workTasks` to `DATA_SOURCES` with work task categories:
-  - Categories: research, sketch, design, coding, crit, qa, admin, personal & social, ooo
+  - Categories: research, sketch, design, coding, crit, qa, admin, social, ooo
   - Each category: Tasks Complete, Task Details (similar to tasks)
 - **File**: `src/config/main.js`
 - **Test**: Verify data source definitions are correct
@@ -106,11 +107,25 @@ Each phase is designed to be:
 
 ### Milestone 3.1: Add Work Recap Sources to mappings.js
 
-- [ ] Add `WORK_RECAP_SOURCES` object (similar to `PERSONAL_RECAP_SOURCES`):
-  - `workCalendar`: uses `WORK_MAIN_CALENDAR_ID`
-  - `workPRs`: uses `WORK_PRS_CALENDAR_ID`
-- [ ] Add `getAvailableWorkRecapSources()` function
-- [ ] Update `buildCalendarFetches()` to handle work recap sources (or create `buildWorkCalendarFetches()`)
+- [ ] Add `WORK_RECAP_SOURCES` object (mirror `PERSONAL_RECAP_SOURCES` structure exactly):
+  - `workCalendar`:
+    - Single calendar source using `WORK_MAIN_CALENDAR_ID`
+    - Category-based (like personalCalendar)
+    - Same structure: `id`, `displayName`, `description`, `required`, `calendars` array with `key`, `envVar`, `required`, `fetchKey`
+  - `workPRs`:
+    - Single calendar source using `WORK_PRS_CALENDAR_ID`
+    - Simple structure (like personalPRs)
+    - Same structure: `id`, `displayName`, `description`, `required`, `calendars` array
+  - `workTasks`:
+    - Notion database source (like tasks)
+    - Uses `TASKS_DATABASE_ID`
+    - Same structure: `id`, `displayName`, `description`, `required`, `isNotionSource: true`, `databaseId`
+- [ ] Add `getAvailableWorkRecapSources()` function (mirror `getAvailableRecapSources()` pattern)
+- [ ] Refactor `buildCalendarFetches()` to accept sources parameter:
+  - Change signature: `buildCalendarFetches(selectedSources, accountType = "personal", sourcesConfig = PERSONAL_RECAP_SOURCES)`
+  - Use `sourcesConfig` parameter instead of hardcoded `PERSONAL_RECAP_SOURCES`
+  - Can be called with either `PERSONAL_RECAP_SOURCES` or `WORK_RECAP_SOURCES`
+  - Follows DRY principle - single function handles both personal and work sources
 - **Files**: `src/config/calendar/mappings.js`
 - **Test**: Verify work recap sources are available and build correct fetch configs
 
@@ -128,7 +143,12 @@ Each phase is designed to be:
 - [ ] Implement `transformCalendarEventsToRecapData()` function:
   - Handle work calendar categories (use `getWorkCategoryByColor()`)
   - Process work PRs (similar to personalPRs)
-  - Handle work tasks (use `getWorkCategoryKey()` from task-categories)
+  - Handle work tasks:
+    - **Filter IN work tasks** (opposite of personal recap which filters OUT work tasks)
+    - Use `getWorkCategoryKey()` from task-categories to map `task.workCategory` field
+    - Split tasks into distinct columns by Work Category (research, sketch, design, coding, crit, qa, admin, social, ooo)
+    - Each category gets: `{category}TasksComplete` (count) and `{category}TaskDetails` (text)
+    - Note: `workCategory` is extracted by collector (see Milestone 5.2)
   - Default unmapped colors to meetings (color 1)
 - [ ] Mirror structure from `transform-calendar-to-notion-personal-recap.js`
 - **Files**: `src/transformers/transform-calendar-to-notion-work-recap.js`
@@ -157,13 +177,20 @@ Each phase is designed to be:
 
 ### Milestone 5.2: Create Work Recap Tasks Workflow
 
+- [ ] Update `fetchCompletedTasks()` in `collect-tasks.js` to extract `workCategory`:
+  - Add: `workCategory: collector.extractProperty(task, "Work Category")`
+  - Follows best practice - keeps transformer simple and consistent with personal recap pattern
+  - Extracts field in collector so transformer receives it in standardized format
 - [ ] Create `src/workflows/notion-tasks-to-notion-work-recap.js`
 - [ ] Implement `summarizeWeek()` function:
-  - Fetch work tasks (filter by work task types)
-  - Transform to recap data
+  - Fetch completed tasks from Notion (updated `fetchCompletedTasks()` now includes workCategory)
+  - **Filter IN work tasks** (where Type = "💼 Work") - opposite of personal recap
+  - Use `getWorkCategoryKey()` from task-categories to map `task.workCategory` field
+  - Transform to recap data by Work Category (research, sketch, design, coding, crit, qa, admin, social, ooo)
+  - Each category becomes separate columns: `{category}TasksComplete` and `{category}TaskDetails`
   - Update Work Recap database
 - [ ] Mirror structure from `notion-tasks-to-notion-personal-recap.js`
-- **Files**: `src/workflows/notion-tasks-to-notion-work-recap.js`
+- **Files**: `src/collectors/collect-tasks.js`, `src/workflows/notion-tasks-to-notion-work-recap.js`
 - **Test**: Can fetch and aggregate work tasks for a week
 
 **Phase 5 Completion**: Can aggregate work recap data from calendars and tasks.
@@ -176,14 +203,14 @@ Each phase is designed to be:
 
 ### Milestone 6.1: Update Summarize Week CLI
 
-- [ ] Add account type selection prompt (Personal vs Work)
-- [ ] Route to appropriate workflows based on selection:
-  - Personal → existing workflows
-  - Work → new work recap workflows
-- [ ] Update source selection to show work recap sources when work selected
+- [ ] Add "Work Calendar" and "Work Tasks" as options in the existing source selection list
+- [ ] When work sources are selected, route to work recap workflows:
+  - "Work Calendar" → `aggregate-calendar-to-notion-work-recap.js` workflow
+  - "Work Tasks" → `notion-tasks-to-notion-work-recap.js` workflow
+- [ ] Pass `accountType: "work"` to calendar workflows when work sources selected
 - [ ] Update display logic to handle work recap data
 - **Files**: `cli/summarize-week.js`
-- **Test**: CLI prompts for account type and routes correctly
+- **Test**: CLI shows work options in source list and routes correctly
 
 **Phase 6 Completion**: CLI supports Work Recap summarization.
 
@@ -240,10 +267,11 @@ Each phase is designed to be:
 
 - `src/config/main.js` - Add work data sources and property generator
 - `src/config/calendar/color-mappings.js` - Update default behavior
-- `src/config/calendar/mappings.js` - Add work recap sources
+- `src/config/calendar/mappings.js` - Add work recap sources and refactor buildCalendarFetches
 - `src/config/notion/index.js` - Register work recap
 - `src/config/notion/task-categories.js` - Export work task helper
-- `cli/summarize-week.js` - Add work recap support
+- `src/collectors/collect-tasks.js` - Extract workCategory field
+- `cli/summarize-week.js` - Add work recap options to source list
 
 ---
 
@@ -273,5 +301,16 @@ Make sure these are set before testing:
 
 - **Event/Trip/Rock Details**: These are Notion equations and should NOT be populated by code
 - **Admin**: Comes from tasks, not calendar colors
-- **Rituals vs Social**: Different categories (rituals from calendar, personal & social in caledar & tasks)
+- **Rituals vs Personal & Social vs Social**:
+  - Rituals: Calendar only (color 9)
+  - Personal & Social: Calendar only (color 8) - captures both personal and social work calendar events
+  - Social: Tasks only (work social tasks, not personal)
 - **Default Color**: Unmapped colors default to meetings (color 1)
+- **Work Task Filtering**:
+  - **Opposite of Personal Recap**: Personal recap filters OUT work tasks (Type = "💼 Work"), Work recap filters IN work tasks
+  - **Work Category Field**: Work tasks use the "Work Category" property (not "Type") to categorize tasks
+  - **Task Splitting**: Each Work Category (research, sketch, design, coding, crit, qa, admin, social, ooo) gets its own columns:
+    - `{category}TasksComplete` (count of completed tasks)
+    - `{category}TaskDetails` (comma-separated list of task titles with day abbreviations)
+  - **OOO**: OOO (Out of Office) is a task category, not a calendar category
+  - **Collector Pattern**: `workCategory` is extracted in `fetchCompletedTasks()` collector (best practice) so transformer receives it in standardized format

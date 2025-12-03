@@ -41,6 +41,7 @@ Steam API → collect → transform → sync → Steam Database (Notion)
 ```
 
 **Key Points**:
+
 - Notion databases retain the **API/integration name** (Withings, Strava, Oura, etc.)
 - **NO domain names** (`sleep`, `workouts`, `bodyWeight`) should exist in Layer 1
 - These are integration-specific databases - they represent the source API, not a domain abstraction
@@ -55,19 +56,21 @@ Steam API → collect → transform → sync → Steam Database (Notion)
 **Naming Convention**: Use **integration names ONLY** (`withings`, `strava`, `oura`, `github`, `steam`)
 
 **❌ WRONG** - Domain names in Layer 1:
+
 ```javascript
 // ❌ DON'T DO THIS in Layer 1 configs
-config.notion.databases.sleep      // Wrong! Should be: config.notion.databases.oura
-config.notion.databases.workouts   // Wrong! Should be: config.notion.databases.strava
-config.notion.databases.bodyWeight // Wrong! Should be: config.notion.databases.withings
+config.notion.databases.sleep; // Wrong! Should be: config.notion.databases.oura
+config.notion.databases.workouts; // Wrong! Should be: config.notion.databases.strava
+config.notion.databases.bodyWeight; // Wrong! Should be: config.notion.databases.withings
 ```
 
 **✅ CORRECT** - Integration names in Layer 1:
+
 ```javascript
 // ✅ DO THIS in Layer 1 configs
-config.notion.databases.oura      // Correct!
-config.notion.databases.strava    // Correct!
-config.notion.databases.withings  // Correct!
+config.notion.databases.oura; // Correct!
+config.notion.databases.strava; // Correct!
+config.notion.databases.withings; // Correct!
 ```
 
 ### Layer 2: Notion → Calendar (Domain Abstraction Boundary)
@@ -87,6 +90,7 @@ Steam Database (Notion) → transform → sync → Games Calendar
 ```
 
 **Key Points**:
+
 - **Google Calendar is the source of truth for domain names**
 - Domain names (`sleep`, `workouts`, `bodyWeight`, `prs`, `videoGames`) FIRST appear here
 - Calendar IDs and mappings use domain names
@@ -100,11 +104,12 @@ Steam Database (Notion) → transform → sync → Games Calendar
 **Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `videoGames`)
 
 **✅ CORRECT** - Domain names in Layer 2:
+
 ```javascript
 // ✅ DO THIS in Layer 2 configs
-config.calendar.calendars.bodyWeight  // Correct! Domain name
-config.calendar.calendars.workouts    // Correct! Domain name
-config.calendar.calendars.sleep       // Correct! Domain name
+config.calendar.calendars.bodyWeight; // Correct! Domain name
+config.calendar.calendars.workouts; // Correct! Domain name
+config.calendar.calendars.sleep; // Correct! Domain name
 ```
 
 ### Layer 3: Calendar → Recap (Domain Names Maintained)
@@ -122,6 +127,7 @@ Games Calendar → aggregate → Personal Recap
 ```
 
 **Key Points**:
+
 - Uses domain names from Google Calendar (Layer 2)
 - No integration names - data is fully abstracted at this point
 - Metrics are domain-based, not integration-based
@@ -137,24 +143,24 @@ Games Calendar → aggregate → Personal Recap
 
 ```javascript
 // ✅ Layer 1: Integration names ONLY
-config.notion.databases.oura      // Integration name
-config.notion.properties.oura     // Integration name
-config.notion.databases.strava    // Integration name
-config.notion.properties.strava   // Integration name
+config.notion.databases.oura; // Integration name
+config.notion.properties.oura; // Integration name
+config.notion.databases.strava; // Integration name
+config.notion.properties.strava; // Integration name
 
 // ❌ Layer 1: Domain names should NOT exist here
-config.notion.databases.sleep     // WRONG! Domain names don't belong in Layer 1
-config.notion.databases.workouts  // WRONG!
+config.notion.databases.sleep; // WRONG! Domain names don't belong in Layer 1
+config.notion.databases.workouts; // WRONG!
 
 // ✅ Layer 2: Domain names (Google Calendar is source of truth)
-config.calendar.calendars.bodyWeight  // Domain name
-config.calendar.calendars.workouts    // Domain name
-config.calendar.calendars.sleep       // Domain name
+config.calendar.calendars.bodyWeight; // Domain name
+config.calendar.calendars.workouts; // Domain name
+config.calendar.calendars.sleep; // Domain name
 
 // ✅ Layer 3: Domain names (from calendars)
-config.dataSources.bodyWeight.metrics  // Domain name
-config.dataSources.workouts.metrics    // Domain name
-config.dataSources.sleep.metrics       // Domain name
+config.dataSources.bodyWeight.metrics; // Domain name
+config.dataSources.workouts.metrics; // Domain name
+config.dataSources.sleep.metrics; // Domain name
 ```
 
 ### Current Violations (To Be Fixed)
@@ -164,12 +170,12 @@ config.dataSources.sleep.metrics       // Domain name
 ```javascript
 // ❌ CURRENT (WRONG) - Has domain names in Layer 1
 const databases = {
-  sleep: oura.database,        // ❌ Domain name in Layer 1
-  workouts: strava.database,   // ❌ Domain name in Layer 1
-  prs: github.database,        // ❌ Domain name in Layer 1
+  sleep: oura.database, // ❌ Domain name in Layer 1
+  workouts: strava.database, // ❌ Domain name in Layer 1
+  prs: github.database, // ❌ Domain name in Layer 1
   bodyWeight: withings.database, // ❌ Domain name in Layer 1
-  oura: oura.database,         // ✅ Integration name (correct)
-  strava: strava.database,     // ✅ Integration name (correct)
+  oura: oura.database, // ✅ Integration name (correct)
+  strava: strava.database, // ✅ Integration name (correct)
   // ...
 };
 ```
@@ -188,7 +194,8 @@ const databases = {
 };
 ```
 
-**Why this matters**: 
+**Why this matters**:
+
 - Clear layer boundaries - domain names only exist where they're supposed to
 - Google Calendar becomes the single source of truth for domain names
 - Prevents confusion about which layer code is operating in
@@ -227,14 +234,14 @@ const databases = {
          YES │ NO
              │
     ┌────────▼─────────┐          ┌─────────────────────────┐
-    │   LAYER 1        │          │ Is data already in      │
+    │   Layer 1        │          │ Is data already in      │
     │  Integration     │          │ Google Calendar?        │
     │                  │          └──────────┬──────────────┘
     │ Use API names:   │                     │
     │ - withings       │                 YES │ NO
     │ - strava         │                     │
     │ - oura           │            ┌────────▼────────┐
-    │ - github         │            │   LAYER 2       │
+    │ - github         │            │   Layer 2       │
     │ - steam          │            │   Domain        │
     └──────────────────┘            │                 │
                                     │ Use categories: │
@@ -246,7 +253,7 @@ const databases = {
                                     └─────────────────┘
                                              │
                                     ┌────────▼────────┐
-                                    │   LAYER 3       │
+                                    │   Layer 3       │
                                     │   Recap         │
                                     │                 │
                                     │ Use categories: │
@@ -264,107 +271,104 @@ const databases = {
 4. **Debugging**: Error messages clearly indicate which layer failed (integration vs domain logic)
 5. **Self-Documenting**: File/variable names tell you which layer you're in
 
-
 ## System Architecture
 
 ```
 brickbot/
-├── src/
-│   ├── databases/        # LAYER 1: Integration names (API → Notion)
-│   │   ├── NotionDatabase.js       # Base class with generic CRUD (587 lines)
-│   │   ├── OuraDatabase.js         # ✅ Layer 1: Oura sleep database
-│   │   ├── StravaDatabase.js       # ✅ Layer 1: Strava workouts database
-│   │   ├── SteamDatabase.js        # ✅ Layer 1: Steam gaming database
-│   │   ├── GitHubDatabase.js       # ✅ Layer 1: GitHub PRs database
-│   │   ├── WithingsDatabase.js     # ✅ Layer 1: Withings body weight database
-│   │   └── PersonalRecapDatabase.js # ✅ Layer 3: Personal recap database (domain-level)
-│   │
-│   ├── config/           # Configuration (split by domain)
-│   │   ├── index.js                 # Main config loader & validator
-│   │   ├── notion/                  # LAYER 1 & 2: Notion configs
-│   │   │   ├── index.js             # Aggregator (133 lines)
-│   │   │   ├── oura.js              # ✅ Layer 1: Oura sleep config (85 lines)
-│   │   │   ├── strava.js            # ✅ Layer 1: Strava workouts config (57 lines)
-│   │   │   ├── steam.js             # ✅ Layer 1: Steam gaming config (51 lines)
-│   │   │   ├── github.js            # ✅ Layer 1: GitHub PRs config (60 lines)
-│   │   │   ├── withings.js          # ✅ Layer 1: Withings config (59 lines)
-│   │   │   └── personal-recap.js    # ✅ Layer 3: Personal recap config (~237 lines)
-│   │   ├── calendar/                # LAYER 2: Calendar configs
-│   │   │   ├── mappings.js         # Declarative calendar mappings
-│   │   │   ├── credentials.js      # OAuth credentials
-│   │   │   └── color-mappings.js   # Color ID → category mappings
-│   │   ├── integrations/           # LAYER 1: Integration configs
-│   │   │   ├── credentials.js     # External API credentials
-│   │   │   └── sources.js          # Sweep source configs (CLI)
-│   │   ├── notion/                 # LAYER 1 & 2: Notion configs
-│   │   │   └── task-categories.js  # Task category mappings
-│   │   ├── main.js                 # Data sources registry
-│   │   └── tokens.js                # Token management config
-│   │
-│   ├── services/         # LAYER 1: API clients (thin wrappers)
-│   │   ├── NotionService.js         # REFACTORED: Thin wrapper (251 lines, was 1104)
-│   │   ├── GoogleCalendarService.js # LAYER 2: Calendar operations
-│   │   ├── GitHubService.js         # Layer 1: Integration API
-│   │   ├── OuraService.js          # Layer 1: Integration API
-│   │   ├── StravaService.js         # Layer 1: Integration API
-│   │   ├── SteamService.js          # Layer 1: Integration API
-│   │   ├── WithingsService.js      # Layer 1: Integration API
-│   │   ├── AppleNotesService.js
-│   │   └── TokenService.js
-│   │
-│   ├── collectors/       # LAYER 1: Data fetching (business logic)
-│   │   ├── collect-github.js        # Layer 1: Integration name
-│   │   ├── collect-oura.js          # Layer 1: Integration name
-│   │   ├── collect-strava.js        # Layer 1: Integration name
-│   │   ├── collect-steam.js         # Layer 1: Integration name
-│   │   ├── collect-withings.js      # Layer 1: Integration name
-│   │   ├── collect-tasks.js
-│   │   └── collect-calendar.js     # Layer 3: Calendar aggregation
-│   │
-│   ├── transformers/     # Data transformation layer
-│   │   ├── github-to-notion-github.js              # LAYER 1: Integration → Notion
-│   │   ├── oura-to-notion-oura.js                # LAYER 1: Integration → Notion
-│   │   ├── strava-to-notion-strava.js              # LAYER 1: Integration → Notion
-│   │   ├── steam-to-notion-steam.js               # LAYER 1: Integration → Notion
-│   │   ├── withings-to-notion-withings.js            # LAYER 1: Integration → Notion
-│   │   ├── notion-github-to-calendar-prs.js        # LAYER 2: GitHub → PRs
-│   │   ├── notion-strava-to-calendar-workouts.js   # LAYER 2: Strava → Workouts
-│   │   ├── notion-steam-to-calendar-games.js      # LAYER 2: Steam → Games
-│   │   ├── notion-withings-to-calendar-bodyweight.js # LAYER 2: Withings → Body Weight
-│   │   ├── notion-oura-to-calendar-sleep.js      # LAYER 2: Oura → Sleep
-│   │   └── transform-calendar-to-notion-personal-recap.js   # LAYER 3: Calendar → Notion Personal Recap
-│   │
-│   ├── workflows/        # Sync workflows with de-duplication
-│   │   ├── BaseWorkflow.js                  # NEW: Reusable batch logic (190 lines)
-│   │   ├── github-to-notion-github.js              # LAYER 1: Integration → Notion
-│   │   ├── oura-to-notion-oura.js                # LAYER 1: Integration → Notion
-│   │   ├── strava-to-notion-strava.js              # LAYER 1: Integration → Notion
-│   │   ├── steam-to-notion-steam.js               # LAYER 1: Integration → Notion
-│   │   ├── withings-to-notion-withings.js            # LAYER 1: Integration → Notion
-│   │   ├── notion-github-to-calendar-prs.js        # LAYER 2: GitHub → PRs
-│   │   ├── notion-oura-to-calendar-sleep.js      # LAYER 2: Oura → Sleep
-│   │   ├── notion-strava-to-calendar-workouts.js   # LAYER 2: Strava → Workouts
-│   │   ├── notion-steam-to-calendar-games.js      # LAYER 2: Steam → Games
-│   │   ├── notion-withings-to-calendar-bodyweight.js # LAYER 2: Withings → Body Weight
-│   │   ├── aggregate-calendar-to-notion-personal-recap.js   # LAYER 3: Calendar → Notion Personal Recap
-│   │   └── notion-tasks-to-notion-personal-recap.js   # LAYER 3: Notion Tasks → Notion Personal Recap
-│   │
-│   └── utils/           # Shared utilities
-│       ├── async.js               # Async helpers (delay, rate limiting)
-│       ├── cli.js                 # CLI prompts & formatting
-│       ├── date.js                # Date parsing & manipulation
-│       ├── calendar-mapper.js     # NEW: Generic calendar ID resolver
-│       ├── formatting.js          # Display formatting
-│       ├── transformers.js        # Transformer utilities (property filtering)
-│       ├── personal-recap-properties.js # Property builder with validation
-│       └── validation.js          # Input validation
-│
-├── cli/                  # User-facing command-line scripts
+├── cli/                    # User-facing command-line scripts
 │   ├── collect-data.js
 │   ├── update-calendar.js
 │   ├── sweep-notes.js
-│   ├── week/            # Weekly analysis pipeline
-│   └── tokens/          # Token management
+│   ├── week/               # Weekly analysis pipeline
+│   └── tokens/             # Token management
+│
+├── src/
+│   ├── collectors/       # Layer 1: Data fetching (business logic)
+│   │   ├── collect-github.js       # Layer 1: Integration name
+│   │   ├── collect-oura.js         # Layer 1: Integration name
+│   │   ├── collect-strava.js       # Layer 1: Integration name
+│   │   ├── collect-steam.js        # Layer 1: Integration name
+│   │   ├── collect-withings.js     # Layer 1: Integration name
+│   │   ├── collect-tasks.js        # Layer 3: Notion aggregation
+│   │   └── collect-calendar.js     # Layer 3: Calendar aggregation
+│   │
+│   ├── config/           # Configuration (split by domain)
+│   │   ├── calendar/               # Layer 2: Calendar configs
+│   │   │   ├── mappings.js         # Declarative calendar mappings
+│   │   │   ├── credentials.js      # OAuth credentials
+│   │   │   └── color-mappings.js   # Color ID → category mappings
+│   │   ├── integrations/           # Layer 1: Integration configs
+│   │   │   ├── credentials.js      # External API credentials
+│   │   │   └── sources.js          # Sweep source configs (CLI)
+│   │   ├── notion/                 # Layer 1 & 2: Notion configs
+│   │   │   ├── github.js           # Layer 1: GitHub PRs config (60 lines)
+│   │   │   ├── index.js            # Aggregator (133 lines)
+│   │   │   ├── oura.js             # Layer 1: Oura sleep config (85 lines)
+│   │   │   ├── personal-recap.js   # Layer 3: Personal recap config (~237 lines)
+│   │   │   ├── strava.js           # Layer 1: Strava workouts config (57 lines)
+│   │   │   ├── steam.js            # Layer 1: Steam gaming config (51 lines)
+│   │   │   ├── task-categories.js  # Task category mappings
+│   │   │   └── withings.js         # Layer 1: Withings config (59 lines)
+│   │   ├── index.js                # Main config loader & validator
+│   │   ├── main.js                 # Data sources registry
+│   │   └── tokens.js               # Token management config
+│   │
+│   ├── databases/        # Layer 1: Integration names (API → Notion)
+│   │   ├── GitHubDatabase.js         # Layer 1: GitHub PRs database
+│   │   ├── NotionDatabase.js         # Base class with generic CRUD (587 lines)
+│   │   ├── OuraDatabase.js           # Layer 1: Oura sleep database
+│   │   ├── PersonalRecapDatabase.js  # Layer 3: Personal recap database (domain-level)
+│   │   ├── StravaDatabase.js         # Layer 1: Strava workouts database
+│   │   ├── SteamDatabase.js          # Layer 1: Steam gaming database
+│   │   └── WithingsDatabase.js       # Layer 1: Withings body weight database
+│   │
+│   ├── services/         # Layer 1: API clients (thin wrappers)
+│   │   ├── GitHubService.js          # Layer 1: Integration API
+│   │   ├── GoogleCalendarService.js  # Layer 2: Calendar operations
+│   │   ├── NotionService.js          # Thin wrapper
+│   │   ├── OuraService.js            # Layer 1: Integration API
+│   │   ├── StravaService.js          # Layer 1: Integration API
+│   │   ├── SteamService.js           # Layer 1: Integration API
+│   │   ├── TokenService.js
+│   │   └── WithingsService.js        # Layer 1: Integration API
+│   │
+│   ├── transformers/     # Data transformation layer
+│   │   ├── github-to-notion-github.js                      # Layer 1: Integration → Notion
+│   │   ├── oura-to-notion-oura.js                          # Layer 1: Integration → Notion
+│   │   ├── strava-to-notion-strava.js                      # Layer 1: Integration → Notion
+│   │   ├── steam-to-notion-steam.js                        # Layer 1: Integration → Notion
+│   │   ├── withings-to-notion-withings.js                  # Layer 1: Integration → Notion
+│   │   ├── notion-github-to-calendar-prs.js                # Layer 2: GitHub → PRs
+│   │   ├── notion-strava-to-calendar-workouts.js           # Layer 2: Strava → Workouts
+│   │   ├── notion-steam-to-calendar-games.js               # Layer 2: Steam → Games
+│   │   ├── notion-withings-to-calendar-bodyweight.js       # Layer 2: Withings → Body Weight
+│   │   ├── notion-oura-to-calendar-sleep.js                # Layer 2: Oura → Sleep
+│   │   └── transform-calendar-to-notion-personal-recap.js  # Layer 3: Calendar → Notion Personal Recap
+│   │
+│   ├── utils/                            # Shared utilities
+│   │   ├── async.js                      # Async helpers (delay, rate limiting)
+│   │   ├── cli.js                        # CLI prompts & formatting
+│   │   ├── date.js                       # Date parsing & manipulation
+│   │   ├── calendar-mapper.js            # NEW: Generic calendar ID resolver
+│   │   ├── formatting.js                 # Display formatting
+│   │   ├── transformers.js               # Transformer utilities (property filtering)
+│   │   ├── personal-recap-properties.js  # Property builder with validation
+│   │   └── validation.js                 # Input validation
+│   │
+│   └── workflows/        # Sync workflows with de-duplication
+│       ├── aggregate-calendar-to-notion-personal-recap.js  # Layer 3: Calendar → Notion Personal Recap
+│       ├── BaseWorkflow.js                                 # Reusable batch logic
+│       ├── github-to-notion-github.js                      # Layer 1: Integration → Notion
+│       ├── oura-to-notion-oura.js                          # Layer 1: Integration → Notion
+│       ├── strava-to-notion-strava.js                      # Layer 1: Integration → Notion
+│       ├── steam-to-notion-steam.js                        # Layer 1: Integration → Notion
+│       ├── withings-to-notion-withings.js                  # Layer 1: Integration → Notion
+│       ├── notion-github-to-calendar-prs.js                # Layer 2: GitHub → PRs
+│       ├── notion-oura-to-calendar-sleep.js                # Layer 2: Oura → Sleep
+│       ├── notion-strava-to-calendar-workouts.js           # Layer 2: Strava → Workouts
+│       ├── notion-steam-to-calendar-games.js               # Layer 2: Steam → Games
+│       ├── notion-withings-to-calendar-bodyweight.js       # Layer 2: Withings → Body Weight
+│       └── notion-tasks-to-notion-personal-recap.js        # Layer 3: Notion Tasks → Notion Personal Recap
 │
 └── _archive/            # Legacy code (reference only)
 ```
@@ -601,15 +605,15 @@ Each config serves a distinct purpose:
 
 **Comparison Table:**
 
-| Aspect | DATA_SOURCES | PERSONAL_RECAP_SOURCES | calendarMappings |
-|--------|--------------|------------------------|-----------------|
-| **File** | `main.js` | `mappings.js` | `mappings.js` |
-| **Layer** | Layer 3 (definitions) | Layer 3 (fetching) | Layer 2 (routing) |
-| **Purpose** | Define WHAT data exists | Define HOW to fetch data | Define WHERE to route data |
-| **Contains** | Metric definitions (keys, types, labels) | Calendar fetch config (envVar, fetchKey) | Calendar routing rules (type, mappings) |
-| **Direction** | N/A (definitions) | Calendar → Recap (reading) | Notion → Calendar (writing) |
-| **Used by** | Display, properties, validation | Calendar aggregation workflows | Calendar sync workflows |
-| **Metrics** | Full definitions | Derived from DATA_SOURCES | N/A |
+| Aspect        | DATA_SOURCES                             | PERSONAL_RECAP_SOURCES                   | calendarMappings                        |
+| ------------- | ---------------------------------------- | ---------------------------------------- | --------------------------------------- |
+| **File**      | `main.js`                                | `mappings.js`                            | `mappings.js`                           |
+| **Layer**     | Layer 3 (definitions)                    | Layer 3 (fetching)                       | Layer 2 (routing)                       |
+| **Purpose**   | Define WHAT data exists                  | Define HOW to fetch data                 | Define WHERE to route data              |
+| **Contains**  | Metric definitions (keys, types, labels) | Calendar fetch config (envVar, fetchKey) | Calendar routing rules (type, mappings) |
+| **Direction** | N/A (definitions)                        | Calendar → Recap (reading)               | Notion → Calendar (writing)             |
+| **Used by**   | Display, properties, validation          | Calendar aggregation workflows           | Calendar sync workflows                 |
+| **Metrics**   | Full definitions                         | Derived from DATA_SOURCES                | N/A                                     |
 
 ##### DATA_SOURCES: The Source of Truth
 
@@ -627,12 +631,12 @@ const DATA_SOURCES = {
     emoji: "😴",
     type: "calendar",
     apiSource: "google_calendar",
-    
+
     calendars: {
       normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
       sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
     },
-    
+
     // Metrics this source produces
     metrics: {
       earlyWakeupDays: {

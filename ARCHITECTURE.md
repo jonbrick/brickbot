@@ -421,10 +421,10 @@ Single source of truth for all settings, now split by domain for better maintain
 #### Main Configuration Files
 
 - **index.js**: Loads sub-configs, validates environment variables, fails fast on misconfiguration
-- **main.js**: Data sources registry (DATA_SOURCES) with metrics and field types
+- **main.js**: Data sources registry (DATA_SOURCES) with metrics and field types - **single source of truth for all metric definitions** (see [Data Source Configuration Architecture](#data-source-configuration-architecture))
 - **tokens.js**: Token management configuration for all services
 - **notion/index.js**: Aggregates domain-specific Notion configs
-- **calendar/mappings.js**: Declarative calendar ID mappings (NEW!)
+- **calendar/mappings.js**: Contains both Layer 2 calendar routing (`calendarMappings`) and Layer 3 fetch configuration (`PERSONAL_RECAP_SOURCES`) - see [Data Source Configuration Architecture](#data-source-configuration-architecture)
 - **calendar/credentials.js**: OAuth credentials, uses calendar mappings for routing
 - **calendar/color-mappings.js**: Color ID to category mappings for calendar events
 - **integrations/credentials.js**: API credentials, rate limits, retry configuration, date handling
@@ -492,7 +492,9 @@ sleepLatency: { name: "Sleep Latency", type: "number", enabled: false }
 
 #### Declarative Calendar Mappings (`src/config/calendar/mappings.js`) - NEW!
 
-Calendar ID routing is now configuration-driven instead of function-based.
+**Layer 2 Configuration**: Calendar ID routing for syncing Notion records to Google Calendar.
+
+Calendar ID routing is now configuration-driven instead of function-based. This is a **Layer 2 concern** (Notion → Calendar) and is separate from `PERSONAL_RECAP_SOURCES` which handles Layer 3 (Calendar → Recap). See [Data Source Configuration Architecture](#data-source-configuration-architecture) for how these configs relate.
 
 **Mapping Types:**
 
@@ -550,6 +552,225 @@ const calendarId = resolveCalendarId("sleep", record, repository);
 - **Maintainable**: All calendar routing logic in one place
 - **Declarative**: Easy to understand and modify
 - **Future-Ready**: Already configured for 10+ upcoming calendar integrations
+
+#### Data Source Configuration Architecture
+
+Brickbot uses three complementary configuration systems that work together to define data sources, their metrics, and how they're accessed:
+
+1. **DATA_SOURCES** (`main.js`) - Data definitions (WHAT data exists)
+2. **PERSONAL_RECAP_SOURCES** (`mappings.js`) - Fetch configuration (HOW to fetch it)
+3. **calendarMappings** (`mappings.js`) - Calendar routing (Layer 2: Notion → Calendar)
+
+**Relationship Diagram:**
+
+```
+DATA_SOURCES (main.js)
+    │
+    │ defines metrics (WHAT)
+    │ - Metric keys (earlyWakeupDays, sleepHoursTotal, etc.)
+    │ - Types (count, decimal, optionalText)
+    │ - Labels and Notion property mappings
+    │
+    ▼
+getRecapSourceMetrics() ──► PERSONAL_RECAP_SOURCES (mappings.js)
+    │                              │
+    │                              │ defines fetch config (HOW)
+    │                              │ - Calendar IDs (envVar)
+    │                              │ - Fetch keys (earlyWakeup, sleepIn)
+    │                              │ - Display metadata
+    │                              │
+    │                              ▼
+    │                    Calendar Fetching & Aggregation (Layer 3)
+    │
+    └──► Also used by:
+         - Display logic (metric-display.js)
+         - Property building (metric-properties.js)
+         - Validation (FIELD_TYPES)
+
+calendarMappings (mappings.js) ──► Layer 2: Notion → Calendar routing
+    (separate concern - syncing TO calendars)
+```
+
+**Why Three Configs?**
+
+Each config serves a distinct purpose:
+
+- **DATA_SOURCES**: Defines the data model (what metrics exist, their types, labels). This is the **single source of truth** for metric definitions.
+- **PERSONAL_RECAP_SOURCES**: Defines how to fetch calendar data (which calendars to read from, their IDs, fetch keys). It **derives** metric keys from `DATA_SOURCES` to avoid duplication.
+- **calendarMappings**: Defines how to route Notion records to calendars when syncing (Layer 2). This is a separate concern from fetching.
+
+**Comparison Table:**
+
+| Aspect | DATA_SOURCES | PERSONAL_RECAP_SOURCES | calendarMappings |
+|--------|--------------|------------------------|-----------------|
+| **File** | `main.js` | `mappings.js` | `mappings.js` |
+| **Layer** | Layer 3 (definitions) | Layer 3 (fetching) | Layer 2 (routing) |
+| **Purpose** | Define WHAT data exists | Define HOW to fetch data | Define WHERE to route data |
+| **Contains** | Metric definitions (keys, types, labels) | Calendar fetch config (envVar, fetchKey) | Calendar routing rules (type, mappings) |
+| **Direction** | N/A (definitions) | Calendar → Recap (reading) | Notion → Calendar (writing) |
+| **Used by** | Display, properties, validation | Calendar aggregation workflows | Calendar sync workflows |
+| **Metrics** | Full definitions | Derived from DATA_SOURCES | N/A |
+
+##### DATA_SOURCES: The Source of Truth
+
+**Location**: `src/config/main.js`
+
+**Purpose**: Defines all data sources and their metric definitions. This is the **single source of truth** for what metrics exist, their types, labels, and Notion property mappings.
+
+**Structure Example:**
+
+```javascript
+const DATA_SOURCES = {
+  sleep: {
+    id: "sleep",
+    name: "Sleep",
+    emoji: "😴",
+    type: "calendar",
+    apiSource: "google_calendar",
+    
+    calendars: {
+      normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
+      sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
+    },
+    
+    // Metrics this source produces
+    metrics: {
+      earlyWakeupDays: {
+        label: "Early Wakeup - Days",
+        type: "count",
+        notionProperty: "earlyWakeupDays",
+      },
+      sleepInDays: {
+        label: "Sleep In - Days",
+        type: "count",
+        notionProperty: "sleepInDays",
+      },
+      sleepHoursTotal: {
+        label: "Sleep - Hours Total",
+        type: "decimal",
+        notionProperty: "sleepHoursTotal",
+      },
+    },
+  },
+  // ... more sources
+};
+```
+
+**Used For:**
+
+- **Display Logic**: `metric-display.js` uses `getSourceMetrics()` to format and display metrics
+- **Property Building**: `metric-properties.js` uses `getSourceMetricKeys()` to build Notion properties
+- **Validation**: `FIELD_TYPES` validates metric values based on their type definitions
+- **Notion Property Generation**: `generatePersonalRecapProperties()` creates Notion property configs from metric definitions
+
+**Key Functions:**
+
+- `getSourceMetricKeys(sourceId)` - Returns array of metric keys for a source
+- `getSourceMetrics(sourceId)` - Returns full metric configs for a source
+- `generatePersonalRecapProperties()` - Generates Notion property definitions from all sources
+
+##### PERSONAL_RECAP_SOURCES: Fetch Configuration
+
+**Location**: `src/config/calendar/mappings.js`
+
+**Purpose**: Defines which calendars to fetch from and how to aggregate them into Personal Recap. Contains calendar fetch configuration (environment variables, fetch keys) and display metadata.
+
+**Structure Example:**
+
+```javascript
+const PERSONAL_RECAP_SOURCES = {
+  sleep: {
+    id: "sleep",
+    displayName: "Sleep (Early Wakeup + Sleep In)",
+    description: "Sleep tracking from Normal Wake Up and Sleep In calendars",
+    required: false,
+    calendars: [
+      {
+        key: "normalWakeUp",
+        envVar: "NORMAL_WAKE_UP_CALENDAR_ID",
+        required: true,
+        fetchKey: "earlyWakeup", // Maps to calendar event key
+      },
+      {
+        key: "sleepIn",
+        envVar: "SLEEP_IN_CALENDAR_ID",
+        required: true,
+        fetchKey: "sleepIn",
+      },
+    ],
+    isSleepCalendar: true,
+    ignoreAllDayEvents: true,
+    // Note: Metrics are derived from DATA_SOURCES via getRecapSourceMetrics()
+  },
+  // ... more sources
+};
+```
+
+**Used For:**
+
+- **Calendar Fetching**: `buildCalendarFetches()` uses this to determine which calendars to fetch
+- **Aggregation**: `aggregate-calendar-to-notion-personal-recap.js` uses this to know which sources to process
+- **Display**: `getAvailableRecapSources()` uses this for CLI source selection
+- **Success Messages**: `buildSuccessMetrics()` uses derived metrics to format success messages
+
+**Key Functions:**
+
+- `getRecapSourceMetrics(sourceId)` - Derives metric keys from `DATA_SOURCES` (no duplication!)
+- `getAvailableRecapSources()` - Returns available sources with metadata
+- `buildCalendarFetches(selectedSources, accountType)` - Builds fetch configs for selected sources
+
+##### The Bridge: getRecapSourceMetrics()
+
+**Location**: `src/config/calendar/mappings.js`
+
+**Purpose**: Connects `DATA_SOURCES` (definitions) with `PERSONAL_RECAP_SOURCES` (fetch config) by deriving metric keys from the single source of truth.
+
+**Implementation:**
+
+```javascript
+const { getSourceMetricKeys } = require("../main");
+
+function getRecapSourceMetrics(sourceId) {
+  return getSourceMetricKeys(sourceId);
+}
+```
+
+**How It Works:**
+
+1. `PERSONAL_RECAP_SOURCES` defines calendar fetch configuration (which calendars to read)
+2. When metrics are needed, `getRecapSourceMetrics()` calls `getSourceMetricKeys()` from `main.js`
+3. This returns the metric keys defined in `DATA_SOURCES` for that source
+4. No duplication - metrics are defined once in `DATA_SOURCES`, used everywhere
+
+**Benefits:**
+
+- **DRY Principle**: Metrics defined once, used everywhere
+- **Single Source of Truth**: Add a metric to `DATA_SOURCES`, it automatically appears in recap sources
+- **Type Safety**: Reduces risk of typos in metric key names
+- **Maintainability**: Change metric definition in one place, affects all consumers
+
+**Usage Example:**
+
+```javascript
+// In buildSuccessMetrics()
+const sourceMetrics = getRecapSourceMetrics(sourceId);
+// Returns: ['earlyWakeupDays', 'sleepInDays', 'sleepHoursTotal']
+// These keys come from DATA_SOURCES, not hardcoded in PERSONAL_RECAP_SOURCES
+```
+
+**Before This Pattern:**
+
+- `PERSONAL_RECAP_SOURCES` had hardcoded `metrics: [...]` arrays
+- These arrays often didn't match `DATA_SOURCES` definitions
+- Required manual `metricKeyMapping` workaround to fix mismatches
+- Maintenance burden when adding/removing metrics
+
+**After This Pattern:**
+
+- `PERSONAL_RECAP_SOURCES` has no hardcoded metrics
+- Metrics automatically derived from `DATA_SOURCES`
+- No mapping needed - keys match exactly
+- Add metric to `DATA_SOURCES`, it appears everywhere automatically
 
 #### Date Handling Architecture
 

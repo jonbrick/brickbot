@@ -283,56 +283,56 @@ brickbot/
 │   └── tokens/             # Token management
 │
 ├── src/
-│   ├── collectors/       # Layer 1: Data fetching (business logic)
-│   │   ├── collect-github.js       # Layer 1: Integration name
-│   │   ├── collect-oura.js         # Layer 1: Integration name
-│   │   ├── collect-strava.js       # Layer 1: Integration name
-│   │   ├── collect-steam.js        # Layer 1: Integration name
-│   │   ├── collect-withings.js     # Layer 1: Integration name
-│   │   ├── collect-tasks.js        # Layer 3: Notion aggregation
-│   │   └── collect-calendar.js     # Layer 3: Calendar aggregation
+│   ├── collectors/                                         # Layer 1: Data fetching (business logic)
+│   │   ├── collect-github.js                               # Layer 1: Integration name
+│   │   ├── collect-oura.js                                 # Layer 1: Integration name
+│   │   ├── collect-strava.js                               # Layer 1: Integration name
+│   │   ├── collect-steam.js                                # Layer 1: Integration name
+│   │   ├── collect-withings.js                             # Layer 1: Integration name
+│   │   ├── collect-tasks.js                                # Layer 3: Notion aggregation
+│   │   └── collect-calendar.js                             # Layer 3: Calendar aggregation
 │   │
-│   ├── config/           # Configuration (split by domain)
-│   │   ├── calendar/               # Layer 2: Calendar configs
-│   │   │   ├── mappings.js         # Declarative calendar mappings
-│   │   │   ├── credentials.js      # OAuth credentials
-│   │   │   └── color-mappings.js   # Color ID → category mappings
-│   │   ├── integrations/           # Layer 1: Integration configs
-│   │   │   ├── credentials.js      # External API credentials
-│   │   │   └── sources.js          # Sweep source configs (CLI)
-│   │   ├── notion/                 # Layer 1 & 2: Notion configs
-│   │   │   ├── github.js           # Layer 1: GitHub PRs config (60 lines)
-│   │   │   ├── index.js            # Aggregator (133 lines)
-│   │   │   ├── oura.js             # Layer 1: Oura sleep config (85 lines)
-│   │   │   ├── personal-recap.js   # Layer 3: Personal recap config (~237 lines)
-│   │   │   ├── strava.js           # Layer 1: Strava workouts config (57 lines)
-│   │   │   ├── steam.js            # Layer 1: Steam gaming config (51 lines)
-│   │   │   ├── task-categories.js  # Task category mappings
-│   │   │   └── withings.js         # Layer 1: Withings config (59 lines)
-│   │   ├── index.js                # Main config loader & validator
-│   │   ├── main.js                 # Data sources registry
-│   │   └── tokens.js               # Token management config
+│   ├── config/                                           # Configuration (split by domain)
+│   │   ├── calendar/                                       # Layer 2: Calendar configs
+│   │   │   ├── mappings.js                                 # Declarative calendar mappings
+│   │   │   ├── credentials.js                              # OAuth credentials
+│   │   │   └── color-mappings.js                           # Color ID → category mappings
+│   │   ├── integrations/                                   # Layer 1: Integration configs
+│   │   │   ├── credentials.js                              # External API credentials
+│   │   │   └── sources.js                                  # Sweep source configs (CLI)
+│   │   ├── notion/                                         # Layer 1 & 2: Notion configs
+│   │   │   ├── github.js                                   # Layer 1: GitHub PRs config (60 lines)
+│   │   │   ├── index.js                                    # Aggregator (133 lines)
+│   │   │   ├── oura.js                                     # Layer 1: Oura sleep config (85 lines)
+│   │   │   ├── personal-recap.js                           # Layer 3: Personal recap config (~237 lines)
+│   │   │   ├── strava.js                                   # Layer 1: Strava workouts config (57 lines)
+│   │   │   ├── steam.js                                    # Layer 1: Steam gaming config (51 lines)
+│   │   │   ├── task-categories.js                          # Task category mappings
+│   │   │   └── withings.js                                 # Layer 1: Withings config (59 lines)
+│   │   ├── index.js                                        # Main config loader & validator
+│   │   ├── main.js                                         # Data sources registry
+│   │   └── tokens.js                                       # Token management config
 │   │
-│   ├── databases/        # Layer 1: Integration names (API → Notion)
-│   │   ├── GitHubDatabase.js         # Layer 1: GitHub PRs database
-│   │   ├── NotionDatabase.js         # Base class with generic CRUD (587 lines)
-│   │   ├── OuraDatabase.js           # Layer 1: Oura sleep database
-│   │   ├── PersonalRecapDatabase.js  # Layer 3: Personal recap database (domain-level)
-│   │   ├── StravaDatabase.js         # Layer 1: Strava workouts database
-│   │   ├── SteamDatabase.js          # Layer 1: Steam gaming database
-│   │   └── WithingsDatabase.js       # Layer 1: Withings body weight database
+│   ├── databases/                                          # Layer 1: Integration names (API → Notion)
+│   │   ├── GitHubDatabase.js                               # Layer 1: GitHub PRs database
+│   │   ├── NotionDatabase.js                               # Base class with generic CRUD (587 lines)
+│   │   ├── OuraDatabase.js                                 # Layer 1: Oura sleep database
+│   │   ├── PersonalRecapDatabase.js                        # Layer 3: Personal recap database (domain-level)
+│   │   ├── StravaDatabase.js                               # Layer 1: Strava workouts database
+│   │   ├── SteamDatabase.js                                # Layer 1: Steam gaming database
+│   │   └── WithingsDatabase.js                             # Layer 1: Withings body weight database
 │   │
-│   ├── services/         # Layer 1: API clients (thin wrappers)
-│   │   ├── GitHubService.js          # Layer 1: Integration API
-│   │   ├── GoogleCalendarService.js  # Layer 2: Calendar operations
-│   │   ├── NotionService.js          # Thin wrapper
-│   │   ├── OuraService.js            # Layer 1: Integration API
-│   │   ├── StravaService.js          # Layer 1: Integration API
-│   │   ├── SteamService.js           # Layer 1: Integration API
+│   ├── services/                                           # Layer 1: API clients (thin wrappers)
+│   │   ├── GitHubService.js                                # Layer 1: Integration API
+│   │   ├── GoogleCalendarService.js                        # Layer 2: Calendar operations
+│   │   ├── NotionService.js                                # Thin wrapper
+│   │   ├── OuraService.js                                  # Layer 1: Integration API
+│   │   ├── StravaService.js                                # Layer 1: Integration API
+│   │   ├── SteamService.js                                 # Layer 1: Integration API
 │   │   ├── TokenService.js
-│   │   └── WithingsService.js        # Layer 1: Integration API
+│   │   └── WithingsService.js                              # Layer 1: Integration API
 │   │
-│   ├── transformers/     # Data transformation layer
+│   ├── transformers/                                       # Data transformation layer
 │   │   ├── github-to-notion-github.js                      # Layer 1: Integration → Notion
 │   │   ├── oura-to-notion-oura.js                          # Layer 1: Integration → Notion
 │   │   ├── strava-to-notion-strava.js                      # Layer 1: Integration → Notion
@@ -345,17 +345,17 @@ brickbot/
 │   │   ├── notion-oura-to-calendar-sleep.js                # Layer 2: Oura → Sleep
 │   │   └── transform-calendar-to-notion-personal-recap.js  # Layer 3: Calendar → Notion Personal Recap
 │   │
-│   ├── utils/                            # Shared utilities
-│   │   ├── async.js                      # Async helpers (delay, rate limiting)
-│   │   ├── cli.js                        # CLI prompts & formatting
-│   │   ├── date.js                       # Date parsing & manipulation
-│   │   ├── calendar-mapper.js            # NEW: Generic calendar ID resolver
-│   │   ├── formatting.js                 # Display formatting
-│   │   ├── transformers.js               # Transformer utilities (property filtering)
-│   │   ├── personal-recap-properties.js  # Property builder with validation
-│   │   └── validation.js                 # Input validation
+│   ├── utils/                                              # Shared utilities
+│   │   ├── async.js                                        # Async helpers (delay, rate limiting)
+│   │   ├── cli.js                                          # CLI prompts & formatting
+│   │   ├── date.js                                         # Date parsing & manipulation
+│   │   ├── calendar-mapper.js                              # NEW: Generic calendar ID resolver
+│   │   ├── formatting.js                                   # Display formatting
+│   │   ├── transformers.js                                 # Transformer utilities (property filtering)
+│   │   ├── personal-recap-properties.js                    # Property builder with validation
+│   │   └── validation.js                                   # Input validation
 │   │
-│   └── workflows/        # Sync workflows with de-duplication
+│   └── workflows/                                          # Sync workflows with de-duplication
 │       ├── aggregate-calendar-to-notion-personal-recap.js  # Layer 3: Calendar → Notion Personal Recap
 │       ├── BaseWorkflow.js                                 # Reusable batch logic
 │       ├── github-to-notion-github.js                      # Layer 1: Integration → Notion

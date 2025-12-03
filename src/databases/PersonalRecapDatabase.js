@@ -6,8 +6,8 @@
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const {
-  buildPersonalRecapProperties,
-} = require("../utils/personal-recap-properties");
+  buildMetricProperties,
+} = require("../utils/metric-properties");
 
 class PersonalRecapDatabase extends NotionDatabase {
   /**
@@ -67,7 +67,7 @@ class PersonalRecapDatabase extends NotionDatabase {
     const props = config.notion.properties.personalRecap;
 
     // Build properties with validation - throws clear error if config is missing
-    const properties = buildPersonalRecapProperties(
+    const properties = buildMetricProperties(
       summaryData,
       props,
       selectedCalendars

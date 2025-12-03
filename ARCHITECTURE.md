@@ -933,9 +933,10 @@ Common functionality is extracted into shared utilities to maintain consistency 
 - `convertUTCToEasternDate()` - Timezone conversion with DST handling
 - Centralized date handling logic for consistency across integrations
 
-**`src/utils/personal-recap-properties.js`**:
+**`src/utils/metric-properties.js`**:
 
-- `buildPersonalRecapProperties()` - Builds Notion properties object with validation
+- `buildMetricProperties()` - Builds Notion properties object with validation (config-driven)
+- Uses data source registry to automatically build properties from summary data
 - Validates all property configurations exist before use
 - Throws clear error messages listing missing properties (e.g., "Missing property configuration(s): bodyWeightAverage")
 - Prevents cryptic "undefined is not a property" errors from Notion API

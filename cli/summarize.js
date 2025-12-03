@@ -14,10 +14,10 @@ require("dotenv").config();
 const inquirer = require("inquirer");
 const {
   aggregateCalendarDataForWeek: summarizeCalendarWeek,
-} = require("../src/workflows/aggregate-calendar-to-notion-recap");
+} = require("../src/workflows/aggregate-calendar-to-notion-personal-recap");
 const {
   summarizeWeek: summarizeNotionWeek,
-} = require("../src/workflows/notion-tasks-to-notion-recap");
+} = require("../src/workflows/notion-tasks-to-notion-personal-recap");
 const {
   selectWeek,
   showSuccess,

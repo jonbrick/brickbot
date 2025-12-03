@@ -14,7 +14,7 @@
  * Data Flow:
  * - Input: Week number, year, selected calendar sources (optional)
  * - Fetches: Calendar events from Google Calendar API (domain-named calendars)
- * - Transforms: Events → Weekly metrics (via transform-calendar-to-notion-recap.js)
+ * - Transforms: Events → Weekly metrics (via transform-calendar-to-notion-personal-recap.js)
  * - Outputs: Updates Personal Recap database in Notion
  * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games) NOT integration names
  *
@@ -29,7 +29,7 @@
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");
-const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-notion-recap");
+const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-notion-personal-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
@@ -332,7 +332,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Calculate summary (only for selected calendars)
-    // Note: tasks are handled by notion-tasks-to-notion-recap workflow
+    // Note: tasks are handled by notion-tasks-to-notion-personal-recap workflow
     const summary = transformCalendarEventsToRecapMetrics(
       calendarEvents,
       startDate,

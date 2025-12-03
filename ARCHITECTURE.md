@@ -78,8 +78,8 @@ Games Calendar → aggregate → Personal Recap
 
 **Files in Layer 3**:
 
-- Recap Workflows: `aggregate-calendar-to-notion-recap.js`
-- Recap Transformers: `transform-calendar-to-notion-recap.js`
+- Recap Workflows: `aggregate-calendar-to-notion-personal-recap.js`
+- Recap Transformers: `transform-calendar-to-notion-personal-recap.js`
 
 **Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `games`)
 
@@ -226,7 +226,7 @@ brickbot/
 │   │   ├── notion-steam-to-calendar-games.js      # LAYER 2: Steam → Games
 │   │   ├── notion-withings-to-calendar-bodyweight.js # LAYER 2: Withings → Body Weight
 │   │   ├── notion-oura-to-calendar-sleep.js      # LAYER 2: Oura → Sleep
-│   │   └── transform-calendar-to-notion-recap.js   # LAYER 3: Calendar → Notion Recap
+│   │   └── transform-calendar-to-notion-personal-recap.js   # LAYER 3: Calendar → Notion Personal Recap
 │   │
 │   ├── workflows/        # Sync workflows with de-duplication
 │   │   ├── BaseWorkflow.js                  # NEW: Reusable batch logic (190 lines)
@@ -240,8 +240,8 @@ brickbot/
 │   │   ├── notion-strava-to-calendar-workouts.js   # LAYER 2: Strava → Workouts
 │   │   ├── notion-steam-to-calendar-games.js      # LAYER 2: Steam → Games
 │   │   ├── notion-withings-to-calendar-bodyweight.js # LAYER 2: Withings → Body Weight
-│   │   ├── aggregate-calendar-to-notion-recap.js   # LAYER 3: Calendar → Notion Recap
-│   │   └── notion-tasks-to-notion-recap.js   # LAYER 3: Notion Tasks → Notion Recap
+│   │   ├── aggregate-calendar-to-notion-personal-recap.js   # LAYER 3: Calendar → Notion Personal Recap
+│   │   └── notion-tasks-to-notion-personal-recap.js   # LAYER 3: Notion Tasks → Notion Personal Recap
 │   │
 │   └── utils/           # Shared utilities
 │       ├── async.js               # Async helpers (delay, rate limiting)
@@ -614,18 +614,18 @@ Consistent naming patterns make the codebase more intuitive and self-documenting
 
 ### Layer-Aware File Naming Patterns
 
-| Layer           | File Type             | Naming Pattern                                 | Example                                                        | Uses Name From          |
-| --------------- | --------------------- | ---------------------------------------------- | -------------------------------------------------------------- | ----------------------- |
-| **Layer 1**     | Collectors            | `collect-[integration].js`                     | `collect-withings.js`, `collect-strava.js`                     | Integration             |
-| **Layer 1**     | API Transformers      | `[integration]-to-notion-[integration].js`     | `withings-to-notion-withings.js`, `strava-to-notion-strava.js` | Integration             |
-| **Layer 1**     | API Workflows         | `[integration]-to-notion-[integration].js`     | `withings-to-notion-withings.js`                               | Integration             |
-| **Layer 1**     | Databases             | `[Integration]Database.js`                     | `WithingsDatabase.js`, `StravaDatabase.js`                     | Integration             |
-| **Layer 2**     | Calendar Transformers | `notion-[integration]-to-calendar-[domain].js` | `notion-withings-to-calendar-bodyweight.js`                    | Integration → Domain    |
-| **Layer 2**     | Calendar Workflows    | `notion-[integration]-to-calendar-[domain].js` | `notion-withings-to-calendar-bodyweight.js`                    | Integration → Domain    |
-| **Layer 3**     | Recap Workflows       | `aggregate-calendar-to-notion-recap.js`        | `aggregate-calendar-to-notion-recap.js`                        | Calendar → Notion Recap |
-| **Layer 3**     | Recap Transformers    | `transform-calendar-to-notion-recap.js`        | `transform-calendar-to-notion-recap.js`                        | Calendar → Notion Recap |
-| **Cross-Layer** | Services              | `[Provider]Service.js`                         | `OuraService.js`, `GoogleCalendarService.js`                   | Provider                |
-| **Cross-Layer** | Utils                 | `[purpose]-utils.js`                           | `date-utils.js`, `calendar-helpers.js`                         | Purpose-based           |
+| Layer           | File Type             | Naming Pattern                                   | Example                                                        | Uses Name From                   |
+| --------------- | --------------------- | ------------------------------------------------ | -------------------------------------------------------------- | -------------------------------- |
+| **Layer 1**     | Collectors            | `collect-[integration].js`                       | `collect-withings.js`, `collect-strava.js`                     | Integration                      |
+| **Layer 1**     | API Transformers      | `[integration]-to-notion-[integration].js`       | `withings-to-notion-withings.js`, `strava-to-notion-strava.js` | Integration                      |
+| **Layer 1**     | API Workflows         | `[integration]-to-notion-[integration].js`       | `withings-to-notion-withings.js`                               | Integration                      |
+| **Layer 1**     | Databases             | `[Integration]Database.js`                       | `WithingsDatabase.js`, `StravaDatabase.js`                     | Integration                      |
+| **Layer 2**     | Calendar Transformers | `notion-[integration]-to-calendar-[domain].js`   | `notion-withings-to-calendar-bodyweight.js`                    | Integration → Domain             |
+| **Layer 2**     | Calendar Workflows    | `notion-[integration]-to-calendar-[domain].js`   | `notion-withings-to-calendar-bodyweight.js`                    | Integration → Domain             |
+| **Layer 3**     | Recap Workflows       | `aggregate-calendar-to-notion-personal-recap.js` | `aggregate-calendar-to-notion-personal-recap.js`               | Calendar → Notion Personal Recap |
+| **Layer 3**     | Recap Transformers    | `transform-calendar-to-notion-personal-recap.js` | `transform-calendar-to-notion-personal-recap.js`               | Calendar → Notion Personal Recap |
+| **Cross-Layer** | Services              | `[Provider]Service.js`                           | `OuraService.js`, `GoogleCalendarService.js`                   | Provider                         |
+| **Cross-Layer** | Utils                 | `[purpose]-utils.js`                             | `date-utils.js`, `calendar-helpers.js`                         | Purpose-based                    |
 
 **Key Rules**:
 
@@ -850,8 +850,8 @@ OuraDatabase (Notion) → notion-oura-to-calendar-sleep.js → Sleep Calendar
 **Data Flow:**
 
 ```
-Body Weight Calendar → aggregate-calendar-to-notion-recap.js → transform-calendar-to-notion-recap.js → Personal Recap (bodyWeight metrics)
-Workouts Calendar → aggregate-calendar-to-notion-recap.js → transform-calendar-to-notion-recap.js → Personal Recap (workout metrics)
+Body Weight Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (bodyWeight metrics)
+Workouts Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (workout metrics)
 ```
 
 **Key Point**: All naming uses **domain names** at this layer. Integration source is no longer relevant.

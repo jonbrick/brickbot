@@ -5,7 +5,7 @@
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCompletedTasks } = require("../collectors/collect-tasks");
-const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-notion-recap");
+const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-notion-personal-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");

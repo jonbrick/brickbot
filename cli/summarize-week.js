@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Summarize CLI
+ * Summarize Week CLI
  * Command-line interface for summarizing calendar events and database records into Personal Recap database
  *
  * Data Sources:
@@ -33,8 +33,8 @@ const {
 const {
   DATA_SOURCES,
   getAvailableSources,
-} = require("../src/config/data-sources");
-const { getAvailableRecapSources } = require("../src/config/calendar-mappings");
+} = require("../src/config/main");
+const { getAvailableRecapSources } = require("../src/config/calendar/mappings");
 
 /**
  * Select action type (display only or update)

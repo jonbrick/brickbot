@@ -3,7 +3,7 @@
  * Generic resolver for calendar ID mappings
  */
 
-const calendarMappings = require("../config/calendar-mappings");
+const calendarMappings = require("../config/calendar/mappings");
 
 /**
  * Resolve calendar ID based on mapping configuration

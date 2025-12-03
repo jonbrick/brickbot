@@ -1,11 +1,11 @@
 /**
- * Sweep CLI Source Registry
- * Configuration for data sources used in sweep-to-notion and sweep-to-calendar CLIs
+ * Integration CLI Source Registry
+ * Configuration for data sources used in collect-data and update-calendar CLIs
  */
 
 /**
- * Sweep source configurations
- * Each source defines its metadata and handler information for both sweep modes
+ * Integration source configurations
+ * Each source defines its metadata and handler information for both collection modes
  */
 const SWEEP_SOURCES = {
   oura: {
@@ -198,7 +198,7 @@ const SWEEP_SOURCES = {
 };
 
 /**
- * Get sweep sources for a specific mode
+ * Get integration sources for a specific mode
  * @param {string} mode - 'toNotion' or 'toCalendar'
  * @returns {Array} Array of source configs with enabled flag for the mode
  */
@@ -227,3 +227,4 @@ module.exports = {
   getSweepSources,
   getSourceHandler,
 };
+

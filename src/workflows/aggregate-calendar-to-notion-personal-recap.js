@@ -39,7 +39,7 @@ const {
   getRecapSourceConfig,
   buildCalendarFetches,
   PERSONAL_RECAP_SOURCES
-} = require("../config/calendar-mappings");
+} = require("../config/calendar/mappings");
 
 /**
  * Format a metric key and value into human-readable display text

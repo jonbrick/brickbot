@@ -352,8 +352,8 @@ brickbot/
 │       └── validation.js          # Input validation
 │
 ├── cli/                  # User-facing command-line scripts
-│   ├── sweep-to-notion.js
-│   ├── sweep-to-calendar.js
+│   ├── collect-data.js
+│   ├── update-calendar.js
 │   ├── sweep-notes.js
 │   ├── week/            # Weekly analysis pipeline
 │   └── tokens/          # Token management
@@ -965,7 +965,7 @@ Workouts Calendar → aggregate-calendar-to-notion-personal-recap.js → transfo
 ### Weekly Analysis Pipeline
 
 1. **pull-data.js**: Query all Notion databases for week, fetch calendar events, save to `data/weekly/`
-2. **summarize.js**: Generate AI summaries, save to `data/summaries/`
+2. **summarize-week.js**: Generate AI summaries, save to `data/summaries/`
 3. **retro.js**: Generate retrospective sections, save to `data/retros/`
 4. **recap.js**: Generate final recap, save to Notion
 
@@ -1286,7 +1286,7 @@ async function syncNewToNotion(items) {
 
 #### 8. Update CLI Scripts
 
-Add new source to `cli/sweep-to-notion.js` selection menu.
+Add new source to `cli/collect-data.js` selection menu.
 
 #### 9. Add Environment Variables
 
@@ -1333,7 +1333,7 @@ The Withings body weight integration is fully implemented and follows the same p
 - ✅ `src/workflows/withings-to-notion-withings.js` - Sync workflow with de-duplication by Measurement ID
 - ✅ `src/transformers/notion-withings-to-calendar-bodyweight.js` - Transform to all-day calendar events
 - ✅ `src/workflows/notion-withings-to-calendar-bodyweight.js` - Calendar sync workflow
-- ✅ CLI sync modes in `cli/sweep-to-notion.js` and `cli/sweep-to-calendar.js`
+- ✅ CLI sync modes in `cli/collect-data.js` and `cli/update-calendar.js`
 - ✅ Token management in `cli/tokens/setup.js` and `refresh.js`
 
 **Key Features**:

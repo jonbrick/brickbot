@@ -7,10 +7,12 @@
 require("dotenv").config();
 
 const notion = require("./notion/index");
-const sources = require("./sources");
+const integrations = require("./integrations/sources");
+const sources = require("./integrations/credentials");
 const tokens = require("./tokens");
-const calendar = require("./calendar");
-const dataSources = require("./data-sources");
+const calendar = require("./calendar/credentials");
+const main = require("./main");
+const dataSources = require("./main");
 
 /**
  * Validate that all required environment variables are present
@@ -142,10 +144,12 @@ try {
 
 module.exports = {
   notion,
+  integrations,
   sources,
   tokens,
   calendar,
-  dataSources,
+  main,
+  dataSources, // Backward compat alias
   env: {
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: process.env.NODE_ENV === "production",

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Notion to Calendar Sync CLI
+ * Update Calendar CLI
  * Sync sleep and workout records from Notion to Google Calendar
  */
 

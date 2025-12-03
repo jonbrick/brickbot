@@ -59,7 +59,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 
 **Flow**:
 
-1. **CLI** (`cli/sweep-to-notion.js`):
+1. **CLI** (`cli/collect-data.js`):
    - Prompts user for date range and source
    - Calls collector with date range
 
@@ -96,7 +96,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 
 **Flow**:
 
-1. **CLI** (`cli/sweep-to-calendar.js`):
+1. **CLI** (`cli/update-calendar.js`):
    - Prompts user for date range and database
    - Calls calendar sync workflow
 

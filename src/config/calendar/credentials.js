@@ -3,8 +3,8 @@
  * OAuth credentials and calendar mapping utilities
  */
 
-const calendarMappings = require("./calendar-mappings");
-const { resolveCalendarId, getCalendarIds, hasCalendarsConfigured } = require("../utils/calendar-mapper");
+const calendarMappings = require("./mappings");
+const { resolveCalendarId, getCalendarIds, hasCalendarsConfigured } = require("../../utils/calendar-mapper");
 
 // Calendar IDs from environment variables (for backward compatibility)
 const calendars = {
@@ -133,3 +133,4 @@ module.exports = {
   getCalendarIds,
   hasCalendarsConfigured,
 };
+

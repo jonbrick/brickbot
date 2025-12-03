@@ -22,7 +22,7 @@
  */
 
 const config = require("../config");
-const { mapNotionCalendarToId } = require("../config/calendar");
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 
 /**
  * Format sleep stages breakdown for event description
@@ -112,17 +112,12 @@ function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
     config.notion.getPropertyName(props.efficiency)
   );
 
-  // Extract Google Calendar field from Notion and map to calendar ID
-  const googleCalendarField = sleepRepo.extractProperty(
-    sleepRecord,
-    config.notion.getPropertyName(props.googleCalendar)
-  );
-  const calendarId = mapNotionCalendarToId(googleCalendarField);
+  // Get sleep calendar ID using centralized mapper (automatically extracts Google Calendar property)
+  const calendarId = resolveCalendarId('sleep', sleepRecord, sleepRepo);
 
-  // Fallback to default calendar if mapping fails
   if (!calendarId) {
     throw new Error(
-      `Invalid Google Calendar field value: ${googleCalendarField}. Expected "Normal Wake Up" or "Sleep In".`
+      'Sleep calendar ID not configured. Set NORMAL_WAKE_UP_CALENDAR_ID and/or SLEEP_IN_CALENDAR_ID in .env file.'
     );
   }
 

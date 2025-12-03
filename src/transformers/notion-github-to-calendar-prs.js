@@ -22,7 +22,7 @@
  */
 
 const config = require("../config");
-const { mapPRToCalendarId } = require("../config/calendar");
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 const { formatDateOnly } = require("../utils/date");
 
 /**
@@ -131,8 +131,8 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
     prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.projectType)) ||
     "Personal";
 
-  // Get calendar ID based on project type
-  const calendarId = mapPRToCalendarId(projectType);
+  // Get calendar ID using centralized mapper (automatically extracts Project Type property)
+  const calendarId = resolveCalendarId('github', prRecord, prRepo);
 
   if (!calendarId) {
     const calendarType = projectType === "Work" ? "Work" : "Personal";

@@ -7,7 +7,7 @@ const {
   getSweepSources,
   getSourceHandler,
   SWEEP_SOURCES,
-} = require("../config/sweep-sources");
+} = require("../config/integrations/sources");
 const config = require("../config");
 
 /**

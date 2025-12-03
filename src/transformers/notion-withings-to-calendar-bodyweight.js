@@ -22,7 +22,7 @@
  */
 
 const config = require("../config");
-const { mapWithingsToCalendarId } = require("../config/calendar");
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 const { formatDateOnly } = require("../utils/date");
 
 /**
@@ -94,8 +94,8 @@ function transformBodyWeightToCalendarEvent(weightRecord, bodyWeightRepo) {
     config.notion.getPropertyName(props.date)
   );
 
-  // Get body weight calendar ID
-  const calendarId = mapWithingsToCalendarId();
+  // Get body weight calendar ID using centralized mapper
+  const calendarId = resolveCalendarId('bodyWeight', weightRecord, bodyWeightRepo);
 
   if (!calendarId) {
     throw new Error(

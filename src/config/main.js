@@ -581,7 +581,7 @@ const DATA_SOURCES = {
 
 /**
  * Map display field type to Notion property type
- * @param {string} displayType - Field type from data-sources.js ('count', 'decimal', 'text', 'optionalText')
+ * @param {string} displayType - Field type from main.js ('count', 'decimal', 'text', 'optionalText')
  * @returns {string} Notion property type ('number', 'text')
  */
 function mapToNotionType(displayType) {

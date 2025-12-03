@@ -22,7 +22,7 @@
  */
 
 const config = require("../config");
-const { mapSteamToCalendarId } = require("../config/calendar");
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 const { buildDateTime } = require("../utils/date");
 
 /**
@@ -116,8 +116,8 @@ function transformSteamToCalendarEvent(steamRecord, steamRepo) {
     config.notion.getPropertyName(props.endTime)
   );
 
-  // Get video games calendar ID
-  const calendarId = mapSteamToCalendarId();
+  // Get video games calendar ID using centralized mapper
+  const calendarId = resolveCalendarId('steam', steamRecord, steamRepo);
 
   if (!calendarId) {
     throw new Error(

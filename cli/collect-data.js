@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * Data Collection CLI
+ * Collect Data CLI
  * Tool to fetch and display data from external sources (Oura, Strava, etc.)
+ * and sync to Notion
  */
 
 require("dotenv").config();

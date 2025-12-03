@@ -5,7 +5,7 @@
  */
 
 const config = require('../config');
-const { getSourceMetricKeys } = require('../config/data-sources');
+const { getSourceMetricKeys } = require('../config/main');
 
 /**
  * Build properties object for Personal Recap database update

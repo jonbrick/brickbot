@@ -31,7 +31,7 @@
  * ```
  */
 
-const { PERSONAL_RECAP_SOURCES } = require("../config/calendar-mappings");
+const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
 
 /**
  * Get 3-letter day abbreviation from a date string (YYYY-MM-DD)

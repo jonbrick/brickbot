@@ -3,12 +3,12 @@
  * Config-driven display functions for metrics using the data source registry
  */
 
-const { DATA_SOURCES, FIELD_TYPES, getSourceMetrics: getMetrics, getSourceMetricKeys: getKeys } = require('../config/data-sources');
+const { DATA_SOURCES, FIELD_TYPES, getSourceMetrics: getMetrics, getSourceMetricKeys: getKeys } = require('../config/main');
 const { showError } = require('./cli');
 
 /**
  * Display metrics for a source in a standardized way
- * Replaces all the repetitive if/console.log blocks in summarize.js
+ * Replaces all the repetitive if/console.log blocks in summarize-week.js
  * 
  * @param {Object} result - Summary result object with weekNumber, year, and summary
  * @param {string} selectedSource - Selected source key ("all" or specific source ID)
@@ -59,7 +59,7 @@ function displaySourceMetrics(result, selectedSource = 'all') {
 
 /**
  * Collect metrics for a source (for showSummary)
- * Replaces the huge if-block that builds summaryData in summarize.js
+ * Replaces the huge if-block that builds summaryData in summarize-week.js
  * 
  * @param {Object} result - Summary result object
  * @param {string} selectedSource - Selected source key ("all" or specific source ID)

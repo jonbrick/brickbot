@@ -1,11 +1,11 @@
 /**
  * Personal Recap Database Configuration
- * Properties are generated dynamically from data-sources.js to ensure consistency
+ * Properties are generated dynamically from main.js to ensure consistency
  */
 
-const { generatePersonalRecapProperties } = require("../data-sources");
+const { generatePersonalRecapProperties } = require("../main");
 
-// Generate properties dynamically from data-sources.js
+// Generate properties dynamically from main.js
 const properties = generatePersonalRecapProperties();
 
 // Generate fieldMappings automatically (identity mappings)

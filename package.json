@@ -4,9 +4,9 @@
   "description": "Personal Oura sleep data collection to Notion",
   "main": "src/index.js",
   "scripts": {
-    "collect": "node cli/sweep-to-notion.js",
-    "update": "node cli/sweep-to-calendar.js",
-    "summarize": "node cli/summarize.js",
+    "collect": "node cli/collect-data.js",
+    "update": "node cli/update-calendar.js",
+    "summarize": "node cli/summarize-week.js",
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",
     "tokens:setup": "node cli/tokens/setup.js",

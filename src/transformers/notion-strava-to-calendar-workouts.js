@@ -22,7 +22,7 @@
  */
 
 const config = require("../config");
-const { mapStravaToCalendarId } = require("../config/calendar");
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 const { buildDateTime } = require("../utils/date");
 
 /**
@@ -88,12 +88,12 @@ function transformWorkoutToCalendarEvent(workoutRecord, workoutRepo) {
     workoutRepo.extractProperty(workoutRecord, config.notion.getPropertyName(props.type)) ||
     "Workout";
 
-  // Get fitness calendar ID
-  const calendarId = mapStravaToCalendarId();
+  // Get workouts calendar ID using centralized mapper
+  const calendarId = resolveCalendarId('workouts', workoutRecord, workoutRepo);
 
   if (!calendarId) {
     throw new Error(
-      "Fitness calendar ID not configured. Set WORKOUT_CALENDAR_ID in .env file."
+      "Workouts calendar ID not configured. Set WORKOUT_CALENDAR_ID in .env file."
     );
   }
 

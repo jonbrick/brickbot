@@ -65,12 +65,12 @@ const DATA_SOURCES = {
     // Metrics this source produces
     metrics: {
       earlyWakeupDays: {
-        label: "Early Wakeup Days",
+        label: "Early Wakeup - Days",
         type: "count",
         notionProperty: "earlyWakeupDays",
       },
       sleepInDays: {
-        label: "Sleep In Days",
+        label: "Sleep In - Days",
         type: "count",
         notionProperty: "sleepInDays",
       },
@@ -96,12 +96,12 @@ const DATA_SOURCES = {
 
     metrics: {
       soberDays: {
-        label: "Sober Days",
+        label: "Sober - Days",
         type: "count",
         notionProperty: "soberDays",
       },
       drinkingDays: {
-        label: "Drinking Days",
+        label: "Drinking - Days",
         type: "count",
         notionProperty: "drinkingDays",
       },
@@ -126,7 +126,7 @@ const DATA_SOURCES = {
 
     metrics: {
       workoutDays: {
-        label: "Workout Days",
+        label: "Workout - Days",
         type: "count",
         notionProperty: "workoutDays",
       },
@@ -157,7 +157,7 @@ const DATA_SOURCES = {
     calendars: { meditation: process.env.MEDITATION_CALENDAR_ID },
     metrics: {
       meditationDays: {
-        label: "Meditation Days",
+        label: "Meditation - Days",
         type: "count",
         notionProperty: "meditationDays",
       },
@@ -188,7 +188,7 @@ const DATA_SOURCES = {
     calendars: { reading: process.env.READING_CALENDAR_ID },
     metrics: {
       readingDays: {
-        label: "Reading Days",
+        label: "Reading - Days",
         type: "count",
         notionProperty: "readingDays",
       },
@@ -218,7 +218,11 @@ const DATA_SOURCES = {
     apiSource: "google_calendar",
     calendars: { art: process.env.ART_CALENDAR_ID },
     metrics: {
-      artDays: { label: "Art Days", type: "count", notionProperty: "artDays" },
+      artDays: {
+        label: "Art - Days",
+        type: "count",
+        notionProperty: "artDays",
+      },
       artSessions: {
         label: "Art - Sessions",
         type: "count",
@@ -246,7 +250,7 @@ const DATA_SOURCES = {
     calendars: { music: process.env.MUSIC_CALENDAR_ID },
     metrics: {
       musicDays: {
-        label: "Music Days",
+        label: "Music - Days",
         type: "count",
         notionProperty: "musicDays",
       },
@@ -277,7 +281,7 @@ const DATA_SOURCES = {
     calendars: { coding: process.env.CODING_CALENDAR_ID },
     metrics: {
       codingDays: {
-        label: "Coding Days",
+        label: "Coding - Days",
         type: "count",
         notionProperty: "codingDays",
       },
@@ -308,7 +312,7 @@ const DATA_SOURCES = {
     calendars: { videoGames: process.env.VIDEO_GAMES_CALENDAR_ID },
     metrics: {
       videoGamesDays: {
-        label: "Video Games Days",
+        label: "Video Games - Days",
         type: "count",
         notionProperty: "videoGamesDays",
       },
@@ -339,12 +343,12 @@ const DATA_SOURCES = {
     calendars: { personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID },
     metrics: {
       prsSessions: {
-        label: "Personal PRs - Sessions",
+        label: "PRs - Sessions",
         type: "count",
         notionProperty: "prsSessions",
       },
       prsDetails: {
-        label: "Personal PRs - Details",
+        label: "PRs - Details",
         type: "optionalText",
         notionProperty: "prsDetails",
       },
@@ -500,12 +504,12 @@ const DATA_SOURCES = {
       personal: {
         metrics: {
           personalTasksComplete: {
-            label: "Personal Tasks Complete",
+            label: "Personal - Tasks Complete",
             type: "count",
             notionProperty: "personalTasksComplete",
           },
           personalTaskDetails: {
-            label: "Personal Task - Details",
+            label: "Personal - Task Details",
             type: "optionalText",
             notionProperty: "personalTaskDetails",
           },
@@ -514,12 +518,12 @@ const DATA_SOURCES = {
       interpersonal: {
         metrics: {
           interpersonalTasksComplete: {
-            label: "Interpersonal Tasks Complete",
+            label: "Interpersonal - Tasks Complete",
             type: "count",
             notionProperty: "interpersonalTasksComplete",
           },
           interpersonalTaskDetails: {
-            label: "Interpersonal Task - Details",
+            label: "Interpersonal - Task Details",
             type: "optionalText",
             notionProperty: "interpersonalTaskDetails",
           },
@@ -528,12 +532,12 @@ const DATA_SOURCES = {
       home: {
         metrics: {
           homeTasksComplete: {
-            label: "Home Tasks Complete",
+            label: "Home - Tasks Complete",
             type: "count",
             notionProperty: "homeTasksComplete",
           },
           homeTaskDetails: {
-            label: "Home Task - Details",
+            label: "Home - Task Details",
             type: "optionalText",
             notionProperty: "homeTaskDetails",
           },
@@ -542,12 +546,12 @@ const DATA_SOURCES = {
       physicalHealth: {
         metrics: {
           physicalHealthTasksComplete: {
-            label: "Physical Health Tasks Complete",
+            label: "Physical Health - Tasks Complete",
             type: "count",
             notionProperty: "physicalHealthTasksComplete",
           },
           physicalHealthTaskDetails: {
-            label: "Physical Health Task - Details",
+            label: "Physical Health - Task Details",
             type: "optionalText",
             notionProperty: "physicalHealthTaskDetails",
           },
@@ -556,12 +560,12 @@ const DATA_SOURCES = {
       mentalHealth: {
         metrics: {
           mentalHealthTasksComplete: {
-            label: "Mental Health Tasks Complete",
+            label: "Mental Health - Tasks Complete",
             type: "count",
             notionProperty: "mentalHealthTasksComplete",
           },
           mentalHealthTaskDetails: {
-            label: "Mental Health Task - Details",
+            label: "Mental Health - Task Details",
             type: "optionalText",
             notionProperty: "mentalHealthTaskDetails",
           },
@@ -574,6 +578,21 @@ const DATA_SOURCES = {
 /**
  * Helper Functions
  */
+
+/**
+ * Map display field type to Notion property type
+ * @param {string} displayType - Field type from data-sources.js ('count', 'decimal', 'text', 'optionalText')
+ * @returns {string} Notion property type ('number', 'text')
+ */
+function mapToNotionType(displayType) {
+  const typeMap = {
+    count: "number",
+    decimal: "number",
+    text: "text",
+    optionalText: "text",
+  };
+  return typeMap[displayType] || "text";
+}
 
 /**
  * Get all metric keys for a source (flattened)
@@ -660,6 +679,54 @@ function getAvailableSources() {
   return Object.keys(DATA_SOURCES).filter(isSourceAvailable);
 }
 
+/**
+ * Generate Personal Recap properties object from data sources
+ * This becomes the source of truth for Notion property definitions
+ * @returns {Object} Properties object compatible with personal-recap.js format
+ */
+function generatePersonalRecapProperties() {
+  const properties = {
+    // Special metadata properties (not in data sources)
+    title: { name: "Week Recap", type: "title", enabled: true },
+    date: { name: "Date", type: "date", enabled: true },
+    weekNumber: { name: "Week Number", type: "number", enabled: true },
+    year: { name: "Year", type: "number", enabled: true },
+  };
+
+  // Generate properties from all data sources
+  Object.values(DATA_SOURCES).forEach((source) => {
+    if (source.metrics) {
+      // Direct metrics
+      Object.entries(source.metrics).forEach(([metricKey, metricConfig]) => {
+        properties[metricConfig.notionProperty] = {
+          name: metricConfig.label, // Use label as Notion property name
+          type: mapToNotionType(metricConfig.type),
+          enabled: true,
+        };
+      });
+    }
+
+    if (source.categories) {
+      // Category-based metrics (personalCalendar, tasks)
+      Object.values(source.categories).forEach((category) => {
+        if (category.metrics) {
+          Object.entries(category.metrics).forEach(
+            ([metricKey, metricConfig]) => {
+              properties[metricConfig.notionProperty] = {
+                name: metricConfig.label,
+                type: mapToNotionType(metricConfig.type),
+                enabled: true,
+              };
+            }
+          );
+        }
+      });
+    }
+  });
+
+  return properties;
+}
+
 module.exports = {
   DATA_SOURCES,
   FIELD_TYPES,
@@ -667,4 +734,6 @@ module.exports = {
   getSourceMetrics,
   isSourceAvailable,
   getAvailableSources,
+  generatePersonalRecapProperties,
+  mapToNotionType,
 };

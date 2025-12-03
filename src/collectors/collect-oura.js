@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect Oura Sleep Data
+ * @layer 1 - API → Notion (Integration name)
  *
  * Purpose: Fetches sleep data from Oura API for a specific date range,
  * preparing it for sync to Notion.
@@ -14,6 +15,7 @@
  * - Input: Date range (night of dates)
  * - Fetches: Oura API (/v2/usercollection/sleep)
  * - Output: Array of sleep session objects with standardized fields
+ * - Naming: Uses INTEGRATION name (oura)
  *
  * Example:
  * ```

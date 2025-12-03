@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect Strava Activity Data
+ * @layer 1 - API → Notion (Integration name)
  *
  * Purpose: Fetches workout activity data from Strava API for a specific date range,
  * preparing it for sync to Notion.
@@ -14,6 +15,7 @@
  * - Input: Date range
  * - Fetches: Strava API (/athlete/activities)
  * - Output: Array of activity objects with standardized fields
+ * - Naming: Uses INTEGRATION name (strava)
  *
  * Example:
  * ```

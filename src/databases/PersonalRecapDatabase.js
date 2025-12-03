@@ -1,6 +1,24 @@
 /**
- * Personal Recap Database
- * Domain-specific operations for Personal Recap database
+ * @fileoverview Personal Recap Database
+ * @layer 3 - Calendar → Recap (Domain name)
+ *
+ * Purpose: Domain-specific operations for Personal Recap database
+ *
+ * Responsibilities:
+ * - Find week recap records by week number/year
+ * - Update week recap with aggregated metrics
+ * - Build metric properties from summary data
+ *
+ * Data Flow:
+ * - Input: Week number, year, summary metrics (domain names)
+ * - Output: Notion database updates
+ * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games)
+ *
+ * Example:
+ * ```
+ * const db = new PersonalRecapDatabase();
+ * await db.updateWeekRecap(pageId, summary);
+ * ```
  */
 
 const NotionDatabase = require("./NotionDatabase");

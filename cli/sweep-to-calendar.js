@@ -9,19 +9,19 @@ const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
 const {
   syncSleepToCalendar,
-} = require("../src/workflows/notion-sleep-to-calendar");
+} = require("../src/workflows/notion-oura-to-calendar-sleep");
 const {
   syncWorkoutsToCalendar,
-} = require("../src/workflows/notion-workouts-to-calendar");
+} = require("../src/workflows/notion-strava-to-calendar-workouts");
 const {
   syncSteamToCalendar,
-} = require("../src/workflows/notion-steam-to-calendar");
+} = require("../src/workflows/notion-steam-to-calendar-games");
 const {
   syncPRsToCalendar,
-} = require("../src/workflows/notion-prs-to-calendar");
+} = require("../src/workflows/notion-github-to-calendar-prs");
 const {
   syncBodyWeightToCalendar,
-} = require("../src/workflows/notion-bodyweight-to-calendar");
+} = require("../src/workflows/notion-withings-to-calendar-bodyweight");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");

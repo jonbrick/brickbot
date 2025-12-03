@@ -69,14 +69,14 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    - Applies business rules (date extraction, "night of" calculation)
    - Returns structured data array
 
-3. **Workflow** (`src/workflows/oura-to-notion.js`):
+3. **Workflow** (`src/workflows/oura-to-notion-oura.js`):
    - Creates `SleepDatabase` instance
    - For each session:
      - Checks if exists: `sleepRepo.findBySleepId(session.sleepId)`
      - If exists: Skip
      - If new: Transform and create
 
-4. **Transformer** (`src/transformers/oura-to-notion.js`):
+4. **Transformer** (`src/transformers/oura-to-notion-oura.js`):
    - Maps Oura fields to Notion properties
    - Uses config: `config.notion.sleep.properties`
    - Returns formatted properties object
@@ -100,7 +100,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    - Prompts user for date range and database
    - Calls calendar sync workflow
 
-2. **Workflow** (`src/workflows/notion-sleep-to-calendar.js`):
+2. **Workflow** (`src/workflows/notion-oura-to-calendar-sleep.js`):
    - Creates `SleepDatabase` instance
    - Creates `GoogleCalendarService` instance
    - Gets unsynced records: `sleepRepo.getUnsynced(startDate, endDate)`
@@ -110,7 +110,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
      - Create calendar event
      - Mark as synced: `sleepRepo.markSynced(pageId)`
 
-3. **Transformer** (`src/transformers/notion-sleep-to-calendar.js`):
+3. **Transformer** (`src/transformers/notion-oura-to-calendar-sleep.js`):
    - Extracts properties from Notion page using repository
    - Determines which calendar based on wake time
    - Formats event with sleep metrics in description

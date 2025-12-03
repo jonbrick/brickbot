@@ -3,40 +3,45 @@
  * Aggregates all domain-specific Notion configurations
  */
 
-const sleep = require("./sleep");
-const workouts = require("./workouts");
-const games = require("./games");
-const prs = require("./prs");
-const bodyWeight = require("./body-weight");
+const oura = require("./oura");
+const strava = require("./strava");
+const steam = require("./steam");
+const github = require("./github");
+const withings = require("./withings");
 const personalRecap = require("./personal-recap");
 
 // Aggregate database IDs
 const databases = {
-  sleep: sleep.database,
-  workouts: workouts.database,
-  steam: games.database, // Keep 'steam' key for backward compatibility
-  prs: prs.database,
-  bodyWeight: bodyWeight.database,
+  sleep: oura.database, // Keep 'sleep' key for backward compatibility
+  workouts: strava.database, // Keep 'workouts' key for backward compatibility
+  steam: steam.database,
+  prs: github.database, // Keep 'prs' key for backward compatibility
+  bodyWeight: withings.database, // Keep 'bodyWeight' key for backward compatibility
+  // Direct integration name access
+  oura: oura.database,
+  strava: strava.database,
+  github: github.database,
+  withings: withings.database,
   personalRecap: personalRecap.database,
 };
 
 // Aggregate properties
 const properties = {
-  sleep: sleep.properties,
-  strava: workouts.properties, // Keep 'strava' key for backward compatibility
-  steam: games.properties,
-  github: prs.properties, // Keep 'github' key for backward compatibility
-  withings: bodyWeight.properties, // Keep 'withings' key for backward compatibility
+  sleep: oura.properties, // Keep 'sleep' key for backward compatibility
+  strava: strava.properties,
+  steam: steam.properties,
+  github: github.properties,
+  withings: withings.properties,
   personalRecap: personalRecap.properties,
 };
 
 // Aggregate field mappings
 const fieldMappings = {
-  sleep: sleep.fieldMappings,
-  strava: workouts.fieldMappings,
-  steam: games.fieldMappings,
-  github: prs.fieldMappings,
-  withings: bodyWeight.fieldMappings,
+  sleep: oura.fieldMappings, // Keep 'sleep' key for backward compatibility
+  strava: strava.fieldMappings,
+  steam: steam.fieldMappings,
+  github: github.fieldMappings,
+  withings: withings.fieldMappings,
   personalRecap: personalRecap.fieldMappings,
 };
 
@@ -58,8 +63,8 @@ const emojis = {
   },
 };
 
-// Sleep-specific configurations (from sleep.js)
-const sleepCategorization = sleep.categorization;
+// Sleep-specific configurations (from oura.js)
+const sleepCategorization = oura.categorization;
 
 // Helper function to get property name (handles both string and object formats)
 function getPropertyName(property) {

@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect Steam Gaming Data
+ * @layer 1 - API → Notion (Integration name)
  *
  * Purpose: Fetches gaming session data from Steam API for a specific date range,
  * preparing it for sync to Notion.
@@ -14,6 +15,7 @@
  * - Input: Date range
  * - Fetches: Steam API (GetRecentlyPlayedGames)
  * - Output: Array of gaming activity objects with standardized fields
+ * - Naming: Uses INTEGRATION name (steam)
  *
  * Example:
  * ```

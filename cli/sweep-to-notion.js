@@ -12,10 +12,10 @@ const { fetchStravaData } = require("../src/collectors/collect-strava");
 const { fetchWithingsData } = require("../src/collectors/collect-withings");
 const { fetchSteamData } = require("../src/collectors/collect-steam");
 const { fetchGitHubData } = require("../src/collectors/collect-github");
-const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
-const { syncStravaToNotion } = require("../src/workflows/strava-to-notion");
-const { syncSteamToNotion } = require("../src/workflows/steam-to-notion");
-const { syncGitHubToNotion } = require("../src/workflows/github-to-notion");
+const { syncOuraToNotion } = require("../src/workflows/oura-to-notion-oura");
+const { syncStravaToNotion } = require("../src/workflows/strava-to-notion-strava");
+const { syncSteamToNotion } = require("../src/workflows/steam-to-notion-steam");
+const { syncGitHubToNotion } = require("../src/workflows/github-to-notion-github");
 const {
   formatDate,
   formatDateLong,
@@ -375,7 +375,7 @@ async function handleWithingsData(startDate, endDate, action) {
     // Use the processed data from collector
     const {
       syncWithingsToNotion,
-    } = require("../src/workflows/withings-to-notion");
+    } = require("../src/workflows/withings-to-notion-withings");
     const results = await syncWithingsToNotion(measurements);
     printSyncResults(results);
   }

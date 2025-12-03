@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect GitHub Pull Request Data
+ * @layer 1 - API → Notion (Integration name)
  *
  * Purpose: Fetches pull request data from GitHub API for a specific user
  * and date range, preparing it for sync to Notion.
@@ -14,6 +15,7 @@
  * - Input: Date range, GitHub username
  * - Fetches: GitHub API (/repos/.../pulls)
  * - Output: Array of PR objects with standardized fields
+ * - Naming: Uses INTEGRATION name (github)
  *
  * Example:
  * ```

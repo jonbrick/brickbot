@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect Completed Tasks from Notion
+ * @layer 3 - Calendar → Recap (Domain name)
  *
  * Purpose: Fetches completed tasks from Notion Tasks database for a specific date range,
  * preparing it for Personal Recap aggregation.
@@ -13,6 +14,7 @@
  * - Input: Date range
  * - Fetches: Notion API (Tasks database query)
  * - Output: Array of completed task objects with standardized fields
+ * - Naming: Uses DOMAIN names (task categories)
  *
  * Example:
  * ```

@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect Withings Measurement Data
+ * @layer 1 - API → Notion (Integration name)
  *
  * Purpose: Fetches body measurement data from Withings API for a specific date range,
  * preparing it for sync to Notion.
@@ -15,6 +16,7 @@
  * - Input: Date range
  * - Fetches: Withings API (/measure)
  * - Output: Array of measurement objects with standardized fields
+ * - Naming: Uses INTEGRATION name (withings)
  *
  * Example:
  * ```

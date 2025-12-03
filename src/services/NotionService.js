@@ -4,24 +4,24 @@
  * Maintains backward compatibility while delegating to databases
  */
 
-const SleepDatabase = require("../databases/SleepDatabase");
-const WorkoutDatabase = require("../databases/WorkoutDatabase");
+const OuraDatabase = require("../databases/OuraDatabase");
+const StravaDatabase = require("../databases/StravaDatabase");
 const SteamDatabase = require("../databases/SteamDatabase");
-const PRDatabase = require("../databases/PRDatabase");
-const BodyWeightDatabase = require("../databases/BodyWeightDatabase");
+const GitHubDatabase = require("../databases/GitHubDatabase");
+const WithingsDatabase = require("../databases/WithingsDatabase");
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const NotionDatabase = require("../databases/NotionDatabase");
 
 class NotionService extends NotionDatabase {
   constructor() {
     super();
-    
+
     // Initialize domain databases
-    this.sleepRepo = new SleepDatabase();
-    this.workoutRepo = new WorkoutDatabase();
+    this.sleepRepo = new OuraDatabase();
+    this.workoutRepo = new StravaDatabase();
     this.steamRepo = new SteamDatabase();
-    this.prRepo = new PRDatabase();
-    this.bodyWeightRepo = new BodyWeightDatabase();
+    this.prRepo = new GitHubDatabase();
+    this.bodyWeightRepo = new WithingsDatabase();
     this.personalRecapRepo = new PersonalRecapDatabase();
   }
 
@@ -30,16 +30,16 @@ class NotionService extends NotionDatabase {
   // ========================================
 
   /**
-   * Get Sleep database
-   * @returns {SleepDatabase}
+   * Get Sleep database (Oura)
+   * @returns {OuraDatabase}
    */
   getSleepRepository() {
     return this.sleepRepo;
   }
 
   /**
-   * Get Workout database
-   * @returns {WorkoutDatabase}
+   * Get Workout database (Strava)
+   * @returns {StravaDatabase}
    */
   getWorkoutRepository() {
     return this.workoutRepo;
@@ -54,16 +54,16 @@ class NotionService extends NotionDatabase {
   }
 
   /**
-   * Get PR database
-   * @returns {PRDatabase}
+   * Get PR database (GitHub)
+   * @returns {GitHubDatabase}
    */
   getPRRepository() {
     return this.prRepo;
   }
 
   /**
-   * Get Body Weight database
-   * @returns {BodyWeightDatabase}
+   * Get Body Weight database (Withings)
+   * @returns {WithingsDatabase}
    */
   getBodyWeightRepository() {
     return this.bodyWeightRepo;
@@ -215,7 +215,12 @@ class NotionService extends NotionDatabase {
    * @deprecated Use getPersonalRecapRepository().findWeekRecap() instead
    */
   async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
-    return await this.personalRecapRepo.findWeekRecap(weekNumber, year, startDate, endDate);
+    return await this.personalRecapRepo.findWeekRecap(
+      weekNumber,
+      year,
+      startDate,
+      endDate
+    );
   }
 
   /**

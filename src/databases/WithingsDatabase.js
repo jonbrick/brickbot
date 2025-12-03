@@ -1,23 +1,23 @@
 /**
- * @fileoverview Steam Database
+ * @fileoverview Withings Database
  * @layer 1 - API → Notion (Integration name)
  * 
- * Purpose: Domain-specific operations for Steam Notion database
+ * Purpose: Domain-specific operations for Withings Notion database
  * 
  * Responsibilities:
- * - Find records by Activity ID
+ * - Find records by Measurement ID
  * - Get unsynced records for date range
  * - Mark records as synced to calendar
  * 
  * Data Flow:
- * - Input: Steam API data (via transformers)
+ * - Input: Withings API data (via transformers)
  * - Output: Notion database records
- * - Naming: Uses INTEGRATION name (steam)
+ * - Naming: Uses INTEGRATION name (withings)
  * 
  * Example:
  * ```
- * const db = new SteamDatabase();
- * const record = await db.findByActivityId("12345");
+ * const db = new WithingsDatabase();
+ * const record = await db.findByMeasurementId("12345");
  * ```
  */
 
@@ -25,38 +25,47 @@ const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { formatDate } = require("../utils/date");
 
-class SteamDatabase extends NotionDatabase {
+class WithingsDatabase extends NotionDatabase {
   /**
-   * Find Steam gaming record by Activity ID
+   * Find body weight record by Measurement ID
    *
-   * @param {string} activityId - Activity ID to search for
+   * @param {string} measurementId - Measurement ID to search for
    * @returns {Promise<Object|null>} Existing page or null
    */
-  async findByActivityId(activityId) {
-    const databaseId = config.notion.databases.steam;
+  async findByMeasurementId(measurementId) {
+    const databaseId = config.notion.databases.bodyWeight;
+    if (!databaseId) {
+      return null;
+    }
+
     const propertyName = config.notion.getPropertyName(
-      config.notion.properties.steam.activityId
+      config.notion.properties.withings.measurementId
     );
-    return await this.findPageByProperty(databaseId, propertyName, activityId);
+
+    return await this.findPageByProperty(
+      databaseId,
+      propertyName,
+      measurementId
+    );
   }
 
   /**
-   * Get unsynced Steam gaming records (where Calendar Created = false)
+   * Get unsynced body weight records for date range
    *
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
-   * @returns {Promise<Array>} Unsynced Steam records
+   * @returns {Promise<Array>} Unsynced body weight records
    */
   async getUnsynced(startDate, endDate) {
     try {
-      const databaseId = config.notion.databases.steam;
+      const databaseId = config.notion.databases.bodyWeight;
 
       // Filter by date range and checkbox
       const filter = {
         and: [
           {
             property: config.notion.getPropertyName(
-              config.notion.properties.steam.date
+              config.notion.properties.withings.date
             ),
             date: {
               on_or_after: formatDate(startDate),
@@ -64,7 +73,7 @@ class SteamDatabase extends NotionDatabase {
           },
           {
             property: config.notion.getPropertyName(
-              config.notion.properties.steam.date
+              config.notion.properties.withings.date
             ),
             date: {
               on_or_before: formatDate(endDate),
@@ -72,7 +81,7 @@ class SteamDatabase extends NotionDatabase {
           },
           {
             property: config.notion.getPropertyName(
-              config.notion.properties.steam.calendarCreated
+              config.notion.properties.withings.calendarCreated
             ),
             checkbox: {
               equals: false,
@@ -83,12 +92,14 @@ class SteamDatabase extends NotionDatabase {
 
       return await this.queryDatabaseAll(databaseId, filter);
     } catch (error) {
-      throw new Error(`Failed to get unsynced Steam records: ${error.message}`);
+      throw new Error(
+        `Failed to get unsynced body weight records: ${error.message}`
+      );
     }
   }
 
   /**
-   * Mark Steam gaming record as synced (update Calendar Created checkbox)
+   * Mark body weight record as synced (update Calendar Created checkbox)
    *
    * @param {string} pageId - Notion page ID
    * @returns {Promise<Object>} Updated page
@@ -97,16 +108,16 @@ class SteamDatabase extends NotionDatabase {
     try {
       const properties = {
         [config.notion.getPropertyName(
-          config.notion.properties.steam.calendarCreated
+          config.notion.properties.withings.calendarCreated
         )]: true,
       };
 
       return await this.updatePage(pageId, properties);
     } catch (error) {
-      throw new Error(`Failed to mark Steam as synced: ${error.message}`);
+      throw new Error(`Failed to mark body weight as synced: ${error.message}`);
     }
   }
 }
 
-module.exports = SteamDatabase;
+module.exports = WithingsDatabase;
 

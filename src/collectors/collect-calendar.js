@@ -1,5 +1,6 @@
 /**
  * @fileoverview Collect Calendar Event Summary Data
+ * @layer 3 - Calendar → Recap (Domain name)
  *
  * Purpose: Fetches calendar events from Google Calendar API for a specific date range
  * and extracts summary data (dates, durations) for Personal Recap aggregation.
@@ -16,6 +17,7 @@
  * - Input: Calendar ID, date range, account type, sleep calendar flag
  * - Fetches: Google Calendar API (listEvents)
  * - Output: Array of event objects with date and duration
+ * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games)
  *
  * Example:
  * ```

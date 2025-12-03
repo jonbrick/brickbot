@@ -2,7 +2,12 @@
 
 /**
  * Summarize CLI
- * Command-line interface for summarizing calendar events into Personal Recap database
+ * Command-line interface for summarizing calendar events and database records into Personal Recap database
+ *
+ * Data Sources:
+ * - Google Calendar: Sleep, Drinking Days, Workout, Reading, Coding, Art, Video Games,
+ *   Meditation, Music, Body Weight, Personal Calendar, Personal PRs
+ * - Notion Database: Personal Tasks (TASKS_DATABASE_ID)
  */
 
 require("dotenv").config();
@@ -42,10 +47,11 @@ async function selectAction() {
 }
 
 /**
- * Select which calendars to include in the summary
- * @returns {Promise<Array<string>>} Array of selected calendar keys
+ * Select which calendars and databases to include in the summary
+ * Note: Most sources come from Google Calendar API, except Tasks which come from Notion Database API
+ * @returns {Promise<string>} Selected calendar/database key
  */
-async function selectCalendars() {
+async function selectCalendarsAndDatabases() {
   const availableCalendars = [];
 
   // Sleep is always available (requires both calendars to be configured)
@@ -139,47 +145,49 @@ async function selectCalendars() {
     });
   }
 
+  // Tasks come from Notion Database (not Google Calendar)
   if (process.env.TASKS_DATABASE_ID) {
     availableCalendars.push({
-      name: "Tasks",
+      name: "Personal Tasks (Notion Database)",
       value: "tasks",
     });
   }
 
   if (availableCalendars.length === 0) {
     throw new Error(
-      "No calendars are configured. Please set calendar IDs in your .env file."
+      "No calendars or databases are configured. Please set calendar IDs or database IDs in your .env file."
     );
   }
 
   // Sort calendars alphabetically by name
   availableCalendars.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Add "All Calendars" option at the top
+  // Add "All Sources" option at the top (includes both calendars and databases)
   const choices = [
-    { name: "All Calendars", value: "all" },
+    { name: "All Sources (Calendars + Databases)", value: "all" },
     ...availableCalendars,
   ];
 
-  const { calendar } = await inquirer.prompt([
+  const { source } = await inquirer.prompt([
     {
       type: "list",
-      name: "calendar",
-      message: "Select calendar to summarize:",
+      name: "source",
+      message:
+        "Select source to summarize (Google Calendar or Notion Database):",
       choices: choices,
       pageSize: choices.length,
     },
   ]);
 
-  return calendar;
+  return source;
 }
 
 /**
  * Display summary results in a formatted table
  * @param {Object} result - Summary result object
- * @param {string} selectedCalendar - Selected calendar key ("all" or specific calendar)
+ * @param {string} selectedSource - Selected source key ("all" or specific calendar/database)
  */
-function displaySummaryResults(result, selectedCalendar = "all") {
+function displaySummaryResults(result, selectedSource = "all") {
   if (!result.summary) {
     showError("No summary data available");
     return;
@@ -192,10 +200,10 @@ function displaySummaryResults(result, selectedCalendar = "all") {
   console.log(`Week: ${result.weekNumber} of ${result.year}`);
   console.log(`\nCalendar Event Summary:`);
 
-  const showAll = selectedCalendar === "all";
+  const showAll = selectedSource === "all";
 
   // Show sleep metrics if sleep calendar is selected
-  if (selectedCalendar === "sleep" || showAll) {
+  if (selectedSource === "sleep" || showAll) {
     if (result.summary.earlyWakeupDays !== undefined) {
       console.log(`  Early Wakeup Days: ${result.summary.earlyWakeupDays}`);
     }
@@ -210,7 +218,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
   }
 
   // Show drinking days metrics if selected (includes both sober and drinking)
-  if (selectedCalendar === "drinkingDays" || showAll) {
+  if (selectedSource === "drinkingDays" || showAll) {
     if (result.summary.soberDays !== undefined) {
       console.log(`  Sober Days: ${result.summary.soberDays}`);
     }
@@ -225,7 +233,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "workout" || showAll) {
+  if (selectedSource === "workout" || showAll) {
     if (result.summary.workoutDays !== undefined) {
       console.log(`  Workout Days: ${result.summary.workoutDays}`);
     }
@@ -245,7 +253,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "reading" || showAll) {
+  if (selectedSource === "reading" || showAll) {
     if (result.summary.readingDays !== undefined) {
       console.log(`  Reading Days: ${result.summary.readingDays}`);
     }
@@ -265,7 +273,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "coding" || showAll) {
+  if (selectedSource === "coding" || showAll) {
     if (result.summary.codingDays !== undefined) {
       console.log(`  Coding Days: ${result.summary.codingDays}`);
     }
@@ -285,7 +293,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "art" || showAll) {
+  if (selectedSource === "art" || showAll) {
     if (result.summary.artDays !== undefined) {
       console.log(`  Art Days: ${result.summary.artDays}`);
     }
@@ -302,7 +310,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "videoGames" || showAll) {
+  if (selectedSource === "videoGames" || showAll) {
     if (result.summary.videoGamesDays !== undefined) {
       console.log(`  Video Games Days: ${result.summary.videoGamesDays}`);
     }
@@ -326,7 +334,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "meditation" || showAll) {
+  if (selectedSource === "meditation" || showAll) {
     if (result.summary.meditationDays !== undefined) {
       console.log(`  Meditation Days: ${result.summary.meditationDays}`);
     }
@@ -350,7 +358,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "music" || showAll) {
+  if (selectedSource === "music" || showAll) {
     if (result.summary.musicDays !== undefined) {
       console.log(`  Music Days: ${result.summary.musicDays}`);
     }
@@ -370,7 +378,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "bodyWeight" || showAll) {
+  if (selectedSource === "bodyWeight" || showAll) {
     if (result.summary.bodyWeightAverage !== undefined) {
       console.log(
         `  Body Weight Average: ${result.summary.bodyWeightAverage} lbs`
@@ -378,19 +386,16 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "personalPRs" || showAll) {
+  if (selectedSource === "personalPRs" || showAll) {
     if (result.summary.prsSessions !== undefined) {
       console.log(`  PRs Sessions: ${result.summary.prsSessions}`);
     }
-    if (
-      result.summary.prsDetails !== undefined &&
-      result.summary.prsDetails
-    ) {
+    if (result.summary.prsDetails !== undefined && result.summary.prsDetails) {
       console.log(`  PRs Details: ${result.summary.prsDetails}`);
     }
   }
 
-  if (selectedCalendar === "personalCalendar" || showAll) {
+  if (selectedSource === "personalCalendar" || showAll) {
     // Personal category metrics
     if (result.summary.personalSessions !== undefined) {
       console.log(`  Personal Sessions: ${result.summary.personalSessions}`);
@@ -497,7 +502,7 @@ function displaySummaryResults(result, selectedCalendar = "all") {
     }
   }
 
-  if (selectedCalendar === "tasks" || showAll) {
+  if (selectedSource === "tasks" || showAll) {
     // Personal tasks
     if (result.summary.personalTasksComplete !== undefined) {
       console.log(
@@ -508,7 +513,9 @@ function displaySummaryResults(result, selectedCalendar = "all") {
       result.summary.personalTaskDetails !== undefined &&
       result.summary.personalTaskDetails
     ) {
-      console.log(`  Personal Task Details: ${result.summary.personalTaskDetails}`);
+      console.log(
+        `  Personal Task Details: ${result.summary.personalTaskDetails}`
+      );
     }
 
     // Interpersonal tasks
@@ -576,10 +583,13 @@ function displaySummaryResults(result, selectedCalendar = "all") {
  */
 async function main() {
   try {
-    console.log("\n📊 Personal Recap Calendar Summarization\n");
+    console.log("\n📊 Personal Recap Summarization\n");
+    console.log(
+      "Summarizes data from Google Calendar events and Notion database records\n"
+    );
 
-    // Select calendar
-    const selectedCalendar = await selectCalendars();
+    // Select calendars and databases
+    const selectedSource = await selectCalendarsAndDatabases();
 
     // Select action
     const action = await selectAction();
@@ -592,11 +602,12 @@ async function main() {
       showInfo("Display mode: Results will not be saved to Notion\n");
     }
 
-    // Separate calendar sources from Notion sources
+    // Separate Google Calendar sources from Notion Database sources
+    // Note: Tasks come from Notion Database API, everything else from Google Calendar API
     let expandedCalendars = [];
     let expandedNotionSources = [];
-    
-    if (selectedCalendar === "all") {
+
+    if (selectedSource === "all") {
       // Get all available calendar keys
       const config = require("../src/config");
       if (
@@ -641,21 +652,26 @@ async function main() {
       if (process.env.TASKS_DATABASE_ID) {
         expandedNotionSources.push("tasks");
       }
-    } else if (selectedCalendar === "drinkingDays") {
+    } else if (selectedSource === "drinkingDays") {
       expandedCalendars = ["sober", "drinking"];
-    } else if (selectedCalendar === "personalCalendar") {
+    } else if (selectedSource === "personalCalendar") {
       expandedCalendars = ["personalCalendar"];
-    } else if (selectedCalendar === "tasks") {
+    } else if (selectedSource === "tasks") {
+      // Tasks come from Notion Database API (not Google Calendar)
       expandedNotionSources = ["tasks"];
     } else {
-      expandedCalendars = [selectedCalendar];
+      // All other sources come from Google Calendar API
+      expandedCalendars = [selectedSource];
     }
 
     // Run appropriate workflow(s)
+    // Google Calendar API calls
     let calendarResult = null;
+    // Notion Database API calls
     let notionResult = null;
 
     if (expandedCalendars.length > 0) {
+      // Fetch from Google Calendar API
       calendarResult = await summarizeCalendarWeek(weekNumber, year, {
         accountType: "personal",
         displayOnly,
@@ -664,6 +680,7 @@ async function main() {
     }
 
     if (expandedNotionSources.length > 0) {
+      // Fetch from Notion Database API (e.g., Tasks)
       notionResult = await summarizeNotionWeek(weekNumber, year, {
         displayOnly,
         sources: expandedNotionSources,
@@ -694,7 +711,7 @@ async function main() {
 
     // Display results
     if (displayOnly) {
-      displaySummaryResults(result, selectedCalendar);
+      displaySummaryResults(result, selectedSource);
       if (result.error) {
         showError(`Warning: ${result.error}`);
       } else {
@@ -707,10 +724,10 @@ async function main() {
         year: result.year,
       };
 
-      const showAll = selectedCalendar === "all";
+      const showAll = selectedSource === "all";
 
-      // Only include metrics for selected calendar
-      if (selectedCalendar === "sleep" || showAll) {
+      // Only include metrics for selected source
+      if (selectedSource === "sleep" || showAll) {
         if (result.summary.earlyWakeupDays !== undefined) {
           summaryData.earlyWakeupDays = result.summary.earlyWakeupDays;
         }
@@ -722,7 +739,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "drinkingDays" || showAll) {
+      if (selectedSource === "drinkingDays" || showAll) {
         if (result.summary.soberDays !== undefined) {
           summaryData.soberDays = result.summary.soberDays;
         }
@@ -734,7 +751,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "workout" || showAll) {
+      if (selectedSource === "workout" || showAll) {
         if (result.summary.workoutDays !== undefined) {
           summaryData.workoutDays = result.summary.workoutDays;
         }
@@ -749,7 +766,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "reading" || showAll) {
+      if (selectedSource === "reading" || showAll) {
         if (result.summary.readingDays !== undefined) {
           summaryData.readingDays = result.summary.readingDays;
         }
@@ -764,7 +781,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "coding" || showAll) {
+      if (selectedSource === "coding" || showAll) {
         if (result.summary.codingDays !== undefined) {
           summaryData.codingDays = result.summary.codingDays;
         }
@@ -779,7 +796,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "art" || showAll) {
+      if (selectedSource === "art" || showAll) {
         if (result.summary.artDays !== undefined) {
           summaryData.artDays = result.summary.artDays;
         }
@@ -794,7 +811,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "videoGames" || showAll) {
+      if (selectedSource === "videoGames" || showAll) {
         if (result.summary.videoGamesDays !== undefined) {
           summaryData.videoGamesDays = result.summary.videoGamesDays;
         }
@@ -810,7 +827,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "meditation" || showAll) {
+      if (selectedSource === "meditation" || showAll) {
         if (result.summary.meditationDays !== undefined) {
           summaryData.meditationDays = result.summary.meditationDays;
         }
@@ -826,7 +843,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "music" || showAll) {
+      if (selectedSource === "music" || showAll) {
         if (result.summary.musicDays !== undefined) {
           summaryData.musicDays = result.summary.musicDays;
         }
@@ -841,13 +858,13 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "bodyWeight" || showAll) {
+      if (selectedSource === "bodyWeight" || showAll) {
         if (result.summary.bodyWeightAverage !== undefined) {
           summaryData.bodyWeightAverage = result.summary.bodyWeightAverage;
         }
       }
 
-      if (selectedCalendar === "personalPRs" || showAll) {
+      if (selectedSource === "personalPRs" || showAll) {
         if (result.summary.prsSessions !== undefined) {
           summaryData.prsSessions = result.summary.prsSessions;
         }
@@ -856,7 +873,7 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "personalCalendar" || showAll) {
+      if (selectedSource === "personalCalendar" || showAll) {
         if (result.summary.personalSessions !== undefined) {
           summaryData.personalSessions = result.summary.personalSessions;
         }
@@ -914,9 +931,10 @@ async function main() {
         }
       }
 
-      if (selectedCalendar === "tasks" || showAll) {
+      if (selectedSource === "tasks" || showAll) {
         if (result.summary.personalTasksComplete !== undefined) {
-          summaryData.personalTasksComplete = result.summary.personalTasksComplete;
+          summaryData.personalTasksComplete =
+            result.summary.personalTasksComplete;
         }
         if (result.summary.personalTaskDetails !== undefined) {
           summaryData.personalTaskDetails = result.summary.personalTaskDetails;
@@ -956,7 +974,7 @@ async function main() {
       showSummary(summaryData);
       showSuccess("Week summary completed successfully!");
     } else if (result.error) {
-      displaySummaryResults(result, selectedCalendar);
+      displaySummaryResults(result, selectedSource);
       showError(`Failed to update: ${result.error}`);
       process.exit(1);
     } else {

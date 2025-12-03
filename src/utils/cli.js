@@ -16,7 +16,7 @@ const {
 
 /**
  * Select date range with consistent UI
- * Options: Today, Yesterday, This Week, Custom Range
+ * Options: Week Picker, Today, Yesterday, This Week, Custom Range
  *
  * @returns {Promise<{startDate: Date, endDate: Date}>} Selected date range
  */
@@ -29,13 +29,23 @@ async function selectDateRange() {
       choices: [
         { name: "Today", value: "today" },
         { name: "Yesterday", value: "yesterday" },
-        { name: "This Week", value: "week" },
-        { name: "Last 7 Days", value: "last7" },
-        { name: "Last 30 Days", value: "last30" },
+        { name: "This week", value: "week" },
+        { name: "Last week", value: "lastWeek" },
+        { name: "Last 30 days", value: "last30" },
+        { name: "Week Picker", value: "weekPicker" },
         { name: "Custom Range", value: "custom" },
       ],
     },
   ]);
+
+  // Handle week picker option
+  if (rangeType === "weekPicker") {
+    const weekSelection = await selectWeek();
+    return {
+      startDate: weekSelection.startDate,
+      endDate: weekSelection.endDate,
+    };
+  }
 
   let startDate, endDate;
 
@@ -62,10 +72,20 @@ async function selectDateRange() {
       break;
     }
 
-    case "last7": {
-      startDate = new Date(getToday());
-      startDate.setDate(startDate.getDate() - 6); // 6 days ago
-      endDate = getToday();
+    case "lastWeek": {
+      // Get last complete week (Sunday-Saturday)
+      const today = getToday();
+      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
+      // Get this week's Sunday
+      const thisWeekSunday = new Date(today);
+      thisWeekSunday.setDate(today.getDate() - dayOfWeek);
+      // Last week's Sunday is 7 days before this week's Sunday
+      startDate = new Date(thisWeekSunday);
+      startDate.setDate(thisWeekSunday.getDate() - 7);
+      startDate.setHours(0, 0, 0, 0);
+      // Last week's Saturday is 6 days after last week's Sunday
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
       endDate.setHours(23, 59, 59, 999);
       break;
     }
@@ -147,13 +167,23 @@ async function selectCalendarDateRange() {
       choices: [
         { name: "Today", value: "today" },
         { name: "Yesterday", value: "yesterday" },
-        { name: "This Week", value: "week" },
-        { name: "Last 7 Days", value: "last7" },
-        { name: "Last 30 Days", value: "last30" },
+        { name: "This week", value: "week" },
+        { name: "Last week", value: "lastWeek" },
+        { name: "Last 30 days", value: "last30" },
+        { name: "Week Picker", value: "weekPicker" },
         { name: "Custom Range", value: "custom" },
       ],
     },
   ]);
+
+  // Handle week picker option
+  if (rangeType === "weekPicker") {
+    const weekSelection = await selectWeek();
+    return {
+      startDate: weekSelection.startDate,
+      endDate: weekSelection.endDate,
+    };
+  }
 
   let startDate, endDate;
 
@@ -183,11 +213,20 @@ async function selectCalendarDateRange() {
       break;
     }
 
-    case "last7": {
-      // Start = 6 days ago, End = today 23:59:59 (not tomorrow)
-      startDate = new Date(getToday());
-      startDate.setDate(startDate.getDate() - 6); // 6 days ago
-      endDate = getToday();
+    case "lastWeek": {
+      // Get last complete week (Sunday-Saturday)
+      const today = getToday();
+      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
+      // Get this week's Sunday
+      const thisWeekSunday = new Date(today);
+      thisWeekSunday.setDate(today.getDate() - dayOfWeek);
+      // Last week's Sunday is 7 days before this week's Sunday
+      startDate = new Date(thisWeekSunday);
+      startDate.setDate(thisWeekSunday.getDate() - 7);
+      startDate.setHours(0, 0, 0, 0);
+      // Last week's Saturday is 6 days after last week's Sunday
+      endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
       endDate.setHours(23, 59, 59, 999);
       break;
     }

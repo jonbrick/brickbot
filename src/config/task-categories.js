@@ -12,6 +12,18 @@ const TASK_CATEGORY_MAPPING = {
   "💼 Work": "work", // Note: Work tasks excluded from CSV, handle gracefully
 };
 
+const WORK_TASK_CATEGORY_MAPPING = {
+  "🧪 Research": "research",
+  "💡 Sketch": "sketch",
+  "🎨 Design": "design",
+  "🖥️ Coding": "coding",
+  "⚠️ Crit": "crit",
+  "🔎 QA": "qa",
+  "📝 Admin": "admin",
+  "🍸 Social": "social",
+  OOO: "ooo",
+};
+
 /**
  * Get category key from task Type value
  * @param {string} taskType - Task Type value (e.g., "💪 Physical Health")
@@ -25,4 +37,3 @@ module.exports = {
   TASK_CATEGORY_MAPPING,
   getCategoryKey,
 };
-

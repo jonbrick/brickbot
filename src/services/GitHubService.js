@@ -5,7 +5,6 @@
 
 const axios = require("axios");
 const config = require("../config");
-const crypto = require("crypto");
 
 // Work repository classification helper
 function getProjectType(repoName) {
@@ -382,4 +381,3 @@ class GitHubService {
 GitHubService.getProjectType = getProjectType;
 
 module.exports = GitHubService;
-

@@ -377,6 +377,7 @@ module.exports = {
     musicSessions: "musicSessions",
     musicHoursTotal: "musicHoursTotal",
     musicBlocks: "musicBlocks",
+    bodyWeightAverage: "bodyWeightAverage",
     personalSessions: "personalSessions",
     personalHoursTotal: "personalHoursTotal",
     personalBlocks: "personalBlocks",

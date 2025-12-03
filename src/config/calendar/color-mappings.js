@@ -9,10 +9,10 @@
 // Personal Calendar Color Mappings
 // Maps colorId (string) to category object with category key and display name
 const PERSONAL_COLOR_MAPPING = {
-  2: { category: "personal", displayName: "Personal" }, // Sage/Green
-  3: { category: "interpersonal", displayName: "Interpersonal" }, // Grape/Purple
-  5: { category: "home", displayName: "Home" }, // Citron/Yellow
-  8: { category: "physicalHealth", displayName: "Physical Health" }, // Graphite/Gray
+  2: { category: "personal", displayName: "Personal" }, // Sage/Green (default)
+  3: { category: "interpersonal", displayName: "Interpersonal" }, // Grape
+  5: { category: "home", displayName: "Home" }, // Citron
+  8: { category: "physicalHealth", displayName: "Physical Health" }, // Graphite
   9: { category: "ignore", displayName: "Ignore" }, // Blueberry
   11: { category: "mentalHealth", displayName: "Mental Health" }, // Tomato/Red
 };
@@ -20,14 +20,28 @@ const PERSONAL_COLOR_MAPPING = {
 // Work Calendar Color Mappings (for future use)
 // Maps colorId (string) to category object with category key and display name
 const WORK_COLOR_MAPPING = {
-  1: { category: "research", displayName: "Research" }, // Lavender
+  1: { category: "meetings", displayName: "Meetings" }, // Peacock (default)
   2: { category: "design", displayName: "Design" }, // Sage
   3: { category: "coding", displayName: "Coding" }, // Grape
-  5: { category: "review", displayName: "Review" }, // Citron
-  8: { category: "personal", displayName: "Personal" }, // Graphite
+  5: { category: "crit", displayName: "Crit" }, // Citron
+  6: { category: "sketch", displayName: "Sketch" }, // Tangerine
+  7: { category: "research", displayName: "Research" }, // Lavendar
+  8: { category: "personalAndSocial", displayName: "Personal & Social" }, // Graphite
   9: { category: "rituals", displayName: "Rituals" }, // Blueberry
   11: { category: "qa", displayName: "QA" }, // Tomato
 };
+
+// PALE_BLUE	Enum	 Pale Blue ("1"), referred to as "Peacock" in th Calendar UI.
+// PALE_GREEN	Enum	 Pale Green ("2"), referred to as "Sage" in th Calendar UI.
+// MAUVE	Enum	 Mauve ("3"),, referred to as "Grape" in th Calendar UI.
+// PALE_RED	Enum	 Pale Red ("4"), referred to as "Flamingo" in th Calendar UI.
+// YELLOW	Enum	 Yellow ("5"), referred to as "Banana" in th Calendar UI.
+// ORANGE	Enum	 Orange ("6"), referred to as "Tangerine" in th Calendar UI.
+// CYAN	Enum	 Cyan ("7"), referred to as "Lavender" in th Calendar UI.
+// GRAY	Enum	 Gray ("8"), referred to as "Graphite" in th Calendar UI.
+// BLUE	Enum	 Blue ("9"), referred to as "Blueberry" in th Calendar UI.
+// GREEN	Enum	 Green ("10"), referred to as "Basil" in th Calendar UI.
+// RED	Enum	 Red ("11"), referred to as "Tomato" in th Calendar UI.
 
 /**
  * Get Personal Calendar category key by color ID
@@ -93,4 +107,3 @@ module.exports = {
   getWorkCategoryByColor,
   getWorkCategoryDisplayName,
 };
-

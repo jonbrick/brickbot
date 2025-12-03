@@ -22,7 +22,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
 const { formatDateForNotion } = require("../utils/date-handler");
 
@@ -58,22 +57,22 @@ function transformGitHubToNotion(activity) {
 
   // Build properties object using getPropertyName helper
   const allProperties = {
-    [getPropertyName(props.repository)]: repositoryName,
-    [getPropertyName(props.date)]: activity.date
+    [config.notion.getPropertyName(props.repository)]: repositoryName,
+    [config.notion.getPropertyName(props.date)]: activity.date
       ? formatDateForNotion('github', activity.date)
       : "",
-    [getPropertyName(props.commitsCount)]: activity.commitsCount || 0,
-    [getPropertyName(props.commitMessages)]: truncateForNotion(activity.commitMessages || ""),
-    [getPropertyName(props.prTitles)]: truncateForNotion(activity.prTitles || ""),
-    [getPropertyName(props.pullRequestsCount)]: activity.pullRequestsCount || 0,
-    [getPropertyName(props.filesChanged)]: activity.filesChanged || 0,
-    [getPropertyName(props.filesChangedList)]: truncateForNotion(activity.filesChangedList || ""),
-    [getPropertyName(props.totalLinesAdded)]: activity.totalLinesAdded || 0,
-    [getPropertyName(props.totalLinesDeleted)]: activity.totalLinesDeleted || 0,
-    [getPropertyName(props.totalChanges)]: activity.totalChanges || 0,
-    [getPropertyName(props.projectType)]: activity.projectType || "Personal",
-    [getPropertyName(props.uniqueId)]: activity.uniqueId || "",
-    [getPropertyName(props.calendarCreated)]: false,
+    [config.notion.getPropertyName(props.commitsCount)]: activity.commitsCount || 0,
+    [config.notion.getPropertyName(props.commitMessages)]: truncateForNotion(activity.commitMessages || ""),
+    [config.notion.getPropertyName(props.prTitles)]: truncateForNotion(activity.prTitles || ""),
+    [config.notion.getPropertyName(props.pullRequestsCount)]: activity.pullRequestsCount || 0,
+    [config.notion.getPropertyName(props.filesChanged)]: activity.filesChanged || 0,
+    [config.notion.getPropertyName(props.filesChangedList)]: truncateForNotion(activity.filesChangedList || ""),
+    [config.notion.getPropertyName(props.totalLinesAdded)]: activity.totalLinesAdded || 0,
+    [config.notion.getPropertyName(props.totalLinesDeleted)]: activity.totalLinesDeleted || 0,
+    [config.notion.getPropertyName(props.totalChanges)]: activity.totalChanges || 0,
+    [config.notion.getPropertyName(props.projectType)]: activity.projectType || "Personal",
+    [config.notion.getPropertyName(props.uniqueId)]: activity.uniqueId || "",
+    [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
   // Filter out disabled properties

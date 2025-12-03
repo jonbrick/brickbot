@@ -22,7 +22,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { mapSteamToCalendarId } = require("../config/calendar");
 const { buildDateTime } = require("../utils/date");
 
@@ -39,31 +38,31 @@ function formatSteamDescription(steamRecord, steamRepo) {
   const gameName =
     steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.gameName)
+      config.notion.getPropertyName(props.gameName)
     ) || "Gaming Session";
 
   const hoursPlayed =
     steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.hoursPlayed)
+      config.notion.getPropertyName(props.hoursPlayed)
     ) || 0;
 
   const minutesPlayed =
     steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.minutesPlayed)
+      config.notion.getPropertyName(props.minutesPlayed)
     ) || 0;
 
   const sessionCount =
     steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.sessionCount)
+      config.notion.getPropertyName(props.sessionCount)
     ) || 0;
 
   const sessionDetails =
     steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.sessionDetails)
+      config.notion.getPropertyName(props.sessionDetails)
     ) || "";
 
   // Format total playtime
@@ -99,22 +98,22 @@ function transformSteamToCalendarEvent(steamRecord, steamRepo) {
   const gameName =
     steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.gameName)
+      config.notion.getPropertyName(props.gameName)
     ) || "Gaming Session";
 
   const date = steamRepo.extractProperty(
     steamRecord,
-    getPropertyName(props.date)
+    config.notion.getPropertyName(props.date)
   );
 
   const startTime = steamRepo.extractProperty(
     steamRecord,
-    getPropertyName(props.startTime)
+    config.notion.getPropertyName(props.startTime)
   );
 
   const endTime = steamRepo.extractProperty(
     steamRecord,
-    getPropertyName(props.endTime)
+    config.notion.getPropertyName(props.endTime)
   );
 
   // Get video games calendar ID

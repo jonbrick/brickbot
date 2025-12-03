@@ -90,7 +90,7 @@ async function syncSingleActivity(activity, workoutRepo) {
 
   // Transform and create
   const properties = transformStravaToNotion(activity);
-  const databaseId = config.notion.databases.workouts;
+  const databaseId = config.notion.databases.strava;
   const page = await workoutRepo.createPage(databaseId, properties);
 
   return {

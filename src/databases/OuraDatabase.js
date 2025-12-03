@@ -1,19 +1,19 @@
 /**
  * @fileoverview Oura Database
  * @layer 1 - API → Notion (Integration name)
- * 
+ *
  * Purpose: Domain-specific operations for Oura Notion database
- * 
+ *
  * Responsibilities:
  * - Find records by Sleep ID
  * - Get unsynced records for date range
  * - Mark records as synced to calendar
- * 
+ *
  * Data Flow:
  * - Input: Oura API data (via transformers)
  * - Output: Notion database records
  * - Naming: Uses INTEGRATION name (oura)
- * 
+ *
  * Example:
  * ```
  * const db = new OuraDatabase();
@@ -33,9 +33,9 @@ class OuraDatabase extends NotionDatabase {
    * @returns {Promise<Object|null>} Existing page or null
    */
   async findBySleepId(sleepId) {
-    const databaseId = config.notion.databases.sleep;
+    const databaseId = config.notion.databases.oura;
     const propertyName = config.notion.getPropertyName(
-      config.notion.properties.sleep.sleepId
+      config.notion.properties.oura.sleepId
     );
     return await this.findPageByProperty(databaseId, propertyName, sleepId);
   }
@@ -49,14 +49,14 @@ class OuraDatabase extends NotionDatabase {
    */
   async getUnsynced(startDate, endDate) {
     try {
-      const databaseId = config.notion.databases.sleep;
+      const databaseId = config.notion.databases.oura;
 
       // Filter by date range and checkbox
       const filter = {
         and: [
           {
             property: config.notion.getPropertyName(
-              config.notion.properties.sleep.nightOfDate
+              config.notion.properties.oura.nightOfDate
             ),
             date: {
               on_or_after: formatDate(startDate),
@@ -64,7 +64,7 @@ class OuraDatabase extends NotionDatabase {
           },
           {
             property: config.notion.getPropertyName(
-              config.notion.properties.sleep.nightOfDate
+              config.notion.properties.oura.nightOfDate
             ),
             date: {
               on_or_before: formatDate(endDate),
@@ -72,7 +72,7 @@ class OuraDatabase extends NotionDatabase {
           },
           {
             property: config.notion.getPropertyName(
-              config.notion.properties.sleep.calendarCreated
+              config.notion.properties.oura.calendarCreated
             ),
             checkbox: {
               equals: false,
@@ -97,7 +97,7 @@ class OuraDatabase extends NotionDatabase {
     try {
       const properties = {
         [config.notion.getPropertyName(
-          config.notion.properties.sleep.calendarCreated
+          config.notion.properties.oura.calendarCreated
         )]: true,
       };
 
@@ -109,4 +109,3 @@ class OuraDatabase extends NotionDatabase {
 }
 
 module.exports = OuraDatabase;
-

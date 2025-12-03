@@ -89,7 +89,7 @@ async function syncSingleSession(session, sleepRepo) {
 
   // Transform and create
   const properties = transformOuraToNotion(session);
-  const databaseId = config.notion.databases.sleep;
+  const databaseId = config.notion.databases.oura;
   const page = await sleepRepo.createPage(databaseId, properties);
 
   return {

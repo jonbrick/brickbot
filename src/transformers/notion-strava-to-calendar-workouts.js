@@ -22,7 +22,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { mapStravaToCalendarId } = require("../config/calendar");
 const { buildDateTime } = require("../utils/date");
 
@@ -37,17 +36,17 @@ function formatWorkoutDescription(workoutRecord, workoutRepo) {
   const props = config.notion.properties.strava;
 
   const activityName =
-    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.name)) ||
+    workoutRepo.extractProperty(workoutRecord, config.notion.getPropertyName(props.name)) ||
     "Workout";
 
   const duration =
     workoutRepo.extractProperty(
       workoutRecord,
-      getPropertyName(props.duration)
+      config.notion.getPropertyName(props.duration)
     ) || "N/A";
 
   const activityType =
-    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.type)) ||
+    workoutRepo.extractProperty(workoutRecord, config.notion.getPropertyName(props.type)) ||
     "Workout";
 
   return `🏃‍♂️ ${activityName}
@@ -67,26 +66,26 @@ function transformWorkoutToCalendarEvent(workoutRecord, workoutRepo) {
 
   // Extract properties from Notion page
   const activityName =
-    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.name)) ||
+    workoutRepo.extractProperty(workoutRecord, config.notion.getPropertyName(props.name)) ||
     "Workout";
 
   const date = workoutRepo.extractProperty(
     workoutRecord,
-    getPropertyName(props.date)
+    config.notion.getPropertyName(props.date)
   );
 
   const startTime = workoutRepo.extractProperty(
     workoutRecord,
-    getPropertyName(props.startTime)
+    config.notion.getPropertyName(props.startTime)
   );
 
   const duration = workoutRepo.extractProperty(
     workoutRecord,
-    getPropertyName(props.duration)
+    config.notion.getPropertyName(props.duration)
   );
 
   const activityType =
-    workoutRepo.extractProperty(workoutRecord, getPropertyName(props.type)) ||
+    workoutRepo.extractProperty(workoutRecord, config.notion.getPropertyName(props.type)) ||
     "Workout";
 
   // Get fitness calendar ID

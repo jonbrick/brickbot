@@ -4,8 +4,25 @@
  * and displays data in a consistent format
  */
 
-const { properties, fieldMappings } = require("../config/notion");
-const { getPropertyName, isPropertyEnabled } = require("../config/notion");
+const config = require("../config");
+
+// Map old keys to new integration names
+const KEY_MAPPING = {
+  sleep: "oura",
+  workouts: "strava",
+  prs: "github",
+  bodyWeight: "withings",
+  // steam and personalRecap stay the same
+};
+
+/**
+ * Normalize data type key from old format to new format
+ * @param {string} key - Data type key (may be old or new format)
+ * @returns {string} Normalized key (new format)
+ */
+function normalizeKey(key) {
+  return KEY_MAPPING[key] || key;
+}
 
 /**
  * Format duration in seconds to readable format
@@ -41,15 +58,18 @@ function getFieldValue(record, fieldMapping, propertyKey) {
  * @param {string} title - Optional title for the table
  */
 function printDataTable(data, dataType, title = null) {
+  // Normalize key to new format
+  const normalizedKey = normalizeKey(dataType);
+  
   // Get property config for this data type
-  const dataProperties = properties[dataType];
+  const dataProperties = config.notion.properties[normalizedKey];
   if (!dataProperties) {
-    console.error(`Unknown data type: ${dataType}`);
+    console.error(`Unknown data type: ${dataType} (normalized: ${normalizedKey})`);
     return;
   }
 
   // Get field mappings for this data type
-  const fieldMapping = fieldMappings[dataType] || {};
+  const fieldMapping = config.notion.fieldMappings[normalizedKey] || {};
 
   // Get title from data type if not provided
   const displayTitle = title || dataType.toUpperCase();
@@ -68,10 +88,10 @@ function printDataTable(data, dataType, title = null) {
       .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
       .forEach(([propertyKey, propConfig]) => {
         // Get the display name from config
-        const displayName = getPropertyName(propConfig);
+        const displayName = config.notion.getPropertyName(propConfig);
 
         // Check if property is enabled
-        const isEnabled = isPropertyEnabled(propConfig);
+        const isEnabled = config.notion.isPropertyEnabled(propConfig);
 
         // Get the display value
         let displayValue;

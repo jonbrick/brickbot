@@ -30,7 +30,6 @@ const {
 } = require("../transformers/notion-strava-to-calendar-workouts");
 const config = require("../config");
 const { delay } = require("../utils/async");
-const { getPropertyName } = require("../config/notion");
 
 /**
  * Sync workout records from Notion to Google Calendar
@@ -119,7 +118,7 @@ async function syncSingleWorkout(
     const props = config.notion.properties.strava;
     const name = workoutRepo.extractProperty(
       workoutRecord,
-      getPropertyName(props.name)
+      config.notion.getPropertyName(props.name)
     );
 
     return {
@@ -141,7 +140,7 @@ async function syncSingleWorkout(
     const props = config.notion.properties.strava;
     const name = notionService.extractProperty(
       workoutRecord,
-      getPropertyName(props.name)
+      config.notion.getPropertyName(props.name)
     );
 
     return {

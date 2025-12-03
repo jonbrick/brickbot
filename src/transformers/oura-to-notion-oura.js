@@ -28,7 +28,6 @@ const {
   formatTime,
   isSleepIn,
 } = require("../utils/date");
-const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
 const { formatDateForNotion } = require("../utils/date-handler");
 
@@ -39,7 +38,7 @@ const { formatDateForNotion } = require("../utils/date-handler");
  * @returns {Object} Notion properties
  */
 function transformOuraToNotion(session) {
-  const props = config.notion.properties.sleep;
+  const props = config.notion.properties.oura;
 
   // Determine wake up type
   const wakeTime = session.bedtimeEnd ? new Date(session.bedtimeEnd) : null;
@@ -54,52 +53,52 @@ function transformOuraToNotion(session) {
 
   // Build properties object using getPropertyName helper
   const allProperties = {
-    [getPropertyName(props.title)]: formatDateLong(session.nightOf),
-    [getPropertyName(props.nightOfDate)]: session.nightOf
+    [config.notion.getPropertyName(props.title)]: formatDateLong(session.nightOf),
+    [config.notion.getPropertyName(props.nightOfDate)]: session.nightOf
       ? formatDateForNotion('oura', session.nightOf)
       : "",
-    [getPropertyName(props.ouraDate)]: session.ouraDate
+    [config.notion.getPropertyName(props.ouraDate)]: session.ouraDate
       ? formatDateForNotion('oura', session.ouraDate)
       : "",
-    [getPropertyName(props.bedtime)]: session.bedtimeStart || "",
-    [getPropertyName(props.wakeTime)]: session.bedtimeEnd || "",
-    [getPropertyName(props.sleepDuration)]: session.sleepDuration
+    [config.notion.getPropertyName(props.bedtime)]: session.bedtimeStart || "",
+    [config.notion.getPropertyName(props.wakeTime)]: session.bedtimeEnd || "",
+    [config.notion.getPropertyName(props.sleepDuration)]: session.sleepDuration
       ? parseFloat((session.sleepDuration / 3600).toFixed(1))
       : 0, // Convert seconds to hours (to match archive format)
-    [getPropertyName(props.deepSleep)]: session.deepSleep
+    [config.notion.getPropertyName(props.deepSleep)]: session.deepSleep
       ? Math.round(session.deepSleep / 60)
       : 0,
-    [getPropertyName(props.remSleep)]: session.remSleep
+    [config.notion.getPropertyName(props.remSleep)]: session.remSleep
       ? Math.round(session.remSleep / 60)
       : 0,
-    [getPropertyName(props.lightSleep)]: session.lightSleep
+    [config.notion.getPropertyName(props.lightSleep)]: session.lightSleep
       ? Math.round(session.lightSleep / 60)
       : 0,
-    [getPropertyName(props.awakeTime)]: session.awakeTime
+    [config.notion.getPropertyName(props.awakeTime)]: session.awakeTime
       ? Math.round(session.awakeTime / 60)
       : 0,
-    [getPropertyName(props.heartRateAvg)]: session.heartRateAvg || null,
-    [getPropertyName(props.heartRateLow)]: session.heartRateLow || null,
-    [getPropertyName(props.hrv)]: session.hrv || null,
-    [getPropertyName(props.respiratoryRate)]: session.respiratoryRate || null,
-    [getPropertyName(props.efficiency)]: session.efficiency || null,
-    [getPropertyName(props.googleCalendar)]: sleepInType,
-    [getPropertyName(props.sleepId)]: session.sleepId || "",
-    [getPropertyName(props.calendarCreated)]: false,
-    [getPropertyName(props.type)]: session.type || "Sleep",
+    [config.notion.getPropertyName(props.heartRateAvg)]: session.heartRateAvg || null,
+    [config.notion.getPropertyName(props.heartRateLow)]: session.heartRateLow || null,
+    [config.notion.getPropertyName(props.hrv)]: session.hrv || null,
+    [config.notion.getPropertyName(props.respiratoryRate)]: session.respiratoryRate || null,
+    [config.notion.getPropertyName(props.efficiency)]: session.efficiency || null,
+    [config.notion.getPropertyName(props.googleCalendar)]: sleepInType,
+    [config.notion.getPropertyName(props.sleepId)]: session.sleepId || "",
+    [config.notion.getPropertyName(props.calendarCreated)]: false,
+    [config.notion.getPropertyName(props.type)]: session.type || "Sleep",
     // New fields
-    [getPropertyName(props.sleepLatency)]: session.latency
+    [config.notion.getPropertyName(props.sleepLatency)]: session.latency
       ? Math.round(session.latency / 60)
       : null, // Convert seconds to minutes
-    [getPropertyName(props.timeInBed)]: session.timeInBed
+    [config.notion.getPropertyName(props.timeInBed)]: session.timeInBed
       ? parseFloat((session.timeInBed / 3600).toFixed(1))
       : null, // Convert seconds to hours
-    [getPropertyName(props.restlessPeriods)]: session.restlessPeriods || null,
-    [getPropertyName(props.readinessScore)]: session.readinessScore || null,
-    [getPropertyName(props.temperatureDeviation)]: temperatureDeviation,
-    [getPropertyName(props.recoveryIndex)]: recoveryIndex,
-    [getPropertyName(props.sleepBalance)]: sleepBalance,
-    [getPropertyName(props.sleepPeriod)]:
+    [config.notion.getPropertyName(props.restlessPeriods)]: session.restlessPeriods || null,
+    [config.notion.getPropertyName(props.readinessScore)]: session.readinessScore || null,
+    [config.notion.getPropertyName(props.temperatureDeviation)]: temperatureDeviation,
+    [config.notion.getPropertyName(props.recoveryIndex)]: recoveryIndex,
+    [config.notion.getPropertyName(props.sleepBalance)]: sleepBalance,
+    [config.notion.getPropertyName(props.sleepPeriod)]:
       session.period !== undefined ? session.period : null,
   };
 

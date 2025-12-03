@@ -18,7 +18,17 @@ Brickbot follows a modular, repository-based architecture with clear separation 
 
 Brickbot uses a three-layer architecture where **domain abstraction happens at the Google Calendar layer**, not at the Notion layer. This is critical for understanding naming conventions and file organization.
 
-### Layer 1: API → Notion (Integration Name Preserved)
+### Core Principle: Where Domain Names Live
+
+**CRITICAL**: Domain names (`sleep`, `workouts`, `bodyWeight`, `prs`, `videoGames`) **ONLY exist in Google Calendar (Layer 2) and Personal Recap (Layer 3)**. They should **NEVER** appear in Layer 1 (Notion) configurations.
+
+- **Layer 1 (Notion)**: Integration layer ONLY - uses integration names (`oura`, `strava`, `withings`, `github`, `steam`)
+- **Layer 2 (Google Calendar)**: **Source of truth for domain names** - domain names FIRST appear here
+- **Layer 3 (Personal Recap)**: Uses domain names from calendars
+
+**Why this matters**: Notion databases are integration-specific. Domain abstraction happens when data moves to Google Calendar. Google Calendar is the authoritative source for what domain names exist.
+
+### Layer 1: API → Notion (Integration Layer ONLY)
 
 External API data is collected and stored in Notion databases using **integration-specific names**:
 
@@ -30,7 +40,10 @@ GitHub API → collect → transform → sync → GitHub Database (Notion)
 Steam API → collect → transform → sync → Steam Database (Notion)
 ```
 
-**Key Point**: Notion databases retain the **API/integration name** (Withings, Strava, Oura, etc.)
+**Key Points**:
+- Notion databases retain the **API/integration name** (Withings, Strava, Oura, etc.)
+- **NO domain names** (`sleep`, `workouts`, `bodyWeight`) should exist in Layer 1
+- These are integration-specific databases - they represent the source API, not a domain abstraction
 
 **Files in Layer 1**:
 
@@ -39,9 +52,29 @@ Steam API → collect → transform → sync → Steam Database (Notion)
 - Database Classes: `WithingsDatabase.js`, `StravaDatabase.js`, `OuraDatabase.js` (should use integration names)
 - Workflows: `withings-to-notion-withings.js`, `strava-to-notion-strava.js`
 
-**Naming Convention**: Use **integration names** (`withings`, `strava`, `oura`, `github`, `steam`)
+**Naming Convention**: Use **integration names ONLY** (`withings`, `strava`, `oura`, `github`, `steam`)
 
-### Layer 2: Notion → Calendar (Domain Name Conversion)
+**❌ WRONG** - Domain names in Layer 1:
+```javascript
+// ❌ DON'T DO THIS in Layer 1 configs
+config.notion.databases.sleep      // Wrong! Should be: config.notion.databases.oura
+config.notion.databases.workouts   // Wrong! Should be: config.notion.databases.strava
+config.notion.databases.bodyWeight // Wrong! Should be: config.notion.databases.withings
+```
+
+**✅ CORRECT** - Integration names in Layer 1:
+```javascript
+// ✅ DO THIS in Layer 1 configs
+config.notion.databases.oura      // Correct!
+config.notion.databases.strava    // Correct!
+config.notion.databases.withings  // Correct!
+```
+
+### Layer 2: Notion → Calendar (Domain Abstraction Boundary)
+
+**Purpose**: Transform integration-specific data into domain-abstracted calendar events.
+
+**This is where domain abstraction occurs.** Data transitions from integration-specific (Layer 1) to domain-generic (Layer 2+).
 
 When syncing from Notion to Google Calendar, data is **abstracted into domain categories**:
 
@@ -53,16 +86,30 @@ GitHub Database (Notion) → transform → sync → PRs Calendar
 Steam Database (Notion) → transform → sync → Games Calendar
 ```
 
-**Key Point**: Google Calendar uses **domain/category names** (Body Weight, Workouts, Sleep, etc.). This is where the abstraction boundary occurs.
+**Key Points**:
+- **Google Calendar is the source of truth for domain names**
+- Domain names (`sleep`, `workouts`, `bodyWeight`, `prs`, `videoGames`) FIRST appear here
+- Calendar IDs and mappings use domain names
+- Transformation logic converts from integration names → domain names
 
 **Files in Layer 2**:
 
 - Calendar Transformers: `notion-withings-to-calendar-bodyweight.js`, `notion-strava-to-calendar-workouts.js`, `notion-oura-to-calendar-sleep.js`
 - Calendar Workflows: `notion-withings-to-calendar-bodyweight.js`, `notion-strava-to-calendar-workouts.js`
 
-**Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `games`)
+**Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `videoGames`)
 
-### Layer 3: Calendar → Recap (Domain Name Maintained)
+**✅ CORRECT** - Domain names in Layer 2:
+```javascript
+// ✅ DO THIS in Layer 2 configs
+config.calendar.calendars.bodyWeight  // Correct! Domain name
+config.calendar.calendars.workouts    // Correct! Domain name
+config.calendar.calendars.sleep       // Correct! Domain name
+```
+
+### Layer 3: Calendar → Recap (Domain Names Maintained)
+
+**Purpose**: Aggregate calendar events into weekly Personal Recap metrics.
 
 Calendar events are aggregated into Personal Recap using **domain names**:
 
@@ -74,14 +121,78 @@ PRs Calendar → aggregate → Personal Recap
 Games Calendar → aggregate → Personal Recap
 ```
 
-**Key Point**: Personal Recap metrics use **domain names**, not integration names
+**Key Points**:
+- Uses domain names from Google Calendar (Layer 2)
+- No integration names - data is fully abstracted at this point
+- Metrics are domain-based, not integration-based
 
 **Files in Layer 3**:
 
 - Recap Workflows: `aggregate-calendar-to-notion-personal-recap.js`
 - Recap Transformers: `transform-calendar-to-notion-personal-recap.js`
 
-**Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `games`)
+**Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `videoGames`)
+
+### Configuration Structure by Layer
+
+```javascript
+// ✅ Layer 1: Integration names ONLY
+config.notion.databases.oura      // Integration name
+config.notion.properties.oura     // Integration name
+config.notion.databases.strava    // Integration name
+config.notion.properties.strava   // Integration name
+
+// ❌ Layer 1: Domain names should NOT exist here
+config.notion.databases.sleep     // WRONG! Domain names don't belong in Layer 1
+config.notion.databases.workouts  // WRONG!
+
+// ✅ Layer 2: Domain names (Google Calendar is source of truth)
+config.calendar.calendars.bodyWeight  // Domain name
+config.calendar.calendars.workouts    // Domain name
+config.calendar.calendars.sleep       // Domain name
+
+// ✅ Layer 3: Domain names (from calendars)
+config.dataSources.bodyWeight.metrics  // Domain name
+config.dataSources.workouts.metrics    // Domain name
+config.dataSources.sleep.metrics       // Domain name
+```
+
+### Current Violations (To Be Fixed)
+
+**Problem**: `src/config/notion/index.js` currently includes domain name keys for "backward compatibility":
+
+```javascript
+// ❌ CURRENT (WRONG) - Has domain names in Layer 1
+const databases = {
+  sleep: oura.database,        // ❌ Domain name in Layer 1
+  workouts: strava.database,   // ❌ Domain name in Layer 1
+  prs: github.database,        // ❌ Domain name in Layer 1
+  bodyWeight: withings.database, // ❌ Domain name in Layer 1
+  oura: oura.database,         // ✅ Integration name (correct)
+  strava: strava.database,     // ✅ Integration name (correct)
+  // ...
+};
+```
+
+**Solution**: Remove all domain name keys from Layer 1 configs. Layer 1 should ONLY expose integration names:
+
+```javascript
+// ✅ CORRECT - Only integration names in Layer 1
+const databases = {
+  oura: oura.database,
+  strava: strava.database,
+  github: github.database,
+  steam: steam.database,
+  withings: withings.database,
+  personalRecap: personalRecap.database,
+};
+```
+
+**Why this matters**: 
+- Clear layer boundaries - domain names only exist where they're supposed to
+- Google Calendar becomes the single source of truth for domain names
+- Prevents confusion about which layer code is operating in
+- Makes it impossible to accidentally use domain names in Layer 1
 
 ### Quick Reference: What to Call Things Where
 
@@ -102,6 +213,8 @@ Games Calendar → aggregate → Personal Recap
 - ✅ `bodyWeightMetrics` in recap (Layer 3)
 - ✅ All database classes now use integration names (WithingsDatabase, StravaDatabase, OuraDatabase, GitHubDatabase)
 - ✅ All config files now use integration names (withings.js, strava.js, oura.js, github.js, steam.js)
+- ❌ `sleep` key in `config.notion.databases` (WRONG - domain name in Layer 1)
+- ❌ `workouts` key in `config.notion.properties` (WRONG - domain name in Layer 1)
 
 ### Decision Tree: Which Layer Am I In?
 
@@ -151,21 +264,6 @@ Games Calendar → aggregate → Personal Recap
 4. **Debugging**: Error messages clearly indicate which layer failed (integration vs domain logic)
 5. **Self-Documenting**: File/variable names tell you which layer you're in
 
-### Config Structure by Layer
-
-```javascript
-// Layer 1: Integration-specific (for API → Notion)
-config.notion.databases.withings; // Notion database ID
-config.notion.properties.withings; // Withings-specific properties
-
-// Layer 2: Domain-specific (for Notion → Calendar)
-config.calendar.calendars.bodyWeight; // Body Weight calendar ID
-config.calendar.calendars.workouts; // Workouts calendar ID
-
-// Layer 3: Domain-specific (for Calendar → Recap)
-config.dataSources.bodyWeight.metrics; // Body weight metrics
-config.dataSources.workouts.metrics; // Workout metrics
-```
 
 ## System Architecture
 
@@ -908,9 +1006,9 @@ Domain-specific data access layer that separates database concerns from business
 ```javascript
 class OuraDatabase extends NotionDatabase {
   async findBySleepId(sleepId) {
-    const databaseId = config.notion.databases.sleep; // Backward compatible key
+    const databaseId = config.notion.databases.oura;
     const propertyName = config.notion.getPropertyName(
-      config.notion.properties.sleep.sleepId
+      config.notion.properties.oura.sleepId
     );
     return await this.findPageByProperty(databaseId, propertyName, sleepId);
   }

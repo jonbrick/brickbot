@@ -22,7 +22,6 @@
 
 const config = require("../config");
 const { formatDate } = require("../utils/date");
-const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
 const { formatDateForNotion } = require("../utils/date-handler");
 
@@ -37,22 +36,22 @@ function transformWithingsToNotion(measurement) {
 
   // Build properties object using getPropertyName helper
   const allProperties = {
-    [getPropertyName(props.name)]: measurement.name || "",
-    [getPropertyName(props.date)]: measurement.date
+    [config.notion.getPropertyName(props.name)]: measurement.name || "",
+    [config.notion.getPropertyName(props.date)]: measurement.date
       ? formatDateForNotion('withings', measurement.date)
       : "",
-    [getPropertyName(props.weight)]: measurement.weight || null,
-    [getPropertyName(props.fatFreeMass)]: measurement.fatFreeMass || null,
-    [getPropertyName(props.fatPercentage)]: measurement.fatPercentage || null,
-    [getPropertyName(props.fatMass)]: measurement.fatMass || null,
-    [getPropertyName(props.muscleMass)]: measurement.muscleMass || null,
-    [getPropertyName(props.bodyWaterPercentage)]:
+    [config.notion.getPropertyName(props.weight)]: measurement.weight || null,
+    [config.notion.getPropertyName(props.fatFreeMass)]: measurement.fatFreeMass || null,
+    [config.notion.getPropertyName(props.fatPercentage)]: measurement.fatPercentage || null,
+    [config.notion.getPropertyName(props.fatMass)]: measurement.fatMass || null,
+    [config.notion.getPropertyName(props.muscleMass)]: measurement.muscleMass || null,
+    [config.notion.getPropertyName(props.bodyWaterPercentage)]:
       measurement.bodyWaterPercentage || null,
-    [getPropertyName(props.boneMass)]: measurement.boneMass || null,
-    [getPropertyName(props.measurementTime)]: measurement.measurementTime || "",
-    [getPropertyName(props.deviceModel)]: measurement.deviceModel || "",
-    [getPropertyName(props.measurementId)]: measurement.measurementId || "",
-    [getPropertyName(props.calendarCreated)]: false,
+    [config.notion.getPropertyName(props.boneMass)]: measurement.boneMass || null,
+    [config.notion.getPropertyName(props.measurementTime)]: measurement.measurementTime || "",
+    [config.notion.getPropertyName(props.deviceModel)]: measurement.deviceModel || "",
+    [config.notion.getPropertyName(props.measurementId)]: measurement.measurementId || "",
+    [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
   // Filter out disabled properties

@@ -30,7 +30,6 @@ const {
 } = require("../transformers/notion-withings-to-calendar-bodyweight");
 const config = require("../config");
 const { delay } = require("../utils/async");
-const { getPropertyName } = require("../config/notion");
 
 /**
  * Sync body weight records from Notion to Google Calendar
@@ -116,7 +115,7 @@ async function syncSingleBodyWeight(
     const props = config.notion.properties.withings;
     const name = bodyWeightRepo.extractProperty(
       weightRecord,
-      getPropertyName(props.name)
+      config.notion.getPropertyName(props.name)
     );
 
     return {
@@ -138,7 +137,7 @@ async function syncSingleBodyWeight(
     const props = config.notion.properties.withings;
     const name = bodyWeightRepo.extractProperty(
       weightRecord,
-      getPropertyName(props.name)
+      config.notion.getPropertyName(props.name)
     );
 
     return {

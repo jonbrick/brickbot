@@ -30,7 +30,6 @@ const {
 } = require("../transformers/notion-oura-to-calendar-sleep");
 const config = require("../config");
 const { delay } = require("../utils/async");
-const { getPropertyName } = require("../config/notion");
 const { formatDate } = require("../utils/date");
 
 /**
@@ -110,10 +109,10 @@ async function syncSingleSleepRecord(sleepRecord, sleepRepo, calendarService) {
   // Skip if missing required data
   if (!event.start.dateTime || !event.end.dateTime) {
     // Extract nightOf for display even when skipped
-    const props = config.notion.properties.sleep;
+    const props = config.notion.properties.oura;
     const nightOf = sleepRepo.extractProperty(
       sleepRecord,
-      getPropertyName(props.nightOfDate)
+      config.notion.getPropertyName(props.nightOfDate)
     );
     const displayName = nightOf
       ? formatDate(nightOf instanceof Date ? nightOf : new Date(nightOf))
@@ -135,10 +134,10 @@ async function syncSingleSleepRecord(sleepRecord, sleepRepo, calendarService) {
     await sleepRepo.markSynced(sleepRecord.id);
 
     // Extract nightOf from Notion record and format for consistent display
-    const props = config.notion.properties.sleep;
+    const props = config.notion.properties.oura;
     const nightOf = sleepRepo.extractProperty(
       sleepRecord,
-      getPropertyName(props.nightOfDate)
+      config.notion.getPropertyName(props.nightOfDate)
     );
     const displayName = nightOf
       ? formatDate(nightOf instanceof Date ? nightOf : new Date(nightOf))

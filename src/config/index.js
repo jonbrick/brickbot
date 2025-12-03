@@ -19,19 +19,83 @@ const dataSources = require("./data-sources");
 function validateConfig() {
   const errors = [];
 
-  // Core API keys
+  // Core API keys (always required)
   if (!process.env.NOTION_TOKEN) {
     errors.push("NOTION_TOKEN is required");
   }
 
-  // Validate Notion sleep database
-  if (!notion.databases.sleep) {
-    errors.push("NOTION_SLEEP_DATABASE_ID is required");
+  // Conditional validation: Only validate if database ID is set
+
+  // Oura validation
+  if (notion.databases.oura) {
+    if (!process.env.OURA_TOKEN) {
+      errors.push(
+        "OURA_TOKEN is required (NOTION_SLEEP_DATABASE_ID is configured)"
+      );
+    }
   }
 
-  // Validate Oura token
-  if (!process.env.OURA_TOKEN) {
-    errors.push("OURA_TOKEN is required");
+  // Strava validation
+  if (notion.databases.strava) {
+    if (!process.env.STRAVA_CLIENT_ID) {
+      errors.push(
+        "STRAVA_CLIENT_ID is required (NOTION_WORKOUTS_DATABASE_ID is configured)"
+      );
+    }
+    if (!process.env.STRAVA_CLIENT_SECRET) {
+      errors.push(
+        "STRAVA_CLIENT_SECRET is required (NOTION_WORKOUTS_DATABASE_ID is configured)"
+      );
+    }
+    // Note: Access/refresh tokens are managed by TokenService, validate separately if needed
+  }
+
+  // GitHub validation
+  if (notion.databases.github) {
+    if (!process.env.GITHUB_TOKEN) {
+      errors.push(
+        "GITHUB_TOKEN is required (NOTION_PRS_DATABASE_ID is configured)"
+      );
+    }
+    if (!process.env.GITHUB_USERNAME) {
+      errors.push(
+        "GITHUB_USERNAME is required (NOTION_PRS_DATABASE_ID is configured)"
+      );
+    }
+  }
+
+  // Steam validation
+  if (notion.databases.steam) {
+    // STEAM_URL is optional (has default), so no validation needed
+    // But could add validation if custom URL is required
+  }
+
+  // Withings validation
+  if (notion.databases.withings) {
+    if (!process.env.WITHINGS_CLIENT_ID) {
+      errors.push(
+        "WITHINGS_CLIENT_ID is required (NOTION_BODY_WEIGHT_DATABASE_ID is configured)"
+      );
+    }
+    if (!process.env.WITHINGS_CLIENT_SECRET) {
+      errors.push(
+        "WITHINGS_CLIENT_SECRET is required (NOTION_BODY_WEIGHT_DATABASE_ID is configured)"
+      );
+    }
+    // Note: Access/refresh tokens are managed by TokenService
+  }
+
+  // Optional: Strict validation mode
+  if (process.env.VALIDATE_ALL_INTEGRATIONS === "true") {
+    // Validate all database IDs are set
+    const requiredDatabases = ["oura", "strava", "github", "steam", "withings"];
+    requiredDatabases.forEach((dbKey) => {
+      if (!notion.databases[dbKey]) {
+        errors.push(
+          `NOTION database ID for ${dbKey} is required (strict validation enabled)`
+        );
+      }
+    });
   }
 
   // Validate calendar credentials (only if using calendar sync)

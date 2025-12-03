@@ -1,19 +1,19 @@
 /**
  * @fileoverview Withings Database
  * @layer 1 - API → Notion (Integration name)
- * 
+ *
  * Purpose: Domain-specific operations for Withings Notion database
- * 
+ *
  * Responsibilities:
  * - Find records by Measurement ID
  * - Get unsynced records for date range
  * - Mark records as synced to calendar
- * 
+ *
  * Data Flow:
  * - Input: Withings API data (via transformers)
  * - Output: Notion database records
  * - Naming: Uses INTEGRATION name (withings)
- * 
+ *
  * Example:
  * ```
  * const db = new WithingsDatabase();
@@ -33,7 +33,7 @@ class WithingsDatabase extends NotionDatabase {
    * @returns {Promise<Object|null>} Existing page or null
    */
   async findByMeasurementId(measurementId) {
-    const databaseId = config.notion.databases.bodyWeight;
+    const databaseId = config.notion.databases.withings;
     if (!databaseId) {
       return null;
     }
@@ -58,7 +58,7 @@ class WithingsDatabase extends NotionDatabase {
    */
   async getUnsynced(startDate, endDate) {
     try {
-      const databaseId = config.notion.databases.bodyWeight;
+      const databaseId = config.notion.databases.withings;
 
       // Filter by date range and checkbox
       const filter = {
@@ -120,4 +120,3 @@ class WithingsDatabase extends NotionDatabase {
 }
 
 module.exports = WithingsDatabase;
-

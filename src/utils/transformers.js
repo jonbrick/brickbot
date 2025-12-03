@@ -4,7 +4,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 
 /**
  * Filter properties to only include enabled ones
@@ -19,7 +18,7 @@ function filterEnabledProperties(allProperties, propertyConfig) {
 
   Object.entries(allProperties).forEach(([key, value]) => {
     const propKey = Object.keys(propertyConfig).find(
-      (k) => getPropertyName(propertyConfig[k]) === key
+      (k) => config.notion.getPropertyName(propertyConfig[k]) === key
     );
 
     if (propKey && config.notion.isPropertyEnabled(propertyConfig[propKey])) {

@@ -21,7 +21,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
 const { formatDateForNotion } = require("../utils/date-handler");
 
@@ -36,35 +35,35 @@ function transformStravaToNotion(activity) {
 
   // Build properties object using getPropertyName helper
   const allProperties = {
-    [getPropertyName(props.name)]: activity.name || "",
-    [getPropertyName(props.activityId)]: activity.activityId || null,
-    [getPropertyName(props.date)]: activity.date
+    [config.notion.getPropertyName(props.name)]: activity.name || "",
+    [config.notion.getPropertyName(props.activityId)]: activity.activityId || null,
+    [config.notion.getPropertyName(props.date)]: activity.date
       ? formatDateForNotion('strava', activity.date)
       : "",
-    [getPropertyName(props.type)]: activity.type || "",
-    [getPropertyName(props.startTime)]: activity.startTime || "",
-    [getPropertyName(props.duration)]: activity.duration || null,
-    [getPropertyName(props.distance)]: activity.distance
+    [config.notion.getPropertyName(props.type)]: activity.type || "",
+    [config.notion.getPropertyName(props.startTime)]: activity.startTime || "",
+    [config.notion.getPropertyName(props.duration)]: activity.duration || null,
+    [config.notion.getPropertyName(props.distance)]: activity.distance
       ? parseFloat(activity.distance)
       : null,
-    [getPropertyName(props.averageCadence)]: activity.averageCadence || null,
-    [getPropertyName(props.averageHeartrate)]:
+    [config.notion.getPropertyName(props.averageCadence)]: activity.averageCadence || null,
+    [config.notion.getPropertyName(props.averageHeartrate)]:
       activity.averageHeartrate || null,
-    [getPropertyName(props.maxHeartrate)]: activity.maxHeartrate || null,
-    [getPropertyName(props.calendarCreated)]: false,
+    [config.notion.getPropertyName(props.maxHeartrate)]: activity.maxHeartrate || null,
+    [config.notion.getPropertyName(props.calendarCreated)]: false,
     // Optional fields
-    [getPropertyName(props.averageSpeed)]: activity.averageSpeed
+    [config.notion.getPropertyName(props.averageSpeed)]: activity.averageSpeed
       ? parseFloat(activity.averageSpeed)
       : null,
-    [getPropertyName(props.averageWatts)]: activity.averageWatts || null,
-    [getPropertyName(props.calories)]: activity.calories || null,
-    [getPropertyName(props.elevationGain)]: activity.elevationGain || null,
-    [getPropertyName(props.maxSpeed)]: activity.maxSpeed
+    [config.notion.getPropertyName(props.averageWatts)]: activity.averageWatts || null,
+    [config.notion.getPropertyName(props.calories)]: activity.calories || null,
+    [config.notion.getPropertyName(props.elevationGain)]: activity.elevationGain || null,
+    [config.notion.getPropertyName(props.maxSpeed)]: activity.maxSpeed
       ? parseFloat(activity.maxSpeed)
       : null,
-    [getPropertyName(props.prCount)]: activity.prCount || null,
-    [getPropertyName(props.sufferScore)]: activity.sufferScore || null,
-    [getPropertyName(props.timezone)]: activity.timezone || null,
+    [config.notion.getPropertyName(props.prCount)]: activity.prCount || null,
+    [config.notion.getPropertyName(props.sufferScore)]: activity.sufferScore || null,
+    [config.notion.getPropertyName(props.timezone)]: activity.timezone || null,
   };
 
   // Filter out disabled properties

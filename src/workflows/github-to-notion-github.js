@@ -92,7 +92,7 @@ async function syncSingleActivity(activity, prRepo) {
 
   // Transform and create
   const properties = transformGitHubToNotion(activity);
-  const databaseId = config.notion.databases.prs;
+  const databaseId = config.notion.databases.github;
   const page = await prRepo.createPage(databaseId, properties);
 
   const displayName = activity.date

@@ -21,7 +21,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { filterEnabledProperties } = require("../utils/transformers");
 const { formatDateForNotion } = require("../utils/date-handler");
 
@@ -36,19 +35,19 @@ function transformSteamToNotion(activity) {
 
   // Build properties object using getPropertyName helper
   const allProperties = {
-    [getPropertyName(props.gameName)]: activity.gameName || "",
-    [getPropertyName(props.date)]: activity.date
+    [config.notion.getPropertyName(props.gameName)]: activity.gameName || "",
+    [config.notion.getPropertyName(props.date)]: activity.date
       ? formatDateForNotion('steam', activity.date)
       : "",
-    [getPropertyName(props.hoursPlayed)]: activity.hoursPlayed || 0,
-    [getPropertyName(props.minutesPlayed)]: activity.minutesPlayed || 0,
-    [getPropertyName(props.sessionCount)]: activity.sessionCount || 0,
-    [getPropertyName(props.sessionDetails)]: activity.sessionDetails || "",
-    [getPropertyName(props.activityId)]: activity.activityId || "",
-    [getPropertyName(props.startTime)]: activity.startTime || "",
-    [getPropertyName(props.endTime)]: activity.endTime || "",
-    [getPropertyName(props.platform)]: activity.platform || "Steam",
-    [getPropertyName(props.calendarCreated)]: false,
+    [config.notion.getPropertyName(props.hoursPlayed)]: activity.hoursPlayed || 0,
+    [config.notion.getPropertyName(props.minutesPlayed)]: activity.minutesPlayed || 0,
+    [config.notion.getPropertyName(props.sessionCount)]: activity.sessionCount || 0,
+    [config.notion.getPropertyName(props.sessionDetails)]: activity.sessionDetails || "",
+    [config.notion.getPropertyName(props.activityId)]: activity.activityId || "",
+    [config.notion.getPropertyName(props.startTime)]: activity.startTime || "",
+    [config.notion.getPropertyName(props.endTime)]: activity.endTime || "",
+    [config.notion.getPropertyName(props.platform)]: activity.platform || "Steam",
+    [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
   // Filter out disabled properties

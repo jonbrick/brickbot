@@ -22,7 +22,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { mapNotionCalendarToId } = require("../config/calendar");
 
 /**
@@ -32,9 +31,9 @@ const { mapNotionCalendarToId } = require("../config/calendar");
  * @returns {string} Formatted description
  */
 function formatSleepStages(sleepRecord) {
-  const props = config.notion.properties.sleep;
-  const wakeTimeRaw = sleepRecord[getPropertyName(props.wakeTime)] || "N/A";
-  const bedtimeRaw = sleepRecord[getPropertyName(props.bedtime)] || "N/A";
+  const props = config.notion.properties.oura;
+  const wakeTimeRaw = sleepRecord[config.notion.getPropertyName(props.wakeTime)] || "N/A";
+  const bedtimeRaw = sleepRecord[config.notion.getPropertyName(props.bedtime)] || "N/A";
 
   // Format ISO timestamps for display
   const formatTimeForDisplay = (isoString) => {
@@ -50,16 +49,16 @@ function formatSleepStages(sleepRecord) {
   const wakeTime = formatTimeForDisplay(wakeTimeRaw);
   const bedtime = formatTimeForDisplay(bedtimeRaw);
 
-  const deepSleep = sleepRecord[getPropertyName(props.deepSleep)] || "N/A";
-  const remSleep = sleepRecord[getPropertyName(props.remSleep)] || "N/A";
-  const lightSleep = sleepRecord[getPropertyName(props.lightSleep)] || "N/A";
+  const deepSleep = sleepRecord[config.notion.getPropertyName(props.deepSleep)] || "N/A";
+  const remSleep = sleepRecord[config.notion.getPropertyName(props.remSleep)] || "N/A";
+  const lightSleep = sleepRecord[config.notion.getPropertyName(props.lightSleep)] || "N/A";
   const heartRateAvg =
-    sleepRecord[getPropertyName(props.heartRateAvg)] !== null
-      ? sleepRecord[getPropertyName(props.heartRateAvg)]
+    sleepRecord[config.notion.getPropertyName(props.heartRateAvg)] !== null
+      ? sleepRecord[config.notion.getPropertyName(props.heartRateAvg)]
       : "N/A";
   const hrv =
-    sleepRecord[getPropertyName(props.hrv)] !== null
-      ? sleepRecord[getPropertyName(props.hrv)]
+    sleepRecord[config.notion.getPropertyName(props.hrv)] !== null
+      ? sleepRecord[config.notion.getPropertyName(props.hrv)]
       : "N/A";
 
   return `Sleep Session
@@ -85,38 +84,38 @@ Metrics:
  * @returns {Object} Google Calendar event data
  */
 function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
-  const props = config.notion.properties.sleep;
+  const props = config.notion.properties.oura;
 
   // Extract properties from Notion page
   const title = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.title)
+    config.notion.getPropertyName(props.title)
   );
   const nightOfDate = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.nightOfDate)
+    config.notion.getPropertyName(props.nightOfDate)
   );
   const bedtime = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.bedtime)
+    config.notion.getPropertyName(props.bedtime)
   );
   const wakeTime = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.wakeTime)
+    config.notion.getPropertyName(props.wakeTime)
   );
   const sleepDuration = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.sleepDuration)
+    config.notion.getPropertyName(props.sleepDuration)
   );
   const efficiency = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.efficiency)
+    config.notion.getPropertyName(props.efficiency)
   );
 
   // Extract Google Calendar field from Notion and map to calendar ID
   const googleCalendarField = sleepRepo.extractProperty(
     sleepRecord,
-    getPropertyName(props.googleCalendar)
+    config.notion.getPropertyName(props.googleCalendar)
   );
   const calendarId = mapNotionCalendarToId(googleCalendarField);
 
@@ -138,27 +137,27 @@ function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
   // Create description with sleep stages
   const description = (() => {
     const record = {
-      [getPropertyName(props.wakeTime)]: wakeTime,
-      [getPropertyName(props.bedtime)]: bedtime,
-      [getPropertyName(props.deepSleep)]: sleepRepo.extractProperty(
+      [config.notion.getPropertyName(props.wakeTime)]: wakeTime,
+      [config.notion.getPropertyName(props.bedtime)]: bedtime,
+      [config.notion.getPropertyName(props.deepSleep)]: sleepRepo.extractProperty(
         sleepRecord,
-        getPropertyName(props.deepSleep)
+        config.notion.getPropertyName(props.deepSleep)
       ),
-      [getPropertyName(props.remSleep)]: sleepRepo.extractProperty(
+      [config.notion.getPropertyName(props.remSleep)]: sleepRepo.extractProperty(
         sleepRecord,
-        getPropertyName(props.remSleep)
+        config.notion.getPropertyName(props.remSleep)
       ),
-      [getPropertyName(props.lightSleep)]: sleepRepo.extractProperty(
+      [config.notion.getPropertyName(props.lightSleep)]: sleepRepo.extractProperty(
         sleepRecord,
-        getPropertyName(props.lightSleep)
+        config.notion.getPropertyName(props.lightSleep)
       ),
-      [getPropertyName(props.heartRateAvg)]: sleepRepo.extractProperty(
+      [config.notion.getPropertyName(props.heartRateAvg)]: sleepRepo.extractProperty(
         sleepRecord,
-        getPropertyName(props.heartRateAvg)
+        config.notion.getPropertyName(props.heartRateAvg)
       ),
-      [getPropertyName(props.hrv)]: sleepRepo.extractProperty(
+      [config.notion.getPropertyName(props.hrv)]: sleepRepo.extractProperty(
         sleepRecord,
-        getPropertyName(props.hrv)
+        config.notion.getPropertyName(props.hrv)
       ),
     };
     return formatSleepStages(record);

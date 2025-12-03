@@ -30,7 +30,6 @@ const {
 } = require("../transformers/notion-steam-to-calendar-games");
 const config = require("../config");
 const { delay } = require("../utils/async");
-const { getPropertyName } = require("../config/notion");
 
 /**
  * Sync Steam gaming session records from Notion to Google Calendar
@@ -114,7 +113,7 @@ async function syncSingleSteamSession(steamRecord, steamRepo, calendarService) {
     const props = config.notion.properties.steam;
     const gameName = steamRepo.extractProperty(
       steamRecord,
-      getPropertyName(props.gameName)
+      config.notion.getPropertyName(props.gameName)
     );
 
     return {
@@ -136,7 +135,7 @@ async function syncSingleSteamSession(steamRecord, steamRepo, calendarService) {
     const props = config.notion.properties.steam;
     const gameName = notionService.extractProperty(
       steamRecord,
-      getPropertyName(props.gameName)
+      config.notion.getPropertyName(props.gameName)
     );
 
     return {

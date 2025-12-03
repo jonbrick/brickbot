@@ -346,10 +346,10 @@ For a complete new data source with calendar sync:
 const config = require('../config');
 
 // Database ID
-const dbId = config.notion.databases.sleep;
+const dbId = config.notion.databases.oura;
 
 // Property name
-const propName = config.notion.properties.sleep.sleepId.name;
+const propName = config.notion.properties.oura.sleepId.name;
 
 // Helper function
 const name = config.notion.getPropertyName(props.sleepId);

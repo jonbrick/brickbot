@@ -91,7 +91,7 @@ async function syncSingleMeasurement(measurement, bodyWeightRepo) {
 
   // Transform and create
   const properties = transformWithingsToNotion(measurement);
-  const databaseId = config.notion.databases.bodyWeight;
+  const databaseId = config.notion.databases.withings;
   const page = await bodyWeightRepo.createPage(databaseId, properties);
 
   return {

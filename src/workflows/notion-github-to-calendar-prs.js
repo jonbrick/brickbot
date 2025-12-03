@@ -30,7 +30,6 @@ const {
 } = require("../transformers/notion-github-to-calendar-prs");
 const config = require("../config");
 const { delay } = require("../utils/async");
-const { getPropertyName } = require("../config/notion");
 const { formatDateOnly } = require("../utils/date");
 
 /**
@@ -114,9 +113,9 @@ async function syncSinglePR(prRecord, prRepo, calendarServices) {
     const props = config.notion.properties.github;
     const repository = prRepo.extractProperty(
       prRecord,
-      getPropertyName(props.repository)
+      config.notion.getPropertyName(props.repository)
     );
-    const date = prRepo.extractProperty(prRecord, getPropertyName(props.date));
+    const date = prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.date));
     const dateStr = date
       ? typeof date === "string"
         ? date.split("T")[0]
@@ -151,9 +150,9 @@ async function syncSinglePR(prRecord, prRepo, calendarServices) {
     const props = config.notion.properties.github;
     const repository = prRepo.extractProperty(
       prRecord,
-      getPropertyName(props.repository)
+      config.notion.getPropertyName(props.repository)
     );
-    const date = prRepo.extractProperty(prRecord, getPropertyName(props.date));
+    const date = prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.date));
     const dateStr = date
       ? typeof date === "string"
         ? date.split("T")[0]

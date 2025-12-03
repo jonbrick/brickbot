@@ -22,7 +22,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { mapWithingsToCalendarId } = require("../config/calendar");
 const { formatDateOnly } = require("../utils/date");
 
@@ -37,25 +36,25 @@ function formatBodyWeightDescription(weightRecord, bodyWeightRepo) {
   const props = config.notion.properties.withings;
 
   const weight =
-    bodyWeightRepo.extractProperty(weightRecord, getPropertyName(props.weight)) ||
+    bodyWeightRepo.extractProperty(weightRecord, config.notion.getPropertyName(props.weight)) ||
     "N/A";
 
   const measurementTime =
     bodyWeightRepo.extractProperty(
       weightRecord,
-      getPropertyName(props.measurementTime)
+      config.notion.getPropertyName(props.measurementTime)
     ) || "N/A";
 
   const fatPercentage =
     bodyWeightRepo.extractProperty(
       weightRecord,
-      getPropertyName(props.fatPercentage)
+      config.notion.getPropertyName(props.fatPercentage)
     );
 
   const muscleMass =
     bodyWeightRepo.extractProperty(
       weightRecord,
-      getPropertyName(props.muscleMass)
+      config.notion.getPropertyName(props.muscleMass)
     );
 
   let description = `⚖️ Body Weight Measurement
@@ -87,12 +86,12 @@ function transformBodyWeightToCalendarEvent(weightRecord, bodyWeightRepo) {
 
   // Extract properties from Notion page
   const weight =
-    bodyWeightRepo.extractProperty(weightRecord, getPropertyName(props.weight)) ||
+    bodyWeightRepo.extractProperty(weightRecord, config.notion.getPropertyName(props.weight)) ||
     null;
 
   const date = bodyWeightRepo.extractProperty(
     weightRecord,
-    getPropertyName(props.date)
+    config.notion.getPropertyName(props.date)
   );
 
   // Get body weight calendar ID

@@ -22,7 +22,6 @@
  */
 
 const config = require("../config");
-const { getPropertyName } = require("../config/notion");
 const { mapPRToCalendarId } = require("../config/calendar");
 const { formatDateOnly } = require("../utils/date");
 
@@ -37,27 +36,27 @@ function formatPRDescription(prRecord, prRepo) {
   const props = config.notion.properties.github;
 
   const repository =
-    prRepo.extractProperty(prRecord, getPropertyName(props.repository)) ||
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.repository)) ||
     "Unknown Repository";
 
   const commitsCount =
-    prRepo.extractProperty(prRecord, getPropertyName(props.commitsCount)) || 0;
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitsCount)) || 0;
 
   const totalLinesAdded =
-    prRepo.extractProperty(prRecord, getPropertyName(props.totalLinesAdded)) ||
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) ||
     0;
 
   const totalLinesDeleted =
     prRepo.extractProperty(
       prRecord,
-      getPropertyName(props.totalLinesDeleted)
+      config.notion.getPropertyName(props.totalLinesDeleted)
     ) || 0;
 
   const prTitles =
-    prRepo.extractProperty(prRecord, getPropertyName(props.prTitles)) || "";
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.prTitles)) || "";
 
   const commitMessages =
-    prRepo.extractProperty(prRecord, getPropertyName(props.commitMessages)) ||
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitMessages)) ||
     "";
 
   let description = `💻 ${repository}
@@ -110,26 +109,26 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
 
   // Extract properties from Notion page
   const repository =
-    prRepo.extractProperty(prRecord, getPropertyName(props.repository)) ||
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.repository)) ||
     "Unknown Repository";
 
-  const date = prRepo.extractProperty(prRecord, getPropertyName(props.date));
+  const date = prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.date));
 
   const commitsCount =
-    prRepo.extractProperty(prRecord, getPropertyName(props.commitsCount)) || 0;
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitsCount)) || 0;
 
   const totalLinesAdded =
-    prRepo.extractProperty(prRecord, getPropertyName(props.totalLinesAdded)) ||
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) ||
     0;
 
   const totalLinesDeleted =
     prRepo.extractProperty(
       prRecord,
-      getPropertyName(props.totalLinesDeleted)
+      config.notion.getPropertyName(props.totalLinesDeleted)
     ) || 0;
 
   const projectType =
-    prRepo.extractProperty(prRecord, getPropertyName(props.projectType)) ||
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.projectType)) ||
     "Personal";
 
   // Get calendar ID based on project type

@@ -25,7 +25,7 @@ const {
 const { formatDate, getDayName, isSleepIn } = require("../src/utils/date");
 const { selectDateRange } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
-const { sleepCategorization } = require("../src/config/notion");
+const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
   buildSourceChoices,
@@ -57,8 +57,8 @@ function extractSleepFields(processedData) {
     // Determine wake time category
     const googleCalendar =
       bedtimeEnd && isSleepIn(bedtimeEnd)
-        ? sleepCategorization.sleepInLabel
-        : sleepCategorization.normalWakeUpLabel;
+        ? config.notion.sleepCategorization.sleepInLabel
+        : config.notion.sleepCategorization.normalWakeUpLabel;
 
     return {
       id: record.sleepId,
@@ -305,7 +305,7 @@ async function handleOuraData(startDate, endDate, action) {
   const extractedData = extractSleepFields(processed);
 
   // Always display the table
-  printDataTable(extractedData, "sleep", "OURA SLEEP DATA");
+  printDataTable(extractedData, "oura", "OURA SLEEP DATA");
 
   // Sync to Notion if requested
   if (action === "sync") {

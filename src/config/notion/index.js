@@ -1,6 +1,6 @@
 /**
  * Notion Configuration Index
- * Aggregates all domain-specific Notion configurations
+ * Aggregates all integration-specific Notion configurations
  */
 
 const oura = require("./oura");
@@ -12,22 +12,17 @@ const personalRecap = require("./personal-recap");
 
 // Aggregate database IDs
 const databases = {
-  sleep: oura.database, // Keep 'sleep' key for backward compatibility
-  workouts: strava.database, // Keep 'workouts' key for backward compatibility
-  steam: steam.database,
-  prs: github.database, // Keep 'prs' key for backward compatibility
-  bodyWeight: withings.database, // Keep 'bodyWeight' key for backward compatibility
-  // Direct integration name access
   oura: oura.database,
   strava: strava.database,
   github: github.database,
+  steam: steam.database,
   withings: withings.database,
   personalRecap: personalRecap.database,
 };
 
 // Aggregate properties
 const properties = {
-  sleep: oura.properties, // Keep 'sleep' key for backward compatibility
+  oura: oura.properties,
   strava: strava.properties,
   steam: steam.properties,
   github: github.properties,
@@ -37,7 +32,7 @@ const properties = {
 
 // Aggregate field mappings
 const fieldMappings = {
-  sleep: oura.fieldMappings, // Keep 'sleep' key for backward compatibility
+  oura: oura.fieldMappings,
   strava: strava.fieldMappings,
   steam: steam.fieldMappings,
   github: github.fieldMappings,
@@ -47,21 +42,6 @@ const fieldMappings = {
 
 // Color mappings (for categorization and display)
 const colors = {};
-
-// Category emojis
-const emojis = {
-  sources: {
-    Oura: "😴",
-  },
-
-  // Status indicators
-  status: {
-    good: "✅",
-    bad: "❌",
-    warning: "⚠️",
-    neutral: "➖",
-  },
-};
 
 // Sleep-specific configurations (from oura.js)
 const sleepCategorization = oura.categorization;
@@ -119,7 +99,6 @@ module.exports = {
   properties,
   fieldMappings,
   colors,
-  emojis,
   sleepCategorization,
 
   // Helper to get token (uses primary NOTION_TOKEN)
@@ -132,4 +111,3 @@ module.exports = {
   getPropertyType,
   getPropertyOptions,
 };
-

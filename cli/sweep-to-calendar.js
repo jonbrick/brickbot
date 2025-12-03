@@ -28,6 +28,8 @@ const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
   buildSourceChoices,
   buildAllSourcesHandlers,
+  formatRecordsForDisplay,
+  displayRecordsTable,
 } = require("../src/utils/sweep-display");
 
 /**
@@ -52,386 +54,6 @@ async function selectSourceAndAction() {
     },
   ]);
   return { source, action };
-}
-
-/**
- * Format sleep records for display
- */
-function formatSleepRecords(sleepRecords, notionService) {
-  const props = config.notion.properties.sleep;
-
-  return sleepRecords.map((record) => {
-    const nightOfDate = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.nightOfDate)
-    );
-    const bedtime = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.bedtime)
-    );
-    const wakeTime = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.wakeTime)
-    );
-    const sleepDuration = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.sleepDuration)
-    );
-    const efficiency = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.efficiency)
-    );
-
-    // Read Google Calendar field directly from Notion
-    const calendar =
-      notionService.extractProperty(
-        record,
-        config.notion.getPropertyName(props.googleCalendar)
-      ) || "Unknown";
-
-    return {
-      nightOf: nightOfDate,
-      bedtime,
-      wakeTime,
-      duration: sleepDuration,
-      efficiency,
-      calendar,
-    };
-  });
-}
-
-/**
- * Format workout records for display
- */
-function formatWorkoutRecords(workoutRecords, notionService) {
-  const props = config.notion.properties.strava;
-
-  return workoutRecords.map((record) => {
-    const name = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.name)
-    );
-    const date = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.date)
-    );
-    const startTime = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.startTime)
-    );
-    const duration = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.duration)
-    );
-    const type = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.type)
-    );
-
-    // Format start time for display (matches Oura pattern)
-    const startTimeFormatted = startTime
-      ? new Date(startTime).toLocaleString()
-      : "N/A";
-
-    return {
-      name,
-      date,
-      startTime: startTimeFormatted,
-      duration,
-      type,
-    };
-  });
-}
-
-/**
- * Display table of sleep records to sync
- */
-function displaySleepRecordsTable(records) {
-  console.log("\n" + "=".repeat(120));
-  console.log("📊 SLEEP RECORDS TO SYNC");
-  console.log("=".repeat(120) + "\n");
-
-  if (records.length === 0) {
-    console.log(
-      "✅ No records to sync (all records already have calendar events)\n"
-    );
-    return;
-  }
-
-  console.log(
-    `Found ${records.length} sleep record${
-      records.length === 1 ? "" : "s"
-    } without calendar events\n`
-  );
-
-  records.forEach((record) => {
-    console.log(
-      `  📅 ${record.nightOf}: Sleep - ${record.duration}hrs (${record.efficiency}% efficiency) → ${record.calendar}`
-    );
-  });
-
-  console.log("\n" + "=".repeat(120) + "\n");
-}
-
-/**
- * Display table of workout records to sync
- */
-function displayWorkoutRecordsTable(records) {
-  console.log("\n" + "=".repeat(120));
-  console.log("🏋️  WORKOUT RECORDS TO SYNC");
-  console.log("=".repeat(120) + "\n");
-
-  if (records.length === 0) {
-    console.log(
-      "✅ No records to sync (all records already have calendar events)\n"
-    );
-    return;
-  }
-
-  console.log(
-    `Found ${records.length} workout record${
-      records.length === 1 ? "" : "s"
-    } without calendar events\n`
-  );
-
-  records.forEach((record) => {
-    console.log(
-      `  🏋️  ${record.date} ${record.startTime}: ${record.name} (${record.duration} min) - ${record.type}`
-    );
-  });
-
-  console.log("\n" + "=".repeat(120) + "\n");
-}
-
-/**
- * Format Steam gaming records for display
- */
-function formatSteamRecords(steamRecords, notionService) {
-  const props = config.notion.properties.steam;
-
-  return steamRecords.map((record) => {
-    const gameName = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.gameName)
-    );
-    const date = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.date)
-    );
-    const hoursPlayed = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.hoursPlayed)
-    );
-    const minutesPlayed = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.minutesPlayed)
-    );
-    const sessionCount = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.sessionCount)
-    );
-
-    // Format playtime
-    let playtime = "";
-    if (hoursPlayed > 0) {
-      playtime = `${hoursPlayed}h ${minutesPlayed}m`;
-    } else {
-      playtime = `${minutesPlayed}m`;
-    }
-
-    return {
-      gameName,
-      date,
-      playtime,
-      sessionCount,
-    };
-  });
-}
-
-/**
- * Display table of Steam gaming records to sync
- */
-function displaySteamRecordsTable(records) {
-  console.log("\n" + "=".repeat(120));
-  console.log("🎮 STEAM GAMING RECORDS TO SYNC");
-  console.log("=".repeat(120) + "\n");
-
-  if (records.length === 0) {
-    console.log(
-      "✅ No records to sync (all records already have calendar events)\n"
-    );
-    return;
-  }
-
-  console.log(
-    `Found ${records.length} gaming record${
-      records.length === 1 ? "" : "s"
-    } without calendar events\n`
-  );
-
-  records.forEach((record) => {
-    console.log(
-      `  🎮 ${record.date}: ${record.gameName} (${record.playtime}) - ${
-        record.sessionCount
-      } session${record.sessionCount === 1 ? "" : "s"}`
-    );
-  });
-
-  console.log("\n" + "=".repeat(120) + "\n");
-}
-
-/**
- * Format PR records for display
- */
-function formatPRRecords(prRecords, notionService) {
-  const props = config.notion.properties.github;
-
-  return prRecords.map((record) => {
-    const repository = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.repository)
-    );
-    const date = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.date)
-    );
-    const commitsCount = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.commitsCount)
-    );
-    const totalLinesAdded = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.totalLinesAdded)
-    );
-    const totalLinesDeleted = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.totalLinesDeleted)
-    );
-    const projectType = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.projectType)
-    );
-
-    // Extract short repo name
-    let repoName = repository || "Unknown Repository";
-    const repoMatch = repoName.match(/^([^\s-]+)/);
-    if (repoMatch) {
-      const repoPath = repoMatch[1];
-      const parts = repoPath.split("/");
-      repoName = parts[parts.length - 1];
-    }
-
-    return {
-      repository: repoName,
-      date,
-      commitsCount: commitsCount || 0,
-      linesAdded: totalLinesAdded || 0,
-      linesDeleted: totalLinesDeleted || 0,
-      projectType: projectType || "Personal",
-    };
-  });
-}
-
-/**
- * Display table of PR records to sync
- */
-function displayPRRecordsTable(records) {
-  console.log("\n" + "=".repeat(120));
-  console.log("💻 GITHUB PR RECORDS TO SYNC");
-  console.log("=".repeat(120) + "\n");
-
-  if (records.length === 0) {
-    console.log(
-      "✅ No records to sync (all records already have calendar events)\n"
-    );
-    return;
-  }
-
-  console.log(
-    `Found ${records.length} PR record${
-      records.length === 1 ? "" : "s"
-    } without calendar events\n`
-  );
-
-  records.forEach((record) => {
-    console.log(
-      `  💻 ${record.date}: ${record.repository} - ${
-        record.commitsCount
-      } commit${record.commitsCount === 1 ? "" : "s"} (+${record.linesAdded}/-${
-        record.linesDeleted
-      } lines) → ${record.projectType}`
-    );
-  });
-
-  console.log("\n" + "=".repeat(120) + "\n");
-}
-
-/**
- * Format body weight records for display
- */
-function formatBodyWeightRecords(weightRecords, notionService) {
-  const props = config.notion.properties.withings;
-
-  return weightRecords.map((record) => {
-    const name = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.name)
-    );
-    const date = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.date)
-    );
-    const weight = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.weight)
-    );
-    const fatPercentage = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.fatPercentage)
-    );
-    const muscleMass = notionService.extractProperty(
-      record,
-      config.notion.getPropertyName(props.muscleMass)
-    );
-
-    return {
-      name,
-      date,
-      weight,
-      fatPercentage,
-      muscleMass,
-    };
-  });
-}
-
-/**
- * Display table of body weight records to sync
- */
-function displayBodyWeightRecordsTable(records) {
-  console.log("\n" + "=".repeat(120));
-  console.log("⚖️  BODY WEIGHT RECORDS TO SYNC");
-  console.log("=".repeat(120) + "\n");
-
-  if (records.length === 0) {
-    console.log(
-      "✅ No records to sync (all records already have calendar events)\n"
-    );
-    return;
-  }
-
-  console.log(
-    `Found ${records.length} body weight record${
-      records.length === 1 ? "" : "s"
-    } without calendar events\n`
-  );
-
-  records.forEach((record) => {
-    console.log(
-      `  ⚖️  ${record.date}: ${record.weight} lbs (${record.fatPercentage}% fat, ${record.muscleMass} lbs muscle)`
-    );
-  });
-
-  console.log("\n" + "=".repeat(120) + "\n");
 }
 
 /**
@@ -642,8 +264,12 @@ async function handleOuraSync(startDate, endDate, action) {
   }
 
   // Format and display records
-  const formattedRecords = formatSleepRecords(sleepRecords, notionService);
-  displaySleepRecordsTable(formattedRecords);
+  const formattedRecords = formatRecordsForDisplay(
+    sleepRecords,
+    "oura",
+    notionService
+  );
+  displayRecordsTable(formattedRecords, "oura");
 
   // Sync to calendar if requested
   if (action === "sync") {
@@ -673,8 +299,12 @@ async function handleStravaSync(startDate, endDate, action) {
   }
 
   // Format and display records
-  const formattedRecords = formatWorkoutRecords(workoutRecords, notionService);
-  displayWorkoutRecordsTable(formattedRecords);
+  const formattedRecords = formatRecordsForDisplay(
+    workoutRecords,
+    "strava",
+    notionService
+  );
+  displayRecordsTable(formattedRecords, "strava");
 
   // Sync to calendar if requested
   if (action === "sync") {
@@ -701,8 +331,12 @@ async function handleSteamSync(startDate, endDate, action) {
   }
 
   // Format and display records
-  const formattedRecords = formatSteamRecords(steamRecords, notionService);
-  displaySteamRecordsTable(formattedRecords);
+  const formattedRecords = formatRecordsForDisplay(
+    steamRecords,
+    "steam",
+    notionService
+  );
+  displayRecordsTable(formattedRecords, "steam");
 
   // Sync to calendar if requested
   if (action === "sync") {
@@ -729,8 +363,12 @@ async function handleGitHubSync(startDate, endDate, action) {
   }
 
   // Format and display records
-  const formattedRecords = formatPRRecords(prRecords, notionService);
-  displayPRRecordsTable(formattedRecords);
+  const formattedRecords = formatRecordsForDisplay(
+    prRecords,
+    "github",
+    notionService
+  );
+  displayRecordsTable(formattedRecords, "github");
 
   // Sync to calendar if requested
   if (action === "sync") {
@@ -760,11 +398,12 @@ async function handleBodyWeightSync(startDate, endDate, action) {
   }
 
   // Format and display records
-  const formattedRecords = formatBodyWeightRecords(
+  const formattedRecords = formatRecordsForDisplay(
     weightRecords,
+    "withings",
     notionService
   );
-  displayBodyWeightRecordsTable(formattedRecords);
+  displayRecordsTable(formattedRecords, "withings");
 
   // Sync to calendar if requested
   if (action === "sync") {

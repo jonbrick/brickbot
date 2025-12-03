@@ -6,26 +6,24 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const OuraService = require("../src/services/OuraService");
 const { fetchOuraData } = require("../src/collectors/collect-oura");
 const { fetchStravaData } = require("../src/collectors/collect-strava");
 const { fetchWithingsData } = require("../src/collectors/collect-withings");
 const { fetchSteamData } = require("../src/collectors/collect-steam");
 const { fetchGitHubData } = require("../src/collectors/collect-github");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion-oura");
-const { syncStravaToNotion } = require("../src/workflows/strava-to-notion-strava");
-const { syncSteamToNotion } = require("../src/workflows/steam-to-notion-steam");
-const { syncGitHubToNotion } = require("../src/workflows/github-to-notion-github");
 const {
-  formatDate,
-  formatDateLong,
-  getDayName,
-  parseDate,
-  addDays,
-  calculateNightOf,
-  isSleepIn,
-} = require("../src/utils/date");
-const { selectDateRange, createSpinner } = require("../src/utils/cli");
+  syncStravaToNotion,
+} = require("../src/workflows/strava-to-notion-strava");
+const { syncSteamToNotion } = require("../src/workflows/steam-to-notion-steam");
+const {
+  syncGitHubToNotion,
+} = require("../src/workflows/github-to-notion-github");
+const {
+  syncWithingsToNotion,
+} = require("../src/workflows/withings-to-notion-withings");
+const { formatDate, getDayName, isSleepIn } = require("../src/utils/date");
+const { selectDateRange } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
 const { sleepCategorization } = require("../src/config/notion");
 const { formatRecordForLogging } = require("../src/utils/display-names");
@@ -36,26 +34,25 @@ const {
 
 /**
  * Extract and format sleep data with only the specified fields
+ * Now accepts processed format from fetchOuraData() instead of raw API format
  */
-function extractSleepFields(sleepData) {
-  return sleepData.map((record) => {
-    // Calculate wake time from bedtime_end or bedtime_start + duration
-    const bedtimeEnd = record.bedtime_end ? new Date(record.bedtime_end) : null;
-    const bedtimeStart = record.bedtime_start
-      ? new Date(record.bedtime_start)
+function extractSleepFields(processedData) {
+  return processedData.map((record) => {
+    // Calculate wake time from bedtimeEnd (processed format uses camelCase)
+    const bedtimeEnd = record.bedtimeEnd ? new Date(record.bedtimeEnd) : null;
+    const bedtimeStart = record.bedtimeStart
+      ? new Date(record.bedtimeStart)
       : null;
 
     // Wake time is the bedtime_end
     const wakeTime = bedtimeEnd ? bedtimeEnd.toLocaleString() : "N/A";
 
-    // Get day name for the record day
-    const dayDate = record.day ? new Date(record.day) : null;
-    const dayName = dayDate ? getDayName(dayDate) : "N/A";
+    // Get day name for the record day (use ouraDate which is the raw wake-up date)
+    // ouraDate is already a Date object from the processed format
+    const dayName = record.ouraDate ? getDayName(record.ouraDate) : "N/A";
 
-    // Calculate "Night of" date (the night you went to sleep)
-    // Oura's 'day' field is the wake-up date, so "Night of" = day - 1
-    const nightOfDate = record.day ? calculateNightOf(record.day) : null;
-    const nightOfDateStr = nightOfDate ? formatDate(nightOfDate) : "N/A";
+    // Night of date is already calculated in processed format (nightOf is a Date object)
+    const nightOfDateStr = record.nightOf ? formatDate(record.nightOf) : "N/A";
 
     // Determine wake time category
     const googleCalendar =
@@ -64,28 +61,28 @@ function extractSleepFields(sleepData) {
         : sleepCategorization.normalWakeUpLabel;
 
     return {
-      id: record.id,
-      day: record.day,
+      id: record.sleepId,
+      day: record.ouraDate ? formatDate(record.ouraDate) : null,
       dayName: dayName,
       nightOf: nightOfDateStr,
       nightOfDate: nightOfDateStr,
-      bedtime_start: record.bedtime_start,
-      bedtime_end: record.bedtime_end,
-      total_sleep_duration: record.total_sleep_duration,
-      deep_sleep_duration: record.deep_sleep_duration,
-      rem_sleep_duration: record.rem_sleep_duration,
-      light_sleep_duration: record.light_sleep_duration,
-      awake_time: record.awake_time,
-      average_heart_rate: record.average_heart_rate,
-      lowest_heart_rate: record.lowest_heart_rate,
-      average_hrv: record.average_hrv,
-      average_breath: record.average_breath,
+      bedtime_start: record.bedtimeStart,
+      bedtime_end: record.bedtimeEnd,
+      total_sleep_duration: record.sleepDuration,
+      deep_sleep_duration: record.deepSleep,
+      rem_sleep_duration: record.remSleep,
+      light_sleep_duration: record.lightSleep,
+      awake_time: record.awakeTime,
+      average_heart_rate: record.heartRateAvg,
+      lowest_heart_rate: record.heartRateLow,
+      average_hrv: record.hrv,
+      average_breath: record.respiratoryRate,
       efficiency: record.efficiency,
       type: record.type,
       wake_time_check: wakeTime,
       googleCalendar: googleCalendar,
       calendarCreated: false,
-      readinessScore: record.readiness?.score || null,
+      readinessScore: record.readinessScore || null,
     };
   });
 }
@@ -296,18 +293,16 @@ async function main() {
 async function handleOuraData(startDate, endDate, action) {
   console.log("📊 Fetching Oura sleep data...\n");
 
-  const service = new OuraService();
+  // Fetch once using collector (returns processed format)
+  const processed = await fetchOuraData(startDate, endDate);
 
-  // Fetch sleep data
-  const sleepData = await service.fetchSleep(startDate, endDate);
-
-  if (sleepData.length === 0) {
+  if (processed.length === 0) {
     console.log("⚠️  No sleep data found for this date range\n");
     return;
   }
 
   // Extract only the fields we want for display
-  const extractedData = extractSleepFields(sleepData);
+  const extractedData = extractSleepFields(processed);
 
   // Always display the table
   printDataTable(extractedData, "sleep", "OURA SLEEP DATA");
@@ -316,8 +311,7 @@ async function handleOuraData(startDate, endDate, action) {
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
 
-    // Use the processed data from collector
-    const processed = await fetchOuraData(startDate, endDate);
+    // Reuse the processed data (already fetched above)
     const results = await syncOuraToNotion(processed);
 
     printSyncResults(results);
@@ -344,9 +338,8 @@ async function handleStravaData(startDate, endDate, action) {
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
 
-    // Use the processed data from collector
-    const processed = await fetchStravaData(startDate, endDate);
-    const results = await syncStravaToNotion(processed);
+    // Reuse the processed data (already fetched above)
+    const results = await syncStravaToNotion(activities);
 
     printSyncResults(results);
   }
@@ -372,10 +365,7 @@ async function handleWithingsData(startDate, endDate, action) {
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
 
-    // Use the processed data from collector
-    const {
-      syncWithingsToNotion,
-    } = require("../src/workflows/withings-to-notion-withings");
+    // Reuse the processed data (already fetched above)
     const results = await syncWithingsToNotion(measurements);
     printSyncResults(results);
   }
@@ -401,9 +391,8 @@ async function handleSteamData(startDate, endDate, action) {
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
 
-    // Use the processed data from collector
-    const processed = await fetchSteamData(startDate, endDate);
-    const results = await syncSteamToNotion(processed);
+    // Reuse the processed data (already fetched above)
+    const results = await syncSteamToNotion(activities);
 
     printSyncResults(results);
   }
@@ -429,9 +418,8 @@ async function handleGitHubData(startDate, endDate, action) {
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
 
-    // Use the processed data from collector
-    const processed = await fetchGitHubData(startDate, endDate);
-    const results = await syncGitHubToNotion(processed);
+    // Reuse the processed data (already fetched above)
+    const results = await syncGitHubToNotion(activities);
 
     printSyncResults(results);
   }

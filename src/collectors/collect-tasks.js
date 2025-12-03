@@ -1,4 +1,26 @@
 /**
+ * @fileoverview Collect Completed Tasks from Notion
+ *
+ * Purpose: Fetches completed tasks from Notion Tasks database for a specific date range,
+ * preparing it for Personal Recap aggregation.
+ *
+ * Responsibilities:
+ * - Query Notion Tasks database
+ * - Filter by completion status and due date
+ * - Map task data to collector format
+ *
+ * Data Flow:
+ * - Input: Date range
+ * - Fetches: Notion API (Tasks database query)
+ * - Output: Array of completed task objects with standardized fields
+ *
+ * Example:
+ * ```
+ * const tasks = await fetchCompletedTasks(startDate, endDate);
+ * ```
+ */
+
+/**
  * Task Collector
  * Fetches completed tasks from Notion Tasks database
  */
@@ -62,4 +84,5 @@ async function fetchCompletedTasks(startDate, endDate) {
 module.exports = {
   fetchCompletedTasks,
 };
+
 

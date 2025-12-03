@@ -137,5 +137,279 @@ const calendarMappings = {
   },
 };
 
-module.exports = calendarMappings;
+/**
+ * Personal Recap Data Sources Configuration
+ * Defines which calendars feed into Personal Recap database and their metadata
+ */
+const PERSONAL_RECAP_SOURCES = {
+  sleep: {
+    id: 'sleep',
+    displayName: 'Sleep (Early Wakeup + Sleep In)',
+    description: 'Sleep tracking from Normal Wake Up and Sleep In calendars',
+    required: false,
+    calendars: [
+      { 
+        key: 'normalWakeUp', 
+        envVar: 'NORMAL_WAKE_UP_CALENDAR_ID', 
+        required: true,
+        fetchKey: 'earlyWakeup' // Maps to calendar event key
+      },
+      { 
+        key: 'sleepIn', 
+        envVar: 'SLEEP_IN_CALENDAR_ID', 
+        required: true,
+        fetchKey: 'sleepIn'
+      }
+    ],
+    metrics: ['earlyWakeupDays', 'sleepInDays', 'totalSleepDays'],
+    isSleepCalendar: true,
+    ignoreAllDayEvents: true
+  },
+  
+  drinkingDays: {
+    id: 'drinkingDays',
+    displayName: 'Drinking Days (Sober + Drinking)',
+    description: 'Alcohol tracking from Sober and Drinking calendars',
+    required: false,
+    calendars: [
+      { key: 'sober', envVar: 'SOBER_CALENDAR_ID', required: true, fetchKey: 'sober' },
+      { key: 'drinking', envVar: 'DRINKING_CALENDAR_ID', required: true, fetchKey: 'drinking' }
+    ],
+    metrics: ['soberDays', 'drinkingDays']
+  },
+  
+  workout: {
+    id: 'workout',
+    displayName: 'Workout',
+    description: 'Exercise tracking from Workout calendar',
+    required: false,
+    calendars: [
+      { key: 'workout', envVar: 'WORKOUT_CALENDAR_ID', required: true, fetchKey: 'workout' }
+    ],
+    metrics: ['workoutDays', 'workoutHours', 'workoutSessions']
+  },
+  
+  reading: {
+    id: 'reading',
+    displayName: 'Reading',
+    description: 'Reading time tracking',
+    required: false,
+    calendars: [
+      { key: 'reading', envVar: 'READING_CALENDAR_ID', required: true, fetchKey: 'reading' }
+    ],
+    metrics: ['readingDays', 'readingHours']
+  },
+  
+  coding: {
+    id: 'coding',
+    displayName: 'Coding',
+    description: 'Personal coding time tracking',
+    required: false,
+    calendars: [
+      { key: 'coding', envVar: 'CODING_CALENDAR_ID', required: true, fetchKey: 'coding' }
+    ],
+    metrics: ['codingDays', 'codingHours']
+  },
+  
+  art: {
+    id: 'art',
+    displayName: 'Art',
+    description: 'Creative art time tracking',
+    required: false,
+    calendars: [
+      { key: 'art', envVar: 'ART_CALENDAR_ID', required: true, fetchKey: 'art' }
+    ],
+    metrics: ['artDays', 'artHours']
+  },
+  
+  videoGames: {
+    id: 'videoGames',
+    displayName: 'Video Games',
+    description: 'Gaming time tracking',
+    required: false,
+    calendars: [
+      { key: 'videoGames', envVar: 'VIDEO_GAMES_CALENDAR_ID', required: true, fetchKey: 'videoGames' }
+    ],
+    metrics: ['videoGamesDays', 'videoGamesHours']
+  },
+  
+  meditation: {
+    id: 'meditation',
+    displayName: 'Meditation',
+    description: 'Meditation practice tracking',
+    required: false,
+    calendars: [
+      { key: 'meditation', envVar: 'MEDITATION_CALENDAR_ID', required: true, fetchKey: 'meditation' }
+    ],
+    metrics: ['meditationDays', 'meditationHours', 'meditationSessions']
+  },
+  
+  music: {
+    id: 'music',
+    displayName: 'Music',
+    description: 'Music practice/listening tracking',
+    required: false,
+    calendars: [
+      { key: 'music', envVar: 'MUSIC_CALENDAR_ID', required: true, fetchKey: 'music' }
+    ],
+    metrics: ['musicDays', 'musicHours']
+  },
+  
+  bodyWeight: {
+    id: 'bodyWeight',
+    displayName: 'Body Weight',
+    description: 'Body weight measurements',
+    required: false,
+    calendars: [
+      { key: 'bodyWeight', envVar: 'BODY_WEIGHT_CALENDAR_ID', required: true, fetchKey: 'bodyWeight' }
+    ],
+    metrics: ['bodyWeightCount', 'bodyWeightAverage']
+  },
+  
+  personalCalendar: {
+    id: 'personalCalendar',
+    displayName: 'Personal Calendar',
+    description: 'Main personal calendar events by category',
+    required: false,
+    calendars: [
+      { key: 'personalMain', envVar: 'PERSONAL_MAIN_CALENDAR_ID', required: true, fetchKey: 'personalCalendar' }
+    ],
+    metrics: ['personalDays', 'personalHours', 'interpersonalDays', 'interpersonalHours', 
+              'experientialDays', 'experientialHours', 'intellectualDays', 'intellectualHours']
+  },
+  
+  personalPRs: {
+    id: 'personalPRs',
+    displayName: 'Personal PRs',
+    description: 'Personal GitHub pull requests',
+    required: false,
+    calendars: [
+      { key: 'personalPRs', envVar: 'PERSONAL_PRS_CALENDAR_ID', required: true, fetchKey: 'personalPRs' }
+    ],
+    metrics: ['personalPRsCount']
+  },
+  
+  tasks: {
+    id: 'tasks',
+    displayName: 'Tasks',
+    description: 'Completed tasks from Notion database',
+    required: false,
+    isNotionSource: true, // Not a calendar source
+    databaseId: process.env.TASKS_DATABASE_ID,
+    metrics: ['tasksCompleted', 'tasksCompletedBlocks']
+  }
+};
+
+/**
+ * Get all available Personal Recap sources
+ * Filters sources to only include those with configured environment variables
+ * @returns {Array<Object>} Array of available sources with metadata
+ */
+function getAvailableRecapSources() {
+  return Object.entries(PERSONAL_RECAP_SOURCES)
+    .filter(([_, config]) => {
+      // Tasks is a special case (Notion database, not calendar)
+      if (config.isNotionSource) {
+        return !!config.databaseId;
+      }
+      
+      // Check if all required calendars have env vars set
+      return config.calendars.every(cal => {
+        const envValue = process.env[cal.envVar];
+        return cal.required ? !!envValue : true;
+      });
+    })
+    .map(([id, config]) => ({ 
+      id, 
+      displayName: config.displayName,
+      description: config.description,
+      isNotionSource: config.isNotionSource || false
+    }));
+}
+
+/**
+ * Get calendar configuration for a specific source
+ * @param {string} sourceId - Source identifier (e.g., 'sleep', 'workout')
+ * @returns {Object|null} Source configuration or null if not found
+ */
+function getRecapSourceConfig(sourceId) {
+  return PERSONAL_RECAP_SOURCES[sourceId] || null;
+}
+
+/**
+ * Get calendar IDs for a specific source
+ * @param {string} sourceId - Source identifier
+ * @returns {Object|null} Object mapping calendar keys to IDs, or null if not found
+ */
+function getCalendarIdsForSource(sourceId) {
+  const source = PERSONAL_RECAP_SOURCES[sourceId];
+  if (!source || source.isNotionSource) return null;
+  
+  return source.calendars.reduce((acc, cal) => {
+    const calendarId = process.env[cal.envVar];
+    if (calendarId) {
+      acc[cal.key] = calendarId;
+    }
+    return acc;
+  }, {});
+}
+
+/**
+ * Build calendar fetch configuration for selected sources
+ * @param {Array<string>} selectedSources - Array of source IDs to fetch
+ * @param {string} accountType - "personal" or "work"
+ * @returns {Array<Object>} Array of fetch configurations
+ */
+function buildCalendarFetches(selectedSources, accountType = 'personal') {
+  const fetches = [];
+  
+  for (const sourceId of selectedSources) {
+    const source = PERSONAL_RECAP_SOURCES[sourceId];
+    if (!source) {
+      console.warn(`Unknown source: ${sourceId}`);
+      continue;
+    }
+    
+    // Skip Notion sources (handled separately)
+    if (source.isNotionSource) {
+      continue;
+    }
+    
+    // Validate all required calendars are configured
+    const missingCalendars = source.calendars
+      .filter(cal => cal.required && !process.env[cal.envVar])
+      .map(cal => cal.envVar);
+      
+    if (missingCalendars.length > 0) {
+      throw new Error(
+        `${source.displayName} requires: ${missingCalendars.join(', ')}`
+      );
+    }
+    
+    // Add fetch config for each calendar in this source
+    for (const calendar of source.calendars) {
+      const calendarId = process.env[calendar.envVar];
+      if (!calendarId) continue;
+      
+      fetches.push({
+        key: calendar.fetchKey,
+        calendarId,
+        accountType,
+        isSleepCalendar: source.isSleepCalendar || false,
+        ignoreAllDayEvents: source.ignoreAllDayEvents || false
+      });
+    }
+  }
+  
+  return fetches;
+}
+
+module.exports = {
+  ...calendarMappings,
+  PERSONAL_RECAP_SOURCES,
+  getAvailableRecapSources,
+  getRecapSourceConfig,
+  getCalendarIdsForSource,
+  buildCalendarFetches
+};
 

@@ -75,7 +75,7 @@ const DATA_SOURCES = {
         notionProperty: "sleepInDays",
       },
       sleepHoursTotal: {
-        label: "Sleep Hours Total",
+        label: "Sleep - Hours Total",
         type: "decimal",
         notionProperty: "sleepHoursTotal",
       },
@@ -106,7 +106,7 @@ const DATA_SOURCES = {
         notionProperty: "drinkingDays",
       },
       drinkingBlocks: {
-        label: "Drinking Blocks",
+        label: "Drinking - Blocks",
         type: "optionalText",
         notionProperty: "drinkingBlocks",
       },
@@ -131,139 +131,19 @@ const DATA_SOURCES = {
         notionProperty: "workoutDays",
       },
       workoutSessions: {
-        label: "Workout Sessions",
+        label: "Workout - Sessions",
         type: "count",
         notionProperty: "workoutSessions",
       },
       workoutHoursTotal: {
-        label: "Workout Hours Total",
+        label: "Workout - Hours Total",
         type: "decimal",
         notionProperty: "workoutHoursTotal",
       },
       workoutBlocks: {
-        label: "Workout Blocks",
+        label: "Workout - Blocks",
         type: "optionalText",
         notionProperty: "workoutBlocks",
-      },
-    },
-  },
-
-  reading: {
-    id: "reading",
-    name: "Reading",
-    emoji: "📚",
-    type: "calendar",
-    apiSource: "google_calendar",
-    calendars: { reading: process.env.READING_CALENDAR_ID },
-    metrics: {
-      readingDays: {
-        label: "Reading Days",
-        type: "count",
-        notionProperty: "readingDays",
-      },
-      readingSessions: {
-        label: "Reading Sessions",
-        type: "count",
-        notionProperty: "readingSessions",
-      },
-      readingHoursTotal: {
-        label: "Reading Hours Total",
-        type: "decimal",
-        notionProperty: "readingHoursTotal",
-      },
-      readingBlocks: {
-        label: "Reading Blocks",
-        type: "optionalText",
-        notionProperty: "readingBlocks",
-      },
-    },
-  },
-
-  coding: {
-    id: "coding",
-    name: "Coding",
-    emoji: "💻",
-    type: "calendar",
-    apiSource: "google_calendar",
-    calendars: { coding: process.env.CODING_CALENDAR_ID },
-    metrics: {
-      codingDays: {
-        label: "Coding Days",
-        type: "count",
-        notionProperty: "codingDays",
-      },
-      codingSessions: {
-        label: "Coding Sessions",
-        type: "count",
-        notionProperty: "codingSessions",
-      },
-      codingHoursTotal: {
-        label: "Coding Hours Total",
-        type: "decimal",
-        notionProperty: "codingHoursTotal",
-      },
-      codingBlocks: {
-        label: "Coding Blocks",
-        type: "optionalText",
-        notionProperty: "codingBlocks",
-      },
-    },
-  },
-
-  art: {
-    id: "art",
-    name: "Art",
-    emoji: "🎨",
-    type: "calendar",
-    apiSource: "google_calendar",
-    calendars: { art: process.env.ART_CALENDAR_ID },
-    metrics: {
-      artDays: { label: "Art Days", type: "count", notionProperty: "artDays" },
-      artSessions: {
-        label: "Art Sessions",
-        type: "count",
-        notionProperty: "artSessions",
-      },
-      artHoursTotal: {
-        label: "Art Hours Total",
-        type: "decimal",
-        notionProperty: "artHoursTotal",
-      },
-      artBlocks: {
-        label: "Art Blocks",
-        type: "optionalText",
-        notionProperty: "artBlocks",
-      },
-    },
-  },
-
-  videoGames: {
-    id: "videoGames",
-    name: "Video Games",
-    emoji: "🎮",
-    type: "calendar",
-    apiSource: "google_calendar",
-    calendars: { videoGames: process.env.VIDEO_GAMES_CALENDAR_ID },
-    metrics: {
-      videoGamesDays: {
-        label: "Video Games Days",
-        type: "count",
-        notionProperty: "videoGamesDays",
-      },
-      videoGamesSessions: {
-        label: "Video Games Sessions",
-        type: "count",
-        notionProperty: "videoGamesSessions",
-      },
-      videoGamesHoursTotal: {
-        label: "Video Games Hours Total",
-        type: "decimal",
-        notionProperty: "videoGamesHoursTotal",
-      },
-      videoGamesBlocks: {
-        label: "Video Games Blocks",
-        type: "optionalText",
-        notionProperty: "videoGamesBlocks",
       },
     },
   },
@@ -282,19 +162,77 @@ const DATA_SOURCES = {
         notionProperty: "meditationDays",
       },
       meditationSessions: {
-        label: "Meditation Sessions",
+        label: "Meditation - Sessions",
         type: "count",
         notionProperty: "meditationSessions",
       },
       meditationHoursTotal: {
-        label: "Meditation Hours Total",
+        label: "Meditation - Hours Total",
         type: "decimal",
         notionProperty: "meditationHoursTotal",
       },
       meditationBlocks: {
-        label: "Meditation Blocks",
+        label: "Meditation - Blocks",
         type: "optionalText",
         notionProperty: "meditationBlocks",
+      },
+    },
+  },
+
+  reading: {
+    id: "reading",
+    name: "Reading",
+    emoji: "📚",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { reading: process.env.READING_CALENDAR_ID },
+    metrics: {
+      readingDays: {
+        label: "Reading Days",
+        type: "count",
+        notionProperty: "readingDays",
+      },
+      readingSessions: {
+        label: "Reading - Sessions",
+        type: "count",
+        notionProperty: "readingSessions",
+      },
+      readingHoursTotal: {
+        label: "Reading - Hours Total",
+        type: "decimal",
+        notionProperty: "readingHoursTotal",
+      },
+      readingBlocks: {
+        label: "Reading - Blocks",
+        type: "optionalText",
+        notionProperty: "readingBlocks",
+      },
+    },
+  },
+
+  art: {
+    id: "art",
+    name: "Art",
+    emoji: "🎨",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { art: process.env.ART_CALENDAR_ID },
+    metrics: {
+      artDays: { label: "Art Days", type: "count", notionProperty: "artDays" },
+      artSessions: {
+        label: "Art - Sessions",
+        type: "count",
+        notionProperty: "artSessions",
+      },
+      artHoursTotal: {
+        label: "Art - Hours Total",
+        type: "decimal",
+        notionProperty: "artHoursTotal",
+      },
+      artBlocks: {
+        label: "Art - Blocks",
+        type: "optionalText",
+        notionProperty: "artBlocks",
       },
     },
   },
@@ -313,19 +251,102 @@ const DATA_SOURCES = {
         notionProperty: "musicDays",
       },
       musicSessions: {
-        label: "Music Sessions",
+        label: "Music - Sessions",
         type: "count",
         notionProperty: "musicSessions",
       },
       musicHoursTotal: {
-        label: "Music Hours Total",
+        label: "Music - Hours Total",
         type: "decimal",
         notionProperty: "musicHoursTotal",
       },
       musicBlocks: {
-        label: "Music Blocks",
+        label: "Music - Blocks",
         type: "optionalText",
         notionProperty: "musicBlocks",
+      },
+    },
+  },
+
+  coding: {
+    id: "coding",
+    name: "Coding",
+    emoji: "💻",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { coding: process.env.CODING_CALENDAR_ID },
+    metrics: {
+      codingDays: {
+        label: "Coding Days",
+        type: "count",
+        notionProperty: "codingDays",
+      },
+      codingSessions: {
+        label: "Coding - Sessions",
+        type: "count",
+        notionProperty: "codingSessions",
+      },
+      codingHoursTotal: {
+        label: "Coding - Hours Total",
+        type: "decimal",
+        notionProperty: "codingHoursTotal",
+      },
+      codingBlocks: {
+        label: "Coding - Blocks",
+        type: "optionalText",
+        notionProperty: "codingBlocks",
+      },
+    },
+  },
+
+  videoGames: {
+    id: "videoGames",
+    name: "Video Games",
+    emoji: "🎮",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { videoGames: process.env.VIDEO_GAMES_CALENDAR_ID },
+    metrics: {
+      videoGamesDays: {
+        label: "Video Games Days",
+        type: "count",
+        notionProperty: "videoGamesDays",
+      },
+      videoGamesSessions: {
+        label: "Video Games - Sessions",
+        type: "count",
+        notionProperty: "videoGamesSessions",
+      },
+      videoGamesHoursTotal: {
+        label: "Video Games - Hours Total",
+        type: "decimal",
+        notionProperty: "videoGamesHoursTotal",
+      },
+      videoGamesBlocks: {
+        label: "Video Games - Blocks",
+        type: "optionalText",
+        notionProperty: "videoGamesBlocks",
+      },
+    },
+  },
+
+  personalPRs: {
+    id: "personalPRs",
+    name: "Personal PRs",
+    emoji: "💪",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID },
+    metrics: {
+      prsSessions: {
+        label: "Personal PRs - Sessions",
+        type: "count",
+        notionProperty: "prsSessions",
+      },
+      prsDetails: {
+        label: "Personal PRs - Details",
+        type: "optionalText",
+        notionProperty: "prsDetails",
       },
     },
   },
@@ -339,7 +360,7 @@ const DATA_SOURCES = {
     calendars: { bodyWeight: process.env.BODY_WEIGHT_CALENDAR_ID },
     metrics: {
       bodyWeightAverage: {
-        label: "Body Weight Average",
+        label: "Body Weight - Average",
         type: "decimal",
         notionProperty: "bodyWeightAverage",
         suffix: " lbs",
@@ -360,17 +381,17 @@ const DATA_SOURCES = {
       personal: {
         metrics: {
           personalSessions: {
-            label: "Personal Sessions",
+            label: "Personal - Sessions",
             type: "count",
             notionProperty: "personalSessions",
           },
           personalHoursTotal: {
-            label: "Personal Hours Total",
+            label: "Personal - Hours Total",
             type: "decimal",
             notionProperty: "personalHoursTotal",
           },
           personalBlocks: {
-            label: "Personal Blocks",
+            label: "Personal - Blocks",
             type: "optionalText",
             notionProperty: "personalBlocks",
           },
@@ -379,17 +400,17 @@ const DATA_SOURCES = {
       interpersonal: {
         metrics: {
           interpersonalSessions: {
-            label: "Interpersonal Sessions",
+            label: "Interpersonal - Sessions",
             type: "count",
             notionProperty: "interpersonalSessions",
           },
           interpersonalHoursTotal: {
-            label: "Interpersonal Hours Total",
+            label: "Interpersonal - Hours Total",
             type: "decimal",
             notionProperty: "interpersonalHoursTotal",
           },
           interpersonalBlocks: {
-            label: "Interpersonal Blocks",
+            label: "Interpersonal - Blocks",
             type: "optionalText",
             notionProperty: "interpersonalBlocks",
           },
@@ -398,17 +419,17 @@ const DATA_SOURCES = {
       home: {
         metrics: {
           homeSessions: {
-            label: "Home Sessions",
+            label: "Home - Sessions",
             type: "count",
             notionProperty: "homeSessions",
           },
           homeHoursTotal: {
-            label: "Home Hours Total",
+            label: "Home - Hours Total",
             type: "decimal",
             notionProperty: "homeHoursTotal",
           },
           homeBlocks: {
-            label: "Home Blocks",
+            label: "Home - Blocks",
             type: "optionalText",
             notionProperty: "homeBlocks",
           },
@@ -417,17 +438,17 @@ const DATA_SOURCES = {
       physicalHealth: {
         metrics: {
           physicalHealthSessions: {
-            label: "Physical Health Sessions",
+            label: "Physical Health - Sessions",
             type: "count",
             notionProperty: "physicalHealthSessions",
           },
           physicalHealthHoursTotal: {
-            label: "Physical Health Hours Total",
+            label: "Physical Health - Hours Total",
             type: "decimal",
             notionProperty: "physicalHealthHoursTotal",
           },
           physicalHealthBlocks: {
-            label: "Physical Health Blocks",
+            label: "Physical Health - Blocks",
             type: "optionalText",
             notionProperty: "physicalHealthBlocks",
           },
@@ -436,17 +457,17 @@ const DATA_SOURCES = {
       mentalHealth: {
         metrics: {
           mentalHealthSessions: {
-            label: "Mental Health Sessions",
+            label: "Mental Health - Sessions",
             type: "count",
             notionProperty: "mentalHealthSessions",
           },
           mentalHealthHoursTotal: {
-            label: "Mental Health Hours Total",
+            label: "Mental Health - Hours Total",
             type: "decimal",
             notionProperty: "mentalHealthHoursTotal",
           },
           mentalHealthBlocks: {
-            label: "Mental Health Blocks",
+            label: "Mental Health - Blocks",
             type: "optionalText",
             notionProperty: "mentalHealthBlocks",
           },
@@ -455,32 +476,11 @@ const DATA_SOURCES = {
       ignore: {
         metrics: {
           ignoreBlocks: {
-            label: "Ignore Blocks",
+            label: "Ignore - Blocks",
             type: "optionalText",
             notionProperty: "ignoreBlocks",
           },
         },
-      },
-    },
-  },
-
-  personalPRs: {
-    id: "personalPRs",
-    name: "Personal PRs",
-    emoji: "💪",
-    type: "calendar",
-    apiSource: "google_calendar",
-    calendars: { personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID },
-    metrics: {
-      prsSessions: {
-        label: "PRs Sessions",
-        type: "count",
-        notionProperty: "prsSessions",
-      },
-      prsDetails: {
-        label: "PRs Details",
-        type: "optionalText",
-        notionProperty: "prsDetails",
       },
     },
   },
@@ -505,7 +505,7 @@ const DATA_SOURCES = {
             notionProperty: "personalTasksComplete",
           },
           personalTaskDetails: {
-            label: "Personal Task Details",
+            label: "Personal Task - Details",
             type: "optionalText",
             notionProperty: "personalTaskDetails",
           },
@@ -519,7 +519,7 @@ const DATA_SOURCES = {
             notionProperty: "interpersonalTasksComplete",
           },
           interpersonalTaskDetails: {
-            label: "Interpersonal Task Details",
+            label: "Interpersonal Task - Details",
             type: "optionalText",
             notionProperty: "interpersonalTaskDetails",
           },
@@ -533,7 +533,7 @@ const DATA_SOURCES = {
             notionProperty: "homeTasksComplete",
           },
           homeTaskDetails: {
-            label: "Home Task Details",
+            label: "Home Task - Details",
             type: "optionalText",
             notionProperty: "homeTaskDetails",
           },
@@ -547,7 +547,7 @@ const DATA_SOURCES = {
             notionProperty: "physicalHealthTasksComplete",
           },
           physicalHealthTaskDetails: {
-            label: "Physical Health Task Details",
+            label: "Physical Health Task - Details",
             type: "optionalText",
             notionProperty: "physicalHealthTaskDetails",
           },
@@ -561,7 +561,7 @@ const DATA_SOURCES = {
             notionProperty: "mentalHealthTasksComplete",
           },
           mentalHealthTaskDetails: {
-            label: "Mental Health Task Details",
+            label: "Mental Health Task - Details",
             type: "optionalText",
             notionProperty: "mentalHealthTaskDetails",
           },

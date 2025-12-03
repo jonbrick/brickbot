@@ -4,8 +4,8 @@
  */
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
-const { fetchCompletedTasks } = require("../collectors/tasks");
-const { calculateWeekSummary } = require("../transformers/calendar-to-personal-recap");
+const { fetchCompletedTasks } = require("../collectors/collect-tasks");
+const { transformCalendarEventsToRecapMetrics } = require("../transformers/transform-calendar-to-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
@@ -72,7 +72,7 @@ async function summarizeWeek(weekNumber, year, options = {}) {
 
     // Calculate summary (empty calendar events, just tasks)
     const calendarEvents = {}; // Empty since this is Notion-only workflow
-    const summary = calculateWeekSummary(
+    const summary = transformCalendarEventsToRecapMetrics(
       calendarEvents,
       startDate,
       endDate,

@@ -7,11 +7,11 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const OuraService = require("../src/services/OuraService");
-const { fetchOuraData } = require("../src/collectors/oura");
-const { fetchStravaData } = require("../src/collectors/strava");
-const { fetchWithingsData } = require("../src/collectors/withings");
-const { fetchSteamData } = require("../src/collectors/steam");
-const { fetchGitHubData } = require("../src/collectors/github");
+const { fetchOuraData } = require("../src/collectors/collect-oura");
+const { fetchStravaData } = require("../src/collectors/collect-strava");
+const { fetchWithingsData } = require("../src/collectors/collect-withings");
+const { fetchSteamData } = require("../src/collectors/collect-steam");
+const { fetchGitHubData } = require("../src/collectors/collect-github");
 const { syncOuraToNotion } = require("../src/workflows/oura-to-notion");
 const { syncStravaToNotion } = require("../src/workflows/strava-to-notion");
 const { syncSteamToNotion } = require("../src/workflows/steam-to-notion");

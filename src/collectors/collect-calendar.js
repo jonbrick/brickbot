@@ -1,4 +1,36 @@
 /**
+ * @fileoverview Collect Calendar Event Summary Data
+ *
+ * Purpose: Fetches calendar events from Google Calendar API for a specific date range
+ * and extracts summary data (dates, durations) for Personal Recap aggregation.
+ *
+ * Responsibilities:
+ * - Authenticate with Google Calendar API
+ * - Fetch events in date range
+ * - Calculate event durations
+ * - Apply "night of" logic for sleep events
+ * - Filter all-day events if needed
+ * - Map event data to collector format
+ *
+ * Data Flow:
+ * - Input: Calendar ID, date range, account type, sleep calendar flag
+ * - Fetches: Google Calendar API (listEvents)
+ * - Output: Array of event objects with date and duration
+ *
+ * Example:
+ * ```
+ * const events = await fetchCalendarSummary(
+ *   calendarId,
+ *   startDate,
+ *   endDate,
+ *   'personal',
+ *   true, // isSleepCalendar
+ *   false // ignoreAllDayEvents
+ * );
+ * ```
+ */
+
+/**
  * Calendar Summary Collector
  * Fetches calendar events and calculates durations for summarization
  */
@@ -139,3 +171,4 @@ async function fetchCalendarSummary(
 module.exports = {
   fetchCalendarSummary,
 };
+

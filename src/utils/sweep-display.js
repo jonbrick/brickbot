@@ -3,8 +3,12 @@
  * Config-driven utilities for building source choices and handlers for sweep CLIs
  */
 
-const { getSweepSources, getSourceHandler, SWEEP_SOURCES } = require('../config/sweep-sources');
-const config = require('../config');
+const {
+  getSweepSources,
+  getSourceHandler,
+  SWEEP_SOURCES,
+} = require("../config/sweep-sources");
+const config = require("../config");
 
 /**
  * Generate source selection choices for inquirer
@@ -13,13 +17,21 @@ const config = require('../config');
  */
 function buildSourceChoices(mode) {
   const sources = getSweepSources(mode);
+  
+  // Sort sources alphabetically by name
+  const sortedSources = [...sources].sort((a, b) => 
+    a.name.localeCompare(b.name)
+  );
+  
   const choices = [
     {
-      name: `All Sources (${sources.map(s => s.name.split(' ')[0]).join(', ')})`,
-      value: 'all',
+      name: `All Sources (${sortedSources
+        .map((s) => s.name.split(" ")[0])
+        .join(", ")})`,
+      value: "all",
     },
-    ...sources.map(s => ({
-      name: `${s.emoji} ${s.name}`,
+    ...sortedSources.map((s) => ({
+      name: s.name, // No emoji
       value: s.id,
     })),
   ];
@@ -35,19 +47,21 @@ function buildSourceChoices(mode) {
 function buildAllSourcesHandlers(mode, handlers) {
   const sources = getSweepSources(mode);
   return sources
-    .map(source => {
+    .map((source) => {
       const handlerName = getSourceHandler(source.id, mode);
       const handler = handlers[handlerName];
       if (!handler) {
-        console.warn(`Warning: Handler "${handlerName}" not found for source "${source.id}"`);
+        console.warn(
+          `Warning: Handler "${handlerName}" not found for source "${source.id}"`
+        );
         return null;
       }
       return {
-        name: source.name.split(' ')[0], // Extract "Oura" from "Oura (Sleep)"
+        name: source.name.split(" ")[0], // Extract "Oura" from "Oura (Sleep)"
         handler: handler,
       };
     })
-    .filter(item => item !== null); // Filter out any null entries
+    .filter((item) => item !== null); // Filter out any null entries
 }
 
 /**
@@ -82,7 +96,9 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
       }
 
       // Get property name from config
-      const propName = config.notion.getPropertyName(propConfig[field.property]);
+      const propName = config.notion.getPropertyName(
+        propConfig[field.property]
+      );
 
       // Extract value
       let value = notionService.extractProperty(record, propName);
@@ -129,7 +145,9 @@ function displayRecordsTable(records, sourceId) {
   console.log("=".repeat(120) + "\n");
 
   if (records.length === 0) {
-    console.log("✅ No records to sync (all records already have calendar events)\n");
+    console.log(
+      "✅ No records to sync (all records already have calendar events)\n"
+    );
     return;
   }
 
@@ -149,4 +167,3 @@ module.exports = {
   formatRecordsForDisplay,
   displayRecordsTable,
 };
-

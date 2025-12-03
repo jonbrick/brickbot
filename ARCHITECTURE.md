@@ -54,11 +54,13 @@ brickbot/
 │   │   └── TokenService.js
 │   │
 │   ├── collectors/       # Data fetching (business logic)
-│   │   ├── github.js
-│   │   ├── oura.js
-│   │   ├── strava.js
-│   │   ├── steam.js
-│   │   └── withings.js
+│   │   ├── collect-github.js
+│   │   ├── collect-oura.js
+│   │   ├── collect-strava.js
+│   │   ├── collect-steam.js
+│   │   ├── collect-withings.js
+│   │   ├── collect-tasks.js
+│   │   └── collect-calendar.js
 │   │
 │   ├── transformers/     # Data transformation layer
 │   │   ├── github-to-notion.js
@@ -71,7 +73,7 @@ brickbot/
 │   │   ├── withings-to-notion.js
 │   │   ├── notion-bodyweight-to-calendar.js
 │   │   ├── notion-sleep-to-calendar.js
-│   │   └── calendar-to-personal-recap.js
+│   │   └── transform-calendar-to-recap.js
 │   │
 │   ├── workflows/        # Sync workflows with de-duplication
 │   │   ├── BaseWorkflow.js          # NEW: Reusable batch logic (190 lines)
@@ -85,7 +87,7 @@ brickbot/
 │   │   ├── notion-steam-to-calendar.js     # UPDATED: Uses SteamDatabase
 │   │   ├── withings-to-notion.js    # UPDATED: Uses BodyWeightDatabase
 │   │   ├── notion-bodyweight-to-calendar.js  # UPDATED: Uses BodyWeightDatabase
-│   │   └── calendar-to-personal-recap.js     # UPDATED: Uses PersonalRecapDatabase
+│   │   └── aggregate-calendar-to-recap.js     # UPDATED: Uses PersonalRecapDatabase
 │   │
 │   └── utils/           # Shared utilities
 │       ├── async.js               # Async helpers (delay, rate limiting)
@@ -451,6 +453,33 @@ User-facing command-line interfaces that:
 - Orchestrate services, collectors, and transformers
 - Display results
 - Handle errors gracefully
+
+## Naming Conventions
+
+Consistent naming patterns make the codebase more intuitive and self-documenting.
+
+### File Naming Patterns
+
+- **Workflows**: `[verb]-[source]-to-[destination].js` (e.g., `sync-oura-to-notion.js`, `aggregate-calendar-to-recap.js`)
+- **Transformers**: `transform-[source]-to-[destination].js` (e.g., `transform-oura-to-notion.js`, `transform-calendar-to-recap.js`)
+- **Collectors**: `collect-[source].js` (e.g., `collect-oura.js`, `collect-github.js`, `collect-calendar.js`)
+- **Databases**: `[Domain]Database.js` (e.g., `SleepDatabase.js`, `WorkoutDatabase.js`) - PascalCase class names
+- **Services**: `[Provider]Service.js` (e.g., `OuraService.js`, `GoogleCalendarService.js`) - PascalCase class names
+
+### Verb Usage
+
+- **aggregate**: Combining data from multiple sources → `aggregateCalendarDataForWeek()`
+- **sync**: Coordinating data between systems → `syncOuraToNotion()`
+- **collect**: Gathering data from APIs → `collectOuraSleepData()`, `fetchOuraData()`
+- **transform**: Converting between formats → `transformOuraToNotion()`, `transformCalendarEventsToRecapMetrics()`
+- **fetch**: Low-level API calls → `fetchCalendarSummary()`
+- **query**: Database queries → `queryNotionDatabase()`
+
+### Function Naming
+
+- Collector functions: `fetch[Source]Data()` or `collect[Source]Data()` (e.g., `fetchOuraData()`, `fetchGitHubData()`)
+- Transformer functions: `transform[Source]To[Destination]()` (e.g., `transformOuraToNotion()`)
+- Workflow functions: `sync[Source]To[Destination]()` or `aggregate[Source]To[Destination]()` (e.g., `syncOuraToNotion()`, `aggregateCalendarDataForWeek()`)
 
 ## Data Flow
 

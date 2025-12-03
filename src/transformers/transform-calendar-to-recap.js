@@ -1,7 +1,35 @@
 /**
- * Calendar to Personal Recap Transformer
- * Calculates weekly summaries from calendar events
+ * @fileoverview Transform Calendar Events to Personal Recap Metrics
+ *
+ * Purpose: Converts raw Google Calendar events into aggregated weekly metrics
+ * for the Personal Recap database (days active, hours, sessions, averages).
+ *
+ * Responsibilities:
+ * - Calculate days active for each calendar source
+ * - Sum total hours from event durations
+ * - Count sessions (discrete events)
+ * - Format blocks (date lists) for drinking/workout/etc.
+ * - Calculate averages (e.g., body weight)
+ * - Handle multi-calendar sources (e.g., sleep = early wakeup + sleep in)
+ *
+ * Data Flow:
+ * - Input: Calendar events object, date range, selected sources
+ * - Transforms: Events → Metrics (counts, hours, formatted text)
+ * - Output: Metric object ready for Notion database update
+ *
+ * Example:
+ * ```
+ * const metrics = transformCalendarEventsToRecapMetrics(
+ *   { workout: [...], reading: [...] },
+ *   startDate,
+ *   endDate,
+ *   ['workout', 'reading']
+ * );
+ * // Returns: { workoutDays: 5, workoutHours: 7.5, readingDays: 6, ... }
+ * ```
  */
+
+const { PERSONAL_RECAP_SOURCES } = require("../config/calendar-mappings");
 
 /**
  * Get 3-letter day abbreviation from a date string (YYYY-MM-DD)
@@ -15,7 +43,7 @@ function getDayAbbreviation(dateStr) {
 }
 
 /**
- * Calculate week summary from calendar events
+ * Transform calendar events to weekly recap metrics
  * Filters events to only include those within the week date range
  *
  * @param {Object} calendarEvents - Object with calendar event arrays
@@ -38,7 +66,7 @@ function getDayAbbreviation(dateStr) {
  * @param {Array<Object>} tasks - Array of completed tasks (default: [])
  * @returns {Object} Summary object with calendar metrics for selected calendars only
  */
-function calculateWeekSummary(
+function transformCalendarEventsToRecapMetrics(
   calendarEvents,
   weekStartDate = null,
   weekEndDate = null,
@@ -93,13 +121,33 @@ function calculateWeekSummary(
     };
   };
 
-  // Determine which calendars to calculate metrics for
-  // If selectedCalendars is null/undefined, calculate all (backward compatible)
-  const shouldCalculate = (calendarKey) => {
+  // Helper to determine if a source should be calculated based on selection
+  // Accepts source IDs (e.g., "sleep", "sober", "drinking", "workout")
+  const shouldCalculate = (sourceId) => {
+    // If no calendars selected, calculate all (backward compatible)
     if (!selectedCalendars || selectedCalendars.length === 0) {
-      return true; // Calculate all if no selection provided
+      return true;
     }
-    return selectedCalendars.includes(calendarKey);
+    
+    // Direct match: source ID is in selected calendars
+    if (selectedCalendars.includes(sourceId)) {
+      return true;
+    }
+    
+    // Special case: "drinkingDays" source includes both "sober" and "drinking"
+    if (sourceId === "sober" || sourceId === "drinking") {
+      return selectedCalendars.includes("drinkingDays");
+    }
+    
+    // Check if this source ID is part of any selected source's calendars
+    // (for cases where a source might be referenced by its calendar fetchKey)
+    return selectedCalendars.some(selectedSourceId => {
+      const source = PERSONAL_RECAP_SOURCES[selectedSourceId];
+      if (!source) return false;
+      
+      // Check if any of the source's calendars match this source ID
+      return source.calendars?.some(cal => cal.fetchKey === sourceId);
+    });
   };
 
   const summary = {};
@@ -537,5 +585,6 @@ function calculateWeekSummary(
 }
 
 module.exports = {
-  calculateWeekSummary,
+  transformCalendarEventsToRecapMetrics,
 };
+

@@ -13,8 +13,8 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const {
-  summarizeWeek: summarizeCalendarWeek,
-} = require("../src/workflows/calendar-to-personal-recap");
+  aggregateCalendarDataForWeek: summarizeCalendarWeek,
+} = require("../src/workflows/aggregate-calendar-to-recap");
 const {
   summarizeWeek: summarizeNotionWeek,
 } = require("../src/workflows/notion-to-personal-recap");
@@ -34,6 +34,7 @@ const {
   DATA_SOURCES,
   getAvailableSources,
 } = require("../src/config/data-sources");
+const { getAvailableRecapSources } = require("../src/config/calendar-mappings");
 
 /**
  * Select action type (display only or update)
@@ -60,31 +61,21 @@ async function selectAction() {
  * @returns {Promise<string>} Selected calendar/database key
  */
 async function selectCalendarsAndDatabases() {
-  const availableSources = getAvailableSources();
+  // Use new config-driven source list
+  const availableRecapSources = getAvailableRecapSources();
 
-  if (availableSources.length === 0) {
+  if (availableRecapSources.length === 0) {
     throw new Error(
       "No calendars or databases are configured. Please set calendar IDs or database IDs in your .env file."
     );
   }
 
-  // Map available sources to inquirer choices
-  const availableCalendars = availableSources.map((sourceId) => {
-    const sourceConfig = DATA_SOURCES[sourceId];
-    let displayName = `${sourceConfig.emoji} ${sourceConfig.name}`;
-
-    // Handle special display cases
-    if (sourceId === "sleep") {
-      displayName = "Sleep (Early Wakeup + Sleep In)";
-    } else if (sourceId === "drinkingDays") {
-      displayName = "Drinking Days (Sober + Drinking)";
-    } else if (sourceId === "tasks") {
-      displayName = "Personal Tasks (Notion Database)";
-    }
-
+  // Map available sources to inquirer choices (no emojis)
+  const availableCalendars = availableRecapSources.map((source) => {
     return {
-      name: displayName,
-      value: sourceId,
+      name: source.displayName, // No emoji
+      value: source.id,
+      description: source.description,
     };
   });
 
@@ -141,29 +132,30 @@ async function main() {
     let expandedNotionSources = [];
 
     if (selectedSource === "all") {
-      // Expand all available sources, split by apiSource
-      const availableSources = getAvailableSources();
-      availableSources.forEach((sourceId) => {
-        const sourceConfig = DATA_SOURCES[sourceId];
-        if (sourceConfig.apiSource === "google_calendar") {
-          expandedCalendars.push(sourceId);
-        } else if (sourceConfig.apiSource === "notion") {
-          expandedNotionSources.push(sourceId);
+      // Expand all available sources, split by source type
+      const availableRecapSources = getAvailableRecapSources();
+      availableRecapSources.forEach((source) => {
+        if (source.isNotionSource) {
+          expandedNotionSources.push(source.id);
+        } else {
+          expandedCalendars.push(source.id);
         }
       });
-    } else if (selectedSource === "drinkingDays") {
-      // Special case: drinkingDays expands to both sober and drinking calendars
-      expandedCalendars = ["sober", "drinking"];
     } else {
-      // Single source selected - check its apiSource
-      const sourceConfig = DATA_SOURCES[selectedSource];
-      if (!sourceConfig) {
+      // Single source selected - check if it's a Notion source
+      const availableRecapSources = getAvailableRecapSources();
+      const selectedSourceConfig = availableRecapSources.find(
+        (s) => s.id === selectedSource
+      );
+
+      if (!selectedSourceConfig) {
         throw new Error(`Unknown source: ${selectedSource}`);
       }
-      if (sourceConfig.apiSource === "google_calendar") {
-        expandedCalendars = [selectedSource];
-      } else if (sourceConfig.apiSource === "notion") {
+
+      if (selectedSourceConfig.isNotionSource) {
         expandedNotionSources = [selectedSource];
+      } else {
+        expandedCalendars = [selectedSource];
       }
     }
 

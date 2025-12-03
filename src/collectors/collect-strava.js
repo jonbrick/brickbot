@@ -1,4 +1,27 @@
 /**
+ * @fileoverview Collect Strava Activity Data
+ *
+ * Purpose: Fetches workout activity data from Strava API for a specific date range,
+ * preparing it for sync to Notion.
+ *
+ * Responsibilities:
+ * - Authenticate with Strava API
+ * - Fetch activities in date range
+ * - Handle timezone conversions
+ * - Map activity data to collector format
+ *
+ * Data Flow:
+ * - Input: Date range
+ * - Fetches: Strava API (/athlete/activities)
+ * - Output: Array of activity objects with standardized fields
+ *
+ * Example:
+ * ```
+ * const activities = await fetchStravaData(startDate, endDate);
+ * ```
+ */
+
+/**
  * Strava Collector
  * Business logic for fetching Strava activity data
  */
@@ -83,3 +106,4 @@ async function fetchStravaData(startDate, endDate) {
 }
 
 module.exports = { fetchStravaData };
+

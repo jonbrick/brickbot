@@ -29,8 +29,8 @@ async function selectDateRange() {
       choices: [
         { name: "Today", value: "today" },
         { name: "Yesterday", value: "yesterday" },
-        { name: "This week", value: "week" },
-        { name: "Last week", value: "lastWeek" },
+        { name: "This week (Sun-Sat)", value: "week" },
+        { name: "Last week (Sun-Sat)", value: "lastWeek" },
         { name: "Last 30 days", value: "last30" },
         { name: "Week Picker", value: "weekPicker" },
         { name: "Custom Range", value: "custom" },
@@ -167,8 +167,8 @@ async function selectCalendarDateRange() {
       choices: [
         { name: "Today", value: "today" },
         { name: "Yesterday", value: "yesterday" },
-        { name: "This week", value: "week" },
-        { name: "Last week", value: "lastWeek" },
+        { name: "This week (Sun-Sat)", value: "week" },
+        { name: "Last week (Sun-Sat)", value: "lastWeek" },
         { name: "Last 30 days", value: "last30" },
         { name: "Week Picker", value: "weekPicker" },
         { name: "Custom Range", value: "custom" },

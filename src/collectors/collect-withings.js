@@ -1,4 +1,28 @@
 /**
+ * @fileoverview Collect Withings Measurement Data
+ *
+ * Purpose: Fetches body measurement data from Withings API for a specific date range,
+ * preparing it for sync to Notion.
+ *
+ * Responsibilities:
+ * - Authenticate with Withings API
+ * - Fetch measurements in date range
+ * - Decode measurement values (value × 10^unit)
+ * - Convert units (kg to lbs)
+ * - Map measurement data to collector format
+ *
+ * Data Flow:
+ * - Input: Date range
+ * - Fetches: Withings API (/measure)
+ * - Output: Array of measurement objects with standardized fields
+ *
+ * Example:
+ * ```
+ * const measurements = await fetchWithingsData(startDate, endDate);
+ * ```
+ */
+
+/**
  * Withings Collector
  * Business logic for fetching Withings measurement data
  */

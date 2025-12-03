@@ -1,4 +1,27 @@
 /**
+ * @fileoverview Collect Steam Gaming Data
+ *
+ * Purpose: Fetches gaming session data from Steam API for a specific date range,
+ * preparing it for sync to Notion.
+ *
+ * Responsibilities:
+ * - Authenticate with Steam API
+ * - Fetch gaming sessions in date range
+ * - Handle timezone conversions (UTC to Eastern Time)
+ * - Map gaming data to collector format
+ *
+ * Data Flow:
+ * - Input: Date range
+ * - Fetches: Steam API (GetRecentlyPlayedGames)
+ * - Output: Array of gaming activity objects with standardized fields
+ *
+ * Example:
+ * ```
+ * const activities = await fetchSteamData(startDate, endDate);
+ * ```
+ */
+
+/**
  * Steam Collector
  * Business logic for fetching Steam gaming data
  */
@@ -186,3 +209,4 @@ async function fetchSteamData(startDate, endDate) {
 }
 
 module.exports = { fetchSteamData };
+

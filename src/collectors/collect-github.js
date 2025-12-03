@@ -1,4 +1,27 @@
 /**
+ * @fileoverview Collect GitHub Pull Request Data
+ *
+ * Purpose: Fetches pull request data from GitHub API for a specific user
+ * and date range, preparing it for sync to Notion.
+ *
+ * Responsibilities:
+ * - Authenticate with GitHub API
+ * - Fetch PRs created/updated in date range
+ * - Filter by author
+ * - Map PR data to collector format
+ *
+ * Data Flow:
+ * - Input: Date range, GitHub username
+ * - Fetches: GitHub API (/repos/.../pulls)
+ * - Output: Array of PR objects with standardized fields
+ *
+ * Example:
+ * ```
+ * const prs = await fetchGitHubData(startDate, endDate);
+ * ```
+ */
+
+/**
  * GitHub Collector
  * Business logic for fetching GitHub commit and PR data
  */
@@ -316,3 +339,4 @@ async function fetchGitHubData(startDate, endDate) {
 }
 
 module.exports = { fetchGitHubData };
+

@@ -5,9 +5,7 @@
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
-const {
-  buildMetricProperties,
-} = require("../utils/metric-properties");
+const { buildMetricProperties } = require("../utils/metric-properties");
 
 class PersonalRecapDatabase extends NotionDatabase {
   /**
@@ -32,7 +30,7 @@ class PersonalRecapDatabase extends NotionDatabase {
 
     // Format week number with zero-padding (e.g., "01", "48")
     const weekNumberStr = String(weekNumber).padStart(2, "0");
-    const titleValue = `Week ${weekNumberStr} Recap`;
+    const titleValue = `Week ${weekNumberStr} Personal Recap`;
 
     // Query by title property
     try {

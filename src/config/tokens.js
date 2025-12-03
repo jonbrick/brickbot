@@ -5,8 +5,8 @@
 
 // Import the specific configs we need to avoid circular dependencies
 // We'll get these via functions instead of direct import
-const getSourcesConfig = () => require("./sources");
-const getCalendarConfig = () => require("./calendar");
+const getSourcesConfig = () => require("./integrations/credentials");
+const getCalendarConfig = () => require("./calendar/credentials");
 
 /**
  * Service token configurations

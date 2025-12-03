@@ -18,6 +18,9 @@ const strava = {
   clientSecret: process.env.STRAVA_CLIENT_SECRET,
   accessToken: process.env.STRAVA_ACCESS_TOKEN,
   refreshToken: process.env.STRAVA_REFRESH_TOKEN,
+  tokenExpiry: process.env.STRAVA_TOKEN_EXPIRY,
+  redirectUri:
+    process.env.STRAVA_REDIRECT_URI || "http://localhost:3000/callback",
   apiBaseUrl: "https://www.strava.com/api/v3",
 };
 

@@ -29,6 +29,10 @@ const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
 const { sleepCategorization } = require("../src/config/notion");
 const { formatRecordForLogging } = require("../src/utils/display-names");
+const {
+  buildSourceChoices,
+  buildAllSourcesHandlers,
+} = require("../src/utils/sweep-display");
 
 /**
  * Extract and format sleep data with only the specified fields
@@ -95,27 +99,16 @@ async function selectAction() {
       type: "list",
       name: "source",
       message: "Select data source:",
-      choices: [
-        { name: "All Sources (GitHub, Oura, Steam, Strava, Withings)", value: "all" },
-        { name: "GitHub (PRs)", value: "github" },
-        { name: "Oura (Sleep)", value: "oura" },
-        { name: "Steam (Video Games)", value: "steam" },
-        { name: "Strava (Workouts)", value: "strava" },
-        { name: "Withings (Body Weight)", value: "withings" },
-      ],
+      choices: buildSourceChoices("toNotion"),
     },
     {
       type: "list",
       name: "action",
       message: "What would you like to do?",
-      choices: (answers) => {
-        const commonChoices = [
-          { name: "Display data only (debug)", value: "display" },
-          { name: "Sync to Notion", value: "sync" },
-        ];
-
-        return commonChoices;
-      },
+      choices: [
+        { name: "Display data only (debug)", value: "display" },
+        { name: "Sync to Notion", value: "sync" },
+      ],
     },
   ]);
 
@@ -170,7 +163,8 @@ function printSyncResults(results) {
   if (results.errors.length > 0) {
     console.log("Errors:");
     results.errors.forEach((e) => {
-      const identifier = e.session || e.activity || e.measurementId || "Unknown";
+      const identifier =
+        e.session || e.activity || e.measurementId || "Unknown";
       console.log(`  ❌ ${identifier}: ${e.error}`);
     });
     console.log();
@@ -187,16 +181,20 @@ async function handleAllSources(startDate, endDate, action) {
   console.log("🌟 RUNNING ALL SOURCES");
   console.log("=".repeat(80));
   console.log(`Date range: ${formatDate(startDate)} to ${formatDate(endDate)}`);
-  console.log(`Action: ${action === 'sync' ? 'Sync to Notion' : 'Display only'}`);
+  console.log(
+    `Action: ${action === "sync" ? "Sync to Notion" : "Display only"}`
+  );
   console.log("=".repeat(80) + "\n");
 
-  const sources = [
-    { name: "GitHub", handler: handleGitHubData },
-    { name: "Oura", handler: handleOuraData },
-    { name: "Steam", handler: handleSteamData },
-    { name: "Strava", handler: handleStravaData },
-    { name: "Withings", handler: handleWithingsData },
-  ];
+  const handlers = {
+    handleGitHubData,
+    handleOuraData,
+    handleSteamData,
+    handleStravaData,
+    handleWithingsData,
+  };
+
+  const sources = buildAllSourcesHandlers("toNotion", handlers);
 
   const aggregatedResults = {
     successful: [],
@@ -223,7 +221,7 @@ async function handleAllSources(startDate, endDate, action) {
     if (i < sources.length - 1) {
       console.log("\n" + "-".repeat(80));
       console.log("⏳ Waiting before next source...\n");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
@@ -241,14 +239,14 @@ function printAggregatedResults(aggregatedResults) {
 
   console.log(`✅ Successful sources: ${aggregatedResults.successful.length}`);
   if (aggregatedResults.successful.length > 0) {
-    aggregatedResults.successful.forEach(source => {
+    aggregatedResults.successful.forEach((source) => {
       console.log(`   ✓ ${source}`);
     });
   }
 
   console.log(`\n❌ Failed sources: ${aggregatedResults.failed.length}`);
   if (aggregatedResults.failed.length > 0) {
-    aggregatedResults.failed.forEach(item => {
+    aggregatedResults.failed.forEach((item) => {
       console.log(`   ✗ ${item.source}: ${item.error}`);
     });
   }
@@ -375,7 +373,9 @@ async function handleWithingsData(startDate, endDate, action) {
     console.log("\n📤 Syncing to Notion...\n");
 
     // Use the processed data from collector
-    const { syncWithingsToNotion } = require("../src/workflows/withings-to-notion");
+    const {
+      syncWithingsToNotion,
+    } = require("../src/workflows/withings-to-notion");
     const results = await syncWithingsToNotion(measurements);
     printSyncResults(results);
   }

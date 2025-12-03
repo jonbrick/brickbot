@@ -7,21 +7,31 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
-const { syncSleepToCalendar } = require("../src/workflows/notion-sleep-to-calendar");
+const {
+  syncSleepToCalendar,
+} = require("../src/workflows/notion-sleep-to-calendar");
 const {
   syncWorkoutsToCalendar,
 } = require("../src/workflows/notion-workouts-to-calendar");
-const { syncSteamToCalendar } = require("../src/workflows/notion-steam-to-calendar");
-const { syncPRsToCalendar } = require("../src/workflows/notion-prs-to-calendar");
+const {
+  syncSteamToCalendar,
+} = require("../src/workflows/notion-steam-to-calendar");
+const {
+  syncPRsToCalendar,
+} = require("../src/workflows/notion-prs-to-calendar");
 const {
   syncBodyWeightToCalendar,
 } = require("../src/workflows/notion-bodyweight-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");
+const {
+  buildSourceChoices,
+  buildAllSourcesHandlers,
+} = require("../src/utils/sweep-display");
 
 /**
- * Select source (Oura or Strava) and action type (display only or sync to calendar)
+ * Select source and action type (display only or sync to calendar)
  */
 async function selectSourceAndAction() {
   const { source, action } = await inquirer.prompt([
@@ -29,14 +39,7 @@ async function selectSourceAndAction() {
       type: "list",
       name: "source",
       message: "Select data source:",
-      choices: [
-        { name: "All Sources (GitHub, Oura, Steam, Strava, Withings)", value: "all" },
-        { name: "GitHub (PRs)", value: "github" },
-        { name: "Oura (Sleep)", value: "oura" },
-        { name: "Steam (Video Games)", value: "steam" },
-        { name: "Strava (Workouts)", value: "strava" },
-        { name: "Withings (Body Weight)", value: "withings" },
-      ],
+      choices: buildSourceChoices("toCalendar"),
     },
     {
       type: "list",
@@ -507,16 +510,20 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   console.log("🌟 SYNCING ALL SOURCES TO CALENDAR");
   console.log("=".repeat(80));
   console.log(`Date range: ${startDate} to ${endDate}`);
-  console.log(`Action: ${action === 'sync' ? 'Sync to Calendar' : 'Display only'}`);
+  console.log(
+    `Action: ${action === "sync" ? "Sync to Calendar" : "Display only"}`
+  );
   console.log("=".repeat(80) + "\n");
 
-  const sources = [
-    { name: "GitHub", handler: handleGitHubSync },
-    { name: "Oura", handler: handleOuraSync },
-    { name: "Steam", handler: handleSteamSync },
-    { name: "Strava", handler: handleStravaSync },
-    { name: "Withings", handler: handleBodyWeightSync },
-  ];
+  const handlers = {
+    handleGitHubSync,
+    handleOuraSync,
+    handleSteamSync,
+    handleStravaSync,
+    handleBodyWeightSync,
+  };
+
+  const sources = buildAllSourcesHandlers("toCalendar", handlers);
 
   const aggregatedResults = {
     successful: [],
@@ -543,7 +550,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
     if (i < sources.length - 1) {
       console.log("\n" + "-".repeat(80));
       console.log("⏳ Waiting before next source...\n");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
@@ -561,14 +568,14 @@ function printAggregatedCalendarResults(aggregatedResults) {
 
   console.log(`✅ Successful sources: ${aggregatedResults.successful.length}`);
   if (aggregatedResults.successful.length > 0) {
-    aggregatedResults.successful.forEach(source => {
+    aggregatedResults.successful.forEach((source) => {
       console.log(`   ✓ ${source}`);
     });
   }
 
   console.log(`\n❌ Failed sources: ${aggregatedResults.failed.length}`);
   if (aggregatedResults.failed.length > 0) {
-    aggregatedResults.failed.forEach(item => {
+    aggregatedResults.failed.forEach((item) => {
       console.log(`   ✗ ${item.source}: ${item.error}`);
     });
   }
@@ -753,7 +760,10 @@ async function handleBodyWeightSync(startDate, endDate, action) {
   }
 
   // Format and display records
-  const formattedRecords = formatBodyWeightRecords(weightRecords, notionService);
+  const formattedRecords = formatBodyWeightRecords(
+    weightRecords,
+    notionService
+  );
   displayBodyWeightRecordsTable(formattedRecords);
 
   // Sync to calendar if requested

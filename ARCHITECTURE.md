@@ -289,9 +289,17 @@ brickbot/
 │   │   │   ├── github.js            # ✅ Layer 1: GitHub PRs config (60 lines)
 │   │   │   ├── withings.js          # ✅ Layer 1: Withings config (59 lines)
 │   │   │   └── personal-recap.js    # ✅ Layer 3: Personal recap config (~237 lines)
-│   │   ├── calendar-mappings.js     # LAYER 2: Declarative calendar mappings
-│   │   ├── calendar.js              # LAYER 2: Google Calendar settings
-│   │   └── sources.js               # LAYER 1: External API credentials
+│   │   ├── calendar/                # LAYER 2: Calendar configs
+│   │   │   ├── mappings.js         # Declarative calendar mappings
+│   │   │   ├── credentials.js      # OAuth credentials
+│   │   │   └── color-mappings.js   # Color ID → category mappings
+│   │   ├── integrations/           # LAYER 1: Integration configs
+│   │   │   ├── credentials.js     # External API credentials
+│   │   │   └── sources.js          # Sweep source configs (CLI)
+│   │   ├── notion/                 # LAYER 1 & 2: Notion configs
+│   │   │   └── task-categories.js  # Task category mappings
+│   │   ├── main.js                 # Data sources registry
+│   │   └── tokens.js                # Token management config
 │   │
 │   ├── services/         # LAYER 1: API clients (thin wrappers)
 │   │   ├── NotionService.js         # REFACTORED: Thin wrapper (251 lines, was 1104)
@@ -413,10 +421,15 @@ Single source of truth for all settings, now split by domain for better maintain
 #### Main Configuration Files
 
 - **index.js**: Loads sub-configs, validates environment variables, fails fast on misconfiguration
+- **main.js**: Data sources registry (DATA_SOURCES) with metrics and field types
+- **tokens.js**: Token management configuration for all services
 - **notion/index.js**: Aggregates domain-specific Notion configs
-- **calendar-mappings.js**: Declarative calendar ID mappings (NEW!)
-- **calendar.js**: OAuth credentials, uses calendar-mappings for routing
-- **sources.js**: API credentials, rate limits, retry configuration
+- **calendar/mappings.js**: Declarative calendar ID mappings (NEW!)
+- **calendar/credentials.js**: OAuth credentials, uses calendar mappings for routing
+- **calendar/color-mappings.js**: Color ID to category mappings for calendar events
+- **integrations/credentials.js**: API credentials, rate limits, retry configuration, date handling
+- **integrations/sources.js**: Sweep source configurations for CLI operations
+- **notion/task-categories.js**: Task category mappings for Notion tasks
 
 #### Domain-Specific Notion Configs (`src/config/notion/`)
 
@@ -477,7 +490,7 @@ heartRateAvg: { name: "Avg HR", type: "number", enabled: true }
 sleepLatency: { name: "Sleep Latency", type: "number", enabled: false }
 ```
 
-#### Declarative Calendar Mappings (`src/config/calendar-mappings.js`) - NEW!
+#### Declarative Calendar Mappings (`src/config/calendar/mappings.js`) - NEW!
 
 Calendar ID routing is now configuration-driven instead of function-based.
 
@@ -589,7 +602,7 @@ Different APIs use different date conventions and timezone formats. Each integra
   - `nightOf`: Transformed date for storage (what we care about)
 - Logic: `calculateNightOf()` subtracts 1 day from the Oura date
 - Also adds 1 day to `endDate` when querying API (to include sessions that wake up on end date)
-- Config: `dateOffset: 0` in `sources.js` (calculateNightOf already handles -1 day, setting dateOffset to -1 would cause double subtraction)
+- Config: `dateOffset: 0` in `integrations/credentials.js` (calculateNightOf already handles -1 day, setting dateOffset to -1 would cause double subtraction)
 - Utility: `src/utils/date.js` → `calculateNightOf()`
 
 **Strava** - Direct date extraction:
@@ -637,14 +650,14 @@ Different APIs use different date conventions and timezone formats. Each integra
 | Withings    | Unix → Local    | Converts timestamp to Date, uses local time (not UTC)      | `dateHandling.withings` |
 
 **Configuration:**
-All date handling logic is configured in `src/config/sources.js` under `dateHandling`. Each source has:
+All date handling logic is configured in `src/config/integrations/credentials.js` under `dateHandling`. Each source has:
 
 - `sourceFormat`: Format of raw date from API (date_string, iso_local, iso_utc, unix_timestamp)
 - `extractionMethod`: Transformation to apply (calculateNightOf, convertUTCToEasternDate, split, unixToLocal)
 - `dateOffset`: Additional day offset (usually 0, applied after extractionMethod)
 - `formatMethod`: Format for storage (currently all use "formatDateOnly")
 
-See `src/config/sources.js` for detailed per-source configuration and explanations.
+See `src/config/integrations/credentials.js` for detailed per-source configuration and explanations.
 
 ### Services (`src/services/`)
 
@@ -1069,7 +1082,7 @@ const results = await BaseWorkflow.syncBatch(
 
 - Notion API: 350ms backoff (3 requests/second limit)
 - Google Calendar: 350ms backoff (3 requests/second limit)
-- External APIs: Variable based on provider (see `src/config/sources.js`)
+- External APIs: Variable based on provider (see `src/config/integrations/credentials.js`)
 - Prevents rate limit errors during batch operations
 - Uses shared `delay()` function from `src/utils/async.js`
 
@@ -1171,7 +1184,7 @@ module.exports = {
 
 #### 3. Add Calendar Mapping (if applicable)
 
-**File**: `src/config/calendar-mappings.js` (~5 lines)
+**File**: `src/config/calendar/mappings.js` (~5 lines)
 
 ```javascript
 // Direct mapping (one database → one calendar)
@@ -1346,7 +1359,7 @@ The Withings body weight integration is fully implemented and follows the same p
 
 ## API Rate Limiting
 
-Services implement rate limiting with configuration in `src/config/sources.js`:
+Services implement rate limiting with configuration in `src/config/integrations/credentials.js`:
 
 - Request per second limits
 - Backoff delays between requests

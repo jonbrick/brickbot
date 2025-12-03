@@ -187,7 +187,7 @@ The modular architecture makes adding new integrations straightforward:
 3. **Create Service** (`src/services/`) - API client wrapper (if external API)
 4. **Create Collector** (`src/collectors/`) - Business logic for fetching data
 5. **Create Transformer** (`src/transformers/`) - Data transformation functions
-6. **Add Calendar Mapping** (`src/config/calendar-mappings.js`) - Just 5 lines!
+6. **Add Calendar Mapping** (`src/config/calendar/mappings.js`) - Just 5 lines!
 7. **Create Workflow** (`src/workflows/`) - Can leverage BaseWorkflow for batch logic
 8. **Update CLI Scripts** - Add new source to selection menus
 
@@ -198,7 +198,7 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed extension guide and patter
 Adding a new calendar integration is now configuration-driven:
 
 ```javascript
-// In src/config/calendar-mappings.js
+// In src/config/calendar/mappings.js
 meditation: {
   type: 'direct',
   sourceDatabase: 'meditation',

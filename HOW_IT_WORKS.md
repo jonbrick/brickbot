@@ -164,7 +164,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    };
    ```
 
-4. **Add Calendar Mapping** (`src/config/calendar-mappings.js`):
+4. **Add Calendar Mapping** (`src/config/calendar/mappings.js`):
    ```javascript
    meditation: {
      type: 'direct',
@@ -215,18 +215,25 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 **Structure**:
 ```
 src/config/
-├── index.js                  # Main loader
-├── notion/                   # Domain-specific configs
-│   ├── index.js              # Aggregator
-│   ├── sleep.js              # Sleep database config
-│   ├── workouts.js           # Workouts database config
-│   ├── games.js              # Games database config
-│   ├── prs.js                # PRs database config
-│   ├── body-weight.js        # Body weight database config
-│   └── recap.js              # Recap database config
-├── calendar-mappings.js      # Calendar routing rules
-├── calendar.js               # OAuth credentials
-└── sources.js                # External API configs
+├── index.js                  # Main loader & validator
+├── main.js                   # Data sources registry
+├── tokens.js                 # Token management config
+├── calendar/                 # Calendar configs
+│   ├── mappings.js          # Calendar routing rules
+│   ├── credentials.js       # OAuth credentials
+│   └── color-mappings.js    # Color ID → category mappings
+├── integrations/            # Integration configs
+│   ├── credentials.js      # External API configs
+│   └── sources.js          # Sweep source configs (CLI)
+└── notion/                  # Notion configs
+    ├── index.js             # Aggregator
+    ├── oura.js              # Oura sleep config
+    ├── strava.js            # Strava workouts config
+    ├── steam.js             # Steam gaming config
+    ├── github.js            # GitHub PRs config
+    ├── withings.js          # Withings config
+    ├── personal-recap.js    # Personal recap config
+    └── task-categories.js   # Task category mappings
 ```
 
 **Benefits**:
@@ -328,9 +335,9 @@ For a complete new data source with calendar sync:
 ```
 .env file
    │
-   ├──> src/config/sources.js      (API credentials)
-   ├──> src/config/notion/*.js     (Database IDs)
-   └──> src/config/calendar-mappings.js (Calendar IDs)
+   ├──> src/config/integrations/credentials.js (API credentials)
+   ├──> src/config/notion/*.js                 (Database IDs)
+   └──> src/config/calendar/mappings.js         (Calendar IDs)
          │
          └──> Loaded by src/config/index.js
                 │

@@ -467,7 +467,7 @@ function transformCalendarEventsToRecapMetrics(
 
   // Personal Calendar blocks (only if "personalCalendar" is selected)
   if (shouldCalculate("personalCalendar")) {
-    const { getPersonalCategoryByColor } = require("../config/color-mappings");
+    const { getPersonalCategoryByColor } = require("../config/calendar/color-mappings");
 
     // Get all events from the single Personal Calendar
     const personalCalendarEvents = calendarEvents.personalCalendar || [];
@@ -542,7 +542,7 @@ function transformCalendarEventsToRecapMetrics(
 
   // Task metrics (only if "tasks" is selected)
   if (shouldCalculate("tasks") && tasks.length > 0) {
-    const { getCategoryKey } = require("../config/task-categories");
+    const { getCategoryKey } = require("../config/notion/task-categories");
 
     // Group tasks by category
     const tasksByCategory = {};

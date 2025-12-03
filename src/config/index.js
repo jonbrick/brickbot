@@ -10,6 +10,7 @@ const notion = require("./notion/index");
 const sources = require("./sources");
 const tokens = require("./tokens");
 const calendar = require("./calendar");
+const dataSources = require("./data-sources");
 
 /**
  * Validate that all required environment variables are present
@@ -80,6 +81,7 @@ module.exports = {
   sources,
   tokens,
   calendar,
+  dataSources,
   env: {
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: process.env.NODE_ENV === "production",

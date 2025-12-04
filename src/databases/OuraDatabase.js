@@ -1,25 +1,4 @@
-/**
- * @fileoverview Oura Database
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Domain-specific operations for Oura Notion database
- *
- * Responsibilities:
- * - Find records by Sleep ID
- * - Get unsynced records for date range
- * - Mark records as synced to calendar
- *
- * Data Flow:
- * - Input: Oura API data (via transformers)
- * - Output: Notion database records
- * - Naming: Uses INTEGRATION name (oura)
- *
- * Example:
- * ```
- * const db = new OuraDatabase();
- * const record = await db.findBySleepId("sleep_12345");
- * ```
- */
+// Domain-specific operations for Oura Notion database
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");

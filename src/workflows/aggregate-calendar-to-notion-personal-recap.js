@@ -1,31 +1,4 @@
-/**
- * @fileoverview Aggregate Calendar Data to Personal Recap Workflow
- * @layer 3 - Calendar → Recap (Domain name)
- *
- * Purpose: Orchestrates fetching calendar events from multiple Google Calendars
- * and aggregating them into weekly data for the Personal Recap database.
- *
- * Responsibilities:
- * - Fetch events from 13+ different calendar sources (sleep, workout, reading, etc.)
- * - Aggregate events into weekly data (days active, total hours, session counts)
- * - Update Personal Recap database with aggregated data
- * - Handle calendar selection (specific sources or all available)
- *
- * Data Flow:
- * - Input: Week number, year, selected calendar sources (optional)
- * - Fetches: Calendar events from Google Calendar API (domain-named calendars)
- * - Transforms: Events → Weekly data (via transform-calendar-to-notion-personal-recap.js)
- * - Outputs: Updates Personal Recap database in Notion
- * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games) NOT integration names
- *
- * Example:
- * ```
- * await aggregateCalendarDataForWeek(49, 2025, {
- *   calendars: ['sleep', 'workout', 'reading'],
- *   accountType: 'personal'
- * });
- * ```
- */
+// Orchestrates fetching calendar events and aggregating them into weekly data for Personal Recap database
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");

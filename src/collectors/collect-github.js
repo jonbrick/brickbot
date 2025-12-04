@@ -1,32 +1,4 @@
-/**
- * @fileoverview Collect GitHub Pull Request Data
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Fetches pull request data from GitHub API for a specific user
- * and date range, preparing it for sync to Notion.
- *
- * Responsibilities:
- * - Authenticate with GitHub API
- * - Fetch PRs created/updated in date range
- * - Filter by author
- * - Map PR data to collector format
- *
- * Data Flow:
- * - Input: Date range, GitHub username
- * - Fetches: GitHub API (/repos/.../pulls)
- * - Output: Array of PR objects with standardized fields
- * - Naming: Uses INTEGRATION name (github)
- *
- * Example:
- * ```
- * const prs = await fetchGitHubData(startDate, endDate);
- * ```
- */
-
-/**
- * GitHub Collector
- * Business logic for fetching GitHub commit and PR data
- */
+// Fetches pull request data from GitHub API for a specific user and date range
 
 const GitHubService = require("../services/GitHubService");
 const { createSpinner } = require("../utils/cli");

@@ -1,27 +1,4 @@
-/**
- * @fileoverview Notion PRs to Calendar Workflow
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- *
- * Purpose: Sync GitHub Notion records to PRs Calendar
- *
- * Responsibilities:
- * - Read unsynced records from GitHubDatabase
- * - Transform records to calendar events (via transformer)
- * - Create events in PRs Calendar (Personal or Work)
- * - Mark records as synced
- *
- * Data Flow:
- * - Input: Date range
- * - Reads: GitHub Notion records (integration name)
- * - Transforms: GitHub records → Calendar events (domain name)
- * - Output: Calendar events in PRs Calendar
- * - Naming: Input uses 'github', output uses 'prs'
- *
- * Example:
- * ```
- * await syncPRsToCalendar(startDate, endDate);
- * ```
- */
+// Syncs GitHub Notion records to PRs Calendar events
 
 const GitHubDatabase = require("../databases/GitHubDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");

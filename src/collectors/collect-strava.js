@@ -1,32 +1,4 @@
-/**
- * @fileoverview Collect Strava Activity Data
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Fetches workout activity data from Strava API for a specific date range,
- * preparing it for sync to Notion.
- *
- * Responsibilities:
- * - Authenticate with Strava API
- * - Fetch activities in date range
- * - Handle timezone conversions
- * - Map activity data to collector format
- *
- * Data Flow:
- * - Input: Date range
- * - Fetches: Strava API (/athlete/activities)
- * - Output: Array of activity objects with standardized fields
- * - Naming: Uses INTEGRATION name (strava)
- *
- * Example:
- * ```
- * const activities = await fetchStravaData(startDate, endDate);
- * ```
- */
-
-/**
- * Strava Collector
- * Business logic for fetching Strava activity data
- */
+// Fetches workout activity data from Strava API for a specific date range
 
 const StravaService = require("../services/StravaService");
 const { createSpinner } = require("../utils/cli");

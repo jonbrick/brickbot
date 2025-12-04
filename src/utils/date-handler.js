@@ -1,31 +1,4 @@
-/**
- * Centralized Date Handler
- * 
- * Config-driven date extraction and formatting layer that standardizes date handling
- * across all integrations. This module sits between collectors and the low-level date
- * utilities, applying source-specific transformations based on configuration.
- * 
- * **Architecture:**
- * - Uses low-level utilities from `date.js` (parseDate, formatDateOnly, calculateNightOf, etc.)
- * - Reads source-specific configuration from `config.sources.dateHandling`
- * - Applies transformations in a consistent pipeline: sourceFormat → extractionMethod → dateOffset
- * 
- * **When to use:**
- * - Always use `extractSourceDate()` in collectors for date extraction from API responses
- * - Use `formatDateForNotion()` when formatting dates for Notion storage
- * 
- * **When NOT to use:**
- * - For simple date formatting/parsing without source-specific logic, use `date.js` directly
- * - For date manipulation (addDays, getWeekStart, etc.), use `date.js` directly
- * - For time formatting (not date extraction), use `date.js` utilities like `formatTimestampWithOffset()`
- * 
- * **Example Flow:**
- * ```
- * API Response → Collector → extractSourceDate('github', rawDate) → date-handler.js → date.js → Date object
- * ```
- * 
- * @module date-handler
- */
+// Config-driven date extraction and formatting layer that standardizes date handling across all integrations
 
 const config = require("../config");
 const {

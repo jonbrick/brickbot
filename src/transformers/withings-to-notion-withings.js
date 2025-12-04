@@ -1,24 +1,4 @@
-/**
- * @fileoverview Withings to Notion Transformer
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Transform Withings API data to Notion page properties
- * 
- * Responsibilities:
- * - Map Withings measurement fields to Notion properties
- * - Format dates and values for Notion
- * - Filter enabled properties based on config
- * 
- * Data Flow:
- * - Input: Withings API measurement data
- * - Output: Notion page properties object
- * - Naming: Uses INTEGRATION name (withings)
- * 
- * Example:
- * ```
- * const properties = transformWithingsToNotion(measurement);
- * ```
- */
+// Transforms Withings API data to Notion properties
 
 const config = require("../config");
 const { formatDate } = require("../utils/date");

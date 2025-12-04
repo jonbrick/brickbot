@@ -1,7 +1,4 @@
-/**
- * Base Workflow
- * Provides common batch processing logic for all workflows
- */
+// Provides common batch processing logic for all workflows
 
 const { delay } = require("../utils/async");
 const config = require("../config");

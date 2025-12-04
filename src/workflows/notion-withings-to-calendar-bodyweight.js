@@ -1,27 +1,4 @@
-/**
- * @fileoverview Notion Body Weight to Calendar Workflow
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- *
- * Purpose: Sync Withings Notion records to Body Weight Calendar
- *
- * Responsibilities:
- * - Read unsynced records from WithingsDatabase
- * - Transform records to calendar events (via transformer)
- * - Create events in Body Weight Calendar
- * - Mark records as synced
- *
- * Data Flow:
- * - Input: Date range
- * - Reads: Withings Notion records (integration name)
- * - Transforms: Withings records → Calendar events (domain name)
- * - Output: Calendar events in Body Weight Calendar
- * - Naming: Input uses 'withings', output uses 'bodyWeight'
- *
- * Example:
- * ```
- * await syncBodyWeightToCalendar(startDate, endDate);
- * ```
- */
+// Syncs Withings Notion records to Body Weight Calendar events
 
 const WithingsDatabase = require("../databases/WithingsDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");

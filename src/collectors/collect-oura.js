@@ -1,32 +1,4 @@
-/**
- * @fileoverview Collect Oura Sleep Data
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Fetches sleep data from Oura API for a specific date range,
- * preparing it for sync to Notion.
- *
- * Responsibilities:
- * - Authenticate with Oura API
- * - Fetch sleep sessions in date range
- * - Transform dates using "night of" logic
- * - Map sleep data to collector format
- *
- * Data Flow:
- * - Input: Date range (night of dates)
- * - Fetches: Oura API (/v2/usercollection/sleep)
- * - Output: Array of sleep session objects with standardized fields
- * - Naming: Uses INTEGRATION name (oura)
- *
- * Example:
- * ```
- * const sessions = await fetchOuraData(startDate, endDate);
- * ```
- */
-
-/**
- * Oura Collector
- * Business logic for fetching Oura sleep data
- */
+// Fetches sleep data from Oura API for a specific date range
 
 const OuraService = require("../services/OuraService");
 const { parseDate } = require("../utils/date");

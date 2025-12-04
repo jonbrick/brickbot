@@ -1,26 +1,4 @@
-/**
- * @fileoverview GitHub to Notion Workflow
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Sync GitHub activity data to Notion with de-duplication
- *
- * Responsibilities:
- * - Orchestrate GitHub API → Notion sync
- * - Check for existing records by Unique ID
- * - Create new Notion pages for new PRs
- * - Handle rate limiting and errors
- *
- * Data Flow:
- * - Input: Array of GitHub PRs
- * - Transforms: PRs → Notion properties (via transformer)
- * - Output: Sync results (created, skipped, errors)
- * - Naming: Uses INTEGRATION name (github)
- *
- * Example:
- * ```
- * const results = await syncGitHubToNotion(prs);
- * ```
- */
+// Syncs GitHub commit and PR data to Notion with de-duplication
 
 const GitHubDatabase = require("../databases/GitHubDatabase");
 const { transformGitHubToNotion } = require("../transformers/github-to-notion-github");

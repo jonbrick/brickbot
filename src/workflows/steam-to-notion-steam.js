@@ -1,26 +1,4 @@
-/**
- * @fileoverview Steam to Notion Workflow
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Sync Steam gaming data to Notion with de-duplication
- *
- * Responsibilities:
- * - Orchestrate Steam API → Notion sync
- * - Check for existing records by Activity ID
- * - Create new Notion pages for new gaming activities
- * - Handle rate limiting and errors
- *
- * Data Flow:
- * - Input: Array of Steam gaming activities
- * - Transforms: Activities → Notion properties (via transformer)
- * - Output: Sync results (created, skipped, errors)
- * - Naming: Uses INTEGRATION name (steam)
- *
- * Example:
- * ```
- * const results = await syncSteamToNotion(activities);
- * ```
- */
+// Syncs Steam gaming data to Notion with de-duplication
 
 const SteamDatabase = require("../databases/SteamDatabase");
 const { transformSteamToNotion } = require("../transformers/steam-to-notion-steam");

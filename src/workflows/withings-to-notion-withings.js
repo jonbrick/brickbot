@@ -1,26 +1,4 @@
-/**
- * @fileoverview Withings to Notion Workflow
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Sync Withings body weight data to Notion with de-duplication
- * 
- * Responsibilities:
- * - Orchestrate Withings API → Notion sync
- * - Check for existing records by Measurement ID
- * - Create new Notion pages for new measurements
- * - Handle rate limiting and errors
- * 
- * Data Flow:
- * - Input: Array of Withings measurements
- * - Transforms: Measurements → Notion properties (via transformer)
- * - Output: Sync results (created, skipped, errors)
- * - Naming: Uses INTEGRATION name (withings)
- * 
- * Example:
- * ```
- * const results = await syncWithingsToNotion(measurements);
- * ```
- */
+// Syncs Withings measurement data to Notion with de-duplication
 
 const WithingsDatabase = require("../databases/WithingsDatabase");
 const { transformWithingsToNotion } = require("../transformers/withings-to-notion-withings");

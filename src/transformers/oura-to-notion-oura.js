@@ -1,25 +1,4 @@
-/**
- * @fileoverview Oura to Notion Transformer
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Transform Oura API data to Notion page properties
- * 
- * Responsibilities:
- * - Map Oura sleep session fields to Notion properties
- * - Format dates and values for Notion
- * - Handle "night of" date logic
- * - Filter enabled properties based on config
- * 
- * Data Flow:
- * - Input: Oura API sleep session data
- * - Output: Notion page properties object
- * - Naming: Uses INTEGRATION name (oura)
- * 
- * Example:
- * ```
- * const properties = transformOuraToNotion(session);
- * ```
- */
+// Transforms Oura API data to Notion properties
 
 const config = require("../config");
 const {

@@ -1,25 +1,4 @@
-/**
- * @fileoverview GitHub Database
- * @layer 1 - API → Notion (Integration name)
- *
- * Purpose: Domain-specific operations for GitHub PRs Notion database
- *
- * Responsibilities:
- * - Find records by Unique ID
- * - Get unsynced records for date range
- * - Mark records as synced to calendar
- *
- * Data Flow:
- * - Input: GitHub API data (via transformers)
- * - Output: Notion database records
- * - Naming: Uses INTEGRATION name (github)
- *
- * Example:
- * ```
- * const db = new GitHubDatabase();
- * const record = await db.findByUniqueId("pr_12345");
- * ```
- */
+// Domain-specific operations for GitHub Notion database
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");

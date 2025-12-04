@@ -1,25 +1,4 @@
-/**
- * @fileoverview Steam Database
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Domain-specific operations for Steam Notion database
- * 
- * Responsibilities:
- * - Find records by Activity ID
- * - Get unsynced records for date range
- * - Mark records as synced to calendar
- * 
- * Data Flow:
- * - Input: Steam API data (via transformers)
- * - Output: Notion database records
- * - Naming: Uses INTEGRATION name (steam)
- * 
- * Example:
- * ```
- * const db = new SteamDatabase();
- * const record = await db.findByActivityId("12345");
- * ```
- */
+// Domain-specific operations for Steam Notion database
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");

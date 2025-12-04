@@ -1,27 +1,4 @@
-/**
- * @fileoverview Notion Sleep to Calendar Workflow
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- *
- * Purpose: Sync Oura Notion records to Sleep Calendar
- *
- * Responsibilities:
- * - Read unsynced records from OuraDatabase
- * - Transform records to calendar events (via transformer)
- * - Create events in Sleep Calendar (Normal Wake Up or Sleep In)
- * - Mark records as synced
- *
- * Data Flow:
- * - Input: Date range
- * - Reads: Oura Notion records (integration name)
- * - Transforms: Oura records → Calendar events (domain name)
- * - Output: Calendar events in Sleep Calendar
- * - Naming: Input uses 'oura', output uses 'sleep'
- *
- * Example:
- * ```
- * await syncSleepToCalendar(startDate, endDate);
- * ```
- */
+// Syncs Oura Notion records to Sleep Calendar events
 
 const OuraDatabase = require("../databases/OuraDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");

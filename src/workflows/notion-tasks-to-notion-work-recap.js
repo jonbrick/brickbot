@@ -1,28 +1,4 @@
-/**
- * @fileoverview Notion to Work Recap Workflow
- * @layer 3 - Calendar → Recap (Domain name)
- *
- * Purpose: Summarize Notion database data (work tasks) and update Work Recap database
- *
- * Responsibilities:
- * - Fetch completed work tasks from Notion Tasks database
- * - Filter and categorize tasks by Work Category
- * - Update Work Recap database with aggregated task data
- *
- * Data Flow:
- * - Input: Week number, year, selected sources (optional)
- * - Fetches: Notion API (Tasks database query)
- * - Transforms: Tasks → Weekly data (via transform-calendar-to-notion-work-recap.js)
- * - Outputs: Updates Work Recap database in Notion
- * - Naming: Uses DOMAIN names (research/sketch/design/coding/crit/qa/admin/social/ooo) NOT integration names
- *
- * Example:
- * ```
- * await summarizeWeek(49, 2025, { 
- *   sources: ['workTasks']
- * });
- * ```
- */
+// Syncs completed tasks from Notion Tasks database to Work Recap database
 
 const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
 const { fetchCompletedTasks } = require("../collectors/collect-tasks");

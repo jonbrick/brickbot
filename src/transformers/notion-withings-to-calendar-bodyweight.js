@@ -1,25 +1,4 @@
-/**
- * @fileoverview Notion Body Weight to Calendar Transformer
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- * 
- * Purpose: Transform Withings Notion records to Body Weight Calendar events
- * 
- * Responsibilities:
- * - Read records from WithingsDatabase (integration name)
- * - Transform to calendar event format
- * - Output events for Body Weight Calendar (domain name)
- * 
- * Data Flow:
- * - Input: Withings Notion records (integration-specific properties)
- * - Transforms: Withings measurements → Calendar events
- * - Output: Body Weight Calendar events (domain-generic)
- * - Naming: Input uses 'withings', output uses 'bodyWeight'
- * 
- * Example:
- * ```
- * const event = transformBodyWeightToCalendarEvent(record, withingsDb);
- * ```
- */
+// Transforms Withings Notion records to Body Weight Calendar events
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");

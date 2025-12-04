@@ -1,25 +1,4 @@
-/**
- * @fileoverview Notion Sleep to Calendar Transformer
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- * 
- * Purpose: Transform Oura Notion records to Sleep Calendar events
- * 
- * Responsibilities:
- * - Read records from OuraDatabase (integration name)
- * - Transform to calendar event format
- * - Output events for Sleep Calendar (domain name)
- * 
- * Data Flow:
- * - Input: Oura Notion records (integration-specific properties)
- * - Transforms: Oura sleep sessions → Calendar events
- * - Output: Sleep Calendar events (domain-generic)
- * - Naming: Input uses 'oura', output uses 'sleep'
- * 
- * Example:
- * ```
- * const event = transformSleepToCalendarEvent(record, ouraDb);
- * ```
- */
+// Transforms Oura Notion records to Sleep Calendar events
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");

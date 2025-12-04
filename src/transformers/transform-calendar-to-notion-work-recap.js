@@ -1,35 +1,4 @@
-/**
- * @fileoverview Transform Calendar Events to Work Recap Data
- * @layer 3 - Calendar → Recap (Domain name)
- *
- * Purpose: Converts raw Google Calendar events into aggregated weekly data
- * for the Work Recap database (days active, hours, sessions, averages).
- *
- * Responsibilities:
- * - Calculate days active for each calendar source
- * - Sum total hours from event durations
- * - Count sessions (discrete events)
- * - Format blocks (date lists) for work calendar events
- * - Handle work calendar categories (meetings, design, coding, etc.)
- * - Process work PRs and work tasks
- *
- * Data Flow:
- * - Input: Calendar events object (domain-named keys), date range, selected sources
- * - Transforms: Events → Data (counts, hours, formatted text)
- * - Output: Data object ready for Notion database update
- * - Naming: Uses DOMAIN names (meetings/design/coding/crit/sketch/research/personalAndSocial/rituals/qa) NOT integration names
- *
- * Example:
- * ```
- * const data = transformCalendarEventsToRecapData(
- *   { workCalendar: [...], workPRs: [...] },
- *   startDate,
- *   endDate,
- *   ['workCalendar', 'workPRs']
- * );
- * // Returns: { meetingsSessions: 5, meetingsHoursTotal: 7.5, workPRsSessions: 3, ... }
- * ```
- */
+// Converts raw Google Calendar events into aggregated weekly data for Work Recap database
 
 const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
 

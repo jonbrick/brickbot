@@ -1,26 +1,4 @@
-/**
- * @fileoverview Strava to Notion Workflow
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Sync Strava activity data to Notion with de-duplication
- * 
- * Responsibilities:
- * - Orchestrate Strava API → Notion sync
- * - Check for existing records by Activity ID
- * - Create new Notion pages for new activities
- * - Handle rate limiting and errors
- * 
- * Data Flow:
- * - Input: Array of Strava activities
- * - Transforms: Activities → Notion properties (via transformer)
- * - Output: Sync results (created, skipped, errors)
- * - Naming: Uses INTEGRATION name (strava)
- * 
- * Example:
- * ```
- * const results = await syncStravaToNotion(activities);
- * ```
- */
+// Syncs Strava activity data to Notion with de-duplication
 
 const StravaDatabase = require("../databases/StravaDatabase");
 const { transformStravaToNotion } = require("../transformers/strava-to-notion-strava");

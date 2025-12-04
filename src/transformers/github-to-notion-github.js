@@ -1,25 +1,4 @@
-/**
- * @fileoverview GitHub to Notion Transformer
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Transform GitHub activity data to Notion page properties
- * 
- * Responsibilities:
- * - Map GitHub PR fields to Notion properties
- * - Format dates and values for Notion
- * - Truncate text to Notion limits
- * - Filter enabled properties based on config
- * 
- * Data Flow:
- * - Input: GitHub API PR data
- * - Output: Notion page properties object
- * - Naming: Uses INTEGRATION name (github)
- * 
- * Example:
- * ```
- * const properties = transformGitHubToNotion(pr);
- * ```
- */
+// Transforms GitHub API data to Notion properties
 
 const config = require("../config");
 const { filterEnabledProperties } = require("../utils/transformers");

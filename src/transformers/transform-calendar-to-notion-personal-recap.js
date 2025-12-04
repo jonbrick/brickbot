@@ -1,35 +1,4 @@
-/**
- * @fileoverview Transform Calendar Events to Personal Recap Data
- * @layer 3 - Calendar → Recap (Domain name)
- *
- * Purpose: Converts raw Google Calendar events into aggregated weekly data
- * for the Personal Recap database (days active, hours, sessions, averages).
- *
- * Responsibilities:
- * - Calculate days active for each calendar source
- * - Sum total hours from event durations
- * - Count sessions (discrete events)
- * - Format blocks (date lists) for drinking/workout/etc.
- * - Calculate averages (e.g., body weight)
- * - Handle multi-calendar sources (e.g., sleep = early wakeup + sleep in)
- *
- * Data Flow:
- * - Input: Calendar events object (domain-named keys), date range, selected sources
- * - Transforms: Events → Data (counts, hours, formatted text)
- * - Output: Data object ready for Notion database update
- * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games) NOT integration names
- *
- * Example:
- * ```
- * const data = transformCalendarEventsToRecapData(
- *   { workout: [...], reading: [...] },
- *   startDate,
- *   endDate,
- *   ['workout', 'reading']
- * );
- * // Returns: { workoutDays: 5, workoutHours: 7.5, readingDays: 6, ... }
- * ```
- */
+// Converts raw Google Calendar events into aggregated weekly data for Personal Recap database
 
 const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
 

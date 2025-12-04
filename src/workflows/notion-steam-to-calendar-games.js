@@ -1,27 +1,4 @@
-/**
- * @fileoverview Notion Steam to Calendar Workflow
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- *
- * Purpose: Sync Steam Notion records to Games Calendar
- *
- * Responsibilities:
- * - Read unsynced records from SteamDatabase
- * - Transform records to calendar events (via transformer)
- * - Create events in Games Calendar
- * - Mark records as synced
- *
- * Data Flow:
- * - Input: Date range
- * - Reads: Steam Notion records (integration name)
- * - Transforms: Steam records → Calendar events (domain name)
- * - Output: Calendar events in Games Calendar
- * - Naming: Input uses 'steam', output uses 'games'
- *
- * Example:
- * ```
- * await syncSteamToCalendar(startDate, endDate);
- * ```
- */
+// Syncs Steam Notion records to Video Games Calendar events
 
 const SteamDatabase = require("../databases/SteamDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");

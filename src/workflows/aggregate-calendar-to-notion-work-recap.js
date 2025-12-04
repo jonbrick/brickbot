@@ -1,31 +1,4 @@
-/**
- * @fileoverview Aggregate Calendar Data to Work Recap Workflow
- * @layer 3 - Calendar → Recap (Domain name)
- *
- * Purpose: Orchestrates fetching calendar events from multiple Google Calendars
- * and aggregating them into weekly data for the Work Recap database.
- *
- * Responsibilities:
- * - Fetch events from work calendar sources (workCalendar, workPRs)
- * - Aggregate events into weekly data (days active, total hours, session counts)
- * - Update Work Recap database with aggregated data
- * - Handle calendar selection (specific sources or all available)
- *
- * Data Flow:
- * - Input: Week number, year, selected calendar sources (optional)
- * - Fetches: Calendar events from Google Calendar API (domain-named calendars)
- * - Transforms: Events → Weekly data (via transform-calendar-to-notion-work-recap.js)
- * - Outputs: Updates Work Recap database in Notion
- * - Naming: Uses DOMAIN names (meetings/design/coding/crit/sketch/research/personalAndSocial/rituals/qa) NOT integration names
- *
- * Example:
- * ```
- * await aggregateCalendarDataForWeek(49, 2025, {
- *   calendars: ['workCalendar', 'workPRs'],
- *   accountType: 'work'
- * });
- * ```
- */
+// Orchestrates fetching calendar events and aggregating them into weekly data for Work Recap database
 
 const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");

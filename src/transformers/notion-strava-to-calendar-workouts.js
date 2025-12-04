@@ -1,25 +1,4 @@
-/**
- * @fileoverview Notion Workouts to Calendar Transformer
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- * 
- * Purpose: Transform Strava Notion records to Workouts Calendar events
- * 
- * Responsibilities:
- * - Read records from StravaDatabase (integration name)
- * - Transform to calendar event format
- * - Output events for Workouts Calendar (domain name)
- * 
- * Data Flow:
- * - Input: Strava Notion records (integration-specific properties)
- * - Transforms: Strava activities → Calendar events
- * - Output: Workouts Calendar events (domain-generic)
- * - Naming: Input uses 'strava', output uses 'workouts'
- * 
- * Example:
- * ```
- * const event = transformWorkoutToCalendarEvent(record, stravaDb);
- * ```
- */
+// Transforms Strava Notion records to Workout Calendar events
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");

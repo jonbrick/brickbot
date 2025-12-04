@@ -1,25 +1,4 @@
-/**
- * @fileoverview Work Recap Database
- * @layer 3 - Calendar → Recap (Domain name)
- *
- * Purpose: Domain-specific operations for Work Recap database
- *
- * Responsibilities:
- * - Find week recap records by week number/year
- * - Update week recap with aggregated data
- * - Build data properties from summary data
- *
- * Data Flow:
- * - Input: Week number, year, summary data (domain names)
- * - Output: Notion database updates
- * - Naming: Uses DOMAIN names (meetings/design/coding/crit/sketch/research/personalAndSocial/rituals/qa)
- *
- * Example:
- * ```
- * const db = new WorkRecapDatabase();
- * await db.updateWeekRecap(pageId, summary);
- * ```
- */
+// Domain-specific operations for Work Recap Notion database
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");

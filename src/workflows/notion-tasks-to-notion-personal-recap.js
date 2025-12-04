@@ -1,7 +1,4 @@
-/**
- * Notion to Personal Recap Workflow
- * Summarize Notion database data (tasks) and update Personal Recap database
- */
+// Syncs completed tasks from Notion Tasks database to Personal Recap database
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCompletedTasks } = require("../collectors/collect-tasks");

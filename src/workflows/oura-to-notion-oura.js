@@ -1,26 +1,4 @@
-/**
- * @fileoverview Oura to Notion Workflow
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Sync Oura sleep data to Notion with de-duplication
- * 
- * Responsibilities:
- * - Orchestrate Oura API → Notion sync
- * - Check for existing records by Sleep ID
- * - Create new Notion pages for new sleep sessions
- * - Handle rate limiting and errors
- * 
- * Data Flow:
- * - Input: Array of Oura sleep sessions
- * - Transforms: Sessions → Notion properties (via transformer)
- * - Output: Sync results (created, skipped, errors)
- * - Naming: Uses INTEGRATION name (oura)
- * 
- * Example:
- * ```
- * const results = await syncOuraToNotion(sessions);
- * ```
- */
+// Syncs Oura sleep data to Notion with de-duplication
 
 const OuraDatabase = require("../databases/OuraDatabase");
 const { transformOuraToNotion } = require("../transformers/oura-to-notion-oura");

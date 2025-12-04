@@ -1,7 +1,4 @@
-/**
- * External Service Configurations
- * API settings and credentials for external data sources
- */
+// API settings and credentials for external data sources
 
 // Oura Ring configuration
 const oura = {

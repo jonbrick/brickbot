@@ -1,25 +1,4 @@
-/**
- * @fileoverview Notion Database Base Class
- * @layer 1 - API → Notion (Base class for all integration databases)
- * 
- * Purpose: Generic CRUD operations for Notion databases
- * 
- * Responsibilities:
- * - Provide base Notion API client
- * - Implement common database operations (query, create, update, delete)
- * - Handle property extraction and formatting
- * - Manage rate limiting and error handling
- * 
- * Data Flow:
- * - Input: Database operations (query, create, update)
- * - Output: Notion API responses
- * - Naming: Base class used by integration-specific databases
- * 
- * Example:
- * ```
- * class MyDatabase extends NotionDatabase { ... }
- * ```
- */
+// Generic CRUD operations for Notion databases
 
 const { Client } = require("@notionhq/client");
 const config = require("../config");

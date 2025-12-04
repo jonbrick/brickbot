@@ -1,24 +1,4 @@
-/**
- * @fileoverview Strava to Notion Transformer
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Transform Strava API data to Notion page properties
- * 
- * Responsibilities:
- * - Map Strava activity fields to Notion properties
- * - Format dates and values for Notion
- * - Filter enabled properties based on config
- * 
- * Data Flow:
- * - Input: Strava API activity data
- * - Output: Notion page properties object
- * - Naming: Uses INTEGRATION name (strava)
- * 
- * Example:
- * ```
- * const properties = transformStravaToNotion(activity);
- * ```
- */
+// Transforms Strava API data to Notion properties
 
 const config = require("../config");
 const { filterEnabledProperties } = require("../utils/transformers");

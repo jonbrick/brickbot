@@ -1,25 +1,4 @@
-/**
- * @fileoverview Notion Steam to Calendar Transformer
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- * 
- * Purpose: Transform Steam Notion records to Games Calendar events
- * 
- * Responsibilities:
- * - Read records from SteamDatabase (integration name)
- * - Transform to calendar event format
- * - Output events for Games Calendar (domain name)
- * 
- * Data Flow:
- * - Input: Steam Notion records (integration-specific properties)
- * - Transforms: Steam gaming activities → Calendar events
- * - Output: Games Calendar events (domain-generic)
- * - Naming: Input uses 'steam', output uses 'games'
- * 
- * Example:
- * ```
- * const event = transformSteamToCalendarEvent(record, steamDb);
- * ```
- */
+// Transforms Steam Notion records to Video Games Calendar events
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");

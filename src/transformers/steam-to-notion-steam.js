@@ -1,24 +1,4 @@
-/**
- * @fileoverview Steam to Notion Transformer
- * @layer 1 - API → Notion (Integration name)
- * 
- * Purpose: Transform Steam API data to Notion page properties
- * 
- * Responsibilities:
- * - Map Steam gaming activity fields to Notion properties
- * - Format dates and values for Notion
- * - Filter enabled properties based on config
- * 
- * Data Flow:
- * - Input: Steam API gaming activity data
- * - Output: Notion page properties object
- * - Naming: Uses INTEGRATION name (steam)
- * 
- * Example:
- * ```
- * const properties = transformSteamToNotion(activity);
- * ```
- */
+// Transforms Steam API data to Notion properties
 
 const config = require("../config");
 const { filterEnabledProperties } = require("../utils/transformers");

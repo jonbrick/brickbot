@@ -1,27 +1,4 @@
-/**
- * @fileoverview Notion Workouts to Calendar Workflow
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- * 
- * Purpose: Sync Strava Notion records to Workouts Calendar
- * 
- * Responsibilities:
- * - Read unsynced records from StravaDatabase
- * - Transform records to calendar events (via transformer)
- * - Create events in Workouts Calendar
- * - Mark records as synced
- * 
- * Data Flow:
- * - Input: Date range
- * - Reads: Strava Notion records (integration name)
- * - Transforms: Strava records → Calendar events (domain name)
- * - Output: Calendar events in Workouts Calendar
- * - Naming: Input uses 'strava', output uses 'workouts'
- * 
- * Example:
- * ```
- * await syncWorkoutsToCalendar(startDate, endDate);
- * ```
- */
+// Syncs Strava Notion records to Workout Calendar events
 
 const StravaDatabase = require("../databases/StravaDatabase");
 const GoogleCalendarService = require("../services/GoogleCalendarService");

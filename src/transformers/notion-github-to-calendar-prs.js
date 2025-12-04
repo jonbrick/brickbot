@@ -1,25 +1,4 @@
-/**
- * @fileoverview Notion PRs to Calendar Transformer
- * @layer 2 - Notion → Calendar (Integration → Domain name transition)
- * 
- * Purpose: Transform GitHub Notion records to PRs Calendar events
- * 
- * Responsibilities:
- * - Read records from GitHubDatabase (integration name)
- * - Transform to calendar event format
- * - Output events for PRs Calendar (domain name)
- * 
- * Data Flow:
- * - Input: GitHub Notion records (integration-specific properties)
- * - Transforms: GitHub PRs → Calendar events
- * - Output: PRs Calendar events (domain-generic)
- * - Naming: Input uses 'github', output uses 'prs'
- * 
- * Example:
- * ```
- * const event = transformPRToCalendarEvent(record, githubDb);
- * ```
- */
+// Transforms GitHub Notion records to PRs Calendar events
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");

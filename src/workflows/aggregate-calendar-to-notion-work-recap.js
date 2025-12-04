@@ -1,52 +1,51 @@
 /**
- * @fileoverview Aggregate Calendar Data to Personal Recap Workflow
+ * @fileoverview Aggregate Calendar Data to Work Recap Workflow
  * @layer 3 - Calendar → Recap (Domain name)
  *
  * Purpose: Orchestrates fetching calendar events from multiple Google Calendars
- * and aggregating them into weekly data for the Personal Recap database.
+ * and aggregating them into weekly data for the Work Recap database.
  *
  * Responsibilities:
- * - Fetch events from 13+ different calendar sources (sleep, workout, reading, etc.)
+ * - Fetch events from work calendar sources (workCalendar, workPRs)
  * - Aggregate events into weekly data (days active, total hours, session counts)
- * - Update Personal Recap database with aggregated data
+ * - Update Work Recap database with aggregated data
  * - Handle calendar selection (specific sources or all available)
  *
  * Data Flow:
  * - Input: Week number, year, selected calendar sources (optional)
  * - Fetches: Calendar events from Google Calendar API (domain-named calendars)
- * - Transforms: Events → Weekly data (via transform-calendar-to-notion-personal-recap.js)
- * - Outputs: Updates Personal Recap database in Notion
- * - Naming: Uses DOMAIN names (bodyWeight/workouts/sleep/prs/games) NOT integration names
+ * - Transforms: Events → Weekly data (via transform-calendar-to-notion-work-recap.js)
+ * - Outputs: Updates Work Recap database in Notion
+ * - Naming: Uses DOMAIN names (meetings/design/coding/crit/sketch/research/personalAndSocial/rituals/qa) NOT integration names
  *
  * Example:
  * ```
  * await aggregateCalendarDataForWeek(49, 2025, { 
- *   calendars: ['sleep', 'workout', 'reading'],
- *   accountType: 'personal'
+ *   calendars: ['workCalendar', 'workPRs'],
+ *   accountType: 'work'
  * });
  * ```
- */
 
-const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
+const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");
-const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-personal-recap");
+const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-work-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
 const {
-  getAvailableRecapSources,
+  getAvailableWorkRecapSources,
   getRecapSourceConfig,
   buildCalendarFetches,
   getRecapSourceData,
-  PERSONAL_RECAP_SOURCES,
+  WORK_RECAP_SOURCES,
 } = require("../config/calendar/mappings");
 
 /**
  * Format a data key and value into human-readable display text
- * @param {string} dataKey - Data key (e.g., "workoutDays", "bodyWeightAverage")
+ * @param {string} dataKey - Data key (e.g., "meetingsSessions", "codingHoursTotal")
  * @param {number|string} value - Data value
- * @returns {string} Formatted display text (e.g., "5 workout days", "201.4 lbs average weight")
+ * @returns {string} Formatted display text (e.g., "5 meetings sessions", "10.5 coding hours")
  */
 function formatDataForDisplay(dataKey, value) {
   // Special cases with custom formatting
@@ -58,7 +57,11 @@ function formatDataForDisplay(dataKey, value) {
     return `${value} PR sessions`;
   }
   
-  // Handle personalCalendar category data
+  if (dataKey === "workPRsSessions") {
+    return `${value} work PR sessions`;
+  }
+  
+  // Handle personalCalendar category data (for backward compatibility)
   const categoryPatterns = {
     personalSessions: "personal sessions",
     interpersonalSessions: "interpersonal sessions",
@@ -110,10 +113,10 @@ function formatDataForDisplay(dataKey, value) {
  * Uses config-driven approach with data derived from DATA_SOURCES
  * @param {Array<string>} calendarsToFetch - Array of source IDs to include
  * @param {Object} summary - Summary object with data values
- * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
+ * @param {Object} sourcesConfig - Sources configuration object (default: WORK_RECAP_SOURCES)
  * @returns {Array<string>} Array of formatted data strings
  */
-function buildSuccessData(calendarsToFetch, summary, sourcesConfig = PERSONAL_RECAP_SOURCES) {
+function buildSuccessData(calendarsToFetch, summary, sourcesConfig = WORK_RECAP_SOURCES) {
   const data = [];
   
   // Import DATA_SOURCES to check data types
@@ -160,18 +163,18 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig = PERSONAL_RE
 }
 
 /**
- * Aggregate calendar data for a week and update Personal Recap database
+ * Aggregate calendar data for a week and update Work Recap database
  *
  * @param {number} weekNumber - Week number (1-52/53)
  * @param {number} year - Year
  * @param {Object} options - Options
- * @param {string} options.accountType - "personal" or "work" (default: "personal")
+ * @param {string} options.accountType - "personal" or "work" (default: "work")
  * @param {boolean} options.displayOnly - If true, only display results without updating Notion
  * @param {Array<string>} options.calendars - Array of calendar keys to include (default: all available)
  * @returns {Promise<Object>} Results object
  */
 async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
-  const accountType = options.accountType || "personal";
+  const accountType = options.accountType || "work";
   const displayOnly = options.displayOnly || false;
   const selectedCalendars = options.calendars || [];
   const results = {
@@ -189,7 +192,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 
     // Get available sources
-    const availableSources = getAvailableRecapSources();
+    const availableSources = getAvailableWorkRecapSources();
     
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
@@ -200,7 +203,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
           .map(source => source.id);
 
     // Build calendar fetch configurations
-    const fetchConfigs = buildCalendarFetches(calendarsToFetch, accountType, PERSONAL_RECAP_SOURCES);
+    const fetchConfigs = buildCalendarFetches(calendarsToFetch, accountType, WORK_RECAP_SOURCES);
     
     if (fetchConfigs.length === 0) {
       throw new Error("No calendars selected or available to fetch.");
@@ -278,7 +281,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Calculate summary (only for selected calendars)
-    // Note: tasks are handled by notion-tasks-to-notion-personal-recap workflow
+    // Note: tasks are handled by notion-tasks-to-notion-work-recap workflow
     const summary = transformCalendarEventsToRecapData(
       calendarEvents,
       startDate,
@@ -294,8 +297,8 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Find or get week recap record
-    const personalRecapRepo = new PersonalRecapDatabase();
-    const weekRecap = await personalRecapRepo.findWeekRecap(
+    const workRecapRepo = new WorkRecapDatabase();
+    const weekRecap = await workRecapRepo.findWeekRecap(
       weekNumber,
       year,
       startDate,
@@ -311,8 +314,8 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Update week recap
-    showProgress("Updating Personal Recap database...");
-    await personalRecapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
+    showProgress("Updating Work Recap database...");
+    await workRecapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
 
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);
@@ -321,7 +324,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     results.selectedCalendars = calendarsToFetch;
     
     // Build success message with available data for selected calendars (config-driven)
-    const data = buildSuccessData(calendarsToFetch, summary, PERSONAL_RECAP_SOURCES);
+    const data = buildSuccessData(calendarsToFetch, summary, WORK_RECAP_SOURCES);
     
     showSuccess(
       `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`

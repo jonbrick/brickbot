@@ -129,7 +129,7 @@ Each phase is designed to be:
 
 ### Milestone 3.1: Add Work Recap Sources to mappings.js
 
-- [ ] Add `WORK_RECAP_SOURCES` object (mirror `PERSONAL_RECAP_SOURCES` structure exactly):
+- [x] Add `WORK_RECAP_SOURCES` object (mirror `PERSONAL_RECAP_SOURCES` structure exactly):
   - `workCalendar`:
     - Single calendar source using `WORK_MAIN_CALENDAR_ID`
     - Category-based (like personalCalendar)
@@ -145,12 +145,17 @@ Each phase is designed to be:
     - Uses `TASKS_DATABASE_ID`
     - Same structure: `id`, `displayName`, `description`, `required`, `isNotionSource: true`, `databaseId`
     - Add `sourceType: "work"` property for explicit identification
-- [ ] Add `sourceType: "personal"` to all `PERSONAL_RECAP_SOURCES` entries for consistency
-- [ ] Add `getAvailableWorkRecapSources()` function (mirror `getAvailableRecapSources()` pattern):
+- [x] Add `sourceType: "personal"` to all `PERSONAL_RECAP_SOURCES` entries for consistency
+- [x] Add `getAvailableWorkRecapSources()` function (mirror `getAvailableRecapSources()` pattern):
   - Filter sources based on configured environment variables (same logic as personal)
-  - Return array of source objects with: `id`, `displayName`, `description`, `isNotionSource`, `sourceType: "work"`
+  - Return array of source objects with: `id`, `displayName`, `description`, `isNotionSource`, `sourceType`
   - Use `WORK_RECAP_SOURCES` instead of `PERSONAL_RECAP_SOURCES`
-- [ ] Refactor `buildCalendarFetches()` to accept sources parameter:
+  - **Config-driven sourceType**: Uses `config.sourceType || "work"` defensive fallback pattern (mirrors codebase pattern like `isNotionSource: config.isNotionSource || false`)
+- [x] Enhance `getAvailableRecapSources()` to include `sourceType` in return value:
+  - Add `sourceType: config.sourceType || "personal"` to returned source objects
+  - Ensures both `getAvailableRecapSources()` and `getAvailableWorkRecapSources()` return consistent structure
+  - Uses config-driven defensive fallback pattern for consistency
+- [x] Refactor `buildCalendarFetches()` to accept sources parameter:
   - Change signature: `buildCalendarFetches(selectedSources, accountType = "personal", sourcesConfig = PERSONAL_RECAP_SOURCES)`
   - Use `sourcesConfig` parameter instead of hardcoded `PERSONAL_RECAP_SOURCES`
   - Can be called with either `PERSONAL_RECAP_SOURCES` or `WORK_RECAP_SOURCES`
@@ -158,10 +163,24 @@ Each phase is designed to be:
   - Update all call sites to pass appropriate `sourcesConfig`:
     - Personal recap workflows: pass `PERSONAL_RECAP_SOURCES`
     - Work recap workflows: pass `WORK_RECAP_SOURCES`
+- [x] Refactor `getRecapSourceConfig()` to accept sourcesConfig parameter:
+  - Change signature: `getRecapSourceConfig(sourceId, sourcesConfig = PERSONAL_RECAP_SOURCES)`
+  - Use `sourcesConfig` parameter instead of hardcoded `PERSONAL_RECAP_SOURCES`
+  - Can be called with either `PERSONAL_RECAP_SOURCES` or `WORK_RECAP_SOURCES`
+  - Follows DRY principle - single function handles both personal and work sources
+- [x] Refactor `getCalendarIdsForSource()` to accept sourcesConfig parameter:
+  - Change signature: `getCalendarIdsForSource(sourceId, sourcesConfig = PERSONAL_RECAP_SOURCES)`
+  - Use `sourcesConfig` parameter instead of hardcoded `PERSONAL_RECAP_SOURCES`
+  - Can be called with either `PERSONAL_RECAP_SOURCES` or `WORK_RECAP_SOURCES`
+  - Follows DRY principle - single function handles both personal and work sources
+- [x] Update module.exports to include work recap exports:
+  - Add `WORK_RECAP_SOURCES` to exports
+  - Add `getAvailableWorkRecapSources` to exports
+  - Ensures work recap sources are accessible to workflows and CLI
 - **Files**: `src/config/calendar/mappings.js`
 - **Test**: Verify work recap sources are available and build correct fetch configs
 
-**Phase 3 Completion**: Calendar sources configured. Can verify source availability.
+**Phase 3 Completion**: Calendar sources configured. All helper functions refactored to accept `sourcesConfig` parameter for DRY principle. Config-driven `sourceType` pattern implemented with defensive fallbacks. Module exports updated. Can verify source availability.
 
 ---
 
@@ -358,7 +377,7 @@ Each phase is designed to be:
 
 - `src/config/main.js` - Add work data sources and property generator
 - `src/config/calendar/color-mappings.js` - Update default behavior
-- `src/config/calendar/mappings.js` - Add work recap sources and refactor buildCalendarFetches
+- `src/config/calendar/mappings.js` - Add work recap sources and refactor helper functions (buildCalendarFetches, getRecapSourceConfig, getCalendarIdsForSource) to accept sourcesConfig parameter
 - `src/config/notion/index.js` - Register work recap
 - `src/config/notion/task-categories.js` - Export work task helper
 - `src/collectors/collect-tasks.js` - Extract workCategory field

@@ -77,6 +77,7 @@ async function fetchCompletedTasks(startDate, endDate) {
       title: collector.extractProperty(task, "Task"),
       type: collector.extractProperty(task, "Type"),
       dueDate: collector.extractProperty(task, "Due Date"),
+      workCategory: collector.extractProperty(task, "Work Category"),
     }));
   } catch (error) {
     throw new Error(`Failed to fetch tasks: ${error.message}`);

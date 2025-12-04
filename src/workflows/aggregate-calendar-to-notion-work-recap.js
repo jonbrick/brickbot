@@ -30,17 +30,14 @@ const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");
 const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-work-recap");
 const config = require("../config");
-const { parseWeekNumber } = require("../utils/date");
+// Import entire date module instead of destructuring to avoid module loading timing issues
+// that cause "parseWeekNumber is not defined" errors in work recap workflow
+const dateUtils = require("../utils/date");
+console.log("dateUtils loaded:", typeof dateUtils, !!dateUtils.parseWeekNumber);
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
-const {
-  getAvailableWorkRecapSources,
-  getRecapSourceConfig,
-  buildCalendarFetches,
-  getRecapSourceData,
-  getDisplayNameForFetchKey,
-  WORK_RECAP_SOURCES,
-} = require("../config/calendar/mappings");
+// Import entire mappings module to avoid destructuring timing issues
+const mappings = require("../config/calendar/mappings");
 
 /**
  * Format a data key and value into human-readable display text
@@ -120,7 +117,7 @@ function formatDataForDisplay(dataKey, value) {
 function buildSuccessData(
   calendarsToFetch,
   summary,
-  sourcesConfig = WORK_RECAP_SOURCES
+  sourcesConfig = mappings.WORK_RECAP_SOURCES
 ) {
   const data = [];
 
@@ -133,7 +130,7 @@ function buildSuccessData(
     if (!source) return;
 
     // Get data for this source from DATA_SOURCES (single source of truth)
-    const sourceData = getRecapSourceData(sourceId);
+    const sourceData = mappings.getRecapSourceData(sourceId);
 
     // For each data field, check if it exists in summary and format for display
     sourceData.forEach((dataKey) => {
@@ -198,10 +195,10 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Calculate week date range
-    const { startDate, endDate } = parseWeekNumber(weekNumber, year);
+    const { startDate, endDate } = dateUtils.parseWeekNumber(weekNumber, year);
 
     // Get available sources
-    const availableSources = getAvailableWorkRecapSources();
+    const availableSources = mappings.getAvailableWorkRecapSources();
 
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
@@ -213,10 +210,10 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
             .map((source) => source.id);
 
     // Build calendar fetch configurations
-    const fetchConfigs = buildCalendarFetches(
+    const fetchConfigs = mappings.buildCalendarFetches(
       calendarsToFetch,
       accountType,
-      WORK_RECAP_SOURCES
+      mappings.WORK_RECAP_SOURCES
     );
 
     if (fetchConfigs.length === 0) {
@@ -292,9 +289,9 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
           isDateInWeek(event.date)
         );
         if (filteredEvents.length > 0) {
-          const displayName = getDisplayNameForFetchKey(
+          const displayName = mappings.getDisplayNameForFetchKey(
             key,
-            WORK_RECAP_SOURCES
+            mappings.WORK_RECAP_SOURCES
           );
           console.log(
             `\n  ${displayName} Events (${filteredEvents.length} of ${events.length} total):`
@@ -384,13 +381,15 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     const data = buildSuccessData(
       calendarsToFetch,
       summary,
-      WORK_RECAP_SOURCES
+      mappings.WORK_RECAP_SOURCES
     );
 
     if (typeof showSuccess === "function") {
       showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
     } else {
-      console.log(`✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+      console.log(
+        `✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
+      );
     }
 
     return results;

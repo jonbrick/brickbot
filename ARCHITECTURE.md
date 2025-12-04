@@ -14,6 +14,379 @@ Brickbot follows a modular, repository-based architecture with clear separation 
 - **Workflows**: Orchestration with BaseWorkflow for common patterns
 - **Utilities**: Shared helper functions
 
+## System Flow & Examples
+
+This section provides narrative examples of how the system works in practice, complementing the technical reference material below.
+
+### Architecture Overview
+
+Brickbot uses a **layered, repository-based architecture** designed for scalability and maintainability.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      CLI Layer                              │
+│  (User interaction, prompts, display results)               │
+└─────────────────────────────────────────────────────────────┘
+                            │
+┌─────────────────────────────────────────────────────────────┐
+│                   Workflow Layer                            │
+│  (Orchestration, batch processing, error handling)          │
+│  Uses: BaseWorkflow for common patterns                     │
+└─────────────────────────────────────────────────────────────┘
+                            │
+        ┌───────────────────┴───────────────────┐
+        │                                       │
+┌───────────────────┐                 ┌────────────────────┐
+│  Collector Layer  │                 │ Database Layer     │
+│  (Fetch from APIs)│                 │ (Notion data access│
+└───────────────────┘                 │  by domain)        │
+        │                             └────────────────────┘
+        │                                       │
+┌───────────────────┐                          │
+│ Transformer Layer │◄─────────────────────────┘
+│ (Format conversion)
+└───────────────────┘
+        │
+┌───────────────────┐
+│  Service Layer    │
+│  (API clients)    │
+└───────────────────┘
+        │
+┌───────────────────┐
+│  External APIs    │
+│  (Oura, Strava,   │
+│   GitHub, etc.)   │
+└───────────────────┘
+```
+
+### Data Flow Examples
+
+#### Example 1: Collecting Oura Sleep Data
+
+**User Action**: `yarn collect` → Select "Yesterday" → Select "Oura"
+
+**Flow**:
+
+1. **CLI** (`cli/collect-data.js`):
+   - Prompts user for date range and source
+   - Calls collector with date range
+
+2. **Collector** (`src/collectors/oura.js`):
+   - Creates `OuraService` instance
+   - Fetches sleep sessions from Oura API
+   - Applies business rules (date extraction, "night of" calculation)
+   - Returns structured data array
+
+3. **Workflow** (`src/workflows/oura-to-notion-oura.js`):
+   - Creates `SleepDatabase` instance
+   - For each session:
+     - Checks if exists: `sleepRepo.findBySleepId(session.sleepId)`
+     - If exists: Skip
+     - If new: Transform and create
+
+4. **Transformer** (`src/transformers/oura-to-notion-oura.js`):
+   - Maps Oura fields to Notion properties
+   - Uses config: `config.notion.sleep.properties`
+   - Returns formatted properties object
+
+5. **Database** (`src/databases/SleepDatabase.js`):
+   - Extends `NotionDatabase` base class
+   - Calls `createPage()` with database ID and properties
+   - Base class handles API call with rate limiting
+
+6. **Result**:
+   - CLI displays: "Created: 1, Skipped: 0, Errors: 0"
+   - New page appears in Notion Sleep database
+
+#### Example 2: Syncing Sleep to Google Calendar
+
+**User Action**: `yarn update` → Select "Yesterday" → Select "Oura (Sleep)"
+
+**Flow**:
+
+1. **CLI** (`cli/update-calendar.js`):
+   - Prompts user for date range and database
+   - Calls calendar sync workflow
+
+2. **Workflow** (`src/workflows/notion-oura-to-calendar-sleep.js`):
+   - Creates `SleepDatabase` instance
+   - Creates `GoogleCalendarService` instance
+   - Gets unsynced records: `sleepRepo.getUnsynced(startDate, endDate)`
+   - For each record:
+     - Transform to calendar event
+     - Determine calendar ID (Normal Wake Up or Sleep In)
+     - Create calendar event
+     - Mark as synced: `sleepRepo.markSynced(pageId)`
+
+3. **Transformer** (`src/transformers/notion-oura-to-calendar-sleep.js`):
+   - Extracts properties from Notion page using repository
+   - Determines which calendar based on wake time
+   - Formats event with sleep data in description
+   - Returns `{ calendarId, event }`
+
+4. **Calendar Mapping** (`src/utils/calendar-mapper.js`):
+   - Uses declarative config: `config.calendarMappings.sleep`
+   - Routes to correct calendar based on "Google Calendar" property
+   - Returns calendar ID
+
+5. **Service** (`src/services/GoogleCalendarService.js`):
+   - Creates event via Google Calendar API
+   - Handles OAuth, retry logic, rate limiting
+
+6. **Database** (`src/databases/SleepDatabase.js`):
+   - Updates Notion page: Sets "Calendar Created" checkbox to true
+   - Prevents re-syncing same record
+
+7. **Result**:
+   - CLI displays: "Created: 1, Skipped: 0, Errors: 0"
+   - Event appears in Google Calendar
+   - Notion page marked as synced
+
+#### Example 3: Adding a New Calendar (Meditation)
+
+**User Action**: Configure new meditation tracking
+
+**Steps**:
+
+1. **Create Notion Database** (in Notion):
+   - Properties: Title, Date, Duration, Notes, Calendar Created
+
+2. **Create Database** (`src/databases/MeditationDatabase.js`):
+   ```javascript
+   class MeditationDatabase extends NotionDatabase {
+     async findByUniqueId(uniqueId) { /* ... */ }
+     async getUnsynced(startDate, endDate) { /* ... */ }
+     async markSynced(pageId) { /* ... */ }
+   }
+   ```
+
+3. **Create Config** (`src/config/notion/meditation.js`):
+   ```javascript
+   module.exports = {
+     database: process.env.NOTION_MEDITATION_DATABASE_ID,
+     properties: {
+       title: { name: "Title", type: "title", enabled: true },
+       date: { name: "Date", type: "date", enabled: true },
+       // ... more properties
+     }
+   };
+   ```
+
+4. **Add Calendar Mapping** (`src/config/calendar/mappings.js`):
+   ```javascript
+   meditation: {
+     type: 'direct',
+     sourceDatabase: 'meditation',
+     calendarId: process.env.MEDITATION_CALENDAR_ID,
+   }
+   ```
+
+5. **Create Workflow** (leverage BaseWorkflow patterns)
+
+6. **Update CLI** (add to selection menus)
+
+7. **Add Environment Variables** (`.env`):
+   ```bash
+   NOTION_MEDITATION_DATABASE_ID=xxxxx
+   MEDITATION_CALENDAR_ID=xxxxx@group.calendar.google.com
+   ```
+
+**Total Code**: ~115 lines across 3-4 focused files
+
+### Key Components Overview
+
+#### Databases (Domain Data Access)
+
+**Purpose**: Encapsulate all Notion database operations for a specific domain
+
+**Base Class**: `NotionDatabase.js`
+- Generic CRUD operations
+- Property formatting
+- Filtering and querying
+
+**Domain Databases**:
+- `SleepDatabase.js` - Oura sleep data
+- `WorkoutDatabase.js` - Strava workouts
+- `SteamDatabase.js` - Gaming sessions
+- `PRDatabase.js` - GitHub pull requests
+- `BodyWeightDatabase.js` - Withings measurements
+- `PersonalRecapDatabase.js` - Weekly recaps
+
+**Benefits**:
+- **Small**: 60-100 lines each vs. 1104-line monolith
+- **Focused**: One responsibility per file
+- **Testable**: Easy to mock for unit tests
+- **Maintainable**: Changes isolated to specific domains
+
+#### Configuration (Split by Domain)
+
+**Structure**:
+```
+src/config/
+├── index.js                  # Main loader & validator
+├── main.js                   # Data sources registry
+├── tokens.js                 # Token management config
+├── calendar/                 # Calendar configs
+│   ├── mappings.js          # Calendar routing rules
+│   ├── credentials.js       # OAuth credentials
+│   └── color-mappings.js    # Color ID → category mappings
+├── integrations/            # Integration configs
+│   ├── credentials.js      # External API configs
+│   └── sources.js          # Sweep source configs (CLI)
+└── notion/                  # Notion configs
+    ├── index.js             # Aggregator
+    ├── oura.js              # Oura sleep config
+    ├── strava.js            # Strava workouts config
+    ├── steam.js             # Steam gaming config
+    ├── github.js            # GitHub PRs config
+    ├── withings.js          # Withings config
+    ├── personal-recap.js    # Personal recap config
+    └── task-categories.js   # Task category mappings
+```
+
+**Benefits**:
+- **Modular**: Each domain config ~50-70 lines
+- **Clear**: Easy to find and modify settings
+- **Scalable**: Add new configs without bloating existing ones
+
+#### Calendar Mapping System
+
+**Before (Function-Based)**:
+```javascript
+// Had to write a new function for each calendar
+function mapMeditationToCalendarId() {
+  return process.env.MEDITATION_CALENDAR_ID;
+}
+```
+
+**After (Configuration-Based)**:
+```javascript
+// Just add configuration
+meditation: {
+  type: 'direct',
+  calendarId: process.env.MEDITATION_CALENDAR_ID,
+}
+```
+
+**Mapping Types**:
+
+1. **Direct**: One-to-one mapping
+2. **Property-Based**: Route by Notion property value
+3. **Category-Based**: Route by category/type field
+
+**Resolution**:
+```javascript
+const calendarId = resolveCalendarId('meditation', record, repository);
+```
+
+#### Workflows (Orchestration Layer)
+
+**BaseWorkflow Class**: Provides reusable batch processing
+
+**Common Pattern**:
+```javascript
+async function syncDataToNotion(items) {
+  const repo = new DomainDatabase();
+  const results = { created: [], skipped: [], errors: [], total: items.length };
+
+  for (const item of items) {
+    // Check for existing
+    const existing = await repo.findByUniqueId(item.id);
+    if (existing) {
+      results.skipped.push(item);
+      continue;
+    }
+
+    // Transform and create
+    const properties = transform(item);
+    await repo.createPage(databaseId, properties);
+    results.created.push(item);
+
+    // Rate limiting
+    await delay(rateLimitMs);
+  }
+
+  return results;
+}
+```
+
+**Benefits**:
+- **Consistent**: Same error handling across workflows
+- **Rate-Limited**: Built-in delay between operations
+- **De-duplicated**: Checks for existing records
+- **Trackable**: Returns detailed results
+
+### Adding New Integrations Quick Reference
+
+For a complete new data source with calendar sync:
+
+- [ ] Create repository (~60 lines)
+- [ ] Create domain config (~50 lines)
+- [ ] Add calendar mapping (~5 lines)
+- [ ] Create service (if external API)
+- [ ] Create collector
+- [ ] Create transformers (to-notion, to-calendar)
+- [ ] Create workflows (leverage BaseWorkflow)
+- [ ] Update CLI menus
+- [ ] Add environment variables
+
+**Estimated Time**: 2-3 hours for complete integration
+
+**Lines of Code**: ~200-300 (vs. ~150-200 in old architecture, but much cleaner)
+
+### Configuration System Overview
+
+#### Environment Variables Flow
+
+```
+.env file
+   │
+   ├──> src/config/integrations/credentials.js (API credentials)
+   ├──> src/config/notion/*.js                 (Database IDs)
+   └──> src/config/calendar/mappings.js         (Calendar IDs)
+         │
+         └──> Loaded by src/config/index.js
+                │
+                └──> Validated on startup
+                      │
+                      └──> Available as config.* throughout app
+```
+
+#### Configuration Access Patterns
+
+**Notion Configs**:
+```javascript
+const config = require('../config');
+
+// Database ID
+const dbId = config.notion.databases.oura;
+
+// Property name
+const propName = config.notion.properties.oura.sleepId.name;
+
+// Helper function
+const name = config.notion.getPropertyName(props.sleepId);
+```
+
+**Calendar Mappings**:
+```javascript
+const { resolveCalendarId } = require('../utils/calendar-mapper');
+
+// Automatic routing based on config
+const calendarId = resolveCalendarId('sleep', record, repository);
+```
+
+**API Credentials**:
+```javascript
+const config = require('../config');
+
+// External API
+const token = config.sources.oura.token;
+
+// Rate limits
+const delay = config.sources.rateLimits.notion.backoffMs;
+```
+
 ## Three-Layer Data Flow Architecture
 
 Brickbot uses a three-layer architecture where **domain abstraction happens at the Google Calendar layer**, not at the Notion layer. This is critical for understanding naming conventions and file organization.
@@ -1617,6 +1990,252 @@ Batch operations where possible (N API calls → 1 batch call).
 ### Parallel Operations
 
 Independent operations run in parallel using `Promise.all()`.
+
+## API Field Mappings Reference
+
+This section provides comprehensive mappings for all 5 data sources in the calendar-sync system. Each mapping shows how API responses are transformed and stored in Notion, plus where data appears in calendar events.
+
+### 1. GitHub API → Notion Mapping
+
+**Data Flow:** GitHub API → Process commits/PRs → Notion DB → Google Calendar
+
+#### Field Mappings
+
+| API Source Field | Transformation | Notion Property | Type | Calendar Location |
+|-----------------|----------------|-----------------|------|-------------------|
+| `repository.name` | Direct or with PR info | **Repository** | Title | Title (short name only) |
+| `commit.author.date` | UTC → YYYY-MM-DD | **Date** | Date | N/A |
+| `commits.length` | Count commits | **Commits Count** | Number | Title |
+| `commit.message` | Join with timestamps | **Commit Messages** | Text (2000 char limit) | Description |
+| `pr.title`, `pr.number` | Format as CSV | **PR Titles** | Text (2000 char limit) | Description |
+| Unique PR count | Deduplicate by PR# | **PRs Count** | Number | Description |
+| `files.length` | Count unique files | **Files Changed** | Number | Description |
+| `files[].filename` | Join as CSV | **Files List** | Text (2000 char limit) | N/A |
+| `commit.stats.additions` | Sum across commits | **Lines Added** | Number | Title & Description |
+| `commit.stats.deletions` | Sum across commits | **Lines Deleted** | Number | Title & Description |
+| `additions + deletions` | Calculate sum | **Total Changes** | Number | Title |
+| Repository check | "cortexapps/*" = Work | **Project Type** | Select | N/A |
+| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+| `repo-date-sha/PR#` | Generate ID | **Unique ID** | Text | N/A |
+
+#### Calendar Event Format
+
+**Title:** `{repoName}: {commitsCount} commits (+{linesAdded}/-{linesDeleted} lines)`
+- Example: `brain-app: 3 commits (+125/-48 lines)`
+
+**Description:**
+```
+💻 {full repository path}
+📊 {commits count} commits
+📈 +{lines added}/-{lines deleted} lines
+🔀 PR: {PR titles or "None"}
+
+📝 Commits:
+{commit messages with timestamps}
+```
+
+### 2. Oura API → Notion Mapping
+
+**Data Flow:** Oura API → Transform sleep data → Notion DB → Google Calendar
+
+#### Field Mappings
+
+| API Source Field | Transformation | Notion Property | Type | Calendar Location |
+|-----------------|----------------|-----------------|------|-------------------|
+| `day - 1 day` | Format readable | **Night of** | Title | Description |
+| `day - 1 day` | Subtract 1 day | **Night of Date** | Date | N/A |
+| `day` | Direct copy | **Oura Date** | Date | N/A |
+| `bedtime_start` | Direct copy | **Bedtime** | Text | N/A (used for event timing) |
+| `bedtime_end` | Direct copy | **Wake Time** | Text | N/A (used for event timing) |
+| `total_sleep_duration` | Seconds → hours (÷3600, 1 decimal) | **Sleep Duration** | Number | Title |
+| `deep_sleep_duration` | Seconds → minutes (÷60, integer) | **Deep Sleep** | Number | Description |
+| `rem_sleep_duration` | Seconds → minutes (÷60, integer) | **REM Sleep** | Number | Description |
+| `light_sleep_duration` | Seconds → minutes (÷60, integer) | **Light Sleep** | Number | Description |
+| `awake_time` | Seconds → minutes (÷60, integer) | **Awake Time** | Number | Description |
+| `average_heart_rate` | Direct copy | **Heart Rate Avg** | Number | N/A |
+| `lowest_heart_rate` | Direct copy | **Heart Rate Low** | Number | N/A |
+| `average_hrv` | Direct copy | **HRV** | Number | N/A |
+| `average_breath` | Direct copy | **Respiratory Rate** | Number | N/A |
+| `efficiency` | Direct copy | **Efficiency** | Number | Title |
+| `type` | Direct copy | **Type** | Text | N/A |
+| Wake time check | < 7am = "Normal Wake Up" | **Google Calendar** | Select | N/A (determines calendar) |
+| `id` | Direct copy | **Sleep ID** | Text | N/A |
+| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+
+#### Calendar Event Format
+
+**Title:** `Sleep - {duration}hrs ({efficiency}% efficiency)`
+- Example: `Sleep - 7.2hrs (89% efficiency)`
+
+**Description:**
+```
+😴 {Night of - full date}
+⏱️ Duration: {duration} hours
+📊 Efficiency: {efficiency}%
+
+🛌 Sleep Stages:
+• Deep Sleep: {deep} min
+• REM Sleep: {rem} min
+• Light Sleep: {light} min
+```
+
+### 3. Strava API → Notion Mapping
+
+**Data Flow:** Strava API → Convert units → Notion DB → Google Calendar
+
+#### Field Mappings
+
+| API Source Field | Transformation | Notion Property | Type | Calendar Location |
+|-----------------|----------------|-----------------|------|-------------------|
+| `name` | Direct copy | **Activity Name** | Title | Title (if no distance) |
+| `start_date_local` | Extract date (YYYY-MM-DD) | **Date** | Date | N/A |
+| `type` | Direct copy | **Activity Type** | Select | Title & Description |
+| `start_date_local` | Full ISO timestamp | **Start Time** | Text | N/A (used for event timing) |
+| `moving_time` | Seconds → minutes (÷60, integer) | **Duration** | Number | Description |
+| `distance` | Meters → miles (÷1609.34, 1 decimal) | **Distance** | Number | Title & Description |
+| `id` | Direct copy | **Activity ID** | Number | N/A |
+| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+
+#### Calendar Event Format
+
+**Title:** 
+- With distance: `{activityType} - {distance} miles`
+  - Example: `Run - 5.2 miles`
+- Without distance: `{activityName}`
+  - Example: `Morning Yoga Session`
+
+**Description:**
+```
+🏃‍♂️ {activity name}
+⏱️ Duration: {duration} minutes
+📏 Distance: {distance} miles (if > 0)
+📊 Activity Type: {activity type}
+```
+
+### 4. Steam Lambda API → Notion Mapping
+
+**Data Flow:** Steam Lambda API → Format sessions → Notion DB → Google Calendar
+
+#### Field Mappings
+
+| API Source Field | Transformation | Notion Property | Type | Calendar Location |
+|-----------------|----------------|-----------------|------|-------------------|
+| `games[].name` | Direct copy | **Game Name** | Title | Title |
+| `date` | Direct copy | **Date** | Date | N/A |
+| `games[].hours` | Direct copy | **Hours Played** | Number | Title |
+| `games[].minutes` | Direct copy | **Minutes Played** | Number | Title |
+| `games[].sessions.length` | Count sessions | **Session Count** | Number | Description |
+| `games[].sessions[]` | Format as list | **Session Details** | Text | Description |
+| `sessions[0].start_time` | First session start | **Start Time** | Text | N/A (used for event timing) |
+| `sessions[last].end_time` | Last session end | **End Time** | Text | N/A (used for event timing) |
+| - | Always "Steam" | **Platform** | Select | Description |
+| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+| `date-gameName` | Generate ID | **Activity ID** | Text | N/A |
+
+#### Session Details Format
+`{start_time}-{end_time} ({duration}min), {start_time}-{end_time} ({duration}min)`
+
+Example: `15:00-16:30 (90min), 18:00-19:00 (60min)`
+
+#### Calendar Event Format
+
+**Title:** `{gameName} - {hours}h {minutes}m`
+- Example: `Baldur's Gate 3 - 2h 30m`
+
+**Description:**
+```
+🎮 {game name}
+⏱️ Total Time: {hours}h {minutes}m
+📊 Sessions: {session count}
+🕹️ Platform: Steam
+
+Session Times:
+{session details formatted list}
+```
+
+### 5. Withings API → Notion Mapping
+
+**Data Flow:** Withings API → Decode values, convert kg→lbs → Notion DB → Google Calendar
+
+**Date Handling:** Unix timestamps are converted to JavaScript Date objects, then formatted using **local time** (not UTC) to avoid timezone issues with measurements taken in the evening.
+
+#### Field Mappings
+
+| API Source Field | Transformation | Notion Property | Type | Calendar Location |
+|-----------------|----------------|-----------------|------|-------------------|
+| `date` | Unix timestamp → "Body Weight - [Day], [Month] [Date], [Year]" | **Name** | Title | N/A |
+| `date` | Unix timestamp → YYYY-MM-DD (local time) | **Date** | Date | N/A |
+| `measures[type=1].value` | Decode, kg→lbs, 1 decimal | **Weight** | Number | Title |
+| `measures[type=5].value` | Decode, kg→lbs, 1 decimal | **Fat Free Mass** | Number | N/A |
+| `measures[type=6].value` | Decode value, 1 decimal | **Fat Percentage** | Number | N/A |
+| `measures[type=8].value` | Decode, kg→lbs, 1 decimal | **Fat Mass** | Number | N/A |
+| `measures[type=76].value` | Decode, kg→lbs, 1 decimal | **Muscle Mass** | Number | N/A |
+| `measures[type=77].value` | Decode value, 1 decimal | **Body Water Percentage** | Number | N/A |
+| `measures[type=88].value` | Decode, kg→lbs, 1 decimal | **Bone Mass** | Number | N/A |
+| `date` | Unix → ISO timestamp | **Measurement Time** | Text | Description |
+| `model` | Direct copy | **Device Model** | Text | Description |
+| `grpid` | Convert to string | **Measurement ID** | Text | N/A |
+| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+
+#### Value Decoding Formula
+`actualValue = value × 10^unit`
+
+Example: `value: 7856, unit: -2` → `78.56`
+
+#### Unit Conversion
+- **kg to lbs:** `kg × 2.20462`
+- **All mass measurements** converted to pounds
+- **Percentages:** No conversion needed
+
+#### Name Format
+Title format: `Body Weight - [Day of Week], [Month] [Date], [Year]`
+- Example: `Body Weight - Saturday, November 29, 2025`
+- Uses full month names and full day of week names
+
+#### Calendar Event Format
+
+**Title:** `Weight: {weight} lbs`
+- Example: `Weight: 173.2 lbs`
+
+**Description:**
+```
+⚖️ Body Weight Measurement
+📊 Weight: {weight} lbs
+⏰ Time: {measurement timestamp}
+📝 Notes: {notes if present}
+🔗 Source: Withings
+```
+
+### Summary of Calendar Event Types
+
+| Data Source | Event Type | Uses Start/End Time | All-Day Event |
+|-------------|-----------|-------------------|---------------|
+| GitHub | All-day | ❌ No | ✅ Yes |
+| Oura | Timed | ✅ Yes (bedtime → wake) | ❌ No |
+| Strava | Timed | ✅ Yes (start + duration) | ❌ No |
+| Steam | Timed | ✅ Yes (first start → last end) | ❌ No |
+| Withings | All-day | ❌ No | ✅ Yes |
+
+### Common Patterns
+
+#### Deduplication Strategy
+- **GitHub:** `Unique ID` (repo-date-sha or repo-date-PR#)
+- **Oura:** `Sleep ID` (Oura's unique identifier)
+- **Strava:** `Activity ID` (Strava's unique activity ID)
+- **Steam:** `Activity ID` (date-gameName combination)
+- **Withings:** `Measurement ID` (Withings group ID)
+
+#### Calendar Created Flag
+All databases include a `Calendar Created` checkbox:
+- Initially set to `false`
+- Set to `true` after calendar event creation
+- Used to prevent duplicate calendar events
+
+#### Text Field Truncation
+GitHub fields with potential long content are truncated to Notion's 2000 character limit:
+- Commit Messages
+- PR Titles
+- Files List
 
 ## Code Quality & DRY Principles
 

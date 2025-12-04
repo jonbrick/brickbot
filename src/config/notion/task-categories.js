@@ -21,7 +21,7 @@ const WORK_TASK_CATEGORY_MAPPING = {
   "🔎 QA": "qa",
   "📝 Admin": "admin",
   "🍸 Social": "social",
-  OOO: "ooo",
+  "🏝️ OOO": "ooo",
 };
 
 /**
@@ -52,4 +52,3 @@ module.exports = {
   getCategoryKey,
   getWorkCategoryKey,
 };
-

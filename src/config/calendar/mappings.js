@@ -160,6 +160,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Sleep (Early Wakeup + Sleep In)",
     description: "Sleep tracking from Normal Wake Up and Sleep In calendars",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "normalWakeUp",
@@ -183,6 +184,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Drinking Days (Sober + Drinking)",
     description: "Alcohol tracking from Sober and Drinking calendars",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "sober",
@@ -204,6 +206,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Workout",
     description: "Exercise tracking from Workout calendar",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "workout",
@@ -219,6 +222,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Reading",
     description: "Reading time tracking",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "reading",
@@ -234,6 +238,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Coding",
     description: "Personal coding time tracking",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "coding",
@@ -249,6 +254,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Art",
     description: "Creative art time tracking",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "art",
@@ -264,6 +270,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Video Games",
     description: "Gaming time tracking",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "videoGames",
@@ -279,6 +286,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Meditation",
     description: "Meditation practice tracking",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "meditation",
@@ -294,6 +302,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Music",
     description: "Music practice/listening tracking",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "music",
@@ -309,6 +318,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Body Weight",
     description: "Body weight measurements",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "bodyWeight",
@@ -324,6 +334,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Personal Calendar",
     description: "Main personal calendar events by category",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "personalMain",
@@ -339,6 +350,7 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Personal PRs",
     description: "Personal GitHub pull requests",
     required: false,
+    sourceType: "personal",
     calendars: [
       {
         key: "personalPRs",
@@ -354,6 +366,56 @@ const PERSONAL_RECAP_SOURCES = {
     displayName: "Tasks",
     description: "Completed tasks from Notion database",
     required: false,
+    sourceType: "personal",
+    isNotionSource: true, // Not a calendar source
+    databaseId: process.env.TASKS_DATABASE_ID,
+  },
+};
+
+/**
+ * Work Recap Data Sources Configuration
+ * Defines which calendars feed into Work Recap database and their metadata
+ * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
+ */
+const WORK_RECAP_SOURCES = {
+  workCalendar: {
+    id: "workCalendar",
+    displayName: "Work Calendar",
+    description: "Main work calendar events by category",
+    required: false,
+    sourceType: "work",
+    calendars: [
+      {
+        key: "workMain",
+        envVar: "WORK_MAIN_CALENDAR_ID",
+        required: true,
+        fetchKey: "workCalendar",
+      },
+    ],
+  },
+
+  workPRs: {
+    id: "workPRs",
+    displayName: "Work PRs",
+    description: "Work GitHub pull requests",
+    required: false,
+    sourceType: "work",
+    calendars: [
+      {
+        key: "workPRs",
+        envVar: "WORK_PRS_CALENDAR_ID",
+        required: true,
+        fetchKey: "workPRs",
+      },
+    ],
+  },
+
+  workTasks: {
+    id: "workTasks",
+    displayName: "Work Tasks",
+    description: "Completed work tasks from Notion database",
+    required: false,
+    sourceType: "work",
     isNotionSource: true, // Not a calendar source
     databaseId: process.env.TASKS_DATABASE_ID,
   },
@@ -383,25 +445,62 @@ function getAvailableRecapSources() {
       displayName: config.displayName,
       description: config.description,
       isNotionSource: config.isNotionSource || false,
+      sourceType: config.sourceType || "personal",
+    }));
+}
+
+/**
+ * Get all available Work Recap sources
+ * Filters sources to only include those with configured environment variables
+ * @returns {Array<Object>} Array of available sources with metadata
+ */
+function getAvailableWorkRecapSources() {
+  return Object.entries(WORK_RECAP_SOURCES)
+    .filter(([_, config]) => {
+      // Tasks is a special case (Notion database, not calendar)
+      if (config.isNotionSource) {
+        return !!config.databaseId;
+      }
+
+      // Check if all required calendars have env vars set
+      return config.calendars.every((cal) => {
+        const envValue = process.env[cal.envVar];
+        return cal.required ? !!envValue : true;
+      });
+    })
+    .map(([id, config]) => ({
+      id,
+      displayName: config.displayName,
+      description: config.description,
+      isNotionSource: config.isNotionSource || false,
+      sourceType: config.sourceType || "work",
     }));
 }
 
 /**
  * Get calendar configuration for a specific source
  * @param {string} sourceId - Source identifier (e.g., 'sleep', 'workout')
+ * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
  * @returns {Object|null} Source configuration or null if not found
  */
-function getRecapSourceConfig(sourceId) {
-  return PERSONAL_RECAP_SOURCES[sourceId] || null;
+function getRecapSourceConfig(
+  sourceId,
+  sourcesConfig = PERSONAL_RECAP_SOURCES
+) {
+  return sourcesConfig[sourceId] || null;
 }
 
 /**
  * Get calendar IDs for a specific source
  * @param {string} sourceId - Source identifier
+ * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
  * @returns {Object|null} Object mapping calendar keys to IDs, or null if not found
  */
-function getCalendarIdsForSource(sourceId) {
-  const source = PERSONAL_RECAP_SOURCES[sourceId];
+function getCalendarIdsForSource(
+  sourceId,
+  sourcesConfig = PERSONAL_RECAP_SOURCES
+) {
+  const source = sourcesConfig[sourceId];
   if (!source || source.isNotionSource) return null;
 
   return source.calendars.reduce((acc, cal) => {
@@ -417,13 +516,18 @@ function getCalendarIdsForSource(sourceId) {
  * Build calendar fetch configuration for selected sources
  * @param {Array<string>} selectedSources - Array of source IDs to fetch
  * @param {string} accountType - "personal" or "work"
+ * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
  * @returns {Array<Object>} Array of fetch configurations
  */
-function buildCalendarFetches(selectedSources, accountType = "personal") {
+function buildCalendarFetches(
+  selectedSources,
+  accountType = "personal",
+  sourcesConfig = PERSONAL_RECAP_SOURCES
+) {
   const fetches = [];
 
   for (const sourceId of selectedSources) {
-    const source = PERSONAL_RECAP_SOURCES[sourceId];
+    const source = sourcesConfig[sourceId];
     if (!source) {
       console.warn(`Unknown source: ${sourceId}`);
       continue;
@@ -466,7 +570,9 @@ function buildCalendarFetches(selectedSources, accountType = "personal") {
 module.exports = {
   ...calendarMappings,
   PERSONAL_RECAP_SOURCES,
+  WORK_RECAP_SOURCES,
   getAvailableRecapSources,
+  getAvailableWorkRecapSources,
   getRecapSourceConfig,
   getCalendarIdsForSource,
   buildCalendarFetches,

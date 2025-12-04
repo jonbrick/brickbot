@@ -9,6 +9,7 @@ const steam = require("./steam");
 const github = require("./github");
 const withings = require("./withings");
 const personalRecap = require("./personal-recap");
+const workRecap = require("./work-recap");
 
 // Aggregate database IDs
 const databases = {
@@ -18,6 +19,7 @@ const databases = {
   steam: steam.database,
   withings: withings.database,
   personalRecap: personalRecap.database,
+  workRecap: workRecap.database,
 };
 
 // Aggregate properties
@@ -28,6 +30,7 @@ const properties = {
   github: github.properties,
   withings: withings.properties,
   personalRecap: personalRecap.properties,
+  workRecap: workRecap.properties,
 };
 
 // Aggregate field mappings
@@ -38,6 +41,7 @@ const fieldMappings = {
   github: github.fieldMappings,
   withings: withings.fieldMappings,
   personalRecap: personalRecap.fieldMappings,
+  workRecap: workRecap.fieldMappings,
 };
 
 // Color mappings (for categorization and display)

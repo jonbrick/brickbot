@@ -39,7 +39,7 @@ const {
   getRecapSourceConfig,
   buildCalendarFetches,
   getRecapSourceData,
-  PERSONAL_RECAP_SOURCES
+  PERSONAL_RECAP_SOURCES,
 } = require("../config/calendar/mappings");
 
 /**
@@ -199,7 +199,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
           .map(source => source.id);
 
     // Build calendar fetch configurations
-    const fetchConfigs = buildCalendarFetches(calendarsToFetch, accountType);
+    const fetchConfigs = buildCalendarFetches(calendarsToFetch, accountType, PERSONAL_RECAP_SOURCES);
     
     if (fetchConfigs.length === 0) {
       throw new Error("No calendars selected or available to fetch.");

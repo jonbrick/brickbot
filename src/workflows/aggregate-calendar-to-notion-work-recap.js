@@ -52,15 +52,15 @@ function formatDataForDisplay(dataKey, value) {
   if (dataKey === "bodyWeightAverage") {
     return `${value} lbs average weight`;
   }
-  
+
   if (dataKey === "prsSessions") {
     return `${value} PR sessions`;
   }
-  
+
   if (dataKey === "workPRsSessions") {
     return `${value} work PR sessions`;
   }
-  
+
   // Handle personalCalendar category data (for backward compatibility)
   const categoryPatterns = {
     personalSessions: "personal sessions",
@@ -74,16 +74,16 @@ function formatDataForDisplay(dataKey, value) {
     physicalHealthHoursTotal: "physical health hours",
     mentalHealthHoursTotal: "mental health hours",
   };
-  
+
   if (categoryPatterns[dataKey]) {
     return `${value} ${categoryPatterns[dataKey]}`;
   }
-  
+
   // Pattern-based formatting for standard data
   // Extract base name and data type
   let baseName = dataKey;
   let dataType = "";
-  
+
   // Remove common suffixes
   if (dataKey.endsWith("Days")) {
     baseName = dataKey.slice(0, -4); // Remove "Days"
@@ -98,13 +98,13 @@ function formatDataForDisplay(dataKey, value) {
     baseName = dataKey.slice(0, -5); // Remove "Hours"
     dataType = "hours";
   }
-  
+
   // Convert camelCase to space-separated words
   const displayName = baseName
     .replace(/([A-Z])/g, " $1")
     .toLowerCase()
     .trim();
-  
+
   return `${value} ${displayName} ${dataType}`;
 }
 
@@ -116,29 +116,33 @@ function formatDataForDisplay(dataKey, value) {
  * @param {Object} sourcesConfig - Sources configuration object (default: WORK_RECAP_SOURCES)
  * @returns {Array<string>} Array of formatted data strings
  */
-function buildSuccessData(calendarsToFetch, summary, sourcesConfig = WORK_RECAP_SOURCES) {
+function buildSuccessData(
+  calendarsToFetch,
+  summary,
+  sourcesConfig = WORK_RECAP_SOURCES
+) {
   const data = [];
-  
+
   // Import DATA_SOURCES to check data types
   const { DATA_SOURCES } = require("../config/main");
-  
+
   // Iterate through selected calendars
   calendarsToFetch.forEach((sourceId) => {
     const source = sourcesConfig[sourceId];
     if (!source) return;
-    
+
     // Get data for this source from DATA_SOURCES (single source of truth)
     const sourceData = getRecapSourceData(sourceId);
-    
+
     // For each data field, check if it exists in summary and format for display
     sourceData.forEach((dataKey) => {
       // Skip if data doesn't exist in summary
       if (summary[dataKey] === undefined || summary[dataKey] === null) return;
-      
+
       // Get data config to check type
       const sourceConfig = DATA_SOURCES[sourceId];
       let dataConfig = null;
-      
+
       if (sourceConfig?.data?.[dataKey]) {
         dataConfig = sourceConfig.data[dataKey];
       } else if (sourceConfig?.categories) {
@@ -150,15 +154,15 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig = WORK_RECAP_
           }
         }
       }
-      
+
       // Skip optional text fields that are empty
       if (dataConfig?.type === "optionalText" && !summary[dataKey]) return;
-      
+
       const displayText = formatDataForDisplay(dataKey, summary[dataKey]);
       data.push(displayText);
     });
   });
-  
+
   return data;
 }
 
@@ -193,24 +197,29 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
 
     // Get available sources
     const availableSources = getAvailableWorkRecapSources();
-    
+
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
-    const calendarsToFetch = selectedCalendars.length > 0 
-      ? selectedCalendars 
-      : availableSources
-          .filter(source => !source.isNotionSource) // Exclude Notion sources for calendar fetch
-          .map(source => source.id);
+    const calendarsToFetch =
+      selectedCalendars.length > 0
+        ? selectedCalendars
+        : availableSources
+            .filter((source) => !source.isNotionSource) // Exclude Notion sources for calendar fetch
+            .map((source) => source.id);
 
     // Build calendar fetch configurations
-    const fetchConfigs = buildCalendarFetches(calendarsToFetch, accountType, WORK_RECAP_SOURCES);
-    
+    const fetchConfigs = buildCalendarFetches(
+      calendarsToFetch,
+      accountType,
+      WORK_RECAP_SOURCES
+    );
+
     if (fetchConfigs.length === 0) {
       throw new Error("No calendars selected or available to fetch.");
     }
-    
+
     // Execute all calendar fetches in parallel
-    const calendarFetches = fetchConfigs.map(fetchConfig => ({
+    const calendarFetches = fetchConfigs.map((fetchConfig) => ({
       key: fetchConfig.key,
       promise: fetchCalendarSummary(
         fetchConfig.calendarId,
@@ -219,14 +228,16 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
         fetchConfig.accountType,
         fetchConfig.isSleepCalendar,
         fetchConfig.ignoreAllDayEvents
-      )
+      ),
     }));
-    
+
     showProgress(`Fetching ${calendarFetches.length} calendar(s)...`);
     const fetchResults = await Promise.all(
-      calendarFetches.map(f => f.promise.catch(err => ({ error: err.message })))
+      calendarFetches.map((f) =>
+        f.promise.catch((err) => ({ error: err.message }))
+      )
     );
-    
+
     // Map results to calendar keys
     const calendarEvents = {};
     fetchResults.forEach((result, index) => {
@@ -238,6 +249,15 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
         calendarEvents[key] = result;
       }
     });
+
+    // Warn if all calendar fetches failed
+    const allFailed =
+      fetchResults.length > 0 && fetchResults.every((r) => r.error);
+    if (allFailed) {
+      showError(
+        "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
+      );
+    }
 
     // Rate limiting between API calls
     await delay(config.sources.rateLimits.googleCalendar.backoffMs);
@@ -251,21 +271,31 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
       };
 
       console.log("\n📋 Event Details (within week range):");
-      
+
       Object.entries(calendarEvents).forEach(([key, events]) => {
-        const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+        const filteredEvents = events.filter((event) =>
+          isDateInWeek(event.date)
+        );
         if (filteredEvents.length > 0) {
-          const displayName = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, " $1");
+          const displayName =
+            key.charAt(0).toUpperCase() +
+            key.slice(1).replace(/([A-Z])/g, " $1");
           console.log(
             `\n  ${displayName} Events (${filteredEvents.length} of ${events.length} total):`
           );
           filteredEvents.forEach((event, idx) => {
             console.log(
-              `    ${idx + 1}. ${event.date} - ${event.summary}${event.durationHours ? ` (${event.durationHours.toFixed(2)}h)` : ""}`
+              `    ${idx + 1}. ${event.date} - ${event.summary}${
+                event.durationHours
+                  ? ` (${event.durationHours.toFixed(2)}h)`
+                  : ""
+              }`
             );
             if (event.startDateTime) {
               console.log(
-                `       Start: ${new Date(event.startDateTime).toLocaleString()}`
+                `       Start: ${new Date(
+                  event.startDateTime
+                ).toLocaleString()}`
               );
             }
           });
@@ -315,20 +345,26 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
 
     // Update week recap
     showProgress("Updating Work Recap database...");
-    await workRecapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
+    await workRecapRepo.updateWeekRecap(
+      weekRecap.id,
+      summary,
+      calendarsToFetch
+    );
 
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);
 
     results.updated = true;
     results.selectedCalendars = calendarsToFetch;
-    
+
     // Build success message with available data for selected calendars (config-driven)
-    const data = buildSuccessData(calendarsToFetch, summary, WORK_RECAP_SOURCES);
-    
-    showSuccess(
-      `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
+    const data = buildSuccessData(
+      calendarsToFetch,
+      summary,
+      WORK_RECAP_SOURCES
     );
+
+    showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
 
     return results;
   } catch (error) {
@@ -341,4 +377,3 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
 module.exports = {
   aggregateCalendarDataForWeek,
 };
-

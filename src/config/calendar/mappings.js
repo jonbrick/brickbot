@@ -363,7 +363,7 @@ const PERSONAL_RECAP_SOURCES = {
 
   tasks: {
     id: "tasks",
-    displayName: "Tasks",
+    displayName: "Personal Tasks",
     description: "Completed tasks from Notion database",
     required: false,
     sourceType: "personal",
@@ -567,6 +567,33 @@ function buildCalendarFetches(
   return fetches;
 }
 
+/**
+ * Get display name for a fetchKey by looking it up in sources config
+ * @param {string} fetchKey - The fetchKey from calendar events (e.g., "personalPRs", "earlyWakeup")
+ * @param {Object} sourcesConfig - Sources configuration object (PERSONAL_RECAP_SOURCES or WORK_RECAP_SOURCES)
+ * @returns {string} Display name from config, or fallback to DATA_SOURCES name, or fetchKey itself
+ */
+function getDisplayNameForFetchKey(fetchKey, sourcesConfig) {
+  // Look through all sources to find which one has this fetchKey
+  for (const [sourceId, source] of Object.entries(sourcesConfig)) {
+    if (source.calendars) {
+      const calendar = source.calendars.find((cal) => cal.fetchKey === fetchKey);
+      if (calendar) {
+        return source.displayName;
+      }
+    }
+  }
+
+  // Fallback: try DATA_SOURCES directly if fetchKey matches sourceId
+  const { DATA_SOURCES } = require("../main");
+  if (DATA_SOURCES[fetchKey]?.name) {
+    return DATA_SOURCES[fetchKey].name;
+  }
+
+  // Final fallback: return the fetchKey itself
+  return fetchKey;
+}
+
 module.exports = {
   ...calendarMappings,
   PERSONAL_RECAP_SOURCES,
@@ -577,4 +604,5 @@ module.exports = {
   getCalendarIdsForSource,
   buildCalendarFetches,
   getRecapSourceData,
+  getDisplayNameForFetchKey,
 };

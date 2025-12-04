@@ -52,7 +52,7 @@ const DATA_SOURCES = {
   sleep: {
     id: "sleep",
     name: "Sleep",
-    emoji: "😴",
+    emoji: "🛏️",
     type: "calendar",
     apiSource: "google_calendar",
 
@@ -65,11 +65,13 @@ const DATA_SOURCES = {
     // Data this source produces
     data: {
       earlyWakeupDays: {
+        emoji: "☀️",
         label: "Early Wakeup - Days",
         type: "count",
         notionProperty: "earlyWakeupDays",
       },
       sleepInDays: {
+        emoji: "🌙",
         label: "Sleep In - Days",
         type: "count",
         notionProperty: "sleepInDays",
@@ -83,9 +85,9 @@ const DATA_SOURCES = {
   },
 
   drinkingDays: {
+    emoji: "🍷",
     id: "drinkingDays",
     name: "Drinking Days",
-    emoji: "🍺",
     type: "calendar",
     apiSource: "google_calendar",
 
@@ -96,11 +98,13 @@ const DATA_SOURCES = {
 
     data: {
       soberDays: {
+        emoji: "💧",
         label: "Sober - Days",
         type: "count",
         notionProperty: "soberDays",
       },
       drinkingDays: {
+        emoji: "🍷",
         label: "Drinking - Days",
         type: "count",
         notionProperty: "drinkingDays",
@@ -116,7 +120,7 @@ const DATA_SOURCES = {
   workout: {
     id: "workout",
     name: "Workout",
-    emoji: "🏋️",
+    emoji: "💪",
     type: "calendar",
     apiSource: "google_calendar",
 
@@ -182,7 +186,7 @@ const DATA_SOURCES = {
   reading: {
     id: "reading",
     name: "Reading",
-    emoji: "📚",
+    emoji: "📖",
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { reading: process.env.READING_CALENDAR_ID },
@@ -244,7 +248,7 @@ const DATA_SOURCES = {
   music: {
     id: "music",
     name: "Music",
-    emoji: "🎵",
+    emoji: "🎸",
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { music: process.env.MUSIC_CALENDAR_ID },
@@ -275,7 +279,7 @@ const DATA_SOURCES = {
   coding: {
     id: "coding",
     name: "Coding",
-    emoji: "💻",
+    emoji: "🖥️",
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { coding: process.env.CODING_CALENDAR_ID },
@@ -337,7 +341,7 @@ const DATA_SOURCES = {
   personalPRs: {
     id: "personalPRs",
     name: "Personal PRs",
-    emoji: "💪",
+    emoji: "🖥️",
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID },
@@ -676,7 +680,7 @@ const DATA_SOURCES = {
   workPRs: {
     id: "workPRs",
     name: "Work PRs",
-    emoji: "🔀",
+    emoji: "🖥️",
     type: "calendar",
     apiSource: "google_calendar",
     calendars: { workPRs: process.env.WORK_PRS_CALENDAR_ID },
@@ -699,12 +703,10 @@ const DATA_SOURCES = {
   tasks: {
     id: "tasks",
     name: "Personal Tasks",
-    emoji: "✅",
+    emoji: "🌱",
     type: "notion_database",
     apiSource: "notion",
     database: process.env.TASKS_DATABASE_ID,
-
-    // Task categories mirror personal calendar structure
     categories: {
       personal: {
         data: {
@@ -782,14 +784,13 @@ const DATA_SOURCES = {
   workTasks: {
     id: "workTasks",
     name: "Work Tasks",
-    emoji: "✅",
+    emoji: "💼",
     type: "notion_database",
     apiSource: "notion",
     database: process.env.TASKS_DATABASE_ID,
-
-    // Work task categories
     categories: {
       research: {
+        emoji: "🧪",
         data: {
           researchTasksComplete: {
             label: "Research - Tasks Complete",
@@ -804,6 +805,7 @@ const DATA_SOURCES = {
         },
       },
       sketch: {
+        emoji: "💡",
         data: {
           sketchTasksComplete: {
             label: "Sketch - Tasks Complete",
@@ -818,6 +820,7 @@ const DATA_SOURCES = {
         },
       },
       design: {
+        emoji: "🎨",
         data: {
           designTasksComplete: {
             label: "Design - Tasks Complete",
@@ -832,6 +835,7 @@ const DATA_SOURCES = {
         },
       },
       coding: {
+        emoji: "🖥️",
         data: {
           codingTasksComplete: {
             label: "Coding - Tasks Complete",
@@ -846,6 +850,7 @@ const DATA_SOURCES = {
         },
       },
       crit: {
+        emoji: "⚠️",
         data: {
           critTasksComplete: {
             label: "Crit - Tasks Complete",
@@ -860,6 +865,7 @@ const DATA_SOURCES = {
         },
       },
       qa: {
+        emoji: "🔍",
         data: {
           qaTasksComplete: {
             label: "QA - Tasks Complete",
@@ -888,6 +894,7 @@ const DATA_SOURCES = {
         },
       },
       social: {
+        emoji: "🍸",
         data: {
           socialTasksComplete: {
             label: "Social - Tasks Complete",
@@ -902,6 +909,7 @@ const DATA_SOURCES = {
         },
       },
       ooo: {
+        emoji: "🏝️",
         data: {
           oooTasksComplete: {
             label: "OOO - Tasks Complete",
@@ -1054,15 +1062,13 @@ function generatePersonalRecapProperties() {
       // Category-based data (personalCalendar, tasks)
       Object.values(source.categories).forEach((category) => {
         if (category.data) {
-          Object.entries(category.data).forEach(
-            ([dataKey, dataConfig]) => {
-              properties[dataConfig.notionProperty] = {
-                name: dataConfig.label,
-                type: mapToNotionType(dataConfig.type),
-                enabled: true,
-              };
-            }
-          );
+          Object.entries(category.data).forEach(([dataKey, dataConfig]) => {
+            properties[dataConfig.notionProperty] = {
+              name: dataConfig.label,
+              type: mapToNotionType(dataConfig.type),
+              enabled: true,
+            };
+          });
         }
       });
     }
@@ -1108,15 +1114,13 @@ function generateWorkRecapProperties() {
       // Category-based data (workCalendar, workTasks)
       Object.values(source.categories).forEach((category) => {
         if (category.data) {
-          Object.entries(category.data).forEach(
-            ([dataKey, dataConfig]) => {
-              properties[dataConfig.notionProperty] = {
-                name: dataConfig.label,
-                type: mapToNotionType(dataConfig.type),
-                enabled: true,
-              };
-            }
-          );
+          Object.entries(category.data).forEach(([dataKey, dataConfig]) => {
+            properties[dataConfig.notionProperty] = {
+              name: dataConfig.label,
+              type: mapToNotionType(dataConfig.type),
+              enabled: true,
+            };
+          });
         }
       });
     }

@@ -54,7 +54,11 @@ async function summarizeWeek(weekNumber, year, options = {}) {
   };
 
   try {
-    showProgress(`Summarizing week ${weekNumber} of ${year}...`);
+    if (typeof showProgress === "function") {
+      showProgress(`Summarizing week ${weekNumber} of ${year}...`);
+    } else {
+      console.log(`⏳ Summarizing week ${weekNumber} of ${year}...`);
+    }
 
     // Calculate week date range
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
@@ -74,7 +78,11 @@ async function summarizeWeek(weekNumber, year, options = {}) {
       if (!process.env.TASKS_DATABASE_ID) {
         throw new Error("TASKS_DATABASE_ID is not configured.");
       }
-      showProgress("Fetching completed tasks...");
+      if (typeof showProgress === "function") {
+        showProgress("Fetching completed tasks...");
+      } else {
+        console.log("⏳ Fetching completed tasks...");
+      }
       tasks = await fetchCompletedTasks(startDate, endDate);
       await delay(config.sources.rateLimits.notion.backoffMs);
     }
@@ -125,7 +133,11 @@ async function summarizeWeek(weekNumber, year, options = {}) {
     }
 
     // Update week recap
-    showProgress("Updating Work Recap database...");
+    if (typeof showProgress === "function") {
+      showProgress("Updating Work Recap database...");
+    } else {
+      console.log("⏳ Updating Work Recap database...");
+    }
     await workRecapRepo.updateWeekRecap(weekRecap.id, summary, sourcesToFetch);
 
     // Rate limiting
@@ -153,9 +165,13 @@ async function summarizeWeek(weekNumber, year, options = {}) {
       }
     }
     
-    showSuccess(
-      `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
-    );
+    if (typeof showSuccess === "function") {
+      showSuccess(
+        `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
+      );
+    } else {
+      console.log(`✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+    }
 
     return results;
   } catch (error) {

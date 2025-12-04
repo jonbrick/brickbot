@@ -38,6 +38,7 @@ const {
   getRecapSourceConfig,
   buildCalendarFetches,
   getRecapSourceData,
+  getDisplayNameForFetchKey,
   WORK_RECAP_SOURCES,
 } = require("../config/calendar/mappings");
 
@@ -190,7 +191,11 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
   };
 
   try {
-    showProgress(`Summarizing week ${weekNumber} of ${year}...`);
+    if (typeof showProgress === "function") {
+      showProgress(`Summarizing week ${weekNumber} of ${year}...`);
+    } else {
+      console.log(`⏳ Summarizing week ${weekNumber} of ${year}...`);
+    }
 
     // Calculate week date range
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
@@ -231,7 +236,11 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
       ),
     }));
 
-    showProgress(`Fetching ${calendarFetches.length} calendar(s)...`);
+    if (typeof showProgress === "function") {
+      showProgress(`Fetching ${calendarFetches.length} calendar(s)...`);
+    } else {
+      console.log(`⏳ Fetching ${calendarFetches.length} calendar(s)...`);
+    }
     const fetchResults = await Promise.all(
       calendarFetches.map((f) =>
         f.promise.catch((err) => ({ error: err.message }))
@@ -254,9 +263,15 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     const allFailed =
       fetchResults.length > 0 && fetchResults.every((r) => r.error);
     if (allFailed) {
-      showError(
-        "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
-      );
+      if (typeof showError === "function") {
+        showError(
+          "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
+        );
+      } else {
+        console.error(
+          "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
+        );
+      }
     }
 
     // Rate limiting between API calls
@@ -270,16 +285,17 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
         return eventDate >= startDate && eventDate <= endDate;
       };
 
-      console.log("\n📋 Event Details (within week range):");
+      console.log("\n📋 Block Details (within week range):");
 
       Object.entries(calendarEvents).forEach(([key, events]) => {
         const filteredEvents = events.filter((event) =>
           isDateInWeek(event.date)
         );
         if (filteredEvents.length > 0) {
-          const displayName =
-            key.charAt(0).toUpperCase() +
-            key.slice(1).replace(/([A-Z])/g, " $1");
+          const displayName = getDisplayNameForFetchKey(
+            key,
+            WORK_RECAP_SOURCES
+          );
           console.log(
             `\n  ${displayName} Events (${filteredEvents.length} of ${events.length} total):`
           );
@@ -336,15 +352,22 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     );
 
     if (!weekRecap) {
-      showError(
-        `Week recap record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`
-      );
+      const errorMessage = `Week recap record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
+      if (typeof showError === "function") {
+        showError(errorMessage);
+      } else {
+        console.error(errorMessage);
+      }
       results.error = "Week recap record not found";
       return results;
     }
 
     // Update week recap
-    showProgress("Updating Work Recap database...");
+    if (typeof showProgress === "function") {
+      showProgress("Updating Work Recap database...");
+    } else {
+      console.log("⏳ Updating Work Recap database...");
+    }
     await workRecapRepo.updateWeekRecap(
       weekRecap.id,
       summary,
@@ -364,12 +387,20 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
       WORK_RECAP_SOURCES
     );
 
-    showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+    if (typeof showSuccess === "function") {
+      showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+    } else {
+      console.log(`✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+    }
 
     return results;
   } catch (error) {
     results.error = error.message;
-    showError(`Failed to summarize week: ${error.message}`);
+    if (typeof showError === "function") {
+      showError(`Failed to summarize week: ${error.message}`);
+    } else {
+      console.error(`Failed to summarize week: ${error.message}`);
+    }
     throw error;
   }
 }

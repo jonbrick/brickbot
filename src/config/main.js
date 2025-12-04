@@ -489,6 +489,211 @@ const DATA_SOURCES = {
     },
   },
 
+  workCalendar: {
+    id: "workCalendar",
+    name: "Work Calendar",
+    emoji: "💼",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { workMain: process.env.WORK_MAIN_CALENDAR_ID },
+
+    // Work calendar has nested categories
+    categories: {
+      meetings: {
+        data: {
+          meetingsSessions: {
+            label: "Meetings - Sessions",
+            type: "count",
+            notionProperty: "meetingsSessions",
+          },
+          meetingsHoursTotal: {
+            label: "Meetings - Hours Total",
+            type: "decimal",
+            notionProperty: "meetingsHoursTotal",
+          },
+          meetingsBlocks: {
+            label: "Meetings - Blocks",
+            type: "optionalText",
+            notionProperty: "meetingsBlocks",
+          },
+        },
+      },
+      design: {
+        data: {
+          designSessions: {
+            label: "Design - Sessions",
+            type: "count",
+            notionProperty: "designSessions",
+          },
+          designHoursTotal: {
+            label: "Design - Hours Total",
+            type: "decimal",
+            notionProperty: "designHoursTotal",
+          },
+          designBlocks: {
+            label: "Design - Blocks",
+            type: "optionalText",
+            notionProperty: "designBlocks",
+          },
+        },
+      },
+      coding: {
+        data: {
+          codingSessions: {
+            label: "Coding - Sessions",
+            type: "count",
+            notionProperty: "codingSessions",
+          },
+          codingHoursTotal: {
+            label: "Coding - Hours Total",
+            type: "decimal",
+            notionProperty: "codingHoursTotal",
+          },
+          codingBlocks: {
+            label: "Coding - Blocks",
+            type: "optionalText",
+            notionProperty: "codingBlocks",
+          },
+        },
+      },
+      crit: {
+        data: {
+          critSessions: {
+            label: "Crit - Sessions",
+            type: "count",
+            notionProperty: "critSessions",
+          },
+          critHoursTotal: {
+            label: "Crit - Hours Total",
+            type: "decimal",
+            notionProperty: "critHoursTotal",
+          },
+          critBlocks: {
+            label: "Crit - Blocks",
+            type: "optionalText",
+            notionProperty: "critBlocks",
+          },
+        },
+      },
+      sketch: {
+        data: {
+          sketchSessions: {
+            label: "Sketch - Sessions",
+            type: "count",
+            notionProperty: "sketchSessions",
+          },
+          sketchHoursTotal: {
+            label: "Sketch - Hours Total",
+            type: "decimal",
+            notionProperty: "sketchHoursTotal",
+          },
+          sketchBlocks: {
+            label: "Sketch - Blocks",
+            type: "optionalText",
+            notionProperty: "sketchBlocks",
+          },
+        },
+      },
+      research: {
+        data: {
+          researchSessions: {
+            label: "Research - Sessions",
+            type: "count",
+            notionProperty: "researchSessions",
+          },
+          researchHoursTotal: {
+            label: "Research - Hours Total",
+            type: "decimal",
+            notionProperty: "researchHoursTotal",
+          },
+          researchBlocks: {
+            label: "Research - Blocks",
+            type: "optionalText",
+            notionProperty: "researchBlocks",
+          },
+        },
+      },
+      personalAndSocial: {
+        data: {
+          personalAndSocialSessions: {
+            label: "Personal & Social - Sessions",
+            type: "count",
+            notionProperty: "personalAndSocialSessions",
+          },
+          personalAndSocialHoursTotal: {
+            label: "Personal & Social - Hours Total",
+            type: "decimal",
+            notionProperty: "personalAndSocialHoursTotal",
+          },
+          personalAndSocialBlocks: {
+            label: "Personal & Social - Blocks",
+            type: "optionalText",
+            notionProperty: "personalAndSocialBlocks",
+          },
+        },
+      },
+      rituals: {
+        data: {
+          ritualsSessions: {
+            label: "Rituals - Sessions",
+            type: "count",
+            notionProperty: "ritualsSessions",
+          },
+          ritualsHoursTotal: {
+            label: "Rituals - Hours Total",
+            type: "decimal",
+            notionProperty: "ritualsHoursTotal",
+          },
+          ritualsBlocks: {
+            label: "Rituals - Blocks",
+            type: "optionalText",
+            notionProperty: "ritualsBlocks",
+          },
+        },
+      },
+      qa: {
+        data: {
+          qaSessions: {
+            label: "QA - Sessions",
+            type: "count",
+            notionProperty: "qaSessions",
+          },
+          qaHoursTotal: {
+            label: "QA - Hours Total",
+            type: "decimal",
+            notionProperty: "qaHoursTotal",
+          },
+          qaBlocks: {
+            label: "QA - Blocks",
+            type: "optionalText",
+            notionProperty: "qaBlocks",
+          },
+        },
+      },
+    },
+  },
+
+  workPRs: {
+    id: "workPRs",
+    name: "Work PRs",
+    emoji: "🔀",
+    type: "calendar",
+    apiSource: "google_calendar",
+    calendars: { workPRs: process.env.WORK_PRS_CALENDAR_ID },
+    data: {
+      workPRsSessions: {
+        label: "Work PRs - Sessions",
+        type: "count",
+        notionProperty: "workPRsSessions",
+      },
+      workPRsDetails: {
+        label: "Work PRs - Details",
+        type: "optionalText",
+        notionProperty: "workPRsDetails",
+      },
+    },
+  },
+
   // ===== NOTION DATABASE SOURCES =====
 
   tasks: {
@@ -568,6 +773,145 @@ const DATA_SOURCES = {
             label: "Mental Health - Task Details",
             type: "optionalText",
             notionProperty: "mentalHealthTaskDetails",
+          },
+        },
+      },
+    },
+  },
+
+  workTasks: {
+    id: "workTasks",
+    name: "Work Tasks",
+    emoji: "✅",
+    type: "notion_database",
+    apiSource: "notion",
+    database: process.env.TASKS_DATABASE_ID,
+
+    // Work task categories
+    categories: {
+      research: {
+        data: {
+          researchTasksComplete: {
+            label: "Research - Tasks Complete",
+            type: "count",
+            notionProperty: "researchTasksComplete",
+          },
+          researchTaskDetails: {
+            label: "Research - Task Details",
+            type: "optionalText",
+            notionProperty: "researchTaskDetails",
+          },
+        },
+      },
+      sketch: {
+        data: {
+          sketchTasksComplete: {
+            label: "Sketch - Tasks Complete",
+            type: "count",
+            notionProperty: "sketchTasksComplete",
+          },
+          sketchTaskDetails: {
+            label: "Sketch - Task Details",
+            type: "optionalText",
+            notionProperty: "sketchTaskDetails",
+          },
+        },
+      },
+      design: {
+        data: {
+          designTasksComplete: {
+            label: "Design - Tasks Complete",
+            type: "count",
+            notionProperty: "designTasksComplete",
+          },
+          designTaskDetails: {
+            label: "Design - Task Details",
+            type: "optionalText",
+            notionProperty: "designTaskDetails",
+          },
+        },
+      },
+      coding: {
+        data: {
+          codingTasksComplete: {
+            label: "Coding - Tasks Complete",
+            type: "count",
+            notionProperty: "codingTasksComplete",
+          },
+          codingTaskDetails: {
+            label: "Coding - Task Details",
+            type: "optionalText",
+            notionProperty: "codingTaskDetails",
+          },
+        },
+      },
+      crit: {
+        data: {
+          critTasksComplete: {
+            label: "Crit - Tasks Complete",
+            type: "count",
+            notionProperty: "critTasksComplete",
+          },
+          critTaskDetails: {
+            label: "Crit - Task Details",
+            type: "optionalText",
+            notionProperty: "critTaskDetails",
+          },
+        },
+      },
+      qa: {
+        data: {
+          qaTasksComplete: {
+            label: "QA - Tasks Complete",
+            type: "count",
+            notionProperty: "qaTasksComplete",
+          },
+          qaTaskDetails: {
+            label: "QA - Task Details",
+            type: "optionalText",
+            notionProperty: "qaTaskDetails",
+          },
+        },
+      },
+      admin: {
+        data: {
+          adminTasksComplete: {
+            label: "Admin - Tasks Complete",
+            type: "count",
+            notionProperty: "adminTasksComplete",
+          },
+          adminTaskDetails: {
+            label: "Admin - Task Details",
+            type: "optionalText",
+            notionProperty: "adminTaskDetails",
+          },
+        },
+      },
+      social: {
+        data: {
+          socialTasksComplete: {
+            label: "Social - Tasks Complete",
+            type: "count",
+            notionProperty: "socialTasksComplete",
+          },
+          socialTaskDetails: {
+            label: "Social - Task Details",
+            type: "optionalText",
+            notionProperty: "socialTaskDetails",
+          },
+        },
+      },
+      ooo: {
+        data: {
+          oooTasksComplete: {
+            label: "OOO - Tasks Complete",
+            type: "count",
+            notionProperty: "oooTasksComplete",
+          },
+          oooTaskDetails: {
+            label: "OOO - Task Details",
+            type: "optionalText",
+            notionProperty: "oooTaskDetails",
           },
         },
       },
@@ -727,6 +1071,60 @@ function generatePersonalRecapProperties() {
   return properties;
 }
 
+/**
+ * Generate Work Recap properties object from work data sources
+ * This becomes the source of truth for Notion property definitions
+ * @returns {Object} Properties object compatible with work-recap.js format
+ */
+function generateWorkRecapProperties() {
+  const properties = {
+    // Special metadata properties (not in data sources)
+    title: { name: "Week Recap", type: "title", enabled: true },
+    date: { name: "Date", type: "date", enabled: true },
+    weekNumber: { name: "Week Number", type: "number", enabled: true },
+    year: { name: "Year", type: "number", enabled: true },
+  };
+
+  // Work data sources only
+  const workSources = ["workCalendar", "workPRs", "workTasks"];
+
+  // Generate properties from work data sources
+  workSources.forEach((sourceId) => {
+    const source = DATA_SOURCES[sourceId];
+    if (!source) return;
+
+    if (source.data) {
+      // Direct data
+      Object.entries(source.data).forEach(([dataKey, dataConfig]) => {
+        properties[dataConfig.notionProperty] = {
+          name: dataConfig.label, // Use label as Notion property name
+          type: mapToNotionType(dataConfig.type),
+          enabled: true,
+        };
+      });
+    }
+
+    if (source.categories) {
+      // Category-based data (workCalendar, workTasks)
+      Object.values(source.categories).forEach((category) => {
+        if (category.data) {
+          Object.entries(category.data).forEach(
+            ([dataKey, dataConfig]) => {
+              properties[dataConfig.notionProperty] = {
+                name: dataConfig.label,
+                type: mapToNotionType(dataConfig.type),
+                enabled: true,
+              };
+            }
+          );
+        }
+      });
+    }
+  });
+
+  return properties;
+}
+
 module.exports = {
   DATA_SOURCES,
   FIELD_TYPES,
@@ -735,5 +1133,6 @@ module.exports = {
   isSourceAvailable,
   getAvailableSources,
   generatePersonalRecapProperties,
+  generateWorkRecapProperties,
   mapToNotionType,
 };

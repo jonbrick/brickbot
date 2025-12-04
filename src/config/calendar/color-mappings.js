@@ -78,11 +78,11 @@ function getPersonalCategoryDisplayName(colorId) {
  */
 function getWorkCategoryByColor(colorId) {
   if (!colorId) {
-    return "default";
+    return "meetings";
   }
 
   const colorInfo = WORK_COLOR_MAPPING[String(colorId)];
-  return colorInfo ? colorInfo.category : "default";
+  return colorInfo ? colorInfo.category : "meetings";
 }
 
 /**
@@ -92,11 +92,11 @@ function getWorkCategoryByColor(colorId) {
  */
 function getWorkCategoryDisplayName(colorId) {
   if (!colorId) {
-    return "Default Work";
+    return "Meetings";
   }
 
   const colorInfo = WORK_COLOR_MAPPING[String(colorId)];
-  return colorInfo ? colorInfo.displayName : "Default Work";
+  return colorInfo ? colorInfo.displayName : "Meetings";
 }
 
 module.exports = {

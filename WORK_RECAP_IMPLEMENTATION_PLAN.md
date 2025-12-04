@@ -2,6 +2,18 @@
 
 This document outlines the phased approach to implement Work Recap functionality, mirroring the Personal Recap implementation pattern.
 
+## Implementation Notes
+
+- ✅ **Work Category Field**: Confirmed exists in Tasks database CSV (column: "Work Category")
+- ✅ **Title Format**: Work Recap database uses "Week XX Work Recap" format (e.g., "Week 01 Work Recap")
+- ✅ **CLI Routing**:
+  - Work and personal sources merged into single selection list
+  - Sources split by type (`sourceType: "work" | "personal"`) before routing
+  - When both types selected, workflows run separately and databases update independently
+  - Each database update tracked separately with appropriate error handling
+- ✅ **Best Practices**: Following same patterns as Personal Recap (collector extracts fields, transformer processes standardized data)
+- ✅ **Source Type Identification**: All source configs include `sourceType` property for explicit work vs personal identification
+
 ## Overview
 
 Work Recap will follow the same architectural pattern as Personal Recap:
@@ -32,10 +44,15 @@ Each phase is designed to be:
 
 ### Milestone 1.2: Add Work Task Category Helper
 
+- [ ] Create `getWorkCategoryKey()` function in `task-categories.js`:
+  - Maps Work Category property values (e.g., "🧪 Research", "💡 Sketch", "🖥️ Coding") to category keys (e.g., "research", "sketch", "coding")
+  - Uses `WORK_TASK_CATEGORY_MAPPING` for mapping
+  - Returns category key or null if unmapped (same pattern as `getCategoryKey()`)
+  - Handles null/undefined input gracefully (returns null)
+  - Mirrors the pattern of `getCategoryKey()` for personal tasks
 - [ ] Export `getWorkCategoryKey()` function from `task-categories.js`
-- [ ] Use `WORK_TASK_CATEGORY_MAPPING` for work tasks
 - **File**: `src/config/notion/task-categories.js`
-- **Test**: Verify work task category mapping works
+- **Test**: Verify work task category mapping works (test with sample Work Category values from CSV)
 
 ### Milestone 1.3: Add Work Data Sources to main.js
 
@@ -53,10 +70,12 @@ Each phase is designed to be:
 
 ### Milestone 1.4: Create generateWorkRecapProperties Function
 
-- [ ] Add `generateWorkRecapProperties()` function (similar to `generatePersonalRecapProperties()`)
-- [ ] Generate properties from work data sources
+- [ ] Add `generateWorkRecapProperties()` function (similar to `generatePersonalRecapProperties()`):
+  - Generate properties from work data sources (workCalendar, workPRs, workTasks)
+  - Include special metadata properties: title, date, weekNumber, year
+  - Use `mapToNotionType()` helper to convert field types to Notion property types
 - **File**: `src/config/main.js`
-- **Test**: Verify property generation includes all work recap fields
+- **Test**: Verify property generation includes all work recap fields and matches expected structure
 
 **Phase 1 Completion**: All configuration and data definitions in place. Can verify by checking generated properties.
 
@@ -71,11 +90,14 @@ Each phase is designed to be:
 - [ ] Create `src/databases/WorkRecapDatabase.js`
 - [ ] Extend `NotionDatabase` (like `PersonalRecapDatabase`)
 - [ ] Implement `findWeekRecap()` method:
-  - Uses `WORK_WEEK_RECAP_DATABASE_ID`
-  - Looks for "Week XX Work Recap" format
+  - Uses `WORK_WEEK_RECAP_DATABASE_ID` from config
+  - Looks for "Week XX Work Recap" format (e.g., "Week 01 Work Recap", "Week 48 Work Recap")
+  - Formats week number with zero-padding (e.g., "01", "48")
+  - Mirrors `PersonalRecapDatabase.findWeekRecap()` pattern exactly
 - [ ] Implement `updateWeekRecap()` method:
-  - Uses work recap config properties
-  - Uses `buildDataProperties()` utility
+  - Uses work recap config properties from `config.notion.properties.workRecap`
+  - Uses `buildDataProperties()` utility (same as personal recap)
+  - Accepts `selectedCalendars` parameter for field inclusion logic
 - **Files**: `src/databases/WorkRecapDatabase.js`
 - **Test**: Can instantiate class and call methods (will need DB ID configured)
 
@@ -112,20 +134,30 @@ Each phase is designed to be:
     - Single calendar source using `WORK_MAIN_CALENDAR_ID`
     - Category-based (like personalCalendar)
     - Same structure: `id`, `displayName`, `description`, `required`, `calendars` array with `key`, `envVar`, `required`, `fetchKey`
+    - Add `sourceType: "work"` property for explicit identification
   - `workPRs`:
     - Single calendar source using `WORK_PRS_CALENDAR_ID`
     - Simple structure (like personalPRs)
     - Same structure: `id`, `displayName`, `description`, `required`, `calendars` array
+    - Add `sourceType: "work"` property for explicit identification
   - `workTasks`:
     - Notion database source (like tasks)
     - Uses `TASKS_DATABASE_ID`
     - Same structure: `id`, `displayName`, `description`, `required`, `isNotionSource: true`, `databaseId`
-- [ ] Add `getAvailableWorkRecapSources()` function (mirror `getAvailableRecapSources()` pattern)
+    - Add `sourceType: "work"` property for explicit identification
+- [ ] Add `sourceType: "personal"` to all `PERSONAL_RECAP_SOURCES` entries for consistency
+- [ ] Add `getAvailableWorkRecapSources()` function (mirror `getAvailableRecapSources()` pattern):
+  - Filter sources based on configured environment variables (same logic as personal)
+  - Return array of source objects with: `id`, `displayName`, `description`, `isNotionSource`, `sourceType: "work"`
+  - Use `WORK_RECAP_SOURCES` instead of `PERSONAL_RECAP_SOURCES`
 - [ ] Refactor `buildCalendarFetches()` to accept sources parameter:
   - Change signature: `buildCalendarFetches(selectedSources, accountType = "personal", sourcesConfig = PERSONAL_RECAP_SOURCES)`
   - Use `sourcesConfig` parameter instead of hardcoded `PERSONAL_RECAP_SOURCES`
   - Can be called with either `PERSONAL_RECAP_SOURCES` or `WORK_RECAP_SOURCES`
   - Follows DRY principle - single function handles both personal and work sources
+  - Update all call sites to pass appropriate `sourcesConfig`:
+    - Personal recap workflows: pass `PERSONAL_RECAP_SOURCES`
+    - Work recap workflows: pass `WORK_RECAP_SOURCES`
 - **Files**: `src/config/calendar/mappings.js`
 - **Test**: Verify work recap sources are available and build correct fetch configs
 
@@ -144,11 +176,12 @@ Each phase is designed to be:
   - Handle work calendar categories (use `getWorkCategoryByColor()`)
   - Process work PRs (similar to personalPRs)
   - Handle work tasks:
-    - **Filter IN work tasks** (opposite of personal recap which filters OUT work tasks)
-    - Use `getWorkCategoryKey()` from task-categories to map `task.workCategory` field
+    - **Filter IN work tasks** (where `task.type === "💼 Work"`) - opposite of personal recap which filters OUT work tasks
+    - Use `getWorkCategoryKey()` from task-categories to map `task.workCategory` field (extracted by collector)
     - Split tasks into distinct columns by Work Category (research, sketch, design, coding, crit, qa, admin, social, ooo)
-    - Each category gets: `{category}TasksComplete` (count) and `{category}TaskDetails` (text)
-    - Note: `workCategory` is extracted by collector (see Milestone 5.2)
+    - Each category gets: `{category}TasksComplete` (count) and `{category}TaskDetails` (comma-separated text with day abbreviations)
+    - Format task details as: "Task name (Day)" - no duration (same as personal recap task format)
+    - Note: `workCategory` is extracted by collector (see Milestone 5.2) - follows best practice pattern
   - Default unmapped colors to meetings (color 1)
 - [ ] Mirror structure from `transform-calendar-to-notion-personal-recap.js`
 - **Files**: `src/transformers/transform-calendar-to-notion-work-recap.js`
@@ -184,11 +217,12 @@ Each phase is designed to be:
 - [ ] Create `src/workflows/notion-tasks-to-notion-work-recap.js`
 - [ ] Implement `summarizeWeek()` function:
   - Fetch completed tasks from Notion (updated `fetchCompletedTasks()` now includes workCategory)
-  - **Filter IN work tasks** (where Type = "💼 Work") - opposite of personal recap
-  - Use `getWorkCategoryKey()` from task-categories to map `task.workCategory` field
+  - **Filter IN work tasks** (where `task.type === "💼 Work"`) - opposite of personal recap which filters OUT work tasks
+  - Use `getWorkCategoryKey()` from task-categories to map `task.workCategory` field to category keys
   - Transform to recap data by Work Category (research, sketch, design, coding, crit, qa, admin, social, ooo)
-  - Each category becomes separate columns: `{category}TasksComplete` and `{category}TaskDetails`
-  - Update Work Recap database
+  - Each category becomes separate columns: `{category}TasksComplete` (count) and `{category}TaskDetails` (formatted text)
+  - Use `WorkRecapDatabase` instead of `PersonalRecapDatabase`
+  - Update Work Recap database with transformed data
 - [ ] Mirror structure from `notion-tasks-to-notion-personal-recap.js`
 - **Files**: `src/collectors/collect-tasks.js`, `src/workflows/notion-tasks-to-notion-work-recap.js`
 - **Test**: Can fetch and aggregate work tasks for a week
@@ -203,14 +237,59 @@ Each phase is designed to be:
 
 ### Milestone 6.1: Update Summarize Week CLI
 
-- [ ] Add "Work Calendar" and "Work Tasks" as options in the existing source selection list
-- [ ] When work sources are selected, route to work recap workflows:
-  - "Work Calendar" → `aggregate-calendar-to-notion-work-recap.js` workflow
-  - "Work Tasks" → `notion-tasks-to-notion-work-recap.js` workflow
-- [ ] Pass `accountType: "work"` to calendar workflows when work sources selected
-- [ ] Update display logic to handle work recap data
+- [ ] Merge work recap sources into source selection list:
+
+  - Combine `getAvailableRecapSources()` and `getAvailableWorkRecapSources()` into single list
+  - Work sources will appear alongside personal sources in the same selection menu
+  - All sources now have `sourceType: "work" | "personal"` property for explicit identification
+
+- [ ] Split selected sources by type:
+
+  - After source selection, separate into work vs personal groups:
+    - **Work sources**: workCalendar, workPRs, workTasks (identified by `sourceType === "work"` or checking if source ID exists in `WORK_RECAP_SOURCES`)
+    - **Personal sources**: all others (sleep, workout, personalCalendar, tasks, etc.)
+  - Handle "all" selection: expand and split by type
+
+- [ ] Route to appropriate workflows based on source type:
+
+  - **Work sources** → work recap workflows:
+    - workCalendar/workPRs → `aggregate-calendar-to-notion-work-recap.js` workflow
+    - workTasks → `notion-tasks-to-notion-work-recap.js` workflow
+  - **Personal sources** → personal recap workflows:
+    - Calendar sources → `aggregate-calendar-to-notion-personal-recap.js` workflow
+    - tasks → `notion-tasks-to-notion-personal-recap.js` workflow
+  - **Both types selected**: Run both workflows separately, update both databases independently
+
+- [ ] Pass correct accountType to calendar workflows:
+
+  - **Work calendar sources**: Use `accountType: "work"` and pass `WORK_RECAP_SOURCES` to `buildCalendarFetches()`
+  - **Personal calendar sources**: Use `accountType: "personal"` and pass `PERSONAL_RECAP_SOURCES` to `buildCalendarFetches()`
+  - Build separate fetch configs for each type when both are selected
+
+- [ ] Update action prompt dynamically:
+
+  - If only work sources: "Update Work Recap database"
+  - If only personal: "Update Personal Recap database"
+  - If both: "Update Work and Personal Recap databases"
+  - Update `selectAction()` function to accept source types and generate appropriate prompt
+
+- [ ] Update display and error handling logic:
+
+  - Use `WorkRecapDatabase` for work sources, `PersonalRecapDatabase` for personal sources
+  - When both types selected, run workflows separately and handle results independently:
+    - Track success/failure for each database separately
+    - Display results for each database update
+    - Handle partial failures gracefully (one DB succeeds, other fails)
+  - Update success messages to reflect correct database(s) being updated
+  - Update error messages to indicate which database failed
+
 - **Files**: `cli/summarize-week.js`
-- **Test**: CLI shows work options in source list and routes correctly
+- **Test**:
+  - CLI shows work options in source list
+  - Routes correctly to appropriate workflows based on source type
+  - Handles mixed source selections (work + personal)
+  - Updates correct databases independently
+  - Displays appropriate success/error messages
 
 **Phase 6 Completion**: CLI supports Work Recap summarization.
 
@@ -225,7 +304,9 @@ Each phase is designed to be:
 - [ ] Test work calendar aggregation end-to-end
 - [ ] Test work PRs aggregation
 - [ ] Test work tasks aggregation
-- [ ] Test combined sources
+- [ ] Test combined sources (work + personal together)
+- [ ] Test work-only sources
+- [ ] Test personal-only sources
 - [ ] Verify all categories populate correctly
 - **Test**: Run summarize-week for work recap and verify Notion updates
 
@@ -235,6 +316,16 @@ Each phase is designed to be:
 - [ ] Test missing calendar IDs
 - [ ] Test missing database IDs
 - [ ] Test empty weeks
+- [ ] Test mixed source selections (work + personal):
+  - Verify both databases update independently
+  - Verify partial failures handled correctly (one succeeds, one fails)
+  - Verify results displayed separately
+- [ ] Test unmapped Work Category values:
+  - Verify `getWorkCategoryKey()` returns null for unmapped values
+  - Verify transformer handles null gracefully (skips unmapped tasks or puts in "unknown" category)
+- [ ] Test tasks with missing Work Category property:
+  - Verify collector extracts null/undefined gracefully
+  - Verify transformer handles missing workCategory field
 - **Test**: Verify error handling and edge cases
 
 **Phase 7 Completion**: Work Recap fully functional and tested.
@@ -305,12 +396,25 @@ Make sure these are set before testing:
   - Rituals: Calendar only (color 9)
   - Personal & Social: Calendar only (color 8) - captures both personal and social work calendar events
   - Social: Tasks only (work social tasks, not personal)
-- **Default Color**: Unmapped colors default to meetings (color 1)
+- **Default Color**: Unmapped colors default to meetings (color 1) for work calendar
 - **Work Task Filtering**:
   - **Opposite of Personal Recap**: Personal recap filters OUT work tasks (Type = "💼 Work"), Work recap filters IN work tasks
-  - **Work Category Field**: Work tasks use the "Work Category" property (not "Type") to categorize tasks
+  - **Work Category Field**: Work tasks use the "Work Category" property (confirmed exists in CSV) to categorize tasks
   - **Task Splitting**: Each Work Category (research, sketch, design, coding, crit, qa, admin, social, ooo) gets its own columns:
     - `{category}TasksComplete` (count of completed tasks)
     - `{category}TaskDetails` (comma-separated list of task titles with day abbreviations)
   - **OOO**: OOO (Out of Office) is a task category, not a calendar category
   - **Collector Pattern**: `workCategory` is extracted in `fetchCompletedTasks()` collector (best practice) so transformer receives it in standardized format
+- **CLI Routing Best Practice**:
+  - Merge work and personal sources into single selection list for better UX
+  - Add `sourceType: "work" | "personal"` property to all source configs for explicit identification
+  - Split selected sources by type before routing to workflows
+  - Route to appropriate workflow and database based on source type:
+    - Work sources → Work recap workflows → WorkRecapDatabase
+    - Personal sources → Personal recap workflows → PersonalRecapDatabase
+    - Both types → Run both workflows separately, update both databases independently
+  - Pass correct `accountType` and `sourcesConfig` to `buildCalendarFetches()`:
+    - Work sources: `accountType: "work"`, `sourcesConfig: WORK_RECAP_SOURCES`
+    - Personal sources: `accountType: "personal"`, `sourcesConfig: PERSONAL_RECAP_SOURCES`
+  - Handle partial failures gracefully when updating multiple databases
+  - Display results separately for each database update

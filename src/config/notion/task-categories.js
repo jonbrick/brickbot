@@ -33,8 +33,23 @@ function getCategoryKey(taskType) {
   return TASK_CATEGORY_MAPPING[taskType] || null;
 }
 
+/**
+ * Get work category key from Work Category property value
+ * @param {string|null|undefined} workCategory - Work Category property value (e.g., "🧪 Research", "📝 Admin")
+ * @returns {string|null} Category key (e.g., "research", "admin") or null if unmapped
+ */
+function getWorkCategoryKey(workCategory) {
+  if (!workCategory) {
+    return null;
+  }
+
+  return WORK_TASK_CATEGORY_MAPPING[workCategory] || null;
+}
+
 module.exports = {
   TASK_CATEGORY_MAPPING,
+  WORK_TASK_CATEGORY_MAPPING,
   getCategoryKey,
+  getWorkCategoryKey,
 };
 

@@ -24,6 +24,16 @@ const WORK_TASK_CATEGORY_MAPPING = {
   "🏝️ OOO": "ooo",
 };
 
+const TASK_STATUS_MAPPING = {
+  "🟢 Done": "done",
+  "🔵 In Progress": "inProgress",
+  "🟡 Scheduled": "scheduled",
+  "🟠 To Book": "toBook",
+  "🔴 To Do": "toDo",
+  "🟣 Considering": "considering",
+  "🧊 Ice Box": "iceBox",
+};
+
 /**
  * Get category key from task Type value
  * @param {string} taskType - Task Type value (e.g., "💪 Physical Health")
@@ -49,6 +59,7 @@ function getWorkCategoryKey(workCategory) {
 module.exports = {
   TASK_CATEGORY_MAPPING,
   WORK_TASK_CATEGORY_MAPPING,
+  TASK_STATUS_MAPPING,
   getCategoryKey,
   getWorkCategoryKey,
 };

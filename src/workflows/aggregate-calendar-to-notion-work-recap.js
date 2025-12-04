@@ -20,20 +20,22 @@
  *
  * Example:
  * ```
- * await aggregateCalendarDataForWeek(49, 2025, { 
+ * await aggregateCalendarDataForWeek(49, 2025, {
  *   calendars: ['workCalendar', 'workPRs'],
  *   accountType: 'work'
  * });
  * ```
+ */
 
 const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
 const { fetchCalendarSummary } = require("../collectors/collect-calendar");
-const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-work-recap");
+const {
+  transformCalendarEventsToRecapData,
+} = require("../transformers/transform-calendar-to-notion-work-recap");
 const config = require("../config");
 // Import entire date module instead of destructuring to avoid module loading timing issues
 // that cause "parseWeekNumber is not defined" errors in work recap workflow
-const dateUtils = require("../utils/date");
-console.log("dateUtils loaded:", typeof dateUtils, !!dateUtils.parseWeekNumber);
+const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
 // Import entire mappings module to avoid destructuring timing issues
@@ -45,6 +47,7 @@ const mappings = require("../config/calendar/mappings");
  * @param {number|string} value - Data value
  * @returns {string} Formatted display text (e.g., "5 meetings sessions", "10.5 coding hours")
  */
+
 function formatDataForDisplay(dataKey, value) {
   // Special cases with custom formatting
   if (dataKey === "bodyWeightAverage") {
@@ -195,7 +198,7 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Calculate week date range
-    const { startDate, endDate } = dateUtils.parseWeekNumber(weekNumber, year);
+    const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 
     // Get available sources
     const availableSources = mappings.getAvailableWorkRecapSources();

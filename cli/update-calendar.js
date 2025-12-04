@@ -33,6 +33,43 @@ const {
 } = require("../src/utils/sweep-display");
 
 /**
+ * Calendar sync handler configuration
+ * Maps source IDs to their NotionService query methods, sync functions and display settings
+ */
+const CALENDAR_SYNC_HANDLERS = {
+  oura: {
+    queryMethod: "getUnsyncedSleep",
+    syncFn: syncSleepToCalendar,
+    emptyMessage: "✅ No sleep records found without calendar events\n",
+    sourceType: "sleep",
+  },
+  strava: {
+    queryMethod: "getUnsyncedWorkouts",
+    syncFn: syncWorkoutsToCalendar,
+    emptyMessage: "✅ No workout records found without calendar events\n",
+    sourceType: "strava",
+  },
+  steam: {
+    queryMethod: "getUnsyncedSteam",
+    syncFn: syncSteamToCalendar,
+    emptyMessage: "✅ No gaming records found without calendar events\n",
+    sourceType: "steam",
+  },
+  github: {
+    queryMethod: "getUnsyncedPRs",
+    syncFn: syncPRsToCalendar,
+    emptyMessage: "✅ No PR records found without calendar events\n",
+    sourceType: "github",
+  },
+  withings: {
+    queryMethod: "getUnsyncedBodyWeight",
+    syncFn: syncBodyWeightToCalendar,
+    emptyMessage: "✅ No body weight records found without calendar events\n",
+    sourceType: "withings",
+  },
+};
+
+/**
  * Select source and action type (display only or sync to calendar)
  */
 async function selectSourceAndAction() {
@@ -138,11 +175,14 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   console.log("=".repeat(80) + "\n");
 
   const handlers = {
-    handleGitHubSync,
-    handleOuraSync,
-    handleSteamSync,
-    handleStravaSync,
-    handleBodyWeightSync,
+    handleGitHubSync: (sd, ed, act) =>
+      handleCalendarSync("github", sd, ed, act),
+    handleOuraSync: (sd, ed, act) => handleCalendarSync("oura", sd, ed, act),
+    handleSteamSync: (sd, ed, act) => handleCalendarSync("steam", sd, ed, act),
+    handleStravaSync: (sd, ed, act) =>
+      handleCalendarSync("strava", sd, ed, act),
+    handleBodyWeightSync: (sd, ed, act) =>
+      handleCalendarSync("withings", sd, ed, act),
   };
 
   const sources = buildAllSourcesHandlers("toCalendar", handlers);
@@ -205,6 +245,47 @@ function printAggregatedCalendarResults(aggregatedResults) {
   console.log("\n" + "=".repeat(80) + "\n");
 }
 
+/**
+ * Generic handler for syncing Notion records to calendar
+ * @param {string} sourceId - Source identifier (e.g., 'oura', 'strava')
+ * @param {string} startDate - Start date string for query range
+ * @param {string} endDate - End date string for query range
+ * @param {string} action - Action to perform ('display' or 'sync')
+ */
+async function handleCalendarSync(sourceId, startDate, endDate, action) {
+  const config = CALENDAR_SYNC_HANDLERS[sourceId];
+  if (!config) {
+    throw new Error(`Unknown source: ${sourceId}`);
+  }
+
+  console.log(`📊 Querying Notion for unsynced ${sourceId} records...\n`);
+
+  const notionService = new NotionService();
+
+  // Dynamically call the configured query method
+  const records = await notionService[config.queryMethod](startDate, endDate);
+
+  if (records.length === 0) {
+    console.log(config.emptyMessage);
+    return;
+  }
+
+  // Format and display records using config-driven utilities
+  const formattedRecords = formatRecordsForDisplay(
+    records,
+    sourceId,
+    notionService
+  );
+  displayRecordsTable(formattedRecords, sourceId);
+
+  // Sync to calendar if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Calendar...\n");
+    const results = await config.syncFn(startDate, endDate);
+    printSyncResults(results, config.sourceType);
+  }
+}
+
 async function main() {
   console.log("\n🤖 Brickbot - Sync to Calendar\n");
 
@@ -227,16 +308,8 @@ async function main() {
     // Route to appropriate handler
     if (source === "all") {
       await handleAllCalendarSyncs(startDate, endDate, action);
-    } else if (source === "oura") {
-      await handleOuraSync(startDate, endDate, action);
-    } else if (source === "strava") {
-      await handleStravaSync(startDate, endDate, action);
-    } else if (source === "steam") {
-      await handleSteamSync(startDate, endDate, action);
-    } else if (source === "github") {
-      await handleGitHubSync(startDate, endDate, action);
-    } else if (source === "withings") {
-      await handleBodyWeightSync(startDate, endDate, action);
+    } else {
+      await handleCalendarSync(source, startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -246,172 +319,6 @@ async function main() {
       console.error(error.stack);
     }
     process.exit(1);
-  }
-}
-
-/**
- * Handle Oura sleep sync
- */
-async function handleOuraSync(startDate, endDate, action) {
-  console.log("📊 Querying Notion for unsynced sleep records...\n");
-
-  const notionService = new NotionService();
-  const sleepRecords = await notionService.getUnsyncedSleep(startDate, endDate);
-
-  if (sleepRecords.length === 0) {
-    console.log("✅ No sleep records found without calendar events\n");
-    return;
-  }
-
-  // Format and display records
-  const formattedRecords = formatRecordsForDisplay(
-    sleepRecords,
-    "oura",
-    notionService
-  );
-  displayRecordsTable(formattedRecords, "oura");
-
-  // Sync to calendar if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Calendar...\n");
-
-    const results = await syncSleepToCalendar(startDate, endDate);
-
-    printSyncResults(results, "sleep");
-  }
-}
-
-/**
- * Handle Strava workout sync
- */
-async function handleStravaSync(startDate, endDate, action) {
-  console.log("📊 Querying Notion for unsynced workout records...\n");
-
-  const notionService = new NotionService();
-  const workoutRecords = await notionService.getUnsyncedWorkouts(
-    startDate,
-    endDate
-  );
-
-  if (workoutRecords.length === 0) {
-    console.log("✅ No workout records found without calendar events\n");
-    return;
-  }
-
-  // Format and display records
-  const formattedRecords = formatRecordsForDisplay(
-    workoutRecords,
-    "strava",
-    notionService
-  );
-  displayRecordsTable(formattedRecords, "strava");
-
-  // Sync to calendar if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Calendar...\n");
-
-    const results = await syncWorkoutsToCalendar(startDate, endDate);
-
-    printSyncResults(results, "strava");
-  }
-}
-
-/**
- * Handle Steam gaming sync
- */
-async function handleSteamSync(startDate, endDate, action) {
-  console.log("📊 Querying Notion for unsynced gaming records...\n");
-
-  const notionService = new NotionService();
-  const steamRecords = await notionService.getUnsyncedSteam(startDate, endDate);
-
-  if (steamRecords.length === 0) {
-    console.log("✅ No gaming records found without calendar events\n");
-    return;
-  }
-
-  // Format and display records
-  const formattedRecords = formatRecordsForDisplay(
-    steamRecords,
-    "steam",
-    notionService
-  );
-  displayRecordsTable(formattedRecords, "steam");
-
-  // Sync to calendar if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Calendar...\n");
-
-    const results = await syncSteamToCalendar(startDate, endDate);
-
-    printSyncResults(results, "steam");
-  }
-}
-
-/**
- * Handle GitHub PR sync
- */
-async function handleGitHubSync(startDate, endDate, action) {
-  console.log("📊 Querying Notion for unsynced PR records...\n");
-
-  const notionService = new NotionService();
-  const prRecords = await notionService.getUnsyncedPRs(startDate, endDate);
-
-  if (prRecords.length === 0) {
-    console.log("✅ No PR records found without calendar events\n");
-    return;
-  }
-
-  // Format and display records
-  const formattedRecords = formatRecordsForDisplay(
-    prRecords,
-    "github",
-    notionService
-  );
-  displayRecordsTable(formattedRecords, "github");
-
-  // Sync to calendar if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Calendar...\n");
-
-    const results = await syncPRsToCalendar(startDate, endDate);
-
-    printSyncResults(results, "github");
-  }
-}
-
-/**
- * Handle Body Weight sync
- */
-async function handleBodyWeightSync(startDate, endDate, action) {
-  console.log("📊 Querying Notion for unsynced body weight records...\n");
-
-  const notionService = new NotionService();
-  const weightRecords = await notionService.getUnsyncedBodyWeight(
-    startDate,
-    endDate
-  );
-
-  if (weightRecords.length === 0) {
-    console.log("✅ No body weight records found without calendar events\n");
-    return;
-  }
-
-  // Format and display records
-  const formattedRecords = formatRecordsForDisplay(
-    weightRecords,
-    "withings",
-    notionService
-  );
-  displayRecordsTable(formattedRecords, "withings");
-
-  // Sync to calendar if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Calendar...\n");
-
-    const results = await syncBodyWeightToCalendar(startDate, endDate);
-
-    printSyncResults(results, "withings");
   }
 }
 

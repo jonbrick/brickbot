@@ -34,6 +34,49 @@ const {
 } = require("../src/utils/sweep-display");
 
 /**
+ * Source handler configuration
+ * Maps source IDs to their fetch, transform, sync functions and display settings
+ */
+const SOURCE_HANDLERS = {
+  oura: {
+    fetchFn: fetchOuraData,
+    transformFn: extractSleepFields, // Only Oura needs transformation
+    syncFn: syncOuraToNotion,
+    tableTitle: "OURA SLEEP DATA",
+    emptyMessage: "⚠️  No sleep data found for this date range\n",
+    displayType: "oura"
+  },
+  strava: {
+    fetchFn: fetchStravaData,
+    syncFn: syncStravaToNotion,
+    tableTitle: "STRAVA ACTIVITIES",
+    emptyMessage: "⚠️  No Strava activities found for this date range\n",
+    displayType: "strava"
+  },
+  withings: {
+    fetchFn: fetchWithingsData,
+    syncFn: syncWithingsToNotion,
+    tableTitle: "WITHINGS MEASUREMENTS",
+    emptyMessage: "⚠️  No Withings measurements found for this date range\n",
+    displayType: "withings"
+  },
+  steam: {
+    fetchFn: fetchSteamData,
+    syncFn: syncSteamToNotion,
+    tableTitle: "STEAM GAMING ACTIVITIES",
+    emptyMessage: "⚠️  No Steam gaming activities found for this date range\n",
+    displayType: "steam"
+  },
+  github: {
+    fetchFn: fetchGitHubData,
+    syncFn: syncGitHubToNotion,
+    tableTitle: "GITHUB ACTIVITIES",
+    emptyMessage: "⚠️  No GitHub activities found for this date range\n",
+    displayType: "github"
+  }
+};
+
+/**
  * Extract and format sleep data with only the specified fields
  * Now accepts processed format from fetchOuraData() instead of raw API format
  */
@@ -185,11 +228,11 @@ async function handleAllSources(startDate, endDate, action) {
   console.log("=".repeat(80) + "\n");
 
   const handlers = {
-    handleGitHubData,
-    handleOuraData,
-    handleSteamData,
-    handleStravaData,
-    handleWithingsData,
+    handleGitHubData: (sd, ed, act) => handleSourceData('github', sd, ed, act),
+    handleOuraData: (sd, ed, act) => handleSourceData('oura', sd, ed, act),
+    handleSteamData: (sd, ed, act) => handleSourceData('steam', sd, ed, act),
+    handleStravaData: (sd, ed, act) => handleSourceData('strava', sd, ed, act),
+    handleWithingsData: (sd, ed, act) => handleSourceData('withings', sd, ed, act),
   };
 
   const sources = buildAllSourcesHandlers("toNotion", handlers);
@@ -252,6 +295,47 @@ function printAggregatedResults(aggregatedResults) {
   console.log("\n" + "=".repeat(80) + "\n");
 }
 
+/**
+ * Generic handler for fetching and processing source data
+ * @param {string} sourceId - Source identifier (e.g., 'oura', 'strava')
+ * @param {Date} startDate - Start date for data range
+ * @param {Date} endDate - End date for data range
+ * @param {string} action - Action to perform ('display' or 'sync')
+ */
+async function handleSourceData(sourceId, startDate, endDate, action) {
+  const config = SOURCE_HANDLERS[sourceId];
+  if (!config) {
+    throw new Error(`Unknown source: ${sourceId}`);
+  }
+
+  console.log(`📊 Fetching ${sourceId} data...\n`);
+
+  // Fetch data using the configured fetch function
+  const fetchedData = await config.fetchFn(startDate, endDate);
+
+  if (fetchedData.length === 0) {
+    console.log(config.emptyMessage);
+    return;
+  }
+
+  // Apply transformation if configured (only Oura needs this)
+  const displayData = config.transformFn 
+    ? config.transformFn(fetchedData)
+    : fetchedData;
+
+  // Always display the table
+  printDataTable(displayData, config.displayType, config.tableTitle);
+
+  // Sync to Notion if requested
+  if (action === "sync") {
+    console.log("\n📤 Syncing to Notion...\n");
+    
+    // Use fetched data (not transformed) for sync
+    const results = await config.syncFn(fetchedData);
+    printSyncResults(results);
+  }
+}
+
 async function main() {
   console.log("\n🤖 Brickbot - Data Collection Tool\n");
 
@@ -266,16 +350,8 @@ async function main() {
     // Route to appropriate handler based on source
     if (source === "all") {
       await handleAllSources(startDate, endDate, action);
-    } else if (source === "oura") {
-      await handleOuraData(startDate, endDate, action);
-    } else if (source === "strava") {
-      await handleStravaData(startDate, endDate, action);
-    } else if (source === "withings") {
-      await handleWithingsData(startDate, endDate, action);
-    } else if (source === "steam") {
-      await handleSteamData(startDate, endDate, action);
-    } else if (source === "github") {
-      await handleGitHubData(startDate, endDate, action);
+    } else {
+      await handleSourceData(source, startDate, endDate, action);
     }
 
     console.log("✅ Done!\n");
@@ -288,143 +364,6 @@ async function main() {
   }
 }
 
-/**
- * Handle Oura data fetching and processing
- */
-async function handleOuraData(startDate, endDate, action) {
-  console.log("📊 Fetching Oura sleep data...\n");
-
-  // Fetch once using collector (returns processed format)
-  const processed = await fetchOuraData(startDate, endDate);
-
-  if (processed.length === 0) {
-    console.log("⚠️  No sleep data found for this date range\n");
-    return;
-  }
-
-  // Extract only the fields we want for display
-  const extractedData = extractSleepFields(processed);
-
-  // Always display the table
-  printDataTable(extractedData, "oura", "OURA SLEEP DATA");
-
-  // Sync to Notion if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Notion...\n");
-
-    // Reuse the processed data (already fetched above)
-    const results = await syncOuraToNotion(processed);
-
-    printSyncResults(results);
-  }
-}
-
-/**
- * Handle Strava data fetching and processing
- */
-async function handleStravaData(startDate, endDate, action) {
-  console.log("📊 Fetching Strava activity data...\n");
-
-  const activities = await fetchStravaData(startDate, endDate);
-
-  if (activities.length === 0) {
-    console.log("⚠️  No Strava activities found for this date range\n");
-    return;
-  }
-
-  // Always display the table
-  printDataTable(activities, "strava", "STRAVA ACTIVITIES");
-
-  // Sync to Notion if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Notion...\n");
-
-    // Reuse the processed data (already fetched above)
-    const results = await syncStravaToNotion(activities);
-
-    printSyncResults(results);
-  }
-}
-
-/**
- * Handle Withings data fetching and processing
- */
-async function handleWithingsData(startDate, endDate, action) {
-  console.log("📊 Fetching Withings measurement data...\n");
-
-  const measurements = await fetchWithingsData(startDate, endDate);
-
-  if (measurements.length === 0) {
-    console.log("⚠️  No Withings measurements found for this date range\n");
-    return;
-  }
-
-  // Always display the table
-  printDataTable(measurements, "withings", "WITHINGS MEASUREMENTS");
-
-  // Sync to Notion if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Notion...\n");
-
-    // Reuse the processed data (already fetched above)
-    const results = await syncWithingsToNotion(measurements);
-    printSyncResults(results);
-  }
-}
-
-/**
- * Handle Steam data fetching and processing
- */
-async function handleSteamData(startDate, endDate, action) {
-  console.log("📊 Fetching Steam gaming data...\n");
-
-  const activities = await fetchSteamData(startDate, endDate);
-
-  if (activities.length === 0) {
-    console.log("⚠️  No Steam gaming activities found for this date range\n");
-    return;
-  }
-
-  // Always display the table
-  printDataTable(activities, "steam", "STEAM GAMING ACTIVITIES");
-
-  // Sync to Notion if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Notion...\n");
-
-    // Reuse the processed data (already fetched above)
-    const results = await syncSteamToNotion(activities);
-
-    printSyncResults(results);
-  }
-}
-
-/**
- * Handle GitHub data fetching and processing
- */
-async function handleGitHubData(startDate, endDate, action) {
-  console.log("📊 Fetching GitHub activity data...\n");
-
-  const activities = await fetchGitHubData(startDate, endDate);
-
-  if (activities.length === 0) {
-    console.log("⚠️  No GitHub activities found for this date range\n");
-    return;
-  }
-
-  // Always display the table
-  printDataTable(activities, "github", "GITHUB ACTIVITIES");
-
-  // Sync to Notion if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Notion...\n");
-
-    // Reuse the processed data (already fetched above)
-    const results = await syncGitHubToNotion(activities);
-
-    printSyncResults(results);
-  }
-}
 
 // Run main function
 main().catch((error) => {

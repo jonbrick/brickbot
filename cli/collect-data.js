@@ -7,78 +7,22 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { fetchOuraData } = require("../src/collectors/collect-oura");
-const { fetchStravaData } = require("../src/collectors/collect-strava");
-const { fetchWithingsData } = require("../src/collectors/collect-withings");
-const { fetchSteamData } = require("../src/collectors/collect-steam");
-const { fetchGitHubData } = require("../src/collectors/collect-github");
-const { syncOuraToNotion } = require("../src/workflows/oura-to-notion-oura");
-const {
-  syncStravaToNotion,
-} = require("../src/workflows/strava-to-notion-strava");
-const { syncSteamToNotion } = require("../src/workflows/steam-to-notion-steam");
-const {
-  syncGitHubToNotion,
-} = require("../src/workflows/github-to-notion-github");
-const {
-  syncWithingsToNotion,
-} = require("../src/workflows/withings-to-notion-withings");
 const { formatDate, getDayName, isSleepIn } = require("../src/utils/date");
 const { selectDateRange } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
 const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
-  buildSourceChoices,
-  buildAllSourcesHandlers,
-} = require("../src/utils/sweep-display");
-
-/**
- * Source handler configuration
- * Maps source IDs to their fetch, transform, sync functions and display settings
- */
-const SOURCE_HANDLERS = {
-  oura: {
-    fetchFn: fetchOuraData,
-    transformFn: extractSleepFields, // Only Oura needs transformation
-    syncFn: syncOuraToNotion,
-    tableTitle: "OURA SLEEP DATA",
-    emptyMessage: "⚠️  No sleep data found for this date range\n",
-    displayType: "oura"
-  },
-  strava: {
-    fetchFn: fetchStravaData,
-    syncFn: syncStravaToNotion,
-    tableTitle: "STRAVA ACTIVITIES",
-    emptyMessage: "⚠️  No Strava activities found for this date range\n",
-    displayType: "strava"
-  },
-  withings: {
-    fetchFn: fetchWithingsData,
-    syncFn: syncWithingsToNotion,
-    tableTitle: "WITHINGS MEASUREMENTS",
-    emptyMessage: "⚠️  No Withings measurements found for this date range\n",
-    displayType: "withings"
-  },
-  steam: {
-    fetchFn: fetchSteamData,
-    syncFn: syncSteamToNotion,
-    tableTitle: "STEAM GAMING ACTIVITIES",
-    emptyMessage: "⚠️  No Steam gaming activities found for this date range\n",
-    displayType: "steam"
-  },
-  github: {
-    fetchFn: fetchGitHubData,
-    syncFn: syncGitHubToNotion,
-    tableTitle: "GITHUB ACTIVITIES",
-    emptyMessage: "⚠️  No GitHub activities found for this date range\n",
-    displayType: "github"
-  }
-};
+  getCollector,
+  getCollectorIds,
+  getDisplayMetadata,
+} = require("../src/collectors");
+const { INTEGRATIONS } = require("../src/config/unified-sources");
 
 /**
  * Extract and format sleep data with only the specified fields
  * Now accepts processed format from fetchOuraData() instead of raw API format
+ * @exports extractSleepFields - Temporarily exported for collector registry
  */
 function extractSleepFields(processedData) {
   return processedData.map((record) => {
@@ -135,12 +79,33 @@ function extractSleepFields(processedData) {
  * Select action type and source
  */
 async function selectAction() {
+  const collectorIds = getCollectorIds();
+  
+  // Build choices from collector registry
+  const sortedCollectors = collectorIds
+    .map((id) => ({
+      id,
+      name: INTEGRATIONS[id].name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const choices = [
+    {
+      name: `All Sources (${sortedCollectors.map((s) => s.name.split(" ")[0]).join(", ")})`,
+      value: "all",
+    },
+    ...sortedCollectors.map((s) => ({
+      name: s.name,
+      value: s.id,
+    })),
+  ];
+
   const { source, action } = await inquirer.prompt([
     {
       type: "list",
       name: "source",
       message: "Select data source:",
-      choices: buildSourceChoices("toNotion"),
+      choices,
     },
     {
       type: "list",
@@ -227,15 +192,15 @@ async function handleAllSources(startDate, endDate, action) {
   );
   console.log("=".repeat(80) + "\n");
 
-  const handlers = {
-    handleGitHubData: (sd, ed, act) => handleSourceData('github', sd, ed, act),
-    handleOuraData: (sd, ed, act) => handleSourceData('oura', sd, ed, act),
-    handleSteamData: (sd, ed, act) => handleSourceData('steam', sd, ed, act),
-    handleStravaData: (sd, ed, act) => handleSourceData('strava', sd, ed, act),
-    handleWithingsData: (sd, ed, act) => handleSourceData('withings', sd, ed, act),
-  };
-
-  const sources = buildAllSourcesHandlers("toNotion", handlers);
+  const collectorIds = getCollectorIds();
+  
+  // Build sources list with names from INTEGRATIONS
+  const sources = collectorIds
+    .map((id) => ({
+      id,
+      name: INTEGRATIONS[id].name.split(" ")[0], // Extract "Oura" from "Oura (Sleep)"
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const aggregatedResults = {
     successful: [],
@@ -248,7 +213,7 @@ async function handleAllSources(startDate, endDate, action) {
     console.log("-".repeat(80) + "\n");
 
     try {
-      await source.handler(startDate, endDate, action);
+      await handleSourceData(source.id, startDate, endDate, action);
       aggregatedResults.successful.push(source.name);
     } catch (error) {
       console.error(`\n❌ ${source.name} failed:`, error.message);
@@ -303,35 +268,35 @@ function printAggregatedResults(aggregatedResults) {
  * @param {string} action - Action to perform ('display' or 'sync')
  */
 async function handleSourceData(sourceId, startDate, endDate, action) {
-  const config = SOURCE_HANDLERS[sourceId];
-  if (!config) {
+  const collector = getCollector(sourceId);
+  if (!collector) {
     throw new Error(`Unknown source: ${sourceId}`);
   }
+
+  const { fetchFn, syncFn, transformFn, displayMetadata } = collector;
 
   console.log(`📊 Fetching ${sourceId} data...\n`);
 
   // Fetch data using the configured fetch function
-  const fetchedData = await config.fetchFn(startDate, endDate);
+  const fetchedData = await fetchFn(startDate, endDate);
 
   if (fetchedData.length === 0) {
-    console.log(config.emptyMessage);
+    console.log(displayMetadata.emptyMessage);
     return;
   }
 
   // Apply transformation if configured (only Oura needs this)
-  const displayData = config.transformFn 
-    ? config.transformFn(fetchedData)
-    : fetchedData;
+  const displayData = transformFn ? transformFn(fetchedData) : fetchedData;
 
   // Always display the table
-  printDataTable(displayData, config.displayType, config.tableTitle);
+  printDataTable(displayData, displayMetadata.displayType, displayMetadata.tableTitle);
 
   // Sync to Notion if requested
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
     
     // Use fetched data (not transformed) for sync
-    const results = await config.syncFn(fetchedData);
+    const results = await syncFn(fetchedData);
     printSyncResults(results);
   }
 }
@@ -364,6 +329,11 @@ async function main() {
   }
 }
 
+
+// Export extractSleepFields for collector registry (temporary)
+module.exports = {
+  extractSleepFields,
+};
 
 // Run main function
 main().catch((error) => {

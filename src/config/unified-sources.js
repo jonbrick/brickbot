@@ -986,30 +986,60 @@ const INTEGRATIONS = {
     name: "Oura (Sleep)",
     notionDbEnvVar: "NOTION_SLEEP_DATABASE_ID",
     calendarRouting: ["normalWakeUp", "sleepIn"],
+    collect: true,
+    displayMetadata: {
+      tableTitle: "OURA SLEEP DATA",
+      emptyMessage: "⚠️  No sleep data found for this date range\n",
+      displayType: "oura"
+    },
   },
   strava: {
     id: "strava",
     name: "Strava (Workouts)",
     notionDbEnvVar: "NOTION_WORKOUTS_DATABASE_ID",
     calendarRouting: ["workout"],
+    collect: true,
+    displayMetadata: {
+      tableTitle: "STRAVA ACTIVITIES",
+      emptyMessage: "⚠️  No Strava activities found for this date range\n",
+      displayType: "strava"
+    },
   },
   github: {
     id: "github",
     name: "GitHub (PRs)",
     notionDbEnvVar: "NOTION_PRS_DATABASE_ID",
     calendarRouting: ["personalPRs", "workPRs"],
+    collect: true,
+    displayMetadata: {
+      tableTitle: "GITHUB ACTIVITIES",
+      emptyMessage: "⚠️  No GitHub activities found for this date range\n",
+      displayType: "github"
+    },
   },
   steam: {
     id: "steam",
     name: "Steam (Video Games)",
     notionDbEnvVar: "NOTION_VIDEO_GAMES_DATABASE_ID",
     calendarRouting: ["videoGames"],
+    collect: true,
+    displayMetadata: {
+      tableTitle: "STEAM GAMING ACTIVITIES",
+      emptyMessage: "⚠️  No Steam gaming activities found for this date range\n",
+      displayType: "steam"
+    },
   },
   withings: {
     id: "withings",
     name: "Withings (Body Weight)",
     notionDbEnvVar: "NOTION_BODY_WEIGHT_DATABASE_ID",
     calendarRouting: ["bodyWeight"],
+    collect: true,
+    displayMetadata: {
+      tableTitle: "WITHINGS MEASUREMENTS",
+      emptyMessage: "⚠️  No Withings measurements found for this date range\n",
+      displayType: "withings"
+    },
   },
 };
 

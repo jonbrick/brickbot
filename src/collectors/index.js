@@ -51,12 +51,10 @@ collectableIntegrations.forEach(([id, config]) => {
     // Handle transform function (only Oura has this)
     let transformFn = null;
     if (id === "oura") {
-      // Temporarily import from collect-data.js
-      const collectDataModule = require("../../cli/collect-data.js");
-      transformFn = collectDataModule.extractSleepFields;
+      transformFn = collectorModule.extractSleepFields;
       if (!transformFn) {
         throw new Error(
-          `Oura transform: extractSleepFields not found in collect-data.js`
+          `Oura transform: extractSleepFields not found in collect-${id}.js`
         );
       }
     }

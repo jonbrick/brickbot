@@ -7,7 +7,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { formatDate, getDayName, isSleepIn } = require("../src/utils/date");
+const { formatDate } = require("../src/utils/date");
 const { selectDateRange } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
 const config = require("../src/config");
@@ -18,62 +18,6 @@ const {
   getDisplayMetadata,
 } = require("../src/collectors");
 const { INTEGRATIONS } = require("../src/config/unified-sources");
-
-/**
- * Extract and format sleep data with only the specified fields
- * Now accepts processed format from fetchOuraData() instead of raw API format
- * @exports extractSleepFields - Temporarily exported for collector registry
- */
-function extractSleepFields(processedData) {
-  return processedData.map((record) => {
-    // Calculate wake time from bedtimeEnd (processed format uses camelCase)
-    const bedtimeEnd = record.bedtimeEnd ? new Date(record.bedtimeEnd) : null;
-    const bedtimeStart = record.bedtimeStart
-      ? new Date(record.bedtimeStart)
-      : null;
-
-    // Wake time is the bedtime_end
-    const wakeTime = bedtimeEnd ? bedtimeEnd.toLocaleString() : "N/A";
-
-    // Get day name for the record day (use ouraDate which is the raw wake-up date)
-    // ouraDate is already a Date object from the processed format
-    const dayName = record.ouraDate ? getDayName(record.ouraDate) : "N/A";
-
-    // Night of date is already calculated in processed format (nightOf is a Date object)
-    const nightOfDateStr = record.nightOf ? formatDate(record.nightOf) : "N/A";
-
-    // Determine wake time category
-    const googleCalendar =
-      bedtimeEnd && isSleepIn(bedtimeEnd)
-        ? config.notion.sleepCategorization.sleepInLabel
-        : config.notion.sleepCategorization.normalWakeUpLabel;
-
-    return {
-      id: record.sleepId,
-      day: record.ouraDate ? formatDate(record.ouraDate) : null,
-      dayName: dayName,
-      nightOf: nightOfDateStr,
-      nightOfDate: nightOfDateStr,
-      bedtime_start: record.bedtimeStart,
-      bedtime_end: record.bedtimeEnd,
-      total_sleep_duration: record.sleepDuration,
-      deep_sleep_duration: record.deepSleep,
-      rem_sleep_duration: record.remSleep,
-      light_sleep_duration: record.lightSleep,
-      awake_time: record.awakeTime,
-      average_heart_rate: record.heartRateAvg,
-      lowest_heart_rate: record.heartRateLow,
-      average_hrv: record.hrv,
-      average_breath: record.respiratoryRate,
-      efficiency: record.efficiency,
-      type: record.type,
-      wake_time_check: wakeTime,
-      googleCalendar: googleCalendar,
-      calendarCreated: false,
-      readinessScore: record.readinessScore || null,
-    };
-  });
-}
 
 /**
  * Select action type and source
@@ -328,12 +272,6 @@ async function main() {
     process.exit(1);
   }
 }
-
-
-// Export extractSleepFields for collector registry (temporary)
-module.exports = {
-  extractSleepFields,
-};
 
 // Run main function
 main().catch((error) => {

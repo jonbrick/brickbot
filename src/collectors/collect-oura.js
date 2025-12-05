@@ -1,9 +1,10 @@
 // Fetches sleep data from Oura API for a specific date range
 
 const OuraService = require("../services/OuraService");
-const { parseDate } = require("../utils/date");
+const { parseDate, formatDate, getDayName, isSleepIn } = require("../utils/date");
 const { createSpinner } = require("../utils/cli");
 const { extractSourceDate } = require("../utils/date-handler");
+const config = require("../config");
 
 /**
  * Fetch Oura sleep data for date range
@@ -152,10 +153,69 @@ async function fetchOuraReadiness(startDate, endDate) {
   }
 }
 
+/**
+ * Extract and format sleep data with only the specified fields
+ * Now accepts processed format from fetchOuraData() instead of raw API format
+ *
+ * @param {Array} processedData - Processed Oura sleep data from fetchOuraData()
+ * @returns {Array} Formatted sleep data for display
+ */
+function extractSleepFields(processedData) {
+  return processedData.map((record) => {
+    // Calculate wake time from bedtimeEnd (processed format uses camelCase)
+    const bedtimeEnd = record.bedtimeEnd ? new Date(record.bedtimeEnd) : null;
+    const bedtimeStart = record.bedtimeStart
+      ? new Date(record.bedtimeStart)
+      : null;
+
+    // Wake time is the bedtime_end
+    const wakeTime = bedtimeEnd ? bedtimeEnd.toLocaleString() : "N/A";
+
+    // Get day name for the record day (use ouraDate which is the raw wake-up date)
+    // ouraDate is already a Date object from the processed format
+    const dayName = record.ouraDate ? getDayName(record.ouraDate) : "N/A";
+
+    // Night of date is already calculated in processed format (nightOf is a Date object)
+    const nightOfDateStr = record.nightOf ? formatDate(record.nightOf) : "N/A";
+
+    // Determine wake time category
+    const googleCalendar =
+      bedtimeEnd && isSleepIn(bedtimeEnd)
+        ? config.notion.sleepCategorization.sleepInLabel
+        : config.notion.sleepCategorization.normalWakeUpLabel;
+
+    return {
+      id: record.sleepId,
+      day: record.ouraDate ? formatDate(record.ouraDate) : null,
+      dayName: dayName,
+      nightOf: nightOfDateStr,
+      nightOfDate: nightOfDateStr,
+      bedtime_start: record.bedtimeStart,
+      bedtime_end: record.bedtimeEnd,
+      total_sleep_duration: record.sleepDuration,
+      deep_sleep_duration: record.deepSleep,
+      rem_sleep_duration: record.remSleep,
+      light_sleep_duration: record.lightSleep,
+      awake_time: record.awakeTime,
+      average_heart_rate: record.heartRateAvg,
+      lowest_heart_rate: record.heartRateLow,
+      average_hrv: record.hrv,
+      average_breath: record.respiratoryRate,
+      efficiency: record.efficiency,
+      type: record.type,
+      wake_time_check: wakeTime,
+      googleCalendar: googleCalendar,
+      calendarCreated: false,
+      readinessScore: record.readinessScore || null,
+    };
+  });
+}
+
 module.exports = {
   fetchOuraData,
   fetchOuraDataForNight,
   fetchOuraActivity,
   fetchOuraReadiness,
+  extractSleepFields,
 };
 

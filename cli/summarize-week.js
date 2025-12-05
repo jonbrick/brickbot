@@ -19,35 +19,22 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const {
-  aggregateCalendarDataForWeek: summarizePersonalCalendarWeek,
-} = require("../src/workflows/aggregate-calendar-to-notion-personal-recap");
-const {
-  summarizeWeek: summarizePersonalNotionWeek,
-} = require("../src/workflows/notion-tasks-to-notion-personal-recap");
-const {
-  aggregateCalendarDataForWeek: summarizeWorkCalendarWeek,
-} = require("../src/workflows/aggregate-calendar-to-notion-work-recap");
-const {
-  summarizeWeek: summarizeWorkNotionWeek,
-} = require("../src/workflows/notion-tasks-to-notion-work-recap");
-const {
   selectWeek,
   showSuccess,
   showError,
   showSummary,
   showInfo,
 } = require("../src/utils/cli");
-const { formatDateLong } = require("../src/utils/date");
 const {
   displaySourceData,
   collectSourceData,
 } = require("../src/utils/data-display");
-const { DATA_SOURCES } = require("../src/config/unified-sources");
 const {
-  getAvailableRecapSources,
-  getAvailableWorkRecapSources,
-  WORK_RECAP_SOURCES,
-} = require("../src/config/calendar/mappings");
+  getSummarizer,
+  getSummarizerIds,
+  getAllSummarizersByBucket,
+} = require("../src/summarizers");
+const { SUMMARY_GROUPS } = require("../src/config/unified-sources");
 
 /**
  * Select action type (display only or update)
@@ -93,33 +80,34 @@ async function selectAction(sourceTypes = { hasWork: false, hasPersonal: false }
  * @returns {Promise<string>} Selected calendar/database key
  */
 async function selectCalendarsAndDatabases() {
-  // Merge work and personal recap sources into single list
-  const personalRecapSources = getAvailableRecapSources();
-  const workRecapSources = getAvailableWorkRecapSources();
-  const availableRecapSources = [...personalRecapSources, ...workRecapSources];
+  const availableIds = getSummarizerIds();
 
-  if (availableRecapSources.length === 0) {
+  if (availableIds.length === 0) {
     throw new Error(
       "No calendars or databases are configured. Please set calendar IDs or database IDs in your .env file."
     );
   }
 
-  // Map available sources to inquirer choices (no emojis)
-  const availableCalendars = availableRecapSources.map((source) => {
-    return {
-      name: source.displayName, // No emoji
-      value: source.id,
-      description: source.description,
-    };
-  });
+  // Map available sources to inquirer choices using SUMMARY_GROUPS for display names
+  const availableSources = availableIds
+    .map((id) => {
+      const group = SUMMARY_GROUPS[id];
+      if (!group) return null;
+      return {
+        name: group.name, // No emoji
+        value: id,
+        description: `Summarize ${group.name.toLowerCase()}`,
+      };
+    })
+    .filter(Boolean);
 
-  // Sort calendars alphabetically by name
-  availableCalendars.sort((a, b) => a.name.localeCompare(b.name));
+  // Sort sources alphabetically by name
+  availableSources.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Add "All Sources" option at the top (includes both calendars and databases)
+  // Add "All Sources" option at the top
   const choices = [
     { name: "All Sources (Calendars + Databases)", value: "all" },
-    ...availableCalendars,
+    ...availableSources,
   ];
 
   const { source } = await inquirer.prompt([
@@ -146,49 +134,59 @@ async function main() {
       "Summarizes data from Google Calendar events and Notion database records\n"
     );
 
-    // Get all available sources (merged work and personal)
-    const personalRecapSources = getAvailableRecapSources();
-    const workRecapSources = getAvailableWorkRecapSources();
-    const allAvailableSources = [...personalRecapSources, ...workRecapSources];
-
     // Select calendars and databases
     const selectedSource = await selectCalendarsAndDatabases();
 
-    // Expand selected sources and split by type
-    let workSources = [];
-    let personalSources = [];
+    // Get all summarizers organized by bucket
+    const buckets = getAllSummarizersByBucket();
+    const {
+      personalCalendars: allPersonalCalendars,
+      personalTasks: allPersonalTasks,
+      workCalendars: allWorkCalendars,
+      workTasks: allWorkTasks,
+    } = buckets;
+
+    // Expand selected sources into the four buckets
+    let personalCalendars = [];
+    let personalNotionSources = [];
+    let workCalendars = [];
+    let workNotionSources = [];
 
     if (selectedSource === "all") {
-      // Expand all available sources, split by sourceType
-      allAvailableSources.forEach((source) => {
-        if (source.sourceType === "work") {
-          workSources.push(source.id);
-        } else {
-          personalSources.push(source.id);
-        }
-      });
+      // Use all available sources from buckets
+      personalCalendars = allPersonalCalendars;
+      personalNotionSources = allPersonalTasks;
+      workCalendars = allWorkCalendars;
+      workNotionSources = allWorkTasks;
     } else {
-      // Single source selected - find it in merged list
-      const selectedSourceConfig = allAvailableSources.find(
-        (s) => s.id === selectedSource
-      );
-
-      if (!selectedSourceConfig) {
+      // Single source selected - find which bucket it belongs to
+      const summarizer = getSummarizer(selectedSource);
+      if (!summarizer) {
         throw new Error(`Unknown source: ${selectedSource}`);
       }
 
-      // Add to appropriate group based on sourceType
-      if (selectedSourceConfig.sourceType === "work") {
-        workSources = [selectedSource];
+      // Add to appropriate bucket
+      if (summarizer.recapType === "personal") {
+        if (summarizer.sourceOrigin === "calendar") {
+          personalCalendars = [selectedSource];
+        } else {
+          personalNotionSources = [selectedSource];
+        }
       } else {
-        personalSources = [selectedSource];
+        // recapType === "work"
+        if (summarizer.sourceOrigin === "calendar") {
+          workCalendars = [selectedSource];
+        } else {
+          workNotionSources = [selectedSource];
+        }
       }
     }
 
     // Determine which source types are selected for dynamic action prompt
     const sourceTypes = {
-      hasWork: workSources.length > 0,
-      hasPersonal: personalSources.length > 0,
+      hasWork: workCalendars.length > 0 || workNotionSources.length > 0,
+      hasPersonal:
+        personalCalendars.length > 0 || personalNotionSources.length > 0,
     };
 
     // Select action
@@ -201,39 +199,6 @@ async function main() {
 
     if (displayOnly) {
       showInfo("Display mode: Results will not be saved to Notion\n");
-    }
-
-    // Split sources by isNotionSource within each type
-    // Work sources
-    const workCalendars = [];
-    const workNotionSources = [];
-    if (workSources.length > 0) {
-      workSources.forEach((sourceId) => {
-        const sourceConfig = allAvailableSources.find((s) => s.id === sourceId);
-        if (sourceConfig) {
-          if (sourceConfig.isNotionSource) {
-            workNotionSources.push(sourceId);
-          } else {
-            workCalendars.push(sourceId);
-          }
-        }
-      });
-    }
-
-    // Personal sources
-    const personalCalendars = [];
-    const personalNotionSources = [];
-    if (personalSources.length > 0) {
-      personalSources.forEach((sourceId) => {
-        const sourceConfig = allAvailableSources.find((s) => s.id === sourceId);
-        if (sourceConfig) {
-          if (sourceConfig.isNotionSource) {
-            personalNotionSources.push(sourceId);
-          } else {
-            personalCalendars.push(sourceId);
-          }
-        }
-      });
     }
 
     // Process each week
@@ -266,8 +231,9 @@ async function main() {
 
           // Work calendar sources
           if (workCalendars.length > 0) {
+            const workflow = getSummarizer(workCalendars[0]).workflow;
             workPromises.push(
-              summarizeWorkCalendarWeek(weekNumber, year, {
+              workflow(weekNumber, year, {
                 accountType: "work",
                 displayOnly,
                 calendars: workCalendars,
@@ -277,8 +243,9 @@ async function main() {
 
           // Work Notion sources
           if (workNotionSources.length > 0) {
+            const workflow = getSummarizer(workNotionSources[0]).workflow;
             workPromises.push(
-              summarizeWorkNotionWeek(weekNumber, year, {
+              workflow(weekNumber, year, {
                 displayOnly,
                 sources: workNotionSources,
               })
@@ -337,8 +304,9 @@ async function main() {
 
           // Personal calendar sources
           if (personalCalendars.length > 0) {
+            const workflow = getSummarizer(personalCalendars[0]).workflow;
             personalPromises.push(
-              summarizePersonalCalendarWeek(weekNumber, year, {
+              workflow(weekNumber, year, {
                 accountType: "personal",
                 displayOnly,
                 calendars: personalCalendars,
@@ -348,8 +316,9 @@ async function main() {
 
           // Personal Notion sources
           if (personalNotionSources.length > 0) {
+            const workflow = getSummarizer(personalNotionSources[0]).workflow;
             personalPromises.push(
-              summarizePersonalNotionWeek(weekNumber, year, {
+              workflow(weekNumber, year, {
                 displayOnly,
                 sources: personalNotionSources,
               })

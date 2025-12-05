@@ -1,22 +1,33 @@
 /**
  * Integration CLI Source Registry
  * Configuration for data sources used in collect-data and update-calendar CLIs
+ * 
+ * @deprecated This file is being phased out in favor of unified-sources.js
+ * - sweepToNotion → Replaced by INTEGRATIONS.collect in unified-sources.js + src/collectors/index.js
+ * - sweepToCalendar → Replaced by INTEGRATIONS.updateCalendar in unified-sources.js + src/updaters/index.js
+ * 
+ * NOTE: sweepToCalendar is still used by formatRecordsForDisplay() and displayRecordsTable()
+ * in src/utils/sweep-display.js. These functions should be refactored to use the new registry system.
  */
 
 /**
  * Integration source configurations
  * Each source defines its metadata and handler information for both collection modes
+ * 
+ * @deprecated Use INTEGRATIONS in unified-sources.js instead
  */
 const SWEEP_SOURCES = {
   oura: {
     id: "oura",
     name: "Oura (Sleep)",
     emoji: "😴",
+    /** @deprecated Replaced by INTEGRATIONS.oura.collect in unified-sources.js */
     sweepToNotion: {
       enabled: true,
       handler: "handleOuraData",
       displayType: "sleep",
     },
+    /** @deprecated Replaced by INTEGRATIONS[].updateCalendar in unified-sources.js. Still used by sweep-display.js utilities. */
     sweepToCalendar: {
       enabled: true,
       handler: "handleOuraSync",
@@ -46,6 +57,7 @@ const SWEEP_SOURCES = {
       handler: "handleStravaData",
       displayType: "strava",
     },
+    /** @deprecated Replaced by INTEGRATIONS[].updateCalendar in unified-sources.js. Still used by sweep-display.js utilities. */
     sweepToCalendar: {
       enabled: true,
       handler: "handleStravaSync",
@@ -78,6 +90,7 @@ const SWEEP_SOURCES = {
       handler: "handleSteamData",
       displayType: "steam",
     },
+    /** @deprecated Replaced by INTEGRATIONS[].updateCalendar in unified-sources.js. Still used by sweep-display.js utilities. */
     sweepToCalendar: {
       enabled: true,
       handler: "handleSteamSync",
@@ -120,6 +133,7 @@ const SWEEP_SOURCES = {
       handler: "handleGitHubData",
       displayType: "github",
     },
+    /** @deprecated Replaced by INTEGRATIONS[].updateCalendar in unified-sources.js. Still used by sweep-display.js utilities. */
     sweepToCalendar: {
       enabled: true,
       handler: "handleGitHubSync",
@@ -176,6 +190,7 @@ const SWEEP_SOURCES = {
       handler: "handleWithingsData",
       displayType: "withings",
     },
+    /** @deprecated Replaced by INTEGRATIONS[].updateCalendar in unified-sources.js. Still used by sweep-display.js utilities. */
     sweepToCalendar: {
       enabled: true,
       handler: "handleBodyWeightSync",
@@ -204,6 +219,7 @@ const SWEEP_SOURCES = {
       handler: null,
       displayType: "bloodPressure",
     },
+    /** @deprecated Replaced by INTEGRATIONS[].updateCalendar in unified-sources.js. Still used by sweep-display.js utilities. */
     sweepToCalendar: {
       enabled: true,
       handler: "handleBloodPressureSync",
@@ -227,6 +243,7 @@ const SWEEP_SOURCES = {
 
 /**
  * Get integration sources for a specific mode
+ * @deprecated Use getCollectorIds() from src/collectors/index.js or getUpdaterIds() from src/updaters/index.js instead
  * @param {string} mode - 'toNotion' or 'toCalendar'
  * @returns {Array} Array of source configs with enabled flag for the mode
  */
@@ -239,6 +256,7 @@ function getSweepSources(mode) {
 
 /**
  * Get handler name for a source and mode
+ * @deprecated Use getCollector() from src/collectors/index.js or getUpdater() from src/updaters/index.js instead
  * @param {string} sourceId - Source ID
  * @param {string} mode - 'toNotion' or 'toCalendar'
  * @returns {string|null} Handler function name or null if not found

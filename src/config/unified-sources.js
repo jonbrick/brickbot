@@ -859,6 +859,8 @@ const SUMMARY_GROUPS = {
     emoji: "🛏️",
     calendars: ["normalWakeUp", "sleepIn"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   drinkingDays: {
     id: "drinkingDays",
@@ -866,6 +868,8 @@ const SUMMARY_GROUPS = {
     emoji: "🍷",
     calendars: ["sober", "drinking"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   workout: {
     id: "workout",
@@ -873,6 +877,8 @@ const SUMMARY_GROUPS = {
     emoji: "💪",
     calendars: ["workout"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   reading: {
     id: "reading",
@@ -880,6 +886,8 @@ const SUMMARY_GROUPS = {
     emoji: "📖",
     calendars: ["reading"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   meditation: {
     id: "meditation",
@@ -887,6 +895,8 @@ const SUMMARY_GROUPS = {
     emoji: "🧘",
     calendars: ["meditation"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   art: {
     id: "art",
@@ -894,6 +904,8 @@ const SUMMARY_GROUPS = {
     emoji: "🎨",
     calendars: ["art"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   coding: {
     id: "coding",
@@ -901,6 +913,8 @@ const SUMMARY_GROUPS = {
     emoji: "🖥️",
     calendars: ["coding"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   music: {
     id: "music",
@@ -908,6 +922,8 @@ const SUMMARY_GROUPS = {
     emoji: "🎸",
     calendars: ["music"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   videoGames: {
     id: "videoGames",
@@ -915,6 +931,8 @@ const SUMMARY_GROUPS = {
     emoji: "🎮",
     calendars: ["videoGames"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   bodyWeight: {
     id: "bodyWeight",
@@ -922,6 +940,8 @@ const SUMMARY_GROUPS = {
     emoji: "⚖️",
     calendars: ["bodyWeight"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   bloodPressure: {
     id: "bloodPressure",
@@ -929,6 +949,8 @@ const SUMMARY_GROUPS = {
     emoji: "🫀",
     calendars: ["bloodPressure"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   personalPRs: {
     id: "personalPRs",
@@ -936,6 +958,8 @@ const SUMMARY_GROUPS = {
     emoji: "🖥️",
     calendars: ["personalPRs"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   workPRs: {
     id: "workPRs",
@@ -943,6 +967,8 @@ const SUMMARY_GROUPS = {
     emoji: "🖥️",
     calendars: ["workPRs"],
     sourceType: "work",
+    isNotionSource: false,
+    summarize: true,
   },
   personalCalendar: {
     id: "personalCalendar",
@@ -950,6 +976,8 @@ const SUMMARY_GROUPS = {
     emoji: "📅",
     calendars: ["personalCalendar"],
     sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
   },
   workCalendar: {
     id: "workCalendar",
@@ -957,6 +985,8 @@ const SUMMARY_GROUPS = {
     emoji: "💼",
     calendars: ["workCalendar"],
     sourceType: "work",
+    isNotionSource: false,
+    summarize: true,
   },
   tasks: {
     id: "tasks",
@@ -965,6 +995,7 @@ const SUMMARY_GROUPS = {
     isNotionSource: true,
     databaseIdEnvVar: "TASKS_DATABASE_ID",
     sourceType: "personal",
+    summarize: true,
   },
   workTasks: {
     id: "workTasks",
@@ -973,6 +1004,7 @@ const SUMMARY_GROUPS = {
     isNotionSource: true,
     databaseIdEnvVar: "TASKS_DATABASE_ID",
     sourceType: "work",
+    summarize: true,
   },
 };
 

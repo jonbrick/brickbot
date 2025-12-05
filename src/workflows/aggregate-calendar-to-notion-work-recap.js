@@ -1,7 +1,7 @@
 // Orchestrates fetching calendar events and aggregating them into weekly data for Work Recap database
 
 const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
-const { fetchCalendarSummary } = require("../collectors/collect-calendar");
+const { fetchCalendarSummary } = require("../summarizers/summarize-calendar");
 const {
   transformCalendarEventsToRecapData,
 } = require("../transformers/transform-calendar-to-notion-work-recap");

@@ -1,7 +1,7 @@
 // Syncs completed tasks from Notion Tasks database to Work Recap database
 
 const WorkRecapDatabase = require("../databases/WorkRecapDatabase");
-const { fetchCompletedTasks } = require("../collectors/collect-tasks");
+const { fetchCompletedTasks } = require("../summarizers/summarize-tasks");
 const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-work-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");

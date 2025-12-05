@@ -1,7 +1,7 @@
 // Orchestrates fetching calendar events and aggregating them into weekly data for Personal Recap database
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
-const { fetchCalendarSummary } = require("../collectors/collect-calendar");
+const { fetchCalendarSummary } = require("../summarizers/summarize-calendar");
 const {
   transformCalendarEventsToRecapData,
 } = require("../transformers/transform-calendar-to-notion-personal-recap");

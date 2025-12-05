@@ -4,68 +4,23 @@
  */
 
 const {
-  getSweepSources,
-  getSourceHandler,
-  SWEEP_SOURCES,
+  SWEEP_SOURCES, // @deprecated - still used by formatRecordsForDisplay and displayRecordsTable
 } = require("../config/integrations/sources");
 const config = require("../config");
 
 /**
- * Generate source selection choices for inquirer
- * @param {string} mode - 'toNotion' or 'toCalendar'
- * @returns {Array} Inquirer choices array
+ * @deprecated buildSourceChoices - No longer used. CLI files now use registry-based source selection.
+ * Removed: This function is no longer used in any CLI files.
  */
-function buildSourceChoices(mode) {
-  const sources = getSweepSources(mode);
-  
-  // Sort sources alphabetically by name
-  const sortedSources = [...sources].sort((a, b) => 
-    a.name.localeCompare(b.name)
-  );
-  
-  const choices = [
-    {
-      name: `All Sources (${sortedSources
-        .map((s) => s.name.split(" ")[0])
-        .join(", ")})`,
-      value: "all",
-    },
-    ...sortedSources.map((s) => ({
-      name: s.name, // No emoji
-      value: s.id,
-    })),
-  ];
-  return choices;
-}
 
 /**
- * Build "all sources" handler list for aggregation
- * @param {string} mode - 'toNotion' or 'toCalendar'
- * @param {Object} handlers - Map of handler functions (e.g., { handleOuraData: handleOuraData, ... })
- * @returns {Array} Array of {name, handler} objects
+ * @deprecated buildAllSourcesHandlers - No longer used. CLI files now use registry-based handlers.
+ * Removed: This function is no longer used anywhere.
  */
-function buildAllSourcesHandlers(mode, handlers) {
-  const sources = getSweepSources(mode);
-  return sources
-    .map((source) => {
-      const handlerName = getSourceHandler(source.id, mode);
-      const handler = handlers[handlerName];
-      if (!handler) {
-        console.warn(
-          `Warning: Handler "${handlerName}" not found for source "${source.id}"`
-        );
-        return null;
-      }
-      return {
-        name: source.name.split(" ")[0], // Extract "Oura" from "Oura (Sleep)"
-        handler: handler,
-      };
-    })
-    .filter((item) => item !== null); // Filter out any null entries
-}
 
 /**
  * Format records for display using config-driven field mappings
+ * @deprecated Uses deprecated SWEEP_SOURCES.sweepToCalendar config. Should be refactored to use INTEGRATIONS.updateCalendar from unified-sources.js
  * @param {Array} records - Array of Notion record objects
  * @param {string} sourceId - Source ID (e.g., 'oura', 'strava')
  * @param {Object} notionService - NotionService instance
@@ -147,6 +102,7 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
 
 /**
  * Display records table using config-driven display format
+ * @deprecated Uses deprecated SWEEP_SOURCES.sweepToCalendar config. Should be refactored to use INTEGRATIONS.updateCalendar from unified-sources.js
  * @param {Array} records - Array of formatted record objects
  * @param {string} sourceId - Source ID (e.g., 'oura', 'strava')
  */
@@ -180,8 +136,8 @@ function displayRecordsTable(records, sourceId) {
 }
 
 module.exports = {
-  buildSourceChoices,
-  buildAllSourcesHandlers,
-  formatRecordsForDisplay,
-  displayRecordsTable,
+  // buildSourceChoices, // @deprecated - removed, no longer used
+  // buildAllSourcesHandlers, // @deprecated - removed, no longer used
+  formatRecordsForDisplay, // @deprecated - still used by update-calendar.js, uses deprecated config
+  displayRecordsTable, // @deprecated - still used by update-calendar.js, uses deprecated config
 };

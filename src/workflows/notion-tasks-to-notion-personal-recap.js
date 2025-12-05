@@ -1,7 +1,7 @@
 // Syncs completed tasks from Notion Tasks database to Personal Recap database
 
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
-const { fetchCompletedTasks } = require("../collectors/collect-tasks");
+const { fetchCompletedTasks } = require("../summarizers/summarize-tasks");
 const { transformCalendarEventsToRecapData } = require("../transformers/transform-calendar-to-notion-personal-recap");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");

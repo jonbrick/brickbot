@@ -703,8 +703,8 @@ brickbot/
 │   │   ├── collect-strava.js                               # Layer 1: Integration name
 │   │   ├── collect-steam.js                                # Layer 1: Integration name
 │   │   ├── collect-withings.js                             # Layer 1: Integration name
-│   │   ├── collect-tasks.js                                # Layer 3: Notion aggregation
-│   │   └── collect-calendar.js                             # Layer 3: Calendar aggregation
+│   │   ├── summarize-tasks.js                             # Layer 3: Notion aggregation
+│   │   └── summarize-calendar.js                          # Layer 3: Calendar aggregation
 │   │
 │   ├── config/                                             # Configuration (split by domain)
 │   │   ├── calendar/                                       # Layer 2: Calendar configs

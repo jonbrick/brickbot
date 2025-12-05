@@ -99,25 +99,25 @@ function transformCalendarEventsToRecapData(
     if (!selectedCalendars || selectedCalendars.length === 0) {
       return true;
     }
-    
+
     // Direct match: source ID is in selected calendars
     if (selectedCalendars.includes(sourceId)) {
       return true;
     }
-    
+
     // Special case: "drinkingDays" source includes both "sober" and "drinking"
     if (sourceId === "sober" || sourceId === "drinking") {
       return selectedCalendars.includes("drinkingDays");
     }
-    
+
     // Check if this source ID is part of any selected source's calendars
     // (for cases where a source might be referenced by its calendar fetchKey)
-    return selectedCalendars.some(selectedSourceId => {
+    return selectedCalendars.some((selectedSourceId) => {
       const source = PERSONAL_RECAP_SOURCES[selectedSourceId];
       if (!source) return false;
-      
+
       // Check if any of the source's calendars match this source ID
-      return source.calendars?.some(cal => cal.fetchKey === sourceId);
+      return source.calendars?.some((cal) => cal.fetchKey === sourceId);
     });
   };
 
@@ -195,8 +195,10 @@ function transformCalendarEventsToRecapData(
     );
     // Always include all fields for selected calendar (clean slate)
     summary.workoutDays = workout.days || 0;
-    summary.workoutSessions = workout.sessions !== undefined ? workout.sessions : 0;
-    summary.workoutHoursTotal = workout.hoursTotal !== undefined ? workout.hoursTotal : 0;
+    summary.workoutSessions =
+      workout.sessions !== undefined ? workout.sessions : 0;
+    summary.workoutHoursTotal =
+      workout.hoursTotal !== undefined ? workout.hoursTotal : 0;
 
     // Calculate workout blocks (event summaries) from workout events
     const workoutEvents = calendarEvents.workout || [];
@@ -224,8 +226,10 @@ function transformCalendarEventsToRecapData(
     );
     // Always include all fields for selected calendar (clean slate)
     summary.readingDays = reading.days || 0;
-    summary.readingSessions = reading.sessions !== undefined ? reading.sessions : 0;
-    summary.readingHoursTotal = reading.hoursTotal !== undefined ? reading.hoursTotal : 0;
+    summary.readingSessions =
+      reading.sessions !== undefined ? reading.sessions : 0;
+    summary.readingHoursTotal =
+      reading.hoursTotal !== undefined ? reading.hoursTotal : 0;
 
     // Calculate reading blocks (event summaries) from reading events
     const readingEvents = calendarEvents.reading || [];
@@ -253,8 +257,10 @@ function transformCalendarEventsToRecapData(
     );
     // Always include all fields for selected calendar (clean slate)
     summary.codingDays = coding.days || 0;
-    summary.codingSessions = coding.sessions !== undefined ? coding.sessions : 0;
-    summary.codingHoursTotal = coding.hoursTotal !== undefined ? coding.hoursTotal : 0;
+    summary.codingSessions =
+      coding.sessions !== undefined ? coding.sessions : 0;
+    summary.codingHoursTotal =
+      coding.hoursTotal !== undefined ? coding.hoursTotal : 0;
 
     // Calculate coding blocks (event summaries) from coding events
     const codingEvents = calendarEvents.coding || [];
@@ -307,8 +313,10 @@ function transformCalendarEventsToRecapData(
     );
     // Always include all fields for selected calendar (clean slate)
     summary.videoGamesDays = videoGames.days || 0;
-    summary.videoGamesSessions = videoGames.sessions !== undefined ? videoGames.sessions : 0;
-    summary.videoGamesHoursTotal = videoGames.hoursTotal !== undefined ? videoGames.hoursTotal : 0;
+    summary.videoGamesSessions =
+      videoGames.sessions !== undefined ? videoGames.sessions : 0;
+    summary.videoGamesHoursTotal =
+      videoGames.hoursTotal !== undefined ? videoGames.hoursTotal : 0;
 
     // Calculate video games blocks (event summaries) from video games events
     const videoGamesEvents = calendarEvents.videoGames || [];
@@ -336,8 +344,10 @@ function transformCalendarEventsToRecapData(
     );
     // Always include all fields for selected calendar (clean slate)
     summary.meditationDays = meditation.days || 0;
-    summary.meditationSessions = meditation.sessions !== undefined ? meditation.sessions : 0;
-    summary.meditationHoursTotal = meditation.hoursTotal !== undefined ? meditation.hoursTotal : 0;
+    summary.meditationSessions =
+      meditation.sessions !== undefined ? meditation.sessions : 0;
+    summary.meditationHoursTotal =
+      meditation.hoursTotal !== undefined ? meditation.hoursTotal : 0;
 
     // Calculate meditation blocks (event summaries) from meditation events
     const meditationEvents = calendarEvents.meditation || [];
@@ -358,15 +368,12 @@ function transformCalendarEventsToRecapData(
 
   // Music data (only if "music" is selected)
   if (shouldCalculate("music")) {
-    const music = calculateCalendarData(
-      calendarEvents.music || [],
-      true,
-      true
-    );
+    const music = calculateCalendarData(calendarEvents.music || [], true, true);
     // Always include all fields for selected calendar (clean slate)
     summary.musicDays = music.days || 0;
     summary.musicSessions = music.sessions !== undefined ? music.sessions : 0;
-    summary.musicHoursTotal = music.hoursTotal !== undefined ? music.hoursTotal : 0;
+    summary.musicHoursTotal =
+      music.hoursTotal !== undefined ? music.hoursTotal : 0;
 
     // Calculate music blocks (event summaries) from music events
     const musicEvents = calendarEvents.music || [];
@@ -412,6 +419,72 @@ function transformCalendarEventsToRecapData(
     }
   }
 
+  // Blood Pressure data (only if "bloodPressure" is selected)
+  if (shouldCalculate("bloodPressure")) {
+    const bloodPressureEvents = calendarEvents.bloodPressure || [];
+    const filteredBloodPressureEvents = bloodPressureEvents.filter((event) =>
+      isDateInWeek(event.date)
+    );
+
+    // Extract values from event descriptions using regex
+    // Description format:
+    // 🩺 Blood Pressure Measurement
+    // 📊 Systolic: {number} mmHg
+    // 📊 Diastolic: {number} mmHg
+    // 💓 Pulse: {number} bpm
+    const readings = filteredBloodPressureEvents
+      .map((event) => {
+        const description = event.description || "";
+
+        // Extract systolic: "Systolic: {number} mmHg"
+        const systolicMatch = description.match(
+          /Systolic:\s*(\d+\.?\d*)\s*mmHg/i
+        );
+        const systolic = systolicMatch ? parseFloat(systolicMatch[1]) : null;
+
+        // Extract diastolic: "Diastolic: {number} mmHg"
+        const diastolicMatch = description.match(
+          /Diastolic:\s*(\d+\.?\d*)\s*mmHg/i
+        );
+        const diastolic = diastolicMatch ? parseFloat(diastolicMatch[1]) : null;
+
+        return { systolic, diastolic };
+      })
+      .filter(
+        (reading) => reading.systolic !== null || reading.diastolic !== null
+      );
+
+    // Always include field for selected calendar (clean slate)
+    if (readings.length > 0) {
+      // Calculate averages
+      const systolicSum = readings.reduce(
+        (sum, r) => sum + (r.systolic || 0),
+        0
+      );
+      const diastolicSum = readings.reduce(
+        (sum, r) => sum + (r.diastolic || 0),
+        0
+      );
+
+      // Count valid readings for each metric
+      const systolicCount = readings.filter((r) => r.systolic !== null).length;
+      const diastolicCount = readings.filter(
+        (r) => r.diastolic !== null
+      ).length;
+
+      const avgSystolic =
+        systolicCount > 0 ? Math.round(systolicSum / systolicCount) : 0;
+      const avgDiastolic =
+        diastolicCount > 0 ? Math.round(diastolicSum / diastolicCount) : 0;
+
+      // Format as "systolic/diastolic" (rounded to integers)
+      summary.bloodPressureAverage = `${avgSystolic}/${avgDiastolic}`;
+    } else {
+      // Set to empty string if no readings found
+      summary.bloodPressureAverage = "";
+    }
+  }
+
   // Personal PRs data (only if "personalPRs" is selected)
   if (shouldCalculate("personalPRs")) {
     const prsEvents = calendarEvents.personalPRs || [];
@@ -436,7 +509,9 @@ function transformCalendarEventsToRecapData(
 
   // Personal Calendar blocks (only if "personalCalendar" is selected)
   if (shouldCalculate("personalCalendar")) {
-    const { getPersonalCategoryByColor } = require("../config/calendar/color-mappings");
+    const {
+      getPersonalCategoryByColor,
+    } = require("../config/calendar/color-mappings");
 
     // Get all events from the single Personal Calendar
     const personalCalendarEvents = calendarEvents.personalCalendar || [];
@@ -558,4 +633,3 @@ function transformCalendarEventsToRecapData(
 module.exports = {
   transformCalendarEventsToRecapData,
 };
-

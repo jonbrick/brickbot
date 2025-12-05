@@ -286,7 +286,7 @@ const CALENDARS = {
     emoji: "🫀",
     dataFields: [
       {
-        type: "decimal",
+        type: "text",
         label: "Blood Pressure - Average",
         notionProperty: "bloodPressureAverage",
       },
@@ -918,6 +918,13 @@ const SUMMARY_GROUPS = {
     calendars: ["bodyWeight"],
     sourceType: "personal",
   },
+  bloodPressure: {
+    id: "bloodPressure",
+    name: "Blood Pressure",
+    emoji: "🫀",
+    calendars: ["bloodPressure"],
+    sourceType: "personal",
+  },
   personalPRs: {
     id: "personalPRs",
     name: "Personal PRs",
@@ -1018,6 +1025,7 @@ const FETCH_KEY_MAPPING = {
   music: "music",
   videoGames: "videoGames",
   bodyWeight: "bodyWeight",
+  bloodPressure: "bloodPressure",
   personalPRs: "personalPRs",
   workPRs: "workPRs",
   personalCalendar: "personalCalendar",

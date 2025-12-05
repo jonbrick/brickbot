@@ -9,6 +9,7 @@ const StravaDatabase = require("../databases/StravaDatabase");
 const SteamDatabase = require("../databases/SteamDatabase");
 const GitHubDatabase = require("../databases/GitHubDatabase");
 const WithingsDatabase = require("../databases/WithingsDatabase");
+const BloodPressureDatabase = require("../databases/BloodPressureDatabase");
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const NotionDatabase = require("../databases/NotionDatabase");
 
@@ -22,6 +23,7 @@ class NotionService extends NotionDatabase {
     this.steamRepo = new SteamDatabase();
     this.prRepo = new GitHubDatabase();
     this.bodyWeightRepo = new WithingsDatabase();
+    this.bloodPressureRepo = new BloodPressureDatabase();
     this.personalRecapRepo = new PersonalRecapDatabase();
   }
 
@@ -67,6 +69,14 @@ class NotionService extends NotionDatabase {
    */
   getBodyWeightRepository() {
     return this.bodyWeightRepo;
+  }
+
+  /**
+   * Get Blood Pressure database
+   * @returns {BloodPressureDatabase}
+   */
+  getBloodPressureRepository() {
+    return this.bloodPressureRepo;
   }
 
   /**
@@ -208,6 +218,22 @@ class NotionService extends NotionDatabase {
    */
   async markBodyWeightSynced(pageId) {
     return await this.bodyWeightRepo.markSynced(pageId);
+  }
+
+  /**
+   * Get unsynced blood pressure records
+   * @deprecated Use getBloodPressureRepository().getUnsynced() instead
+   */
+  async getUnsyncedBloodPressure(startDate, endDate) {
+    return await this.bloodPressureRepo.getUnsynced(startDate, endDate);
+  }
+
+  /**
+   * Mark blood pressure record as synced
+   * @deprecated Use getBloodPressureRepository().markSynced() instead
+   */
+  async markBloodPressureSynced(pageId) {
+    return await this.bloodPressureRepo.markSynced(pageId);
   }
 
   /**

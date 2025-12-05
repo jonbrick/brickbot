@@ -22,6 +22,9 @@ const {
 const {
   syncBodyWeightToCalendar,
 } = require("../src/workflows/notion-withings-to-calendar-bodyweight");
+const {
+  syncBloodPressureToCalendar,
+} = require("../src/workflows/notion-blood-pressure-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");
@@ -66,6 +69,12 @@ const CALENDAR_SYNC_HANDLERS = {
     syncFn: syncBodyWeightToCalendar,
     emptyMessage: "✅ No body weight records found without calendar events\n",
     sourceType: "withings",
+  },
+  bloodPressure: {
+    queryMethod: "getUnsyncedBloodPressure",
+    syncFn: syncBloodPressureToCalendar,
+    emptyMessage: "✅ No blood pressure records found without calendar events\n",
+    sourceType: "bloodPressure",
   },
 };
 
@@ -183,6 +192,8 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
       handleCalendarSync("strava", sd, ed, act),
     handleBodyWeightSync: (sd, ed, act) =>
       handleCalendarSync("withings", sd, ed, act),
+    handleBloodPressureSync: (sd, ed, act) =>
+      handleCalendarSync("bloodPressure", sd, ed, act),
   };
 
   const sources = buildAllSourcesHandlers("toCalendar", handlers);

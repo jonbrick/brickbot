@@ -71,6 +71,16 @@ const calendarMappings = {
   },
 
   /**
+   * Blood pressure calendar mapping
+   * All blood pressure measurements go to blood pressure calendar (direct mapping)
+   */
+  bloodPressure: {
+    type: "direct",
+    sourceDatabase: "bloodPressure",
+    calendarId: process.env.BLOOD_PRESSURE_CALENDAR_ID,
+  },
+
+  /**
    * Future calendar mappings (placeholders for upcoming integrations)
    */
 

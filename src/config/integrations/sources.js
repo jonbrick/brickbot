@@ -195,6 +195,34 @@ const SWEEP_SOURCES = {
       recordLabel: "body weight record",
     },
   },
+  bloodPressure: {
+    id: "bloodPressure",
+    name: "Blood Pressure",
+    emoji: "🩺",
+    sweepToNotion: {
+      enabled: false,
+      handler: null,
+      displayType: "bloodPressure",
+    },
+    sweepToCalendar: {
+      enabled: true,
+      handler: "handleBloodPressureSync",
+      sourceType: "bloodPressure",
+      formatFunction: "formatBloodPressureRecords",
+      displayFunction: "displayBloodPressureRecordsTable",
+      fields: [
+        { key: "name", property: "name" },
+        { key: "date", property: "date" },
+        { key: "systolicPressure", property: "systolicPressure" },
+        { key: "diastolicPressure", property: "diastolicPressure" },
+        { key: "pulse", property: "pulse" },
+      ],
+      displayFormat: (record) =>
+        `🩺 ${record.date}: BP ${record.systolicPressure}/${record.diastolicPressure} (Pulse: ${record.pulse} bpm)`,
+      tableTitle: "🩺 BLOOD PRESSURE RECORDS TO SYNC",
+      recordLabel: "blood pressure record",
+    },
+  },
 };
 
 /**

@@ -1327,6 +1327,366 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
   }
 }
 
+/**
+ * Data field types and their display formatting
+ */
+const FIELD_TYPES = {
+  // Numbers (integers)
+  count: {
+    format: (value) => value,
+    default: 0,
+    validate: (value) => typeof value === "number" && value >= 0,
+  },
+
+  // Decimals (floating point)
+  decimal: {
+    format: (value) => value.toFixed(2),
+    default: 0,
+    validate: (value) => typeof value === "number" && value >= 0,
+  },
+
+  // Text/Rich text (blocks, details, etc.)
+  text: {
+    format: (value) => value || "",
+    default: "",
+    validate: (value) => typeof value === "string",
+  },
+
+  // Optional text (only show if non-empty)
+  optionalText: {
+    format: (value) => value || null,
+    default: null,
+    validate: (value) => value === null || typeof value === "string",
+  },
+};
+
+/**
+ * Map display field type to Notion property type
+ * @param {string} displayType - Field type ('count', 'decimal', 'text', 'optionalText')
+ * @returns {string} Notion property type ('number', 'text')
+ */
+function mapToNotionType(displayType) {
+  const typeMap = {
+    count: "number",
+    decimal: "number",
+    text: "text",
+    optionalText: "text",
+  };
+  return typeMap[displayType] || "text";
+}
+
+/**
+ * Derive properties from unified sources configuration
+ * Collects all dataFields (including categories) from CALENDARS based on SUMMARY_GROUPS
+ * @param {string} sourceType - "personal" or "work"
+ * @returns {Object} Properties object compatible with recap.js format
+ */
+function derivePropertiesFromUnified(sourceType) {
+  const properties = {
+    // Special metadata properties (not in data sources)
+    title: { name: "Week Recap", type: "title", enabled: true },
+    date: { name: "Date", type: "date", enabled: true },
+    weekNumber: { name: "Week Number", type: "number", enabled: true },
+    year: { name: "Year", type: "number", enabled: true },
+  };
+
+  // Filter SUMMARY_GROUPS by sourceType
+  const groups = Object.values(SUMMARY_GROUPS).filter(
+    (group) => group.sourceType === sourceType
+  );
+
+  // For each group, collect dataFields from CALENDARS
+  groups.forEach((group) => {
+    // Handle Notion sources (tasks, workTasks)
+    if (group.isNotionSource) {
+      const calendar = CALENDARS[group.id];
+      if (calendar && calendar.categories) {
+        // Collect dataFields from all categories
+        Object.values(calendar.categories).forEach((category) => {
+          if (category.dataFields) {
+            category.dataFields.forEach((field) => {
+              properties[field.notionProperty] = {
+                name: field.label,
+                type: mapToNotionType(field.type),
+                enabled: true,
+              };
+            });
+          }
+        });
+      }
+      return;
+    }
+
+    // Handle calendar-based groups
+    if (group.calendars && Array.isArray(group.calendars)) {
+      group.calendars.forEach((calendarId) => {
+        const calendar = CALENDARS[calendarId];
+        if (!calendar) return;
+
+        // Collect direct dataFields
+        if (calendar.dataFields && Array.isArray(calendar.dataFields)) {
+          calendar.dataFields.forEach((field) => {
+            properties[field.notionProperty] = {
+              name: field.label,
+              type: mapToNotionType(field.type),
+              enabled: true,
+            };
+          });
+        }
+
+        // Collect category-based dataFields
+        if (calendar.categories) {
+          Object.values(calendar.categories).forEach((category) => {
+            if (category.dataFields && Array.isArray(category.dataFields)) {
+              category.dataFields.forEach((field) => {
+                properties[field.notionProperty] = {
+                  name: field.label,
+                  type: mapToNotionType(field.type),
+                  enabled: true,
+                };
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return properties;
+}
+
+/**
+ * Generate Personal Recap properties object from data sources
+ * This becomes the source of truth for Notion property definitions
+ * @returns {Object} Properties object compatible with personal-recap.js format
+ */
+function generatePersonalRecapProperties() {
+  return derivePropertiesFromUnified("personal");
+}
+
+/**
+ * Generate Work Recap properties object from work data sources
+ * This becomes the source of truth for Notion property definitions
+ * @returns {Object} Properties object compatible with work-recap.js format
+ */
+function generateWorkRecapProperties() {
+  return derivePropertiesFromUnified("work");
+}
+
+/**
+ * Derive DATA_SOURCES structure from CALENDARS + SUMMARY_GROUPS
+ * This replaces the hardcoded DATA_SOURCES in main.js
+ * @returns {Object} DATA_SOURCES object matching the exact structure expected by downstream code
+ */
+function deriveDataSources() {
+  const dataSources = {};
+
+  Object.entries(SUMMARY_GROUPS).forEach(([groupId, group]) => {
+    const source = {
+      id: group.id,
+      name: group.name,
+      emoji: group.emoji,
+    };
+
+    // Handle Notion database sources
+    if (group.isNotionSource) {
+      source.type = "notion_database";
+      source.apiSource = "notion";
+      source.database = process.env[group.databaseIdEnvVar];
+
+      // Get calendar config (tasks/workTasks calendar has same id as group)
+      const calendar = CALENDARS[groupId];
+      if (calendar && calendar.categories) {
+        source.categories = {};
+        Object.entries(calendar.categories).forEach(([catId, category]) => {
+          source.categories[catId] = {
+            // Preserve emoji if present in category
+            ...(category.emoji && { emoji: category.emoji }),
+            data: {},
+          };
+
+          // Convert dataFields array to data object
+          if (category.dataFields) {
+            category.dataFields.forEach((field) => {
+              source.categories[catId].data[field.notionProperty] = {
+                label: field.label,
+                type: field.type,
+                notionProperty: field.notionProperty,
+              };
+            });
+          }
+        });
+      }
+    } else {
+      // Handle calendar-based sources
+      source.type = "calendar";
+      source.apiSource = "google_calendar";
+
+      // Build calendars object mapping calendar IDs to env vars
+      if (group.calendars && Array.isArray(group.calendars)) {
+        source.calendars = {};
+        group.calendars.forEach((calId) => {
+          const calendar = CALENDARS[calId];
+          if (calendar) {
+            // Use CALENDAR_KEY_MAPPING if exists, otherwise use calendar id as key
+            const calendarKey = CALENDAR_KEY_MAPPING[calId] || calId;
+            source.calendars[calendarKey] = process.env[calendar.envVar];
+          }
+        });
+
+        // Determine if we need categories or flat data structure
+        const hasCategories = group.calendars.some(
+          (calId) => CALENDARS[calId]?.categories
+        );
+
+        if (hasCategories) {
+          // Calendar with categories (e.g., personalCalendar, workCalendar)
+          // Only one calendar in group for category-based sources
+          const calendar = CALENDARS[group.calendars[0]];
+          if (calendar && calendar.categories) {
+            source.categories = {};
+            Object.entries(calendar.categories).forEach(([catId, category]) => {
+              source.categories[catId] = {
+                data: {},
+              };
+
+              // Convert dataFields array to data object
+              if (category.dataFields) {
+                category.dataFields.forEach((field) => {
+                  source.categories[catId].data[field.notionProperty] = {
+                    label: field.label,
+                    type: field.type,
+                    notionProperty: field.notionProperty,
+                  };
+                });
+              }
+            });
+          }
+        } else {
+          // Flat data structure - combine dataFields from all calendars
+          source.data = {};
+          group.calendars.forEach((calId) => {
+            const calendar = CALENDARS[calId];
+            if (calendar && calendar.dataFields) {
+              calendar.dataFields.forEach((field) => {
+                source.data[field.notionProperty] = {
+                  // Inherit calendar emoji to data field
+                  ...(calendar.emoji && { emoji: calendar.emoji }),
+                  label: field.label,
+                  type: field.type,
+                  notionProperty: field.notionProperty,
+                };
+              });
+            }
+          });
+
+          // Special case: bodyWeightAverage has suffix
+          if (groupId === "bodyWeight" && source.data.bodyWeightAverage) {
+            source.data.bodyWeightAverage.suffix = " lbs";
+          }
+        }
+      }
+    }
+
+    dataSources[groupId] = source;
+  });
+
+  return dataSources;
+}
+
+// Derive DATA_SOURCES from unified config
+const DATA_SOURCES = deriveDataSources();
+
+/**
+ * Helper Functions
+ * These functions work with DATA_SOURCES for data access and availability checks
+ */
+
+/**
+ * Get all data keys for a source (flattened)
+ * @param {string} sourceId - Source ID
+ * @returns {string[]} Array of data keys
+ */
+function getSourceDataKeys(sourceId) {
+  const source = DATA_SOURCES[sourceId];
+  if (!source) return [];
+
+  if (source.data) {
+    return Object.keys(source.data);
+  }
+
+  if (source.categories) {
+    return Object.values(source.categories).flatMap((cat) =>
+      Object.keys(cat.data)
+    );
+  }
+
+  return [];
+}
+
+/**
+ * Get all data for a source (flattened with configs)
+ * @param {string} sourceId - Source ID
+ * @returns {Object} Flattened data object with configs
+ */
+function getSourceData(sourceId) {
+  const source = DATA_SOURCES[sourceId];
+  if (!source) return {};
+
+  if (source.data) {
+    return source.data;
+  }
+
+  if (source.categories) {
+    return Object.values(source.categories).reduce(
+      (acc, cat) => ({ ...acc, ...cat.data }),
+      {}
+    );
+  }
+
+  return {};
+}
+
+/**
+ * Check if a source is available (has required env vars)
+ * @param {string} sourceId - Source ID
+ * @returns {boolean} True if source is available
+ */
+function isSourceAvailable(sourceId) {
+  const source = DATA_SOURCES[sourceId];
+  if (!source) return false;
+
+  // For sleep, both calendars are required
+  if (sourceId === "sleep") {
+    return source.calendars.normalWakeUp && source.calendars.sleepIn;
+  }
+
+  // For drinkingDays, both calendars are required
+  if (sourceId === "drinkingDays") {
+    return source.calendars.sober && source.calendars.drinking;
+  }
+
+  // For calendar sources, check if any calendar ID exists
+  if (source.calendars) {
+    return Object.values(source.calendars).some((id) => id);
+  }
+
+  // For database sources, check if database ID exists
+  if (source.database) {
+    return !!source.database;
+  }
+
+  return false;
+}
+
+/**
+ * Get all available sources
+ * @returns {string[]} Array of available source IDs
+ */
+function getAvailableSources() {
+  return Object.keys(DATA_SOURCES).filter(isSourceAvailable);
+}
+
 module.exports = {
   CALENDARS,
   SUMMARY_GROUPS,
@@ -1334,4 +1694,14 @@ module.exports = {
   FETCH_KEY_MAPPING,
   CALENDAR_KEY_MAPPING,
   verifyDerivation,
+  FIELD_TYPES,
+  mapToNotionType,
+  derivePropertiesFromUnified,
+  generatePersonalRecapProperties,
+  generateWorkRecapProperties,
+  DATA_SOURCES,
+  getSourceDataKeys,
+  getSourceData,
+  isSourceAvailable,
+  getAvailableSources,
 };

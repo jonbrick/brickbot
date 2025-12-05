@@ -11,8 +11,9 @@ const integrations = require("./integrations/sources");
 const sources = require("./integrations/credentials");
 const tokens = require("./tokens");
 const calendar = require("./calendar/credentials");
-const main = require("./main");
-const dataSources = require("./main");
+const unifiedSources = require("./unified-sources");
+const main = unifiedSources; // Backward compat alias
+const dataSources = unifiedSources; // Backward compat alias
 
 /**
  * Validate that all required environment variables are present

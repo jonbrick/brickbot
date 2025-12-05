@@ -3,7 +3,7 @@
  * Declarative configuration for mapping Notion records to Google Calendar IDs
  */
 
-const { getSourceDataKeys } = require("../main");
+const { getSourceDataKeys } = require("../unified-sources");
 const {
   CALENDARS,
   SUMMARY_GROUPS,
@@ -425,7 +425,7 @@ function getDisplayNameForFetchKey(fetchKey, sourcesConfig) {
   }
 
   // Fallback: try DATA_SOURCES directly if fetchKey matches sourceId
-  const { DATA_SOURCES } = require("../main");
+  const { DATA_SOURCES } = require("../unified-sources");
   if (DATA_SOURCES[fetchKey]?.name) {
     return DATA_SOURCES[fetchKey].name;
   }

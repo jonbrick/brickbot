@@ -42,10 +42,7 @@ const {
   displaySourceData,
   collectSourceData,
 } = require("../src/utils/data-display");
-const {
-  DATA_SOURCES,
-  getAvailableSources,
-} = require("../src/config/main");
+const { DATA_SOURCES } = require("../src/config/unified-sources");
 const {
   getAvailableRecapSources,
   getAvailableWorkRecapSources,

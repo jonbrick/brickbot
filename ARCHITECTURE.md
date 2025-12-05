@@ -6,8 +6,8 @@ Technical documentation for developers and contributors.
 
 Brickbot follows a modular, repository-based architecture with clear separation of concerns:
 
-- **Repositories**: Domain-specific data access layer (NEW!)
-- **Configuration**: Single source of truth, split by domain
+- **Repositories**: Domain-specific data access layer
+- **Configuration**: Single source of truth in `src/config/unified-sources.js` with three registries (CALENDARS, SUMMARY_GROUPS, INTEGRATIONS)
 - **Services**: Thin wrappers around external APIs with retry logic
 - **Collectors**: Business logic for fetching data
 - **Transformers**: Data transformation between formats
@@ -148,50 +148,53 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 
 **Steps**:
 
-1. **Create Notion Database** (in Notion):
-   - Properties: Title, Date, Duration, Notes, Calendar Created
-
-2. **Create Database** (`src/databases/MeditationDatabase.js`):
-   ```javascript
-   class MeditationDatabase extends NotionDatabase {
-     async findByUniqueId(uniqueId) { /* ... */ }
-     async getUnsynced(startDate, endDate) { /* ... */ }
-     async markSynced(pageId) { /* ... */ }
-   }
-   ```
-
-3. **Create Config** (`src/config/notion/meditation.js`):
-   ```javascript
-   module.exports = {
-     database: process.env.NOTION_MEDITATION_DATABASE_ID,
-     properties: {
-       title: { name: "Title", type: "title", enabled: true },
-       date: { name: "Date", type: "date", enabled: true },
-       // ... more properties
-     }
-   };
-   ```
-
-4. **Add Calendar Mapping** (`src/config/calendar/mappings.js`):
-   ```javascript
-   meditation: {
-     type: 'direct',
-     sourceDatabase: 'meditation',
-     calendarId: process.env.MEDITATION_CALENDAR_ID,
-   }
-   ```
-
-5. **Create Workflow** (leverage BaseWorkflow patterns)
-
-6. **Update CLI** (add to selection menus)
-
-7. **Add Environment Variables** (`.env`):
+1. **Add environment variable to `.env`**:
    ```bash
-   NOTION_MEDITATION_DATABASE_ID=xxxxx
    MEDITATION_CALENDAR_ID=xxxxx@group.calendar.google.com
    ```
 
-**Total Code**: ~115 lines across 3-4 focused files
+2. **Add entry to CALENDARS in `src/config/unified-sources.js`**:
+   ```javascript
+   meditation: {
+     id: "meditation",
+     envVar: "MEDITATION_CALENDAR_ID",
+     name: "Meditation",
+     emoji: "🧘",
+     dataFields: [
+       {
+         type: "count",
+         label: "Meditation - Days",
+         notionProperty: "meditationDays",
+       },
+       {
+         type: "decimal",
+         label: "Meditation - Hours Total",
+         notionProperty: "meditationHoursTotal",
+       },
+     ],
+   },
+   ```
+
+3. **Add entry to SUMMARY_GROUPS in `src/config/unified-sources.js`**:
+   ```javascript
+   meditation: {
+     id: "meditation",
+     name: "Meditation",
+     emoji: "🧘",
+     calendars: ["meditation"],
+     sourceType: "personal",
+   },
+   ```
+
+4. **Add Notion columns** to your Personal Recap database (automatically generated from `dataFields`).
+
+**Total Code**: ~20 lines of configuration (vs. ~115 lines in old architecture)
+
+**Benefits of Unified Config**:
+- `DATA_SOURCES` automatically derived from CALENDARS + SUMMARY_GROUPS
+- `PERSONAL_RECAP_SOURCES` / `WORK_RECAP_SOURCES` automatically derived
+- Notion property definitions automatically generated
+- No manual mapping or duplication required
 
 ### Key Components Overview
 
@@ -224,10 +227,10 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 ```
 src/config/
 ├── index.js                  # Main loader & validator
-├── main.js                   # Data sources registry
+├── unified-sources.js        # Single source of truth (CALENDARS, SUMMARY_GROUPS, INTEGRATIONS)
 ├── tokens.js                 # Token management config
 ├── calendar/                 # Calendar configs
-│   ├── mappings.js          # Calendar routing rules
+│   ├── mappings.js          # Calendar routing rules (imports from unified-sources.js)
 │   ├── credentials.js       # OAuth credentials
 │   └── color-mappings.js    # Color ID → category mappings
 ├── integrations/            # Integration configs
@@ -248,6 +251,39 @@ src/config/
 - **Modular**: Each domain config ~50-70 lines
 - **Clear**: Easy to find and modify settings
 - **Scalable**: Add new configs without bloating existing ones
+
+#### Unified Sources Configuration (`src/config/unified-sources.js`)
+
+**Purpose**: Single source of truth for all calendar, summary, and integration configuration.
+
+**Three-Registry Architecture**:
+
+1. **CALENDARS** - Atomic time-tracking units
+   - Each calendar represents a single Google Calendar
+   - Contains `dataFields` that define what data this calendar produces
+   - Example: `meditation` calendar with `meditationDays` and `meditationHoursTotal` fields
+
+2. **SUMMARY_GROUPS** - How calendars combine for reporting
+   - Defines which calendars feed into a summary metric
+   - Can combine multiple calendars (e.g., `sleep` combines `normalWakeUp` + `sleepIn`)
+   - Specifies `sourceType` (personal/work) for filtering
+
+3. **INTEGRATIONS** - API → Notion routing
+   - Maps external APIs (Oura, Strava, etc.) to Notion databases
+   - Defines which calendars each integration syncs to
+   - Example: `oura` integration routes to `normalWakeUp` and `sleepIn` calendars
+
+**Derived Configurations**:
+
+- `DATA_SOURCES` - Automatically derived from CALENDARS + SUMMARY_GROUPS
+- `PERSONAL_RECAP_SOURCES` / `WORK_RECAP_SOURCES` - Automatically derived from SUMMARY_GROUPS
+- Notion property definitions - Automatically generated from `dataFields` in CALENDARS
+
+**Benefits**:
+- **Single source of truth**: All calendar/summary config in one place
+- **No duplication**: Data definitions written once, used everywhere
+- **Automatic derivation**: Adding a calendar automatically makes it available for reporting
+- **Type safety**: Field types (count, decimal, optionalText) validated consistently
 
 #### Calendar Mapping System
 
@@ -343,13 +379,18 @@ For a complete new data source with calendar sync:
    │
    ├──> src/config/integrations/credentials.js (API credentials)
    ├──> src/config/notion/*.js                 (Database IDs)
-   └──> src/config/calendar/mappings.js         (Calendar IDs)
+   ├──> src/config/calendar/mappings.js         (Calendar routing - imports from unified-sources.js)
+   └──> src/config/unified-sources.js          (CALENDARS, SUMMARY_GROUPS, INTEGRATIONS)
          │
-         └──> Loaded by src/config/index.js
+         ├──> Derives DATA_SOURCES
+         ├──> Derives PERSONAL_RECAP_SOURCES / WORK_RECAP_SOURCES
+         └──> Generates Notion property definitions
                 │
-                └──> Validated on startup
-                      │
-                      └──> Available as config.* throughout app
+                └──> Loaded by src/config/index.js
+                       │
+                       └──> Validated on startup
+                             │
+                             └──> Available as config.* throughout app
 ```
 
 #### Configuration Access Patterns
@@ -931,6 +972,8 @@ const calendarId = resolveCalendarId("sleep", record, repository);
 - **Future-Ready**: Already configured for 10+ upcoming calendar integrations
 
 #### Data Source Configuration Architecture
+
+**Note**: As of the unified config refactor, `DATA_SOURCES` and `PERSONAL_RECAP_SOURCES` are now automatically derived from `src/config/unified-sources.js`. The three-registry pattern (CALENDARS, SUMMARY_GROUPS, INTEGRATIONS) is the single source of truth. See the "Unified Sources Configuration" section above for details.
 
 Brickbot uses three complementary configuration systems that work together to define data sources, their data, and how they're accessed:
 

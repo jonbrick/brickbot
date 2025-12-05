@@ -1,9 +1,9 @@
 /**
  * Work Recap Database Configuration
- * Properties are generated dynamically from main.js to ensure consistency
+ * Properties are generated dynamically from unified-sources.js to ensure consistency
  */
 
-const { generateWorkRecapProperties } = require("../main");
+const { generateWorkRecapProperties } = require("../unified-sources");
 
 // Generate properties dynamically from main.js
 const properties = generateWorkRecapProperties();

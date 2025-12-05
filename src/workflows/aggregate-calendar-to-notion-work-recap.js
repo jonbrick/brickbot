@@ -98,7 +98,7 @@ function buildSuccessData(
   const data = [];
 
   // Import DATA_SOURCES to check data types
-  const { DATA_SOURCES } = require("../config/main");
+  const { DATA_SOURCES } = require("../config/unified-sources");
 
   // Iterate through selected calendars
   calendarsToFetch.forEach((sourceId) => {

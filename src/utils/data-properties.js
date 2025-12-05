@@ -5,7 +5,7 @@
  */
 
 const config = require('../config');
-const { getSourceDataKeys } = require('../config/main');
+const { getSourceDataKeys } = require('../config/unified-sources');
 
 /**
  * Build properties object for Personal Recap database update

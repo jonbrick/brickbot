@@ -4,11 +4,10 @@
  */
 
 const {
-  DATA_SOURCES,
-  FIELD_TYPES,
   getSourceData: getData,
   getSourceDataKeys: getKeys,
-} = require("../config/main");
+} = require("../config/unified-sources");
+const { DATA_SOURCES, FIELD_TYPES } = require("../config/unified-sources");
 const { showError } = require("./cli");
 
 /**

@@ -689,18 +689,58 @@ Once setup is complete:
 
 ### Example: Adding a New Calendar
 
-Adding a new calendar integration is now configuration-driven:
+Adding a new calendar integration follows a simple 4-step process:
 
-```javascript
-// In src/config/calendar/mappings.js
-meditation: {
-  type: 'direct',
-  sourceDatabase: 'meditation',
-  calendarId: process.env.MEDITATION_CALENDAR_ID,
-}
-```
+1. **Add environment variable to `.env`**:
+   ```bash
+   MEDITATION_CALENDAR_ID=xxxxx@group.calendar.google.com
+   ```
 
-That's it! No new functions needed.
+2. **Add entry to CALENDARS in `src/config/unified-sources.js`**:
+   ```javascript
+   meditation: {
+     id: "meditation",
+     envVar: "MEDITATION_CALENDAR_ID",
+     name: "Meditation",
+     emoji: "🧘",
+     dataFields: [
+       {
+         type: "count",
+         label: "Meditation - Days",
+         notionProperty: "meditationDays",
+       },
+       {
+         type: "decimal",
+         label: "Meditation - Hours Total",
+         notionProperty: "meditationHoursTotal",
+       },
+     ],
+   },
+   ```
+
+3. **Add entry to SUMMARY_GROUPS in `src/config/unified-sources.js`**:
+   ```javascript
+   meditation: {
+     id: "meditation",
+     name: "Meditation",
+     emoji: "🧘",
+     calendars: ["meditation"],
+     sourceType: "personal",
+   },
+   ```
+
+4. **Add Notion columns** to your Personal Recap or Work Recap database (columns are automatically generated from `dataFields` definitions).
+
+That's it! The unified config architecture automatically:
+- Generates `DATA_SOURCES` entries
+- Creates `PERSONAL_RECAP_SOURCES` / `WORK_RECAP_SOURCES` entries
+- Generates Notion property definitions
+- Makes the calendar available for reporting
+
+All configuration now lives in `src/config/unified-sources.js` with three registries:
+- **CALENDARS** - Atomic time-tracking units with dataFields
+- **SUMMARY_GROUPS** - How calendars combine for reporting
+- **INTEGRATIONS** - API → Notion routing
 
 ## Date Handling
 

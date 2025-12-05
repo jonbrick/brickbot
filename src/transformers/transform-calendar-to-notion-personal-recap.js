@@ -426,37 +426,29 @@ function transformCalendarEventsToRecapData(
       isDateInWeek(event.date)
     );
 
-    // Extract values from event descriptions using regex
-    // Description format:
-    // 🩺 Blood Pressure Measurement
-    // 📊 Systolic: {number} mmHg
-    // 📊 Diastolic: {number} mmHg
-    // 💓 Pulse: {number} bpm
+    // Extract values from event title/summary using regex
+    // Title format: "BP: 147/95"
     const readings = filteredBloodPressureEvents
       .map((event) => {
-        const description = event.description || "";
+        const summary = event.summary || "";
 
-        // Extract systolic: "Systolic: {number} mmHg"
-        const systolicMatch = description.match(
-          /Systolic:\s*(\d+\.?\d*)\s*mmHg/i
-        );
-        const systolic = systolicMatch ? parseFloat(systolicMatch[1]) : null;
-
-        // Extract diastolic: "Diastolic: {number} mmHg"
-        const diastolicMatch = description.match(
-          /Diastolic:\s*(\d+\.?\d*)\s*mmHg/i
-        );
-        const diastolic = diastolicMatch ? parseFloat(diastolicMatch[1]) : null;
-
-        return { systolic, diastolic };
+        // Extract systolic and diastolic from "BP: {systolic}/{diastolic}"
+        const match = summary.match(/BP:\s*(\d+\.?\d*)\/(\d+\.?\d*)/i);
+        if (match) {
+          return {
+            systolic: parseFloat(match[1]),
+            diastolic: parseFloat(match[2]),
+          };
+        }
+        return { systolic: null, diastolic: null };
       })
       .filter(
         (reading) => reading.systolic !== null || reading.diastolic !== null
       );
 
-    // Always include field for selected calendar (clean slate)
+    // Always include all fields for selected calendar (clean slate)
     if (readings.length > 0) {
-      // Calculate averages
+      // Calculate averages using internal counts (not stored in Notion)
       const systolicSum = readings.reduce(
         (sum, r) => sum + (r.systolic || 0),
         0
@@ -466,22 +458,24 @@ function transformCalendarEventsToRecapData(
         0
       );
 
-      // Count valid readings for each metric
+      // Count valid readings for each metric (used for calculation only)
       const systolicCount = readings.filter((r) => r.systolic !== null).length;
       const diastolicCount = readings.filter(
         (r) => r.diastolic !== null
       ).length;
 
-      const avgSystolic =
-        systolicCount > 0 ? Math.round(systolicSum / systolicCount) : 0;
-      const avgDiastolic =
-        diastolicCount > 0 ? Math.round(diastolicSum / diastolicCount) : 0;
-
-      // Format as "systolic/diastolic" (rounded to integers)
-      summary.bloodPressureAverage = `${avgSystolic}/${avgDiastolic}`;
+      summary.avgSystolic =
+        systolicCount > 0
+          ? Math.round((systolicSum / systolicCount) * 10) / 10
+          : 0;
+      summary.avgDiastolic =
+        diastolicCount > 0
+          ? Math.round((diastolicSum / diastolicCount) * 10) / 10
+          : 0;
     } else {
-      // Set to empty string if no readings found
-      summary.bloodPressureAverage = "";
+      // Set to 0 if no readings found
+      summary.avgSystolic = 0;
+      summary.avgDiastolic = 0;
     }
   }
 

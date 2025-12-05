@@ -286,9 +286,14 @@ const CALENDARS = {
     emoji: "🫀",
     dataFields: [
       {
-        type: "text",
-        label: "Blood Pressure - Average",
-        notionProperty: "bloodPressureAverage",
+        type: "decimal",
+        label: "Blood Pressure - Average Systolic",
+        notionProperty: "avgSystolic",
+      },
+      {
+        type: "decimal",
+        label: "Blood Pressure - Average Diastolic",
+        notionProperty: "avgDiastolic",
       },
     ],
   },
@@ -1591,6 +1596,16 @@ function deriveDataSources() {
           // Special case: bodyWeightAverage has suffix
           if (groupId === "bodyWeight" && source.data.bodyWeightAverage) {
             source.data.bodyWeightAverage.suffix = " lbs";
+          }
+
+          // Special case: blood pressure averages have suffixes
+          if (groupId === "bloodPressure") {
+            if (source.data.avgSystolic) {
+              source.data.avgSystolic.suffix = " mmHg";
+            }
+            if (source.data.avgDiastolic) {
+              source.data.avgDiastolic.suffix = " mmHg";
+            }
           }
         }
       }

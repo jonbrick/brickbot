@@ -4,35 +4,7 @@
  */
 
 const { INTEGRATIONS } = require("../config/unified-sources");
-
-// Mapping from integration ID to workflow file path and sync function name
-// Workflow naming is inconsistent, so we use explicit mapping
-const WORKFLOW_MAPPING = {
-  oura: {
-    file: "../workflows/notion-oura-to-calendar-sleep.js",
-    syncFnName: "syncSleepToCalendar",
-  },
-  strava: {
-    file: "../workflows/notion-strava-to-calendar-workouts.js",
-    syncFnName: "syncWorkoutsToCalendar",
-  },
-  github: {
-    file: "../workflows/notion-github-to-calendar-prs.js",
-    syncFnName: "syncPRsToCalendar",
-  },
-  steam: {
-    file: "../workflows/notion-steam-to-calendar-games.js",
-    syncFnName: "syncSteamToCalendar",
-  },
-  withings: {
-    file: "../workflows/notion-withings-to-calendar-bodyweight.js",
-    syncFnName: "syncBodyWeightToCalendar",
-  },
-  bloodPressure: {
-    file: "../workflows/notion-blood-pressure-to-calendar.js",
-    syncFnName: "syncBloodPressureToCalendar",
-  },
-};
+const { syncToCalendar } = require("../workflows/notion-databases-to-calendar");
 
 // Build updater registry from INTEGRATIONS
 const updaterRegistry = {};
@@ -45,21 +17,9 @@ const updatableIntegrations = Object.entries(INTEGRATIONS).filter(
 // Build registry for each updatable integration
 updatableIntegrations.forEach(([id, config]) => {
   try {
-    // Get workflow mapping
-    const workflowMapping = WORKFLOW_MAPPING[id];
-    if (!workflowMapping) {
-      throw new Error(`No workflow mapping found for integration: ${id}`);
-    }
-
-    // Dynamically require workflow
-    const workflowModule = require(workflowMapping.file);
-    const syncFn = workflowModule[workflowMapping.syncFnName];
-
-    if (!syncFn) {
-      throw new Error(
-        `Workflow ${id}: function ${workflowMapping.syncFnName} not found in ${workflowMapping.file}`
-      );
-    }
+    // Bind the generic sync function with the integration ID
+    const syncFn = (startDate, endDate, options) =>
+      syncToCalendar(id, startDate, endDate, options);
 
     // Store in registry
     updaterRegistry[id] = {

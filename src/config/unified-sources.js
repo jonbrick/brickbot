@@ -1028,7 +1028,11 @@ const INTEGRATIONS = {
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedSleep",
       emptyMessage: "✅ No sleep records found without calendar events\n",
-      sourceType: "sleep"
+      sourceType: "sleep",
+      eventType: "dateTime",
+      displayNameProperty: "nightOfDate",
+      displayNameFormat: "date",
+      skipReason: "Missing bedtime or wake time"
     },
   },
   strava: {
@@ -1046,7 +1050,11 @@ const INTEGRATIONS = {
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedWorkouts",
       emptyMessage: "✅ No workout records found without calendar events\n",
-      sourceType: "strava"
+      sourceType: "strava",
+      eventType: "dateTime",
+      displayNameProperty: "name",
+      displayNameFormat: "text",
+      skipReason: "Missing date, start time, or duration"
     },
   },
   github: {
@@ -1064,7 +1072,11 @@ const INTEGRATIONS = {
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedPRs",
       emptyMessage: "✅ No PR records found without calendar events\n",
-      sourceType: "github"
+      sourceType: "github",
+      eventType: "allDay",
+      displayNameProperty: "repository",
+      displayNameFormat: "repoDate",
+      skipReason: "Missing date"
     },
   },
   steam: {
@@ -1082,7 +1094,11 @@ const INTEGRATIONS = {
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedSteam",
       emptyMessage: "✅ No gaming records found without calendar events\n",
-      sourceType: "steam"
+      sourceType: "steam",
+      eventType: "dateTime",
+      displayNameProperty: "gameName",
+      displayNameFormat: "text",
+      skipReason: "Missing date, start time, or end time"
     },
   },
   withings: {
@@ -1100,7 +1116,11 @@ const INTEGRATIONS = {
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedBodyWeight",
       emptyMessage: "✅ No body weight records found without calendar events\n",
-      sourceType: "withings"
+      sourceType: "withings",
+      eventType: "allDay",
+      displayNameProperty: "name",
+      displayNameFormat: "text",
+      skipReason: "Missing date"
     },
   },
   bloodPressure: {
@@ -1113,7 +1133,11 @@ const INTEGRATIONS = {
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedBloodPressure",
       emptyMessage: "✅ No blood pressure records found without calendar events\n",
-      sourceType: "bloodPressure"
+      sourceType: "bloodPressure",
+      eventType: "allDay",
+      displayNameProperty: "name",
+      displayNameFormat: "text",
+      skipReason: "Missing date"
     },
   },
 };

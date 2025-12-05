@@ -93,11 +93,11 @@ async function selectCalendarsAndDatabases() {
     .map((id) => {
       const group = SUMMARY_GROUPS[id];
       if (!group) return null;
-      return {
+    return {
         name: group.name, // No emoji
         value: id,
         description: `Summarize ${group.name.toLowerCase()}`,
-      };
+    };
     })
     .filter(Boolean);
 

@@ -9,6 +9,8 @@
  * - Record formatting and validation
  */
 
+const { CALENDARS, SUMMARY_GROUPS } = require("./unified-sources");
+
 /**
  * Data field types and their display formatting
  */
@@ -346,15 +348,15 @@ const DATA_SOURCES = {
     apiSource: "google_calendar",
     calendars: { personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID },
     data: {
-      prsSessions: {
-        label: "PRs - Sessions",
+      personalPRsSessions: {
+        label: "Personal PRs - Sessions",
         type: "count",
-        notionProperty: "prsSessions",
+        notionProperty: "personalPRsSessions",
       },
-      prsDetails: {
-        label: "PRs - Details",
+      personalPRsDetails: {
+        label: "Personal PRs - Details",
         type: "optionalText",
-        notionProperty: "prsDetails",
+        notionProperty: "personalPRsDetails",
       },
     },
   },
@@ -633,25 +635,6 @@ const DATA_SOURCES = {
             label: "Personal & Social - Blocks",
             type: "optionalText",
             notionProperty: "personalAndSocialBlocks",
-          },
-        },
-      },
-      rituals: {
-        data: {
-          ritualsSessions: {
-            label: "Rituals - Sessions",
-            type: "count",
-            notionProperty: "ritualsSessions",
-          },
-          ritualsHoursTotal: {
-            label: "Rituals - Hours Total",
-            type: "decimal",
-            notionProperty: "ritualsHoursTotal",
-          },
-          ritualsBlocks: {
-            label: "Rituals - Blocks",
-            type: "optionalText",
-            notionProperty: "ritualsBlocks",
           },
         },
       },
@@ -1032,11 +1015,12 @@ function getAvailableSources() {
 }
 
 /**
- * Generate Personal Recap properties object from data sources
- * This becomes the source of truth for Notion property definitions
- * @returns {Object} Properties object compatible with personal-recap.js format
+ * Derive properties from unified sources configuration
+ * Collects all dataFields (including categories) from CALENDARS based on SUMMARY_GROUPS
+ * @param {string} sourceType - "personal" or "work"
+ * @returns {Object} Properties object compatible with recap.js format
  */
-function generatePersonalRecapProperties() {
+function derivePropertiesFromUnified(sourceType) {
   const properties = {
     // Special metadata properties (not in data sources)
     title: { name: "Week Recap", type: "title", enabled: true },
@@ -1045,29 +1029,62 @@ function generatePersonalRecapProperties() {
     year: { name: "Year", type: "number", enabled: true },
   };
 
-  // Generate properties from all data sources
-  Object.values(DATA_SOURCES).forEach((source) => {
-    if (source.data) {
-      // Direct data
-      Object.entries(source.data).forEach(([dataKey, dataConfig]) => {
-        properties[dataConfig.notionProperty] = {
-          name: dataConfig.label, // Use label as Notion property name
-          type: mapToNotionType(dataConfig.type),
-          enabled: true,
-        };
-      });
+  // Filter SUMMARY_GROUPS by sourceType
+  const groups = Object.values(SUMMARY_GROUPS).filter(
+    (group) => group.sourceType === sourceType
+  );
+
+  // For each group, collect dataFields from CALENDARS
+  groups.forEach((group) => {
+    // Handle Notion sources (tasks, workTasks)
+    if (group.isNotionSource) {
+      const calendar = CALENDARS[group.id];
+      if (calendar && calendar.categories) {
+        // Collect dataFields from all categories
+        Object.values(calendar.categories).forEach((category) => {
+          if (category.dataFields) {
+            category.dataFields.forEach((field) => {
+              properties[field.notionProperty] = {
+                name: field.label,
+                type: mapToNotionType(field.type),
+                enabled: true,
+              };
+            });
+          }
+        });
+      }
+      return;
     }
 
-    if (source.categories) {
-      // Category-based data (personalCalendar, tasks)
-      Object.values(source.categories).forEach((category) => {
-        if (category.data) {
-          Object.entries(category.data).forEach(([dataKey, dataConfig]) => {
-            properties[dataConfig.notionProperty] = {
-              name: dataConfig.label,
-              type: mapToNotionType(dataConfig.type),
+    // Handle calendar-based groups
+    if (group.calendars && Array.isArray(group.calendars)) {
+      group.calendars.forEach((calendarId) => {
+        const calendar = CALENDARS[calendarId];
+        if (!calendar) return;
+
+        // Collect direct dataFields
+        if (calendar.dataFields && Array.isArray(calendar.dataFields)) {
+          calendar.dataFields.forEach((field) => {
+            properties[field.notionProperty] = {
+              name: field.label,
+              type: mapToNotionType(field.type),
               enabled: true,
             };
+          });
+        }
+
+        // Collect category-based dataFields
+        if (calendar.categories) {
+          Object.values(calendar.categories).forEach((category) => {
+            if (category.dataFields && Array.isArray(category.dataFields)) {
+              category.dataFields.forEach((field) => {
+                properties[field.notionProperty] = {
+                  name: field.label,
+                  type: mapToNotionType(field.type),
+                  enabled: true,
+                };
+              });
+            }
           });
         }
       });
@@ -1078,55 +1095,21 @@ function generatePersonalRecapProperties() {
 }
 
 /**
+ * Generate Personal Recap properties object from data sources
+ * This becomes the source of truth for Notion property definitions
+ * @returns {Object} Properties object compatible with personal-recap.js format
+ */
+function generatePersonalRecapProperties() {
+  return derivePropertiesFromUnified("personal");
+}
+
+/**
  * Generate Work Recap properties object from work data sources
  * This becomes the source of truth for Notion property definitions
  * @returns {Object} Properties object compatible with work-recap.js format
  */
 function generateWorkRecapProperties() {
-  const properties = {
-    // Special metadata properties (not in data sources)
-    title: { name: "Week Recap", type: "title", enabled: true },
-    date: { name: "Date", type: "date", enabled: true },
-    weekNumber: { name: "Week Number", type: "number", enabled: true },
-    year: { name: "Year", type: "number", enabled: true },
-  };
-
-  // Work data sources only
-  const workSources = ["workCalendar", "workPRs", "workTasks"];
-
-  // Generate properties from work data sources
-  workSources.forEach((sourceId) => {
-    const source = DATA_SOURCES[sourceId];
-    if (!source) return;
-
-    if (source.data) {
-      // Direct data
-      Object.entries(source.data).forEach(([dataKey, dataConfig]) => {
-        properties[dataConfig.notionProperty] = {
-          name: dataConfig.label, // Use label as Notion property name
-          type: mapToNotionType(dataConfig.type),
-          enabled: true,
-        };
-      });
-    }
-
-    if (source.categories) {
-      // Category-based data (workCalendar, workTasks)
-      Object.values(source.categories).forEach((category) => {
-        if (category.data) {
-          Object.entries(category.data).forEach(([dataKey, dataConfig]) => {
-            properties[dataConfig.notionProperty] = {
-              name: dataConfig.label,
-              type: mapToNotionType(dataConfig.type),
-              enabled: true,
-            };
-          });
-        }
-      });
-    }
-  });
-
-  return properties;
+  return derivePropertiesFromUnified("work");
 }
 
 module.exports = {

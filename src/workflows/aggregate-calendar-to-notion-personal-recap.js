@@ -30,7 +30,7 @@ function formatDataForDisplay(dataKey, value) {
     return `${value} lbs average weight`;
   }
 
-  if (dataKey === "prsSessions") {
+  if (dataKey === "personalPRsSessions") {
     return `${value} PR sessions`;
   }
 

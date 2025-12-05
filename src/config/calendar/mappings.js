@@ -4,6 +4,12 @@
  */
 
 const { getSourceDataKeys } = require("../main");
+const {
+  CALENDARS,
+  SUMMARY_GROUPS,
+  FETCH_KEY_MAPPING,
+  CALENDAR_KEY_MAPPING,
+} = require("../unified-sources");
 
 const calendarMappings = {
   /**
@@ -150,276 +156,110 @@ function getRecapSourceData(sourceId) {
 }
 
 /**
+ * Derive summary source configuration from a summary group
+ * Builds the source object structure matching the existing hardcoded format
+ * @param {string} groupId - The summary group ID
+ * @param {Object} group - The summary group configuration from SUMMARY_GROUPS
+ * @returns {Object} Source configuration object
+ */
+function deriveSummarySource(groupId, group) {
+  // Handle Notion-based sources (tasks, workTasks)
+  if (group.isNotionSource) {
+    return {
+      id: group.id,
+      displayName: group.name,
+      description: `Completed ${group.name.toLowerCase()} from Notion database`,
+      required: false,
+      sourceType: group.sourceType,
+      isNotionSource: true,
+      databaseId: process.env[group.databaseIdEnvVar],
+    };
+  }
+
+  // Build calendar configs from group.calendars
+  const calendarConfigs = group.calendars.map((calId) => {
+    const calendar = CALENDARS[calId];
+    if (!calendar) {
+      throw new Error(`Calendar ${calId} not found in CALENDARS registry`);
+    }
+    const calendarKey = CALENDAR_KEY_MAPPING[calId] || calendar.id;
+    return {
+      key: calendarKey,
+      envVar: calendar.envVar,
+      required: true,
+      fetchKey: FETCH_KEY_MAPPING[calId] || calendar.id,
+    };
+  });
+
+  // Build description from calendar names
+  const calendarNames = group.calendars
+    .map((calId) => CALENDARS[calId].name)
+    .join(" and ");
+
+  // Special description mappings for exact match with existing hardcoded values
+  const descriptionMap = {
+    sleep: "Sleep tracking from Normal Wake Up and Sleep In calendars",
+    drinkingDays: "Alcohol tracking from Sober and Drinking calendars",
+    workout: "Exercise tracking from Workout calendar",
+    reading: "Reading time tracking",
+    coding: "Personal coding time tracking",
+    art: "Creative art time tracking",
+    videoGames: "Gaming time tracking",
+    meditation: "Meditation practice tracking",
+    music: "Music practice/listening tracking",
+    bodyWeight: "Body weight measurements",
+    personalCalendar: "Main personal calendar events by category",
+    personalPRs: "Personal GitHub pull requests",
+    workCalendar: "Main work calendar events by category",
+    workPRs: "Work GitHub pull requests",
+  };
+
+  // Build source object
+  const source = {
+    id: group.id,
+    displayName: group.name,
+    description:
+      descriptionMap[groupId] ||
+      (group.calendars.length > 1
+        ? `${group.name.split(" (")[0]} tracking from ${calendarNames} calendars`
+        : `${group.name} tracking from ${calendarNames} calendar`),
+    required: false,
+    sourceType: group.sourceType,
+    calendars: calendarConfigs,
+  };
+
+  // Add special properties for sleep
+  if (groupId === "sleep") {
+    source.isSleepCalendar = true;
+    source.ignoreAllDayEvents = true;
+  }
+
+  return source;
+}
+
+/**
  * Personal Recap Data Sources Configuration
  * Defines which calendars feed into Personal Recap database and their metadata
+ * Derived from unified-sources.js SUMMARY_GROUPS configuration
  * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
  */
-const PERSONAL_RECAP_SOURCES = {
-  sleep: {
-    id: "sleep",
-    displayName: "Sleep (Early Wakeup + Sleep In)",
-    description: "Sleep tracking from Normal Wake Up and Sleep In calendars",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "normalWakeUp",
-        envVar: "NORMAL_WAKE_UP_CALENDAR_ID",
-        required: true,
-        fetchKey: "earlyWakeup", // Maps to calendar event key
-      },
-      {
-        key: "sleepIn",
-        envVar: "SLEEP_IN_CALENDAR_ID",
-        required: true,
-        fetchKey: "sleepIn",
-      },
-    ],
-    isSleepCalendar: true,
-    ignoreAllDayEvents: true,
-  },
-
-  drinkingDays: {
-    id: "drinkingDays",
-    displayName: "Drinking Days (Sober + Drinking)",
-    description: "Alcohol tracking from Sober and Drinking calendars",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "sober",
-        envVar: "SOBER_CALENDAR_ID",
-        required: true,
-        fetchKey: "sober",
-      },
-      {
-        key: "drinking",
-        envVar: "DRINKING_CALENDAR_ID",
-        required: true,
-        fetchKey: "drinking",
-      },
-    ],
-  },
-
-  workout: {
-    id: "workout",
-    displayName: "Workout",
-    description: "Exercise tracking from Workout calendar",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "workout",
-        envVar: "WORKOUT_CALENDAR_ID",
-        required: true,
-        fetchKey: "workout",
-      },
-    ],
-  },
-
-  reading: {
-    id: "reading",
-    displayName: "Reading",
-    description: "Reading time tracking",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "reading",
-        envVar: "READING_CALENDAR_ID",
-        required: true,
-        fetchKey: "reading",
-      },
-    ],
-  },
-
-  coding: {
-    id: "coding",
-    displayName: "Coding",
-    description: "Personal coding time tracking",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "coding",
-        envVar: "CODING_CALENDAR_ID",
-        required: true,
-        fetchKey: "coding",
-      },
-    ],
-  },
-
-  art: {
-    id: "art",
-    displayName: "Art",
-    description: "Creative art time tracking",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "art",
-        envVar: "ART_CALENDAR_ID",
-        required: true,
-        fetchKey: "art",
-      },
-    ],
-  },
-
-  videoGames: {
-    id: "videoGames",
-    displayName: "Video Games",
-    description: "Gaming time tracking",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "videoGames",
-        envVar: "VIDEO_GAMES_CALENDAR_ID",
-        required: true,
-        fetchKey: "videoGames",
-      },
-    ],
-  },
-
-  meditation: {
-    id: "meditation",
-    displayName: "Meditation",
-    description: "Meditation practice tracking",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "meditation",
-        envVar: "MEDITATION_CALENDAR_ID",
-        required: true,
-        fetchKey: "meditation",
-      },
-    ],
-  },
-
-  music: {
-    id: "music",
-    displayName: "Music",
-    description: "Music practice/listening tracking",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "music",
-        envVar: "MUSIC_CALENDAR_ID",
-        required: true,
-        fetchKey: "music",
-      },
-    ],
-  },
-
-  bodyWeight: {
-    id: "bodyWeight",
-    displayName: "Body Weight",
-    description: "Body weight measurements",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "bodyWeight",
-        envVar: "BODY_WEIGHT_CALENDAR_ID",
-        required: true,
-        fetchKey: "bodyWeight",
-      },
-    ],
-  },
-
-  personalCalendar: {
-    id: "personalCalendar",
-    displayName: "Personal Calendar",
-    description: "Main personal calendar events by category",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "personalMain",
-        envVar: "PERSONAL_MAIN_CALENDAR_ID",
-        required: true,
-        fetchKey: "personalCalendar",
-      },
-    ],
-  },
-
-  personalPRs: {
-    id: "personalPRs",
-    displayName: "Personal PRs",
-    description: "Personal GitHub pull requests",
-    required: false,
-    sourceType: "personal",
-    calendars: [
-      {
-        key: "personalPRs",
-        envVar: "PERSONAL_PRS_CALENDAR_ID",
-        required: true,
-        fetchKey: "personalPRs",
-      },
-    ],
-  },
-
-  tasks: {
-    id: "tasks",
-    displayName: "Personal Tasks",
-    description: "Completed tasks from Notion database",
-    required: false,
-    sourceType: "personal",
-    isNotionSource: true, // Not a calendar source
-    databaseId: process.env.TASKS_DATABASE_ID,
-  },
-};
+const PERSONAL_RECAP_SOURCES = Object.fromEntries(
+  Object.entries(SUMMARY_GROUPS)
+    .filter(([_, g]) => g.sourceType === "personal")
+    .map(([id, g]) => [id, deriveSummarySource(id, g)])
+);
 
 /**
  * Work Recap Data Sources Configuration
  * Defines which calendars feed into Work Recap database and their metadata
+ * Derived from unified-sources.js SUMMARY_GROUPS configuration
  * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
  */
-const WORK_RECAP_SOURCES = {
-  workCalendar: {
-    id: "workCalendar",
-    displayName: "Work Calendar",
-    description: "Main work calendar events by category",
-    required: false,
-    sourceType: "work",
-    calendars: [
-      {
-        key: "workMain",
-        envVar: "WORK_MAIN_CALENDAR_ID",
-        required: true,
-        fetchKey: "workCalendar",
-      },
-    ],
-  },
-
-  workPRs: {
-    id: "workPRs",
-    displayName: "Work PRs",
-    description: "Work GitHub pull requests",
-    required: false,
-    sourceType: "work",
-    calendars: [
-      {
-        key: "workPRs",
-        envVar: "WORK_PRS_CALENDAR_ID",
-        required: true,
-        fetchKey: "workPRs",
-      },
-    ],
-  },
-
-  workTasks: {
-    id: "workTasks",
-    displayName: "Work Tasks",
-    description: "Completed work tasks from Notion database",
-    required: false,
-    sourceType: "work",
-    isNotionSource: true, // Not a calendar source
-    databaseId: process.env.TASKS_DATABASE_ID,
-  },
-};
+const WORK_RECAP_SOURCES = Object.fromEntries(
+  Object.entries(SUMMARY_GROUPS)
+    .filter(([_, g]) => g.sourceType === "work")
+    .map(([id, g]) => [id, deriveSummarySource(id, g)])
+);
 
 /**
  * Get all available Personal Recap sources

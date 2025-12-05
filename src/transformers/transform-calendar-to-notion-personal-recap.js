@@ -421,10 +421,10 @@ function transformCalendarEventsToRecapData(
 
     // Always include all fields for selected calendar (clean slate)
     // Calculate sessions (count of events)
-    summary.prsSessions = filteredPRsEvents.length || 0;
+    summary.personalPRsSessions = filteredPRsEvents.length || 0;
 
     // Calculate details (formatted as "title (day)" - no hours)
-    summary.prsDetails =
+    summary.personalPRsDetails =
       filteredPRsEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";

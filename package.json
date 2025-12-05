@@ -10,6 +10,7 @@
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",
     "tokens:setup": "node cli/tokens/setup.js",
+    "verify:config": "node -e \"const m = require('./src/config/calendar/mappings'); const u = require('./src/config/unified-sources'); console.log(u.verifyDerivation(m.PERSONAL_RECAP_SOURCES, m.WORK_RECAP_SOURCES))\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

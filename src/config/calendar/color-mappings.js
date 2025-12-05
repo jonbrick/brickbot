@@ -23,11 +23,12 @@ const WORK_COLOR_MAPPING = {
   1: { category: "meetings", displayName: "Meetings" }, // Peacock (default)
   2: { category: "design", displayName: "Design" }, // Sage
   3: { category: "coding", displayName: "Coding" }, // Grape
+  4: { category: "rituals", displayName: "Rituals" }, // Flamingo
   5: { category: "crit", displayName: "Crit" }, // Citron
   6: { category: "sketch", displayName: "Sketch" }, // Tangerine
-  7: { category: "research", displayName: "Research" }, // Lavendar
+  7: { category: "research", displayName: "Research" }, // Lavender
   8: { category: "personalAndSocial", displayName: "Personal & Social" }, // Graphite
-  9: { category: "rituals", displayName: "Rituals" }, // Blueberry
+  9: { category: "admin", displayName: "Admin" }, // Blueberry
   11: { category: "qa", displayName: "QA" }, // Tomato
 };
 

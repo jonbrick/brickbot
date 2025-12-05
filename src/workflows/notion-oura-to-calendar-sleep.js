@@ -87,6 +87,11 @@ async function syncSingleSleepRecord(sleepRecord, sleepRepo, calendarService) {
   if (!event.start.dateTime || !event.end.dateTime) {
     // Extract nightOf for display even when skipped
     const props = config.notion.properties.oura;
+    if (!props) {
+      throw new Error(
+        "Oura properties not found in config. Check that config.notion.properties.oura is properly loaded."
+      );
+    }
     const nightOf = sleepRepo.extractProperty(
       sleepRecord,
       config.notion.getPropertyName(props.nightOfDate)
@@ -112,6 +117,11 @@ async function syncSingleSleepRecord(sleepRecord, sleepRepo, calendarService) {
 
     // Extract nightOf from Notion record and format for consistent display
     const props = config.notion.properties.oura;
+    if (!props) {
+      throw new Error(
+        "Oura properties not found in config. Check that config.notion.properties.oura is properly loaded."
+      );
+    }
     const nightOf = sleepRepo.extractProperty(
       sleepRecord,
       config.notion.getPropertyName(props.nightOfDate)

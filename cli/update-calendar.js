@@ -7,87 +7,50 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
-const {
-  syncSleepToCalendar,
-} = require("../src/workflows/notion-oura-to-calendar-sleep");
-const {
-  syncWorkoutsToCalendar,
-} = require("../src/workflows/notion-strava-to-calendar-workouts");
-const {
-  syncSteamToCalendar,
-} = require("../src/workflows/notion-steam-to-calendar-games");
-const {
-  syncPRsToCalendar,
-} = require("../src/workflows/notion-github-to-calendar-prs");
-const {
-  syncBodyWeightToCalendar,
-} = require("../src/workflows/notion-withings-to-calendar-bodyweight");
-const {
-  syncBloodPressureToCalendar,
-} = require("../src/workflows/notion-blood-pressure-to-calendar");
 const { selectCalendarDateRange } = require("../src/utils/cli");
-const config = require("../src/config");
 const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
-  buildSourceChoices,
-  buildAllSourcesHandlers,
   formatRecordsForDisplay,
   displayRecordsTable,
 } = require("../src/utils/sweep-display");
-
-/**
- * Calendar sync handler configuration
- * Maps source IDs to their NotionService query methods, sync functions and display settings
- */
-const CALENDAR_SYNC_HANDLERS = {
-  oura: {
-    queryMethod: "getUnsyncedSleep",
-    syncFn: syncSleepToCalendar,
-    emptyMessage: "✅ No sleep records found without calendar events\n",
-    sourceType: "sleep",
-  },
-  strava: {
-    queryMethod: "getUnsyncedWorkouts",
-    syncFn: syncWorkoutsToCalendar,
-    emptyMessage: "✅ No workout records found without calendar events\n",
-    sourceType: "strava",
-  },
-  steam: {
-    queryMethod: "getUnsyncedSteam",
-    syncFn: syncSteamToCalendar,
-    emptyMessage: "✅ No gaming records found without calendar events\n",
-    sourceType: "steam",
-  },
-  github: {
-    queryMethod: "getUnsyncedPRs",
-    syncFn: syncPRsToCalendar,
-    emptyMessage: "✅ No PR records found without calendar events\n",
-    sourceType: "github",
-  },
-  withings: {
-    queryMethod: "getUnsyncedBodyWeight",
-    syncFn: syncBodyWeightToCalendar,
-    emptyMessage: "✅ No body weight records found without calendar events\n",
-    sourceType: "withings",
-  },
-  bloodPressure: {
-    queryMethod: "getUnsyncedBloodPressure",
-    syncFn: syncBloodPressureToCalendar,
-    emptyMessage: "✅ No blood pressure records found without calendar events\n",
-    sourceType: "bloodPressure",
-  },
-};
+const {
+  getUpdater,
+  getUpdaterIds,
+  getCalendarSyncMetadata,
+} = require("../src/updaters");
+const { INTEGRATIONS } = require("../src/config/unified-sources");
 
 /**
  * Select source and action type (display only or sync to calendar)
  */
 async function selectSourceAndAction() {
+  const updaterIds = getUpdaterIds();
+  
+  // Build choices from updater registry
+  const sortedUpdaters = updaterIds
+    .map((id) => ({
+      id,
+      name: INTEGRATIONS[id].name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const choices = [
+    {
+      name: `All Sources (${sortedUpdaters.map((s) => s.name.split(" ")[0]).join(", ")})`,
+      value: "all",
+    },
+    ...sortedUpdaters.map((s) => ({
+      name: s.name,
+      value: s.id,
+    })),
+  ];
+
   const { source, action } = await inquirer.prompt([
     {
       type: "list",
       name: "source",
       message: "Select data source:",
-      choices: buildSourceChoices("toCalendar"),
+      choices,
     },
     {
       type: "list",
@@ -100,20 +63,6 @@ async function selectSourceAndAction() {
     },
   ]);
   return { source, action };
-}
-
-/**
- * Determine source type from a record
- * @param {Object} record - Record object
- * @returns {string} Source type
- */
-function getSourceTypeFromRecord(record) {
-  if (record.measurementId) return "withings";
-  if (record.sleepId || record.nightOf) return "sleep";
-  if (record.gameName) return "steam";
-  if (record.repository) return "github";
-  if (record.activityId && record.name) return "strava";
-  return "unknown";
 }
 
 /**
@@ -132,10 +81,9 @@ function printSyncResults(results, sourceType = null) {
   if (results.created.length > 0) {
     console.log("Created events:");
     results.created.forEach((r) => {
-      // Use displayName if available, otherwise determine from record
-      if (r.displayName) {
-        const source = sourceType || getSourceTypeFromRecord(r);
-        console.log(`  ✅ ${formatRecordForLogging(r, source)}`);
+      // Use displayName if available, otherwise use summary
+      if (r.displayName && sourceType) {
+        console.log(`  ✅ ${formatRecordForLogging(r, sourceType)}`);
       } else {
         // Fallback to summary for backward compatibility
         console.log(`  ✅ ${r.summary || "Unknown"}`);
@@ -148,9 +96,8 @@ function printSyncResults(results, sourceType = null) {
     console.log("Skipped records:");
     results.skipped.forEach((r) => {
       // Use displayName if available
-      if (r.displayName) {
-        const source = sourceType || getSourceTypeFromRecord(r);
-        console.log(`  ⏭️  ${formatRecordForLogging(r, source)} - ${r.reason}`);
+      if (r.displayName && sourceType) {
+        console.log(`  ⏭️  ${formatRecordForLogging(r, sourceType)} - ${r.reason}`);
       } else {
         // Fallback to pageId for backward compatibility
         console.log(`  ⏭️  Page ID: ${r.pageId} - ${r.reason}`);
@@ -183,20 +130,15 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   );
   console.log("=".repeat(80) + "\n");
 
-  const handlers = {
-    handleGitHubSync: (sd, ed, act) =>
-      handleCalendarSync("github", sd, ed, act),
-    handleOuraSync: (sd, ed, act) => handleCalendarSync("oura", sd, ed, act),
-    handleSteamSync: (sd, ed, act) => handleCalendarSync("steam", sd, ed, act),
-    handleStravaSync: (sd, ed, act) =>
-      handleCalendarSync("strava", sd, ed, act),
-    handleBodyWeightSync: (sd, ed, act) =>
-      handleCalendarSync("withings", sd, ed, act),
-    handleBloodPressureSync: (sd, ed, act) =>
-      handleCalendarSync("bloodPressure", sd, ed, act),
-  };
-
-  const sources = buildAllSourcesHandlers("toCalendar", handlers);
+  const updaterIds = getUpdaterIds();
+  
+  // Build sources list with names from INTEGRATIONS
+  const sources = updaterIds
+    .map((id) => ({
+      id,
+      name: INTEGRATIONS[id].name.split(" ")[0], // Extract "Oura" from "Oura (Sleep)"
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const aggregatedResults = {
     successful: [],
@@ -209,7 +151,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
     console.log("-".repeat(80) + "\n");
 
     try {
-      await source.handler(startDate, endDate, action);
+      await handleCalendarSync(source.id, startDate, endDate, action);
       aggregatedResults.successful.push(source.name);
     } catch (error) {
       console.error(`\n❌ ${source.name} failed:`, error.message);
@@ -264,20 +206,23 @@ function printAggregatedCalendarResults(aggregatedResults) {
  * @param {string} action - Action to perform ('display' or 'sync')
  */
 async function handleCalendarSync(sourceId, startDate, endDate, action) {
-  const config = CALENDAR_SYNC_HANDLERS[sourceId];
-  if (!config) {
+  const updater = getUpdater(sourceId);
+  if (!updater) {
     throw new Error(`Unknown source: ${sourceId}`);
   }
+
+  const { syncFn, calendarSyncMetadata } = updater;
+  const { queryMethod, emptyMessage, sourceType } = calendarSyncMetadata;
 
   console.log(`📊 Querying Notion for unsynced ${sourceId} records...\n`);
 
   const notionService = new NotionService();
 
   // Dynamically call the configured query method
-  const records = await notionService[config.queryMethod](startDate, endDate);
+  const records = await notionService[queryMethod](startDate, endDate);
 
   if (records.length === 0) {
-    console.log(config.emptyMessage);
+    console.log(emptyMessage);
     return;
   }
 
@@ -292,8 +237,8 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
   // Sync to calendar if requested
   if (action === "sync") {
     console.log("\n📤 Syncing to Calendar...\n");
-    const results = await config.syncFn(startDate, endDate);
-    printSyncResults(results, config.sourceType);
+    const results = await syncFn(startDate, endDate);
+    printSyncResults(results, sourceType);
   }
 }
 

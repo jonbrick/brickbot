@@ -79,7 +79,25 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
 
   const fields = source.sweepToCalendar.fields;
   const sourceType = source.sweepToCalendar.sourceType;
-  const propConfig = config.notion.properties[sourceType];
+  
+  // Map sourceType to integration ID (config.notion.properties uses integration keys)
+  const SOURCE_TYPE_TO_INTEGRATION = {
+    sleep: "oura",
+    strava: "strava",
+    github: "github",
+    steam: "steam",
+    withings: "withings",
+    bloodPressure: "bloodPressure",
+  };
+  
+  const integrationId = SOURCE_TYPE_TO_INTEGRATION[sourceType] || sourceId;
+  const propConfig = config.notion.properties[integrationId];
+  
+  if (!propConfig) {
+    throw new Error(
+      `Property config not found for sourceType "${sourceType}" (integration: "${integrationId}"). Check config.notion.properties.${integrationId}`
+    );
+  }
 
   return records.map((record) => {
     const formatted = {};

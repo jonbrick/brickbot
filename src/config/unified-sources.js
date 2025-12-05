@@ -992,6 +992,12 @@ const INTEGRATIONS = {
       emptyMessage: "⚠️  No sleep data found for this date range\n",
       displayType: "oura"
     },
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      queryMethod: "getUnsyncedSleep",
+      emptyMessage: "✅ No sleep records found without calendar events\n",
+      sourceType: "sleep"
+    },
   },
   strava: {
     id: "strava",
@@ -1003,6 +1009,12 @@ const INTEGRATIONS = {
       tableTitle: "STRAVA ACTIVITIES",
       emptyMessage: "⚠️  No Strava activities found for this date range\n",
       displayType: "strava"
+    },
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      queryMethod: "getUnsyncedWorkouts",
+      emptyMessage: "✅ No workout records found without calendar events\n",
+      sourceType: "strava"
     },
   },
   github: {
@@ -1016,6 +1028,12 @@ const INTEGRATIONS = {
       emptyMessage: "⚠️  No GitHub activities found for this date range\n",
       displayType: "github"
     },
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      queryMethod: "getUnsyncedPRs",
+      emptyMessage: "✅ No PR records found without calendar events\n",
+      sourceType: "github"
+    },
   },
   steam: {
     id: "steam",
@@ -1028,6 +1046,12 @@ const INTEGRATIONS = {
       emptyMessage: "⚠️  No Steam gaming activities found for this date range\n",
       displayType: "steam"
     },
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      queryMethod: "getUnsyncedSteam",
+      emptyMessage: "✅ No gaming records found without calendar events\n",
+      sourceType: "steam"
+    },
   },
   withings: {
     id: "withings",
@@ -1039,6 +1063,25 @@ const INTEGRATIONS = {
       tableTitle: "WITHINGS MEASUREMENTS",
       emptyMessage: "⚠️  No Withings measurements found for this date range\n",
       displayType: "withings"
+    },
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      queryMethod: "getUnsyncedBodyWeight",
+      emptyMessage: "✅ No body weight records found without calendar events\n",
+      sourceType: "withings"
+    },
+  },
+  bloodPressure: {
+    id: "bloodPressure",
+    name: "Blood Pressure",
+    notionDbEnvVar: "NOTION_BLOOD_PRESSURE_DATABASE_ID",
+    calendarRouting: ["bloodPressure"],
+    collect: false,
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      queryMethod: "getUnsyncedBloodPressure",
+      emptyMessage: "✅ No blood pressure records found without calendar events\n",
+      sourceType: "bloodPressure"
     },
   },
 };

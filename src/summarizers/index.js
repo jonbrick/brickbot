@@ -1,16 +1,14 @@
 /**
  * Summarizer Registry
  * Auto-discovers and exports summarizers based on SUMMARY_GROUPS config
- * with explicit routing for four workflow types
+ * with explicit routing for consolidated workflow types
  */
 
 const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
 
-// Workflow imports for explicit routing
-const personalCalendarWorkflow = require("../workflows/aggregate-calendar-to-notion-personal-recap");
-const personalTaskWorkflow = require("../workflows/notion-tasks-to-notion-personal-recap");
-const workCalendarWorkflow = require("../workflows/aggregate-calendar-to-notion-work-recap");
-const workTaskWorkflow = require("../workflows/notion-tasks-to-notion-work-recap");
+// Workflow imports for consolidated routing
+const calendarWorkflow = require("../workflows/calendar-to-notion-summaries");
+const taskWorkflow = require("../workflows/notion-tasks-to-notion-summaries");
 
 /**
  * Check if a calendar-based group is available (all calendars have env vars set)
@@ -46,20 +44,24 @@ function isNotionGroupAvailable(group) {
 
 /**
  * Get workflow function based on sourceType and isNotionSource
+ * Returns a wrapper function that calls the consolidated workflow with recapType as first parameter
  * @param {string} sourceType - "personal" or "work"
  * @param {boolean} isNotionSource - True if Notion source, false if calendar source
- * @returns {Function} Workflow function
+ * @returns {Function} Wrapped workflow function that accepts (weekNumber, year, options)
  */
 function getWorkflowForGroup(sourceType, isNotionSource) {
-  if (sourceType === "personal") {
-    return isNotionSource
-      ? personalTaskWorkflow.summarizeWeek
-      : personalCalendarWorkflow.aggregateCalendarDataForWeek;
+  const recapType = sourceType; // "personal" or "work"
+  
+  if (isNotionSource) {
+    // Task workflow: summarizeWeek(recapType, weekNumber, year, options)
+    return (weekNumber, year, options) => {
+      return taskWorkflow.summarizeWeek(recapType, weekNumber, year, options);
+    };
   } else {
-    // sourceType === "work"
-    return isNotionSource
-      ? workTaskWorkflow.summarizeWeek
-      : workCalendarWorkflow.aggregateCalendarDataForWeek;
+    // Calendar workflow: aggregateCalendarDataForWeek(recapType, weekNumber, year, options)
+    return (weekNumber, year, options) => {
+      return calendarWorkflow.aggregateCalendarDataForWeek(recapType, weekNumber, year, options);
+    };
   }
 }
 

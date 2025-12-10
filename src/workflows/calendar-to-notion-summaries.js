@@ -1,26 +1,18 @@
-// Orchestrates fetching calendar events and aggregating them into weekly data for Personal Recap database
+// Orchestrates fetching calendar events and aggregating them into weekly data for Recap databases
+// Supports both Personal and Work recap types via recapType parameter
 
-const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const { fetchCalendarSummary } = require("../summarizers/summarize-calendar");
-const {
-  transformCalendarEventsToRecapData,
-} = require("../transformers/transform-calendar-to-notion-personal-recap");
 const config = require("../config");
+// Import entire date module instead of destructuring to avoid module loading timing issues
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
-const {
-  getAvailableRecapSources,
-  getRecapSourceConfig,
-  buildCalendarFetches,
-  getRecapSourceData,
-  getDisplayNameForFetchKey,
-  PERSONAL_RECAP_SOURCES,
-} = require("../config/calendar/mappings");
+// Import entire mappings module to avoid destructuring timing issues
+const mappings = require("../config/calendar/mappings");
 
 /**
  * Format a data key and value into human-readable display text
- * @param {string} dataKey - Data key (e.g., "workoutDays", "bodyWeightAverage")
+ * @param {string} dataKey - Data key (e.g., "workoutDays", "bodyWeightAverage", "workPRsSessions")
  * @param {number|string} value - Data value
  * @returns {string} Formatted display text (e.g., "5 workout days", "201.4 lbs average weight")
  */
@@ -34,7 +26,11 @@ function formatDataForDisplay(dataKey, value) {
     return `${value} PR sessions`;
   }
 
-  // Handle personalCalendar category data
+  if (dataKey === "workPRsSessions") {
+    return `${value} work PR sessions`;
+  }
+
+  // Handle personalCalendar category data (for backward compatibility)
   const categoryPatterns = {
     personalSessions: "personal sessions",
     interpersonalSessions: "interpersonal sessions",
@@ -86,14 +82,10 @@ function formatDataForDisplay(dataKey, value) {
  * Uses config-driven approach with data derived from DATA_SOURCES
  * @param {Array<string>} calendarsToFetch - Array of source IDs to include
  * @param {Object} summary - Summary object with data values
- * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
+ * @param {Object} sourcesConfig - Sources configuration object (PERSONAL_RECAP_SOURCES or WORK_RECAP_SOURCES)
  * @returns {Array<string>} Array of formatted data strings
  */
-function buildSuccessData(
-  calendarsToFetch,
-  summary,
-  sourcesConfig = PERSONAL_RECAP_SOURCES
-) {
+function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
   const data = [];
 
   // Import DATA_SOURCES to check data types
@@ -105,7 +97,7 @@ function buildSuccessData(
     if (!source) return;
 
     // Get data for this source from DATA_SOURCES (single source of truth)
-    const sourceData = getRecapSourceData(sourceId);
+    const sourceData = mappings.getRecapSourceData(sourceId);
 
     // For each data field, check if it exists in summary and format for display
     sourceData.forEach((dataKey) => {
@@ -140,18 +132,58 @@ function buildSuccessData(
 }
 
 /**
- * Aggregate calendar data for a week and update Personal Recap database
+ * Aggregate calendar data for a week and update Recap database
  *
+ * @param {string} recapType - "personal" or "work"
  * @param {number} weekNumber - Week number (1-52/53)
  * @param {number} year - Year
  * @param {Object} options - Options
- * @param {string} options.accountType - "personal" or "work" (default: "personal")
+ * @param {string} options.accountType - "personal" or "work" (default: based on recapType)
  * @param {boolean} options.displayOnly - If true, only display results without updating Notion
  * @param {Array<string>} options.calendars - Array of calendar keys to include (default: all available)
  * @returns {Promise<Object>} Results object
  */
-async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
-  const accountType = options.accountType || "personal";
+async function aggregateCalendarDataForWeek(
+  recapType,
+  weekNumber,
+  year,
+  options = {}
+) {
+  // Validate recapType
+  if (recapType !== "personal" && recapType !== "work") {
+    throw new Error(
+      `recapType must be "personal" or "work", got "${recapType}"`
+    );
+  }
+
+  // Select components based on recapType
+  const RecapDatabase =
+    recapType === "personal"
+      ? require("../databases/PersonalRecapDatabase")
+      : require("../databases/WorkRecapDatabase");
+
+  const transformFunction =
+    recapType === "personal"
+      ? require("../transformers/transform-calendar-to-notion-personal-recap")
+          .transformCalendarEventsToRecapData
+      : require("../transformers/transform-calendar-to-notion-work-recap")
+          .transformCalendarEventsToRecapData;
+
+  const sourcesConfig =
+    recapType === "personal"
+      ? mappings.PERSONAL_RECAP_SOURCES
+      : mappings.WORK_RECAP_SOURCES;
+
+  const getAvailableSources =
+    recapType === "personal"
+      ? mappings.getAvailableRecapSources
+      : mappings.getAvailableWorkRecapSources;
+
+  const defaultAccountType = recapType === "personal" ? "personal" : "work";
+  const databaseName =
+    recapType === "personal" ? "Personal Recap" : "Work Recap";
+
+  const accountType = options.accountType || defaultAccountType;
   const displayOnly = options.displayOnly || false;
   const selectedCalendars = options.calendars || [];
   const results = {
@@ -163,13 +195,17 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
   };
 
   try {
-    showProgress(`Summarizing week ${weekNumber} of ${year}...`);
+    if (typeof showProgress === "function") {
+      showProgress(`Summarizing week ${weekNumber} of ${year}...`);
+    } else {
+      console.log(`⏳ Summarizing week ${weekNumber} of ${year}...`);
+    }
 
     // Calculate week date range
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 
     // Get available sources
-    const availableSources = getAvailableRecapSources();
+    const availableSources = getAvailableSources();
 
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)
@@ -181,10 +217,10 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
             .map((source) => source.id);
 
     // Build calendar fetch configurations
-    const fetchConfigs = buildCalendarFetches(
+    const fetchConfigs = mappings.buildCalendarFetches(
       calendarsToFetch,
       accountType,
-      PERSONAL_RECAP_SOURCES
+      sourcesConfig
     );
 
     if (fetchConfigs.length === 0) {
@@ -204,7 +240,11 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
       ),
     }));
 
-    showProgress(`Fetching ${calendarFetches.length} calendar(s)...`);
+    if (typeof showProgress === "function") {
+      showProgress(`Fetching ${calendarFetches.length} calendar(s)...`);
+    } else {
+      console.log(`⏳ Fetching ${calendarFetches.length} calendar(s)...`);
+    }
     const fetchResults = await Promise.all(
       calendarFetches.map((f) =>
         f.promise.catch((err) => ({ error: err.message }))
@@ -222,6 +262,21 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
         calendarEvents[key] = result;
       }
     });
+
+    // Warn if all calendar fetches failed
+    const allFailed =
+      fetchResults.length > 0 && fetchResults.every((r) => r.error);
+    if (allFailed) {
+      if (typeof showError === "function") {
+        showError(
+          "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
+        );
+      } else {
+        console.error(
+          "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
+        );
+      }
+    }
 
     // Rate limiting between API calls
     await delay(config.sources.rateLimits.googleCalendar.backoffMs);
@@ -241,12 +296,13 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
           isDateInWeek(event.date)
         );
         if (filteredEvents.length > 0) {
-          const displayName = getDisplayNameForFetchKey(
+          const displayName = mappings.getDisplayNameForFetchKey(
             key,
-            PERSONAL_RECAP_SOURCES
+            sourcesConfig
           );
+          const eventLabel = recapType === "personal" ? "Blocks" : "Events";
           console.log(
-            `\n  ${displayName} Blocks (${filteredEvents.length} of ${events.length} total):`
+            `\n  ${displayName} ${eventLabel} (${filteredEvents.length} of ${events.length} total):`
           );
           filteredEvents.forEach((event, idx) => {
             console.log(
@@ -276,8 +332,8 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Calculate summary (only for selected calendars)
-    // Note: tasks are handled by notion-tasks-to-notion-personal-recap workflow
-    const summary = transformCalendarEventsToRecapData(
+    // Note: tasks are handled by notion-tasks-to-notion-summaries workflow
+    const summary = transformFunction(
       calendarEvents,
       startDate,
       endDate,
@@ -292,8 +348,8 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     }
 
     // Find or get week recap record
-    const personalRecapRepo = new PersonalRecapDatabase();
-    const weekRecap = await personalRecapRepo.findWeekRecap(
+    const recapRepo = new RecapDatabase();
+    const weekRecap = await recapRepo.findWeekRecap(
       weekNumber,
       year,
       startDate,
@@ -301,16 +357,23 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     );
 
     if (!weekRecap) {
-      showError(
-        `Week recap record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`
-      );
+      const errorMessage = `Week recap record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
+      if (typeof showError === "function") {
+        showError(errorMessage);
+      } else {
+        console.error(errorMessage);
+      }
       results.error = "Week recap record not found";
       return results;
     }
 
     // Update week recap
-    showProgress("Updating Personal Recap database...");
-    await personalRecapRepo.updateWeekRecap(
+    if (typeof showProgress === "function") {
+      showProgress(`Updating ${databaseName} database...`);
+    } else {
+      console.log(`⏳ Updating ${databaseName} database...`);
+    }
+    await recapRepo.updateWeekRecap(
       weekRecap.id,
       summary,
       calendarsToFetch
@@ -323,18 +386,24 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
     results.selectedCalendars = calendarsToFetch;
 
     // Build success message with available data for selected calendars (config-driven)
-    const data = buildSuccessData(
-      calendarsToFetch,
-      summary,
-      PERSONAL_RECAP_SOURCES
-    );
+    const data = buildSuccessData(calendarsToFetch, summary, sourcesConfig);
 
-    showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+    if (typeof showSuccess === "function") {
+      showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+    } else {
+      console.log(
+        `✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
+      );
+    }
 
     return results;
   } catch (error) {
     results.error = error.message;
-    showError(`Failed to summarize week: ${error.message}`);
+    if (typeof showError === "function") {
+      showError(`Failed to summarize week: ${error.message}`);
+    } else {
+      console.error(`Failed to summarize week: ${error.message}`);
+    }
     throw error;
   }
 }
@@ -342,3 +411,4 @@ async function aggregateCalendarDataForWeek(weekNumber, year, options = {}) {
 module.exports = {
   aggregateCalendarDataForWeek,
 };
+

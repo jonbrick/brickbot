@@ -22,8 +22,7 @@ function formatPRDescription(prRecord, prRepo) {
     prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitsCount)) || 0;
 
   const totalLinesAdded =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) ||
-    0;
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) || 0;
 
   const totalLinesDeleted =
     prRepo.extractProperty(
@@ -35,8 +34,7 @@ function formatPRDescription(prRecord, prRepo) {
     prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.prTitles)) || "";
 
   const commitMessages =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitMessages)) ||
-    "";
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitMessages)) || "";
 
   let description = `💻 ${repository}
 📊 ${commitsCount} commit${commitsCount === 1 ? "" : "s"}
@@ -97,8 +95,7 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
     prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitsCount)) || 0;
 
   const totalLinesAdded =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) ||
-    0;
+    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) || 0;
 
   const totalLinesDeleted =
     prRepo.extractProperty(
@@ -111,7 +108,7 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
     "Personal";
 
   // Get calendar ID using centralized mapper (automatically extracts Project Type property)
-  const calendarId = resolveCalendarId('github', prRecord, prRepo);
+  const calendarId = resolveCalendarId("github", prRecord, prRepo);
 
   if (!calendarId) {
     const calendarType = projectType === "Work" ? "Work" : "Personal";
@@ -123,7 +120,7 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
   // Extract short repository name for title
   const repoName = extractRepoName(repository);
 
-  // Format event title per API_MAPPINGS_COMPLETE.md
+  // Format event title with calculations
   const summary = `${repoName}: ${commitsCount} commit${
     commitsCount === 1 ? "" : "s"
   } (+${totalLinesAdded}/-${totalLinesDeleted} lines)`;
@@ -148,9 +145,12 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
   // Create description with PR details
   const description = formatPRDescription(prRecord, prRepo);
 
+  // Map projectType to accountType
+  const accountType = projectType === "Work" ? "work" : "personal";
+
   return {
     calendarId,
-    accountType: projectType === "Work" ? "work" : "personal",
+    accountType,
     event: {
       summary,
       description,
@@ -169,4 +169,3 @@ module.exports = {
   formatPRDescription,
   extractRepoName,
 };
-

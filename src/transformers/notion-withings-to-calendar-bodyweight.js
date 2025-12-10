@@ -1,127 +1,64 @@
 // Transforms Withings Notion records to Body Weight Calendar events
 
 const config = require("../config");
-const { resolveCalendarId } = require("../utils/calendar-mapper");
-const { formatDateOnly } = require("../utils/date");
+const { buildTransformer } = require("./buildTransformer");
 
-/**
- * Format body weight description for event description
- *
- * @param {Object} weightRecord - Notion body weight record
- * @param {WithingsDatabase} bodyWeightRepo - Body weight database instance for extracting properties
- * @returns {string} Formatted description
- */
-function formatBodyWeightDescription(weightRecord, bodyWeightRepo) {
-  const props = config.notion.properties.withings;
+const props = config.notion.properties.withings;
 
-  const weight =
-    bodyWeightRepo.extractProperty(weightRecord, config.notion.getPropertyName(props.weight)) ||
-    "N/A";
+// Build transformer using helper
+const baseTransformer = buildTransformer("bodyWeight", {
+  summary: "{{weight}}", // Placeholder - will be fixed in wrapper
+  description: (values) => {
+    // Build description with optional fields
+    let description = `⚖️ Body Weight Measurement
+📊 Weight: ${values.weight || "N/A"} lbs
+⏰ Time: ${values.measurementTime || "N/A"}`;
 
-  const measurementTime =
-    bodyWeightRepo.extractProperty(
-      weightRecord,
-      config.notion.getPropertyName(props.measurementTime)
-    ) || "N/A";
+    // Add optional fat percentage if present
+    if (values.fatPercentage !== null && values.fatPercentage !== undefined) {
+      description += `\n🔥 Fat %: ${values.fatPercentage}%`;
+    }
 
-  const fatPercentage =
-    bodyWeightRepo.extractProperty(
-      weightRecord,
-      config.notion.getPropertyName(props.fatPercentage)
-    );
+    // Add optional muscle mass if present
+    if (values.muscleMass !== null && values.muscleMass !== undefined) {
+      description += `\n💪 Muscle: ${values.muscleMass} lbs`;
+    }
 
-  const muscleMass =
-    bodyWeightRepo.extractProperty(
-      weightRecord,
-      config.notion.getPropertyName(props.muscleMass)
-    );
+    description += `\n🔗 Source: Withings`;
 
-  let description = `⚖️ Body Weight Measurement
-📊 Weight: ${weight} lbs
-⏰ Time: ${measurementTime}`;
+    return description;
+  },
+  eventType: "allDay",
+  startProp: props.date,
+  endProp: null, // Same as start for all-day
+  properties: {
+    weight: props.weight,
+    measurementTime: props.measurementTime,
+    fatPercentage: props.fatPercentage,
+    muscleMass: props.muscleMass,
+  },
+});
 
-  if (fatPercentage !== null && fatPercentage !== undefined) {
-    description += `\n🔥 Fat %: ${fatPercentage}%`;
-  }
+// Wrap to handle summary fallback logic
+function transformBodyWeightToCalendarEvent(record, repo) {
+  const result = baseTransformer(record, repo);
 
-  if (muscleMass !== null && muscleMass !== undefined) {
-    description += `\n💪 Muscle: ${muscleMass} lbs`;
-  }
-
-  description += `\n🔗 Source: Withings`;
-
-  return description;
-}
-
-/**
- * Transform Notion body weight record to Google Calendar event (all-day)
- *
- * @param {Object} weightRecord - Notion page object
- * @param {WithingsDatabase} bodyWeightRepo - Body weight database instance for extracting properties
- * @returns {Object} Google Calendar event data
- */
-function transformBodyWeightToCalendarEvent(weightRecord, bodyWeightRepo) {
-  const props = config.notion.properties.withings;
-
-  // Extract properties from Notion page
-  const weight =
-    bodyWeightRepo.extractProperty(weightRecord, config.notion.getPropertyName(props.weight)) ||
-    null;
-
-  const date = bodyWeightRepo.extractProperty(
-    weightRecord,
-    config.notion.getPropertyName(props.date)
+  // Extract weight to check for summary fallback
+  const weight = repo.extractProperty(
+    record,
+    config.notion.getPropertyName(props.weight)
   );
 
-  // Get body weight calendar ID using centralized mapper
-  const calendarId = resolveCalendarId('bodyWeight', weightRecord, bodyWeightRepo);
-
-  if (!calendarId) {
-    throw new Error(
-      "Body Weight calendar ID not configured. Set BODY_WEIGHT_CALENDAR_ID in .env file."
-    );
+  // Handle summary: "Weight: {weight} lbs" or "Weight Measurement"
+  if (weight !== null && weight !== undefined) {
+    result.event.summary = `Weight: ${weight} lbs`;
+  } else {
+    result.event.summary = "Weight Measurement";
   }
 
-  // Format event title per API_MAPPINGS_COMPLETE.md
-  const summary = weight !== null ? `Weight: ${weight} lbs` : "Weight Measurement";
-
-  // Format date as YYYY-MM-DD for all-day event
-  let dateStr = null;
-  if (date) {
-    // Handle date format - could be YYYY-MM-DD string or Date object
-    if (typeof date === "string") {
-      dateStr = date.split("T")[0]; // Extract YYYY-MM-DD from ISO string if present
-    } else if (date instanceof Date) {
-      dateStr = formatDateOnly(date);
-    } else {
-      dateStr = date;
-    }
-  }
-
-  if (!dateStr) {
-    throw new Error("Missing date in body weight record");
-  }
-
-  // Create description with measurement details
-  const description = formatBodyWeightDescription(weightRecord, bodyWeightRepo);
-
-  return {
-    calendarId,
-    event: {
-      summary,
-      description,
-      start: {
-        date: dateStr, // All-day event uses 'date' field (YYYY-MM-DD)
-      },
-      end: {
-        date: dateStr, // Same date for all-day event
-      },
-    },
-  };
+  return result;
 }
 
 module.exports = {
   transformBodyWeightToCalendarEvent,
-  formatBodyWeightDescription,
 };
-

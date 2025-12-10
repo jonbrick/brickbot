@@ -6,13 +6,22 @@ const { resolveCalendarId } = require("../utils/calendar-mapper");
 /**
  * Format sleep stages breakdown for event description
  *
- * @param {Object} sleepRecord - Notion sleep record
+ * @param {Object} sleepRecord - Notion sleep record with extracted properties
+ * @param {OuraDatabase} sleepRepo - Sleep database instance for extracting properties
  * @returns {string} Formatted description
  */
-function formatSleepStages(sleepRecord) {
+function formatSleepStages(sleepRecord, sleepRepo) {
   const props = config.notion.properties.oura;
-  const wakeTimeRaw = sleepRecord[config.notion.getPropertyName(props.wakeTime)] || "N/A";
-  const bedtimeRaw = sleepRecord[config.notion.getPropertyName(props.bedtime)] || "N/A";
+
+  // Extract properties
+  const wakeTimeRaw = sleepRepo.extractProperty(
+    sleepRecord,
+    config.notion.getPropertyName(props.wakeTime)
+  );
+  const bedtimeRaw = sleepRepo.extractProperty(
+    sleepRecord,
+    config.notion.getPropertyName(props.bedtime)
+  );
 
   // Format ISO timestamps for display
   const formatTimeForDisplay = (isoString) => {
@@ -28,16 +37,40 @@ function formatSleepStages(sleepRecord) {
   const wakeTime = formatTimeForDisplay(wakeTimeRaw);
   const bedtime = formatTimeForDisplay(bedtimeRaw);
 
-  const deepSleep = sleepRecord[config.notion.getPropertyName(props.deepSleep)] || "N/A";
-  const remSleep = sleepRecord[config.notion.getPropertyName(props.remSleep)] || "N/A";
-  const lightSleep = sleepRecord[config.notion.getPropertyName(props.lightSleep)] || "N/A";
+  const deepSleep =
+    sleepRepo.extractProperty(
+      sleepRecord,
+      config.notion.getPropertyName(props.deepSleep)
+    ) || "N/A";
+  const remSleep =
+    sleepRepo.extractProperty(
+      sleepRecord,
+      config.notion.getPropertyName(props.remSleep)
+    ) || "N/A";
+  const lightSleep =
+    sleepRepo.extractProperty(
+      sleepRecord,
+      config.notion.getPropertyName(props.lightSleep)
+    ) || "N/A";
   const heartRateAvg =
-    sleepRecord[config.notion.getPropertyName(props.heartRateAvg)] !== null
-      ? sleepRecord[config.notion.getPropertyName(props.heartRateAvg)]
+    sleepRepo.extractProperty(
+      sleepRecord,
+      config.notion.getPropertyName(props.heartRateAvg)
+    ) !== null
+      ? sleepRepo.extractProperty(
+          sleepRecord,
+          config.notion.getPropertyName(props.heartRateAvg)
+        )
       : "N/A";
   const hrv =
-    sleepRecord[config.notion.getPropertyName(props.hrv)] !== null
-      ? sleepRecord[config.notion.getPropertyName(props.hrv)]
+    sleepRepo.extractProperty(
+      sleepRecord,
+      config.notion.getPropertyName(props.hrv)
+    ) !== null
+      ? sleepRepo.extractProperty(
+          sleepRecord,
+          config.notion.getPropertyName(props.hrv)
+        )
       : "N/A";
 
   return `Sleep Session
@@ -66,14 +99,6 @@ function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
   const props = config.notion.properties.oura;
 
   // Extract properties from Notion page
-  const title = sleepRepo.extractProperty(
-    sleepRecord,
-    config.notion.getPropertyName(props.title)
-  );
-  const nightOfDate = sleepRepo.extractProperty(
-    sleepRecord,
-    config.notion.getPropertyName(props.nightOfDate)
-  );
   const bedtime = sleepRepo.extractProperty(
     sleepRecord,
     config.notion.getPropertyName(props.bedtime)
@@ -92,50 +117,29 @@ function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
   );
 
   // Get sleep calendar ID using centralized mapper (automatically extracts Google Calendar property)
-  const calendarId = resolveCalendarId('sleep', sleepRecord, sleepRepo);
+  const calendarId = resolveCalendarId("sleep", sleepRecord, sleepRepo);
 
   if (!calendarId) {
     throw new Error(
-      'Sleep calendar ID not configured. Set NORMAL_WAKE_UP_CALENDAR_ID and/or SLEEP_IN_CALENDAR_ID in .env file.'
+      "Sleep calendar ID not configured. Set NORMAL_WAKE_UP_CALENDAR_ID and/or SLEEP_IN_CALENDAR_ID in .env file."
     );
   }
 
-  // Format event title
+  // Format event title with calculations
   const summary = `Sleep - ${sleepDuration}hrs (${efficiency}% efficiency)`;
 
-  // Build date-time strings for calendar event
-  // Use ISO timestamps directly
+  // Use ISO timestamps directly for dateTime events
   const startDateTime = bedtime || null;
   const endDateTime = wakeTime || null;
 
+  if (!startDateTime || !endDateTime) {
+    throw new Error("Missing bedtime or wakeTime in sleep record");
+  }
+
   // Create description with sleep stages
-  const description = (() => {
-    const record = {
-      [config.notion.getPropertyName(props.wakeTime)]: wakeTime,
-      [config.notion.getPropertyName(props.bedtime)]: bedtime,
-      [config.notion.getPropertyName(props.deepSleep)]: sleepRepo.extractProperty(
-        sleepRecord,
-        config.notion.getPropertyName(props.deepSleep)
-      ),
-      [config.notion.getPropertyName(props.remSleep)]: sleepRepo.extractProperty(
-        sleepRecord,
-        config.notion.getPropertyName(props.remSleep)
-      ),
-      [config.notion.getPropertyName(props.lightSleep)]: sleepRepo.extractProperty(
-        sleepRecord,
-        config.notion.getPropertyName(props.lightSleep)
-      ),
-      [config.notion.getPropertyName(props.heartRateAvg)]: sleepRepo.extractProperty(
-        sleepRecord,
-        config.notion.getPropertyName(props.heartRateAvg)
-      ),
-      [config.notion.getPropertyName(props.hrv)]: sleepRepo.extractProperty(
-        sleepRecord,
-        config.notion.getPropertyName(props.hrv)
-      ),
-    };
-    return formatSleepStages(record);
-  })();
+  const description = formatSleepStages(sleepRecord, sleepRepo);
+
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return {
     calendarId,
@@ -144,11 +148,11 @@ function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
       description,
       start: {
         dateTime: startDateTime,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZone,
       },
       end: {
         dateTime: endDateTime,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timeZone,
       },
     },
   };
@@ -158,4 +162,3 @@ module.exports = {
   transformSleepToCalendarEvent,
   formatSleepStages,
 };
-

@@ -68,29 +68,34 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 **Flow**:
 
 1. **CLI** (`cli/collect-data.js`):
+
    - Prompts user for date range and source
    - Calls collector with date range
 
 2. **Collector** (`src/collectors/oura.js`):
+
    - Creates `OuraService` instance
    - Fetches sleep sessions from Oura API
    - Applies business rules (date extraction, "night of" calculation)
    - Returns structured data array
 
 3. **Workflow** (`src/workflows/oura-to-notion-oura.js`):
-   - Creates `SleepDatabase` instance
+
+   - Creates `IntegrationDatabase("oura")` instance
    - For each session:
-     - Checks if exists: `sleepRepo.findBySleepId(session.sleepId)`
+     - Checks if exists: `sleepRepo.findByUniqueId(session.sleepId)`
      - If exists: Skip
      - If new: Transform and create
 
 4. **Transformer** (`src/transformers/oura-to-notion-oura.js`):
+
    - Maps Oura fields to Notion properties
-   - Uses config: `config.notion.sleep.properties`
+   - Uses config: `config.notion.properties.oura`
    - Returns formatted properties object
 
-5. **Database** (`src/databases/SleepDatabase.js`):
-   - Extends `NotionDatabase` base class
+5. **Database** (`src/databases/IntegrationDatabase.js`):
+
+   - Generic database class using config from `INTEGRATIONS`
    - Calls `createPage()` with database ID and properties
    - Base class handles API call with rate limiting
 
@@ -105,11 +110,13 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 **Flow**:
 
 1. **CLI** (`cli/update-calendar.js`):
+
    - Prompts user for date range and database
    - Calls calendar sync workflow
 
-2. **Workflow** (`src/workflows/notion-oura-to-calendar-sleep.js`):
-   - Creates `SleepDatabase` instance
+2. **Workflow** (`src/workflows/notion-databases-to-calendar.js`):
+
+   - Creates `IntegrationDatabase("oura")` instance
    - Creates `GoogleCalendarService` instance
    - Gets unsynced records: `sleepRepo.getUnsynced(startDate, endDate)`
    - For each record:
@@ -119,21 +126,25 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
      - Mark as synced: `sleepRepo.markSynced(pageId)`
 
 3. **Transformer** (`src/transformers/notion-oura-to-calendar-sleep.js`):
+
    - Extracts properties from Notion page using repository
    - Determines which calendar based on wake time
    - Formats event with sleep data in description
    - Returns `{ calendarId, event }`
 
 4. **Calendar Mapping** (`src/utils/calendar-mapper.js`):
+
    - Uses declarative config: `config.calendarMappings.sleep`
    - Routes to correct calendar based on "Google Calendar" property
    - Returns calendar ID
 
 5. **Service** (`src/services/GoogleCalendarService.js`):
+
    - Creates event via Google Calendar API
    - Handles OAuth, retry logic, rate limiting
 
-6. **Database** (`src/databases/SleepDatabase.js`):
+6. **Database** (`src/databases/IntegrationDatabase.js`):
+
    - Updates Notion page: Sets "Calendar Created" checkbox to true
    - Prevents re-syncing same record
 
@@ -149,11 +160,13 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 **Steps**:
 
 1. **Add environment variable to `.env`**:
+
    ```bash
    MEDITATION_CALENDAR_ID=xxxxx@group.calendar.google.com
    ```
 
 2. **Add entry to CALENDARS in `src/config/unified-sources.js`**:
+
    ```javascript
    meditation: {
      id: "meditation",
@@ -176,6 +189,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
    ```
 
 3. **Add entry to SUMMARY_GROUPS in `src/config/unified-sources.js`**:
+
    ```javascript
    meditation: {
      id: "meditation",
@@ -191,6 +205,7 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 **Total Code**: ~20 lines of configuration (vs. ~115 lines in old architecture)
 
 **Benefits of Unified Config**:
+
 - `DATA_SOURCES` automatically derived from CALENDARS + SUMMARY_GROUPS
 - `PERSONAL_RECAP_SOURCES` / `WORK_RECAP_SOURCES` automatically derived
 - Notion property definitions automatically generated
@@ -203,27 +218,29 @@ Brickbot uses a **layered, repository-based architecture** designed for scalabil
 **Purpose**: Encapsulate all Notion database operations for a specific domain
 
 **Base Class**: `NotionDatabase.js`
+
 - Generic CRUD operations
 - Property formatting
 - Filtering and querying
 
-**Domain Databases**:
-- `SleepDatabase.js` - Oura sleep data
-- `WorkoutDatabase.js` - Strava workouts
-- `SteamDatabase.js` - Gaming sessions
-- `PRDatabase.js` - GitHub pull requests
-- `BodyWeightDatabase.js` - Withings measurements
-- `PersonalRecapDatabase.js` - Weekly recaps
+**Database Classes**:
+
+- `IntegrationDatabase.js` - Generic database class for all integrations (config-driven)
+- `NotionDatabase.js` - Base class with generic CRUD operations
+- `PersonalRecapDatabase.js` - Weekly recaps (Layer 3)
+- `WorkRecapDatabase.js` - Work recaps (Layer 3)
 
 **Benefits**:
-- **Small**: 60-100 lines each vs. 1104-line monolith
-- **Focused**: One responsibility per file
-- **Testable**: Easy to mock for unit tests
-- **Maintainable**: Changes isolated to specific domains
+
+- **Single generic class**: One `IntegrationDatabase` class handles all integrations via config
+- **Config-driven**: Integration-specific behavior defined in `INTEGRATIONS` config
+- **Maintainable**: Add new integrations by adding config, no code changes needed
+- **Testable**: Easy to mock and test with different config keys
 
 #### Configuration (Split by Domain)
 
 **Structure**:
+
 ```
 src/config/
 ├── index.js                  # Main loader & validator
@@ -234,8 +251,7 @@ src/config/
 │   ├── credentials.js       # OAuth credentials
 │   └── color-mappings.js    # Color ID → category mappings
 ├── integrations/            # Integration configs
-│   ├── credentials.js      # External API configs
-│   └── sources.js          # Sweep source configs (CLI)
+│   └── credentials.js      # External API configs
 └── notion/                  # Notion configs
     ├── index.js             # Aggregator
     ├── oura.js              # Oura sleep config
@@ -248,6 +264,7 @@ src/config/
 ```
 
 **Benefits**:
+
 - **Modular**: Each domain config ~50-70 lines
 - **Clear**: Easy to find and modify settings
 - **Scalable**: Add new configs without bloating existing ones
@@ -259,11 +276,13 @@ src/config/
 **Three-Registry Architecture**:
 
 1. **CALENDARS** - Atomic time-tracking units
+
    - Each calendar represents a single Google Calendar
    - Contains `dataFields` that define what data this calendar produces
    - Example: `meditation` calendar with `meditationDays` and `meditationHoursTotal` fields
 
 2. **SUMMARY_GROUPS** - How calendars combine for reporting
+
    - Defines which calendars feed into a summary metric
    - Can combine multiple calendars (e.g., `sleep` combines `normalWakeUp` + `sleepIn`)
    - Specifies `sourceType` (personal/work) for filtering
@@ -271,6 +290,7 @@ src/config/
 3. **INTEGRATIONS** - API → Notion routing
    - Maps external APIs (Oura, Strava, etc.) to Notion databases
    - Defines which calendars each integration syncs to
+   - Contains `calendarSyncMetadata` with display configuration (fields, table titles, display formats)
    - Example: `oura` integration routes to `normalWakeUp` and `sleepIn` calendars
 
 **Derived Configurations**:
@@ -280,6 +300,7 @@ src/config/
 - Notion property definitions - Automatically generated from `dataFields` in CALENDARS
 
 **Benefits**:
+
 - **Single source of truth**: All calendar/summary config in one place
 - **No duplication**: Data definitions written once, used everywhere
 - **Automatic derivation**: Adding a calendar automatically makes it available for reporting
@@ -288,6 +309,7 @@ src/config/
 #### Calendar Mapping System
 
 **Before (Function-Based)**:
+
 ```javascript
 // Had to write a new function for each calendar
 function mapMeditationToCalendarId() {
@@ -296,6 +318,7 @@ function mapMeditationToCalendarId() {
 ```
 
 **After (Configuration-Based)**:
+
 ```javascript
 // Just add configuration
 meditation: {
@@ -311,8 +334,9 @@ meditation: {
 3. **Category-Based**: Route by category/type field
 
 **Resolution**:
+
 ```javascript
-const calendarId = resolveCalendarId('meditation', record, repository);
+const calendarId = resolveCalendarId("meditation", record, repository);
 ```
 
 #### Workflows (Orchestration Layer)
@@ -320,6 +344,7 @@ const calendarId = resolveCalendarId('meditation', record, repository);
 **BaseWorkflow Class**: Provides reusable batch processing
 
 **Common Pattern**:
+
 ```javascript
 async function syncDataToNotion(items) {
   const repo = new DomainDatabase();
@@ -347,6 +372,7 @@ async function syncDataToNotion(items) {
 ```
 
 **Benefits**:
+
 - **Consistent**: Same error handling across workflows
 - **Rate-Limited**: Built-in delay between operations
 - **De-duplicated**: Checks for existing records
@@ -396,8 +422,9 @@ For a complete new data source with calendar sync:
 #### Configuration Access Patterns
 
 **Notion Configs**:
+
 ```javascript
-const config = require('../config');
+const config = require("../config");
 
 // Database ID
 const dbId = config.notion.databases.oura;
@@ -410,16 +437,18 @@ const name = config.notion.getPropertyName(props.sleepId);
 ```
 
 **Calendar Mappings**:
+
 ```javascript
-const { resolveCalendarId } = require('../utils/calendar-mapper');
+const { resolveCalendarId } = require("../utils/calendar-mapper");
 
 // Automatic routing based on config
-const calendarId = resolveCalendarId('sleep', record, repository);
+const calendarId = resolveCalendarId("sleep", record, repository);
 ```
 
 **API Credentials**:
+
 ```javascript
-const config = require('../config');
+const config = require("../config");
 
 // External API
 const token = config.sources.oura.token;
@@ -464,7 +493,7 @@ Steam API → collect → transform → sync → Steam Database (Notion)
 
 - Collectors: `collect-withings.js`, `collect-strava.js`, `collect-oura.js`
 - API Transformers: `withings-to-notion-withings.js`, `strava-to-notion-strava.js`, `oura-to-notion-oura.js`
-- Database Classes: `WithingsDatabase.js`, `StravaDatabase.js`, `OuraDatabase.js` (should use integration names)
+- Database Classes: `IntegrationDatabase.js` - Generic class for all integrations (config-driven)
 - Workflows: `withings-to-notion-withings.js`, `strava-to-notion-strava.js`
 
 **Naming Convention**: Use **integration names ONLY** (`withings`, `strava`, `oura`, `github`, `steam`)
@@ -512,8 +541,8 @@ Steam Database (Notion) → transform → sync → Games Calendar
 
 **Files in Layer 2**:
 
-- Calendar Transformers: `notion-withings-to-calendar-bodyweight.js`, `notion-strava-to-calendar-workouts.js`, `notion-oura-to-calendar-sleep.js`
-- Calendar Workflows: `notion-withings-to-calendar-bodyweight.js`, `notion-strava-to-calendar-workouts.js`
+- Calendar Transformers: `notion-withings-to-calendar-bodyweight.js`, `notion-strava-to-calendar-workouts.js`, `notion-oura-to-calendar-sleep.js` (individual transformer files)
+- Calendar Workflows: `notion-databases-to-calendar.js` (consolidated workflow for all integrations)
 
 **Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `videoGames`)
 
@@ -548,7 +577,7 @@ Games Calendar → aggregate → Personal Recap
 
 **Files in Layer 3**:
 
-- Recap Workflows: `aggregate-calendar-to-notion-personal-recap.js`
+- Recap Workflows: `calendar-to-notion-summaries.js` (consolidated, accepts `recapType` parameter), `notion-tasks-to-notion-summaries.js` (consolidated, accepts `recapType` parameter)
 - Recap Transformers: `transform-calendar-to-notion-personal-recap.js`
 
 **Naming Convention**: Use **domain names** (`bodyWeight`, `workouts`, `sleep`, `prs`, `videoGames`)
@@ -628,11 +657,11 @@ const databases = {
 **Examples**:
 
 - ✅ `collect-withings.js` (Layer 1)
-- ✅ `WithingsDatabase.js` (Layer 1)
-- ✅ `notion-withings-to-calendar-bodyweight.js` (Layer 2 - notice the transition!)
+- ✅ `IntegrationDatabase("withings")` (Layer 1)
+- ✅ `notion-databases-to-calendar.js` (Layer 2 - consolidated workflow, uses integration ID parameter)
 - ✅ `BODY_WEIGHT_CALENDAR_ID` (Layer 2)
 - ✅ `bodyWeightData` in recap (Layer 3)
-- ✅ All database classes now use integration names (WithingsDatabase, StravaDatabase, OuraDatabase, GitHubDatabase)
+- ✅ All database classes consolidated into `IntegrationDatabase` (config-driven, uses integration names)
 - ✅ All config files now use integration names (withings.js, strava.js, oura.js, github.js, steam.js)
 - ❌ `sleep` key in `config.notion.databases` (WRONG - domain name in Layer 1)
 - ❌ `workouts` key in `config.notion.properties` (WRONG - domain name in Layer 1)
@@ -713,7 +742,6 @@ brickbot/
 │   │   │   └── color-mappings.js                           # Color ID → category mappings
 │   │   ├── integrations/                                   # Layer 1: Integration configs
 │   │   │   ├── credentials.js                              # External API credentials
-│   │   │   └── sources.js                                  # Sweep source configs (CLI)
 │   │   ├── notion/                                         # Layer 1 & 2: Notion configs
 │   │   │   ├── github.js                                   # Layer 1: GitHub PRs config (60 lines)
 │   │   │   ├── index.js                                    # Aggregator (133 lines)
@@ -728,13 +756,10 @@ brickbot/
 │   │   └── tokens.js                                       # Token management config
 │   │
 │   ├── databases/                                          # Layer 1: Integration names (API → Notion)
-│   │   ├── GitHubDatabase.js                               # Layer 1: GitHub PRs database
+│   │   ├── IntegrationDatabase.js                          # Generic database class for all integrations (config-driven)
 │   │   ├── NotionDatabase.js                               # Base class with generic CRUD (587 lines)
-│   │   ├── OuraDatabase.js                                 # Layer 1: Oura sleep database
 │   │   ├── PersonalRecapDatabase.js                        # Layer 3: Personal recap database (domain-level)
-│   │   ├── StravaDatabase.js                               # Layer 1: Strava workouts database
-│   │   ├── SteamDatabase.js                                # Layer 1: Steam gaming database
-│   │   └── WithingsDatabase.js                             # Layer 1: Withings body weight database
+│   │   └── WorkRecapDatabase.js                             # Layer 3: Work recap database (domain-level)
 │   │
 │   ├── services/                                           # Layer 1: API clients (thin wrappers)
 │   │   ├── GitHubService.js                                # Layer 1: Integration API
@@ -770,19 +795,15 @@ brickbot/
 │   │   └── validation.js                                   # Input validation
 │   │
 │   └── workflows/                                          # Sync workflows with de-duplication
-│       ├── aggregate-calendar-to-notion-personal-recap.js  # Layer 3: Calendar → Notion Personal Recap
+│       ├── calendar-to-notion-summaries.js                  # Layer 3: Calendar → Notion Summaries (consolidated, recapType param)
 │       ├── BaseWorkflow.js                                 # Reusable batch logic
 │       ├── github-to-notion-github.js                      # Layer 1: Integration → Notion
 │       ├── oura-to-notion-oura.js                          # Layer 1: Integration → Notion
 │       ├── strava-to-notion-strava.js                      # Layer 1: Integration → Notion
 │       ├── steam-to-notion-steam.js                        # Layer 1: Integration → Notion
 │       ├── withings-to-notion-withings.js                  # Layer 1: Integration → Notion
-│       ├── notion-github-to-calendar-prs.js                # Layer 2: GitHub → PRs
-│       ├── notion-oura-to-calendar-sleep.js                # Layer 2: Oura → Sleep
-│       ├── notion-strava-to-calendar-workouts.js           # Layer 2: Strava → Workouts
-│       ├── notion-steam-to-calendar-games.js               # Layer 2: Steam → Games
-│       ├── notion-withings-to-calendar-bodyweight.js       # Layer 2: Withings → Body Weight
-│       └── notion-tasks-to-notion-personal-recap.js        # Layer 3: Notion Tasks → Notion Personal Recap
+│       ├── notion-databases-to-calendar.js                 # Layer 2: Generic workflow for all integrations (config-driven)
+│       └── notion-tasks-to-notion-summaries.js             # Layer 3: Notion Tasks → Notion Summaries (consolidated, recapType param)
 │
 └── _archive/            # Legacy code (reference only)
 ```
@@ -800,21 +821,23 @@ Domain-specific data access layer that encapsulates all Notion database operatio
 - Property utilities: `extractProperty`, `_formatProperties`
 - Shared filtering: `filterByDateRange`, `filterByCheckbox`, `findPageByProperty`
 
-**Domain Databases** (extend NotionDatabase):
+**Database Classes**:
 
-- **OuraDatabase**: `findBySleepId`, `getUnsynced`, `markSynced` (Layer 1: Oura integration)
-- **StravaDatabase**: `findByActivityId`, `getUnsynced`, `markSynced` (Layer 1: Strava integration)
-- **SteamDatabase**: `findByActivityId`, `getUnsynced`, `markSynced` (Layer 1: Steam integration)
-- **GitHubDatabase**: `findByUniqueId`, `getUnsynced`, `markSynced` (Layer 1: GitHub integration)
-- **WithingsDatabase**: `findByMeasurementId`, `getUnsynced`, `markSynced` (Layer 1: Withings integration)
+- **IntegrationDatabase**: Generic class for all integrations (Layer 1)
+  - Constructor: `new IntegrationDatabase(configKey)` - takes integration ID ("oura", "strava", etc.)
+  - Methods: `findByUniqueId()`, `getUnsynced()`, `markSynced()`
+  - Config-driven: Uses `INTEGRATIONS[configKey].databaseConfig` for property names and behavior
+  - Handles: Oura, Strava, GitHub, Steam, Withings, BloodPressure
 - **PersonalRecapDatabase**: `findWeekRecap`, `updateWeekRecap` (Layer 3: Domain-level recap)
+- **WorkRecapDatabase**: `findWeekRecap`, `updateWeekRecap` (Layer 3: Work recap)
 
 **Benefits:**
 
-- **Focused**: Each repository ~60-100 lines vs. 1104-line monolith
-- **Maintainable**: Domain logic isolated in dedicated files
-- **Testable**: Easy to mock and test individual domains
-- **Scalable**: Add new domains without modifying existing code
+- **Single generic class**: One class handles all integrations via config
+- **Config-driven**: Integration-specific behavior in `INTEGRATIONS` config
+- **Maintainable**: Add new integrations by adding config, no code changes
+- **Testable**: Easy to mock and test with different config keys
+- **Scalable**: New integrations require only config updates
 
 **Usage Example:**
 
@@ -824,12 +847,12 @@ const notionService = new NotionService();
 await notionService.findSleepBySleepId(sleepId);
 
 // New way (database pattern - uses integration names)
-const sleepRepo = new OuraDatabase();
-await sleepRepo.findBySleepId(sleepId);
+const sleepRepo = new IntegrationDatabase("oura");
+await sleepRepo.findByUniqueId(sleepId);
 
 // Or via NotionService wrapper (backward compatible)
 const notionService = new NotionService();
-await notionService.getSleepRepository().findBySleepId(sleepId);
+await notionService.getSleepRepository().findByUniqueId(sleepId);
 ```
 
 ### Configuration (`src/config/`)
@@ -846,8 +869,9 @@ Single source of truth for all settings, now split by domain for better maintain
 - **calendar/credentials.js**: OAuth credentials, uses calendar mappings for routing
 - **calendar/color-mappings.js**: Color ID to category mappings for calendar events
 - **integrations/credentials.js**: API credentials, rate limits, retry configuration, date handling
-- **integrations/sources.js**: Sweep source configurations for CLI operations
 - **notion/task-categories.js**: Task category mappings for Notion tasks
+
+**Note**: Display configuration for sweep operations (fields, table titles, display formats) is now in `INTEGRATIONS[].calendarSyncMetadata` in `unified-sources.js`. The old `sources.js` file has been removed and its functionality migrated to the unified config.
 
 #### Domain-Specific Notion Configs (`src/config/notion/`)
 
@@ -1021,15 +1045,15 @@ Each config serves a distinct purpose:
 
 **Comparison Table:**
 
-| Aspect        | DATA_SOURCES                             | PERSONAL_RECAP_SOURCES                   | calendarMappings                        |
-| ------------- | ---------------------------------------- | ---------------------------------------- | --------------------------------------- |
-| **File**      | `main.js`                                | `mappings.js`                            | `mappings.js`                           |
-| **Layer**     | Layer 3 (definitions)                    | Layer 3 (fetching)                       | Layer 2 (routing)                       |
-| **Purpose**   | Define WHAT data exists                  | Define HOW to fetch data                 | Define WHERE to route data              |
+| Aspect        | DATA_SOURCES                           | PERSONAL_RECAP_SOURCES                   | calendarMappings                        |
+| ------------- | -------------------------------------- | ---------------------------------------- | --------------------------------------- |
+| **File**      | `main.js`                              | `mappings.js`                            | `mappings.js`                           |
+| **Layer**     | Layer 3 (definitions)                  | Layer 3 (fetching)                       | Layer 2 (routing)                       |
+| **Purpose**   | Define WHAT data exists                | Define HOW to fetch data                 | Define WHERE to route data              |
 | **Contains**  | Data definitions (keys, types, labels) | Calendar fetch config (envVar, fetchKey) | Calendar routing rules (type, mappings) |
-| **Direction** | N/A (definitions)                        | Calendar → Recap (reading)               | Notion → Calendar (writing)             |
-| **Used by**   | Display, properties, validation          | Calendar aggregation workflows           | Calendar sync workflows                 |
-| **Data**   | Full definitions                         | Derived from DATA_SOURCES                | N/A                                     |
+| **Direction** | N/A (definitions)                      | Calendar → Recap (reading)               | Notion → Calendar (writing)             |
+| **Used by**   | Display, properties, validation        | Calendar aggregation workflows           | Calendar sync workflows                 |
+| **Data**      | Full definitions                       | Derived from DATA_SOURCES                | N/A                                     |
 
 ##### DATA_SOURCES: The Source of Truth
 
@@ -1129,7 +1153,7 @@ const PERSONAL_RECAP_SOURCES = {
 **Used For:**
 
 - **Calendar Fetching**: `buildCalendarFetches()` uses this to determine which calendars to fetch
-- **Aggregation**: `aggregate-calendar-to-notion-personal-recap.js` uses this to know which sources to process
+- **Aggregation**: `calendar-to-notion-summaries.js` uses this to know which sources to process
 - **Display**: `getAvailableRecapSources()` uses this for CLI source selection
 - **Success Messages**: `buildSuccessData()` uses derived data to format success messages
 
@@ -1324,8 +1348,8 @@ const notionService = new NotionService();
 await notionService.findSleepBySleepId(sleepId);
 
 // New way (preferred - uses integration names)
-const sleepRepo = new OuraDatabase();
-await sleepRepo.findBySleepId(sleepId);
+const sleepRepo = new IntegrationDatabase("oura");
+await sleepRepo.findByUniqueId(sleepId);
 ```
 
 ### Collectors (`src/collectors/`)
@@ -1349,6 +1373,8 @@ Design pattern: No side effects, easy to test, clear input/output contracts, con
 
 **Shared Utilities**: Property filtering logic extracted to `src/utils/transformers.js` for DRY code across all transformers.
 
+**Transformer Builder**: `src/transformers/buildTransformer.js` provides helper utilities (`interpolateTemplate`, `buildEventDates`, `buildTransformer`, `calculateEndTime`) for creating config-driven transformers that handle common patterns like template interpolation, date/time building, and calendar event creation.
+
 **Personal Recap Properties Builder**: `src/utils/personal-recap-properties.js` provides validated property building with clear error messages. Instead of cryptic "undefined is not a property" errors, it throws descriptive errors listing which property configurations are missing from the config file.
 
 ### CLI Scripts (`cli/`)
@@ -1366,18 +1392,18 @@ Consistent naming patterns make the codebase more intuitive and self-documenting
 
 ### Layer-Aware File Naming Patterns
 
-| Layer           | File Type             | Naming Pattern                                   | Example                                                        | Uses Name From                   |
-| --------------- | --------------------- | ------------------------------------------------ | -------------------------------------------------------------- | -------------------------------- |
-| **Layer 1**     | Collectors            | `collect-[integration].js`                       | `collect-withings.js`, `collect-strava.js`                     | Integration                      |
-| **Layer 1**     | API Transformers      | `[integration]-to-notion-[integration].js`       | `withings-to-notion-withings.js`, `strava-to-notion-strava.js` | Integration                      |
-| **Layer 1**     | API Workflows         | `[integration]-to-notion-[integration].js`       | `withings-to-notion-withings.js`                               | Integration                      |
-| **Layer 1**     | Databases             | `[Integration]Database.js`                       | `WithingsDatabase.js`, `StravaDatabase.js`                     | Integration                      |
-| **Layer 2**     | Calendar Transformers | `notion-[integration]-to-calendar-[domain].js`   | `notion-withings-to-calendar-bodyweight.js`                    | Integration → Domain             |
-| **Layer 2**     | Calendar Workflows    | `notion-[integration]-to-calendar-[domain].js`   | `notion-withings-to-calendar-bodyweight.js`                    | Integration → Domain             |
-| **Layer 3**     | Recap Workflows       | `aggregate-calendar-to-notion-personal-recap.js` | `aggregate-calendar-to-notion-personal-recap.js`               | Calendar → Notion Personal Recap |
-| **Layer 3**     | Recap Transformers    | `transform-calendar-to-notion-personal-recap.js` | `transform-calendar-to-notion-personal-recap.js`               | Calendar → Notion Personal Recap |
-| **Cross-Layer** | Services              | `[Provider]Service.js`                           | `OuraService.js`, `GoogleCalendarService.js`                   | Provider                         |
-| **Cross-Layer** | Utils                 | `[purpose]-utils.js`                             | `date-utils.js`, `calendar-helpers.js`                         | Purpose-based                    |
+| Layer           | File Type             | Naming Pattern                                                           | Example                                                            | Uses Name From                   |
+| --------------- | --------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------ | -------------------------------- |
+| **Layer 1**     | Collectors            | `collect-[integration].js`                                               | `collect-withings.js`, `collect-strava.js`                         | Integration                      |
+| **Layer 1**     | API Transformers      | `[integration]-to-notion-[integration].js`                               | `withings-to-notion-withings.js`, `strava-to-notion-strava.js`     | Integration                      |
+| **Layer 1**     | API Workflows         | `[integration]-to-notion-[integration].js`                               | `withings-to-notion-withings.js`                                   | Integration                      |
+| **Layer 1**     | Databases             | `IntegrationDatabase.js`                                                 | `IntegrationDatabase("withings")`, `IntegrationDatabase("strava")` | Integration (config-driven)      |
+| **Layer 2**     | Calendar Transformers | `notion-[integration]-to-calendar-[domain].js`                           | `notion-withings-to-calendar-bodyweight.js`                        | Integration → Domain             |
+| **Layer 2**     | Calendar Workflows    | `notion-databases-to-calendar.js`                                        | `notion-databases-to-calendar.js` (generic, config-driven)         | Integration → Domain             |
+| **Layer 3**     | Recap Workflows       | `calendar-to-notion-summaries.js`, `notion-tasks-to-notion-summaries.js` | `calendar-to-notion-summaries.js(recapType, ...)`                  | Calendar → Notion Summaries      |
+| **Layer 3**     | Recap Transformers    | `transform-calendar-to-notion-personal-recap.js`                         | `transform-calendar-to-notion-personal-recap.js`                   | Calendar → Notion Personal Recap |
+| **Cross-Layer** | Services              | `[Provider]Service.js`                                                   | `OuraService.js`, `GoogleCalendarService.js`                       | Provider                         |
+| **Cross-Layer** | Utils                 | `[purpose]-utils.js`                                                     | `date-utils.js`, `calendar-helpers.js`                             | Purpose-based                    |
 
 **Key Rules**:
 
@@ -1423,14 +1449,15 @@ Variable names should reflect which layer they operate in:
 const withingsMeasurements = await fetchWithingsData();
 const stravaActivities = await fetchStravaActivities();
 const withingsRecord = transformWithingsToNotion(measurement);
-await withingsDatabase.upsertRecord(withingsRecord);
+await withingsRepo.createPage(databaseId, withingsRecord);
 ```
 
 **Layer 2** (Notion → Calendar - transition from integration to domain):
 
 ```javascript
 // ✅ GOOD: Input uses integration name, output uses domain name
-const withingsRecords = await withingsDatabase.queryRecords(startDate, endDate);
+const withingsRepo = new IntegrationDatabase("withings");
+const withingsRecords = await withingsRepo.getUnsynced(startDate, endDate);
 const bodyWeightEvents = withingsRecords.map(transformToCalendarEvent);
 await syncToBodyWeightCalendar(bodyWeightEvents);
 ```
@@ -1485,12 +1512,10 @@ This section documents current violations of the three-layer architecture that n
 
 **Completed Renames**:
 
-- ✅ `BodyWeightDatabase.js` → `WithingsDatabase.js` (completed)
-- ✅ `WorkoutDatabase.js` → `StravaDatabase.js` (completed)
-- ✅ `SleepDatabase.js` → `OuraDatabase.js` (completed)
-- ✅ `PRDatabase.js` → `GitHubDatabase.js` (completed)
+- ✅ All individual database classes consolidated into `IntegrationDatabase` (completed)
+- ✅ Database operations now config-driven via `INTEGRATIONS[].databaseConfig` (completed)
 
-**Why This Matters**: Database classes operate in Layer 1 (API → Notion), where data is still tied to its integration source. Using integration names makes the layer boundary clear.
+**Why This Matters**: Database classes operate in Layer 1 (API → Notion), where data is still tied to its integration source. The generic `IntegrationDatabase` class uses config to handle all integrations, making it easy to add new ones without code changes.
 
 **Files Updated**: All workflows, transformers, and services that import these database classes have been updated.
 
@@ -1524,12 +1549,11 @@ This section documents current violations of the three-layer architecture that n
 
 **Completed Renames**:
 
-**Database Classes** (4 files - ✅ completed):
+**Database Classes** (✅ completed):
 
-- ✅ `src/databases/BodyWeightDatabase.js` → `WithingsDatabase.js`
-- ✅ `src/databases/WorkoutDatabase.js` → `StravaDatabase.js`
-- ✅ `src/databases/SleepDatabase.js` → `OuraDatabase.js`
-- ✅ `src/databases/PRDatabase.js` → `GitHubDatabase.js`
+- ✅ All individual database classes consolidated into `IntegrationDatabase.js`
+- ✅ Config-driven approach: `INTEGRATIONS[].databaseConfig` defines behavior
+- ✅ Single generic class handles: Oura, Strava, GitHub, Steam, Withings, BloodPressure
 
 **Config Files** (5 files - ✅ completed):
 
@@ -1555,14 +1579,14 @@ This section documents current violations of the three-layer architecture that n
 2. For each selected source:
    - Collector fetches data from API (uses integration name: `collect-withings.js`)
    - Transformer converts to Notion format (uses integration name: `withings-to-notion-withings.js`)
-   - **Database** creates pages in batch (uses integration name: `WithingsDatabase.js`)
+   - **Database** creates pages in batch (uses integration name: `IntegrationDatabase("withings")`)
 3. Display summary
 
 **Data Flow:**
 
 ```
-Withings API → collect-withings.js → withings-to-notion-withings.js → WithingsDatabase → Notion Withings DB
-Strava API → collect-strava.js → strava-to-notion-strava.js → StravaDatabase → Notion Strava DB
+Withings API → collect-withings.js → withings-to-notion-withings.js → IntegrationDatabase("withings") → Notion Withings DB
+Strava API → collect-strava.js → strava-to-notion-strava.js → IntegrationDatabase("strava") → Notion Strava DB
 ```
 
 **Key Point**: All naming uses **integration names** at this layer. Data is still tied to its API source.
@@ -1575,8 +1599,9 @@ Strava API → collect-strava.js → strava-to-notion-strava.js → StravaDataba
 
 1. CLI prompts for date range and databases
 2. For each database:
-   - **Database** queries Notion for unsynced records (reads from integration-named DB: `WithingsDatabase`)
-   - Transformer converts to Calendar event format (uses explicit naming: `notion-withings-to-calendar-bodyweight.js`)
+   - **Database** queries Notion for unsynced records (uses: `IntegrationDatabase("withings")`)
+   - Transformer converts to Calendar event format (uses transformer: `notion-withings-to-calendar-bodyweight.js`)
+   - Workflow: `notion-databases-to-calendar.js` (generic, uses integration ID parameter)
    - GoogleCalendarService creates events (writes to domain-named calendar: `BODY_WEIGHT_CALENDAR_ID`)
    - **Database** marks records as synced
 3. Display summary
@@ -1584,9 +1609,9 @@ Strava API → collect-strava.js → strava-to-notion-strava.js → StravaDataba
 **Data Flow:**
 
 ```
-WithingsDatabase (Notion) → notion-withings-to-calendar-bodyweight.js → Body Weight Calendar
-StravaDatabase (Notion) → notion-strava-to-calendar-workouts.js → Workouts Calendar
-OuraDatabase (Notion) → notion-oura-to-calendar-sleep.js → Sleep Calendar
+IntegrationDatabase("withings") (Notion) → notion-databases-to-calendar.js("withings") → Body Weight Calendar
+IntegrationDatabase("strava") (Notion) → notion-databases-to-calendar.js("strava") → Workouts Calendar
+IntegrationDatabase("oura") (Notion) → notion-databases-to-calendar.js("oura") → Sleep Calendar
 ```
 
 **Key Point**: Input uses integration names (reading from Notion), output uses domain names (writing to Calendar). This is the abstraction boundary.
@@ -1602,8 +1627,8 @@ OuraDatabase (Notion) → notion-oura-to-calendar-sleep.js → Sleep Calendar
 **Data Flow:**
 
 ```
-Body Weight Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (bodyWeight data)
-Workouts Calendar → aggregate-calendar-to-notion-personal-recap.js → transform-calendar-to-notion-personal-recap.js → Personal Recap (workout data)
+Body Weight Calendar → calendar-to-notion-summaries.js("personal", ...) → transform-calendar-to-notion-personal-recap.js → Personal Recap (bodyWeight data)
+Workouts Calendar → calendar-to-notion-summaries.js("personal", ...) → transform-calendar-to-notion-personal-recap.js → Personal Recap (workout data)
 ```
 
 **Key Point**: All naming uses **domain names** at this layer. Integration source is no longer relevant.
@@ -1658,22 +1683,35 @@ Domain-specific data access layer that separates database concerns from business
 **Example Database:**
 
 ```javascript
-class OuraDatabase extends NotionDatabase {
-  async findBySleepId(sleepId) {
-    const databaseId = config.notion.databases.oura;
-    const propertyName = config.notion.getPropertyName(
-      config.notion.properties.oura.sleepId
-    );
-    return await this.findPageByProperty(databaseId, propertyName, sleepId);
+class IntegrationDatabase extends NotionDatabase {
+  constructor(configKey) {
+    super();
+    this.configKey = configKey;
+    this.databaseConfig = INTEGRATIONS[configKey].databaseConfig;
+    this.props = config.notion.properties[configKey];
+    this.databaseId = config.notion.databases[configKey];
+  }
+
+  async findByUniqueId(uniqueId) {
+    // Uses databaseConfig.uniqueIdProperty and uniqueIdType
+    // Handles number type (Strava) and text type (others)
+    /* ... */
   }
 
   async getUnsynced(startDate, endDate) {
+    // Uses databaseConfig.dateProperty and calendarCreatedProperty
     /* ... */
   }
+
   async markSynced(pageId) {
+    // Uses databaseConfig.calendarCreatedProperty
     /* ... */
   }
 }
+
+// Usage:
+const sleepRepo = new IntegrationDatabase("oura");
+const workoutRepo = new IntegrationDatabase("strava");
 ```
 
 ### Workflow Pattern
@@ -1986,7 +2024,7 @@ The Withings body weight integration is fully implemented and follows the same p
 - ✅ `src/transformers/withings-to-notion-withings.js` - Transform API data to Notion format
 - ✅ `src/workflows/withings-to-notion-withings.js` - Sync workflow with de-duplication by Measurement ID
 - ✅ `src/transformers/notion-withings-to-calendar-bodyweight.js` - Transform to all-day calendar events
-- ✅ `src/workflows/notion-withings-to-calendar-bodyweight.js` - Calendar sync workflow
+- ✅ `src/workflows/notion-databases-to-calendar.js` - Generic calendar sync workflow (handles all integrations)
 - ✅ CLI sync modes in `cli/collect-data.js` and `cli/update-calendar.js`
 - ✅ Token management in `cli/tokens/setup.js` and `refresh.js`
 
@@ -2044,29 +2082,31 @@ This section provides comprehensive mappings for all 5 data sources in the calen
 
 #### Field Mappings
 
-| API Source Field | Transformation | Notion Property | Type | Calendar Location |
-|-----------------|----------------|-----------------|------|-------------------|
-| `repository.name` | Direct or with PR info | **Repository** | Title | Title (short name only) |
-| `commit.author.date` | UTC → YYYY-MM-DD | **Date** | Date | N/A |
-| `commits.length` | Count commits | **Commits Count** | Number | Title |
-| `commit.message` | Join with timestamps | **Commit Messages** | Text (2000 char limit) | Description |
-| `pr.title`, `pr.number` | Format as CSV | **PR Titles** | Text (2000 char limit) | Description |
-| Unique PR count | Deduplicate by PR# | **PRs Count** | Number | Description |
-| `files.length` | Count unique files | **Files Changed** | Number | Description |
-| `files[].filename` | Join as CSV | **Files List** | Text (2000 char limit) | N/A |
-| `commit.stats.additions` | Sum across commits | **Lines Added** | Number | Title & Description |
-| `commit.stats.deletions` | Sum across commits | **Lines Deleted** | Number | Title & Description |
-| `additions + deletions` | Calculate sum | **Total Changes** | Number | Title |
-| Repository check | "cortexapps/*" = Work | **Project Type** | Select | N/A |
-| - | Always false initially | **Calendar Created** | Checkbox | N/A |
-| `repo-date-sha/PR#` | Generate ID | **Unique ID** | Text | N/A |
+| API Source Field         | Transformation         | Notion Property      | Type                   | Calendar Location       |
+| ------------------------ | ---------------------- | -------------------- | ---------------------- | ----------------------- |
+| `repository.name`        | Direct or with PR info | **Repository**       | Title                  | Title (short name only) |
+| `commit.author.date`     | UTC → YYYY-MM-DD       | **Date**             | Date                   | N/A                     |
+| `commits.length`         | Count commits          | **Commits Count**    | Number                 | Title                   |
+| `commit.message`         | Join with timestamps   | **Commit Messages**  | Text (2000 char limit) | Description             |
+| `pr.title`, `pr.number`  | Format as CSV          | **PR Titles**        | Text (2000 char limit) | Description             |
+| Unique PR count          | Deduplicate by PR#     | **PRs Count**        | Number                 | Description             |
+| `files.length`           | Count unique files     | **Files Changed**    | Number                 | Description             |
+| `files[].filename`       | Join as CSV            | **Files List**       | Text (2000 char limit) | N/A                     |
+| `commit.stats.additions` | Sum across commits     | **Lines Added**      | Number                 | Title & Description     |
+| `commit.stats.deletions` | Sum across commits     | **Lines Deleted**    | Number                 | Title & Description     |
+| `additions + deletions`  | Calculate sum          | **Total Changes**    | Number                 | Title                   |
+| Repository check         | "cortexapps/\*" = Work | **Project Type**     | Select                 | N/A                     |
+| -                        | Always false initially | **Calendar Created** | Checkbox               | N/A                     |
+| `repo-date-sha/PR#`      | Generate ID            | **Unique ID**        | Text                   | N/A                     |
 
 #### Calendar Event Format
 
 **Title:** `{repoName}: {commitsCount} commits (+{linesAdded}/-{linesDeleted} lines)`
+
 - Example: `brain-app: 3 commits (+125/-48 lines)`
 
 **Description:**
+
 ```
 💻 {full repository path}
 📊 {commits count} commits
@@ -2083,34 +2123,36 @@ This section provides comprehensive mappings for all 5 data sources in the calen
 
 #### Field Mappings
 
-| API Source Field | Transformation | Notion Property | Type | Calendar Location |
-|-----------------|----------------|-----------------|------|-------------------|
-| `day - 1 day` | Format readable | **Night of** | Title | Description |
-| `day - 1 day` | Subtract 1 day | **Night of Date** | Date | N/A |
-| `day` | Direct copy | **Oura Date** | Date | N/A |
-| `bedtime_start` | Direct copy | **Bedtime** | Text | N/A (used for event timing) |
-| `bedtime_end` | Direct copy | **Wake Time** | Text | N/A (used for event timing) |
-| `total_sleep_duration` | Seconds → hours (÷3600, 1 decimal) | **Sleep Duration** | Number | Title |
-| `deep_sleep_duration` | Seconds → minutes (÷60, integer) | **Deep Sleep** | Number | Description |
-| `rem_sleep_duration` | Seconds → minutes (÷60, integer) | **REM Sleep** | Number | Description |
-| `light_sleep_duration` | Seconds → minutes (÷60, integer) | **Light Sleep** | Number | Description |
-| `awake_time` | Seconds → minutes (÷60, integer) | **Awake Time** | Number | Description |
-| `average_heart_rate` | Direct copy | **Heart Rate Avg** | Number | N/A |
-| `lowest_heart_rate` | Direct copy | **Heart Rate Low** | Number | N/A |
-| `average_hrv` | Direct copy | **HRV** | Number | N/A |
-| `average_breath` | Direct copy | **Respiratory Rate** | Number | N/A |
-| `efficiency` | Direct copy | **Efficiency** | Number | Title |
-| `type` | Direct copy | **Type** | Text | N/A |
-| Wake time check | < 7am = "Normal Wake Up" | **Google Calendar** | Select | N/A (determines calendar) |
-| `id` | Direct copy | **Sleep ID** | Text | N/A |
-| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+| API Source Field       | Transformation                     | Notion Property      | Type     | Calendar Location           |
+| ---------------------- | ---------------------------------- | -------------------- | -------- | --------------------------- |
+| `day - 1 day`          | Format readable                    | **Night of**         | Title    | Description                 |
+| `day - 1 day`          | Subtract 1 day                     | **Night of Date**    | Date     | N/A                         |
+| `day`                  | Direct copy                        | **Oura Date**        | Date     | N/A                         |
+| `bedtime_start`        | Direct copy                        | **Bedtime**          | Text     | N/A (used for event timing) |
+| `bedtime_end`          | Direct copy                        | **Wake Time**        | Text     | N/A (used for event timing) |
+| `total_sleep_duration` | Seconds → hours (÷3600, 1 decimal) | **Sleep Duration**   | Number   | Title                       |
+| `deep_sleep_duration`  | Seconds → minutes (÷60, integer)   | **Deep Sleep**       | Number   | Description                 |
+| `rem_sleep_duration`   | Seconds → minutes (÷60, integer)   | **REM Sleep**        | Number   | Description                 |
+| `light_sleep_duration` | Seconds → minutes (÷60, integer)   | **Light Sleep**      | Number   | Description                 |
+| `awake_time`           | Seconds → minutes (÷60, integer)   | **Awake Time**       | Number   | Description                 |
+| `average_heart_rate`   | Direct copy                        | **Heart Rate Avg**   | Number   | N/A                         |
+| `lowest_heart_rate`    | Direct copy                        | **Heart Rate Low**   | Number   | N/A                         |
+| `average_hrv`          | Direct copy                        | **HRV**              | Number   | N/A                         |
+| `average_breath`       | Direct copy                        | **Respiratory Rate** | Number   | N/A                         |
+| `efficiency`           | Direct copy                        | **Efficiency**       | Number   | Title                       |
+| `type`                 | Direct copy                        | **Type**             | Text     | N/A                         |
+| Wake time check        | < 7am = "Normal Wake Up"           | **Google Calendar**  | Select   | N/A (determines calendar)   |
+| `id`                   | Direct copy                        | **Sleep ID**         | Text     | N/A                         |
+| -                      | Always false initially             | **Calendar Created** | Checkbox | N/A                         |
 
 #### Calendar Event Format
 
 **Title:** `Sleep - {duration}hrs ({efficiency}% efficiency)`
+
 - Example: `Sleep - 7.2hrs (89% efficiency)`
 
 **Description:**
+
 ```
 😴 {Night of - full date}
 ⏱️ Duration: {duration} hours
@@ -2128,26 +2170,28 @@ This section provides comprehensive mappings for all 5 data sources in the calen
 
 #### Field Mappings
 
-| API Source Field | Transformation | Notion Property | Type | Calendar Location |
-|-----------------|----------------|-----------------|------|-------------------|
-| `name` | Direct copy | **Activity Name** | Title | Title (if no distance) |
-| `start_date_local` | Extract date (YYYY-MM-DD) | **Date** | Date | N/A |
-| `type` | Direct copy | **Activity Type** | Select | Title & Description |
-| `start_date_local` | Full ISO timestamp | **Start Time** | Text | N/A (used for event timing) |
-| `moving_time` | Seconds → minutes (÷60, integer) | **Duration** | Number | Description |
-| `distance` | Meters → miles (÷1609.34, 1 decimal) | **Distance** | Number | Title & Description |
-| `id` | Direct copy | **Activity ID** | Number | N/A |
-| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+| API Source Field   | Transformation                       | Notion Property      | Type     | Calendar Location           |
+| ------------------ | ------------------------------------ | -------------------- | -------- | --------------------------- |
+| `name`             | Direct copy                          | **Activity Name**    | Title    | Title (if no distance)      |
+| `start_date_local` | Extract date (YYYY-MM-DD)            | **Date**             | Date     | N/A                         |
+| `type`             | Direct copy                          | **Activity Type**    | Select   | Title & Description         |
+| `start_date_local` | Full ISO timestamp                   | **Start Time**       | Text     | N/A (used for event timing) |
+| `moving_time`      | Seconds → minutes (÷60, integer)     | **Duration**         | Number   | Description                 |
+| `distance`         | Meters → miles (÷1609.34, 1 decimal) | **Distance**         | Number   | Title & Description         |
+| `id`               | Direct copy                          | **Activity ID**      | Number   | N/A                         |
+| -                  | Always false initially               | **Calendar Created** | Checkbox | N/A                         |
 
 #### Calendar Event Format
 
-**Title:** 
+**Title:**
+
 - With distance: `{activityType} - {distance} miles`
   - Example: `Run - 5.2 miles`
 - Without distance: `{activityName}`
   - Example: `Morning Yoga Session`
 
 **Description:**
+
 ```
 🏃‍♂️ {activity name}
 ⏱️ Duration: {duration} minutes
@@ -2161,21 +2205,22 @@ This section provides comprehensive mappings for all 5 data sources in the calen
 
 #### Field Mappings
 
-| API Source Field | Transformation | Notion Property | Type | Calendar Location |
-|-----------------|----------------|-----------------|------|-------------------|
-| `games[].name` | Direct copy | **Game Name** | Title | Title |
-| `date` | Direct copy | **Date** | Date | N/A |
-| `games[].hours` | Direct copy | **Hours Played** | Number | Title |
-| `games[].minutes` | Direct copy | **Minutes Played** | Number | Title |
-| `games[].sessions.length` | Count sessions | **Session Count** | Number | Description |
-| `games[].sessions[]` | Format as list | **Session Details** | Text | Description |
-| `sessions[0].start_time` | First session start | **Start Time** | Text | N/A (used for event timing) |
-| `sessions[last].end_time` | Last session end | **End Time** | Text | N/A (used for event timing) |
-| - | Always "Steam" | **Platform** | Select | Description |
-| - | Always false initially | **Calendar Created** | Checkbox | N/A |
-| `date-gameName` | Generate ID | **Activity ID** | Text | N/A |
+| API Source Field          | Transformation         | Notion Property      | Type     | Calendar Location           |
+| ------------------------- | ---------------------- | -------------------- | -------- | --------------------------- |
+| `games[].name`            | Direct copy            | **Game Name**        | Title    | Title                       |
+| `date`                    | Direct copy            | **Date**             | Date     | N/A                         |
+| `games[].hours`           | Direct copy            | **Hours Played**     | Number   | Title                       |
+| `games[].minutes`         | Direct copy            | **Minutes Played**   | Number   | Title                       |
+| `games[].sessions.length` | Count sessions         | **Session Count**    | Number   | Description                 |
+| `games[].sessions[]`      | Format as list         | **Session Details**  | Text     | Description                 |
+| `sessions[0].start_time`  | First session start    | **Start Time**       | Text     | N/A (used for event timing) |
+| `sessions[last].end_time` | Last session end       | **End Time**         | Text     | N/A (used for event timing) |
+| -                         | Always "Steam"         | **Platform**         | Select   | Description                 |
+| -                         | Always false initially | **Calendar Created** | Checkbox | N/A                         |
+| `date-gameName`           | Generate ID            | **Activity ID**      | Text     | N/A                         |
 
 #### Session Details Format
+
 `{start_time}-{end_time} ({duration}min), {start_time}-{end_time} ({duration}min)`
 
 Example: `15:00-16:30 (90min), 18:00-19:00 (60min)`
@@ -2183,9 +2228,11 @@ Example: `15:00-16:30 (90min), 18:00-19:00 (60min)`
 #### Calendar Event Format
 
 **Title:** `{gameName} - {hours}h {minutes}m`
+
 - Example: `Baldur's Gate 3 - 2h 30m`
 
 **Description:**
+
 ```
 🎮 {game name}
 ⏱️ Total Time: {hours}h {minutes}m
@@ -2204,43 +2251,49 @@ Session Times:
 
 #### Field Mappings
 
-| API Source Field | Transformation | Notion Property | Type | Calendar Location |
-|-----------------|----------------|-----------------|------|-------------------|
-| `date` | Unix timestamp → "Body Weight - [Day], [Month] [Date], [Year]" | **Name** | Title | N/A |
-| `date` | Unix timestamp → YYYY-MM-DD (local time) | **Date** | Date | N/A |
-| `measures[type=1].value` | Decode, kg→lbs, 1 decimal | **Weight** | Number | Title |
-| `measures[type=5].value` | Decode, kg→lbs, 1 decimal | **Fat Free Mass** | Number | N/A |
-| `measures[type=6].value` | Decode value, 1 decimal | **Fat Percentage** | Number | N/A |
-| `measures[type=8].value` | Decode, kg→lbs, 1 decimal | **Fat Mass** | Number | N/A |
-| `measures[type=76].value` | Decode, kg→lbs, 1 decimal | **Muscle Mass** | Number | N/A |
-| `measures[type=77].value` | Decode value, 1 decimal | **Body Water Percentage** | Number | N/A |
-| `measures[type=88].value` | Decode, kg→lbs, 1 decimal | **Bone Mass** | Number | N/A |
-| `date` | Unix → ISO timestamp | **Measurement Time** | Text | Description |
-| `model` | Direct copy | **Device Model** | Text | Description |
-| `grpid` | Convert to string | **Measurement ID** | Text | N/A |
-| - | Always false initially | **Calendar Created** | Checkbox | N/A |
+| API Source Field          | Transformation                                                 | Notion Property           | Type     | Calendar Location |
+| ------------------------- | -------------------------------------------------------------- | ------------------------- | -------- | ----------------- |
+| `date`                    | Unix timestamp → "Body Weight - [Day], [Month] [Date], [Year]" | **Name**                  | Title    | N/A               |
+| `date`                    | Unix timestamp → YYYY-MM-DD (local time)                       | **Date**                  | Date     | N/A               |
+| `measures[type=1].value`  | Decode, kg→lbs, 1 decimal                                      | **Weight**                | Number   | Title             |
+| `measures[type=5].value`  | Decode, kg→lbs, 1 decimal                                      | **Fat Free Mass**         | Number   | N/A               |
+| `measures[type=6].value`  | Decode value, 1 decimal                                        | **Fat Percentage**        | Number   | N/A               |
+| `measures[type=8].value`  | Decode, kg→lbs, 1 decimal                                      | **Fat Mass**              | Number   | N/A               |
+| `measures[type=76].value` | Decode, kg→lbs, 1 decimal                                      | **Muscle Mass**           | Number   | N/A               |
+| `measures[type=77].value` | Decode value, 1 decimal                                        | **Body Water Percentage** | Number   | N/A               |
+| `measures[type=88].value` | Decode, kg→lbs, 1 decimal                                      | **Bone Mass**             | Number   | N/A               |
+| `date`                    | Unix → ISO timestamp                                           | **Measurement Time**      | Text     | Description       |
+| `model`                   | Direct copy                                                    | **Device Model**          | Text     | Description       |
+| `grpid`                   | Convert to string                                              | **Measurement ID**        | Text     | N/A               |
+| -                         | Always false initially                                         | **Calendar Created**      | Checkbox | N/A               |
 
 #### Value Decoding Formula
+
 `actualValue = value × 10^unit`
 
 Example: `value: 7856, unit: -2` → `78.56`
 
 #### Unit Conversion
+
 - **kg to lbs:** `kg × 2.20462`
 - **All mass measurements** converted to pounds
 - **Percentages:** No conversion needed
 
 #### Name Format
+
 Title format: `Body Weight - [Day of Week], [Month] [Date], [Year]`
+
 - Example: `Body Weight - Saturday, November 29, 2025`
 - Uses full month names and full day of week names
 
 #### Calendar Event Format
 
 **Title:** `Weight: {weight} lbs`
+
 - Example: `Weight: 173.2 lbs`
 
 **Description:**
+
 ```
 ⚖️ Body Weight Measurement
 📊 Weight: {weight} lbs
@@ -2251,17 +2304,18 @@ Title format: `Body Weight - [Day of Week], [Month] [Date], [Year]`
 
 ### Summary of Calendar Event Types
 
-| Data Source | Event Type | Uses Start/End Time | All-Day Event |
-|-------------|-----------|-------------------|---------------|
-| GitHub | All-day | ❌ No | ✅ Yes |
-| Oura | Timed | ✅ Yes (bedtime → wake) | ❌ No |
-| Strava | Timed | ✅ Yes (start + duration) | ❌ No |
-| Steam | Timed | ✅ Yes (first start → last end) | ❌ No |
-| Withings | All-day | ❌ No | ✅ Yes |
+| Data Source | Event Type | Uses Start/End Time             | All-Day Event |
+| ----------- | ---------- | ------------------------------- | ------------- |
+| GitHub      | All-day    | ❌ No                           | ✅ Yes        |
+| Oura        | Timed      | ✅ Yes (bedtime → wake)         | ❌ No         |
+| Strava      | Timed      | ✅ Yes (start + duration)       | ❌ No         |
+| Steam       | Timed      | ✅ Yes (first start → last end) | ❌ No         |
+| Withings    | All-day    | ❌ No                           | ✅ Yes        |
 
 ### Common Patterns
 
 #### Deduplication Strategy
+
 - **GitHub:** `Unique ID` (repo-date-sha or repo-date-PR#)
 - **Oura:** `Sleep ID` (Oura's unique identifier)
 - **Strava:** `Activity ID` (Strava's unique activity ID)
@@ -2269,13 +2323,17 @@ Title format: `Body Weight - [Day of Week], [Month] [Date], [Year]`
 - **Withings:** `Measurement ID` (Withings group ID)
 
 #### Calendar Created Flag
+
 All databases include a `Calendar Created` checkbox:
+
 - Initially set to `false`
 - Set to `true` after calendar event creation
 - Used to prevent duplicate calendar events
 
 #### Text Field Truncation
+
 GitHub fields with potential long content are truncated to Notion's 2000 character limit:
+
 - Commit Messages
 - PR Titles
 - Files List

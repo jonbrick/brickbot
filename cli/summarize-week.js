@@ -13,7 +13,7 @@
  * Work Recap:
  * - Google Calendar: Work Calendar (meetings, design, coding, crit, sketch, research,
  *   personalAndSocial, rituals, qa), Work PRs
- * - Notion Database: Work Tasks (TASKS_DATABASE_ID, filtered by Type = "💼 Work")
+ * - Notion Database: Work Tasks (TASKS_DATABASE_ID, filtered by Category = "💼 Work")
  */
 
 require("dotenv").config();
@@ -43,9 +43,11 @@ const { SUMMARY_GROUPS } = require("../src/config/unified-sources");
  * @param {boolean} sourceTypes.hasPersonal - Whether personal sources are selected
  * @returns {Promise<string>} Selected action ("display" or "update")
  */
-async function selectAction(sourceTypes = { hasWork: false, hasPersonal: false }) {
+async function selectAction(
+  sourceTypes = { hasWork: false, hasPersonal: false }
+) {
   const { hasWork, hasPersonal } = sourceTypes;
-  
+
   // Generate dynamic prompt message based on selected source types
   let updateMessage;
   if (hasWork && hasPersonal) {
@@ -93,11 +95,11 @@ async function selectCalendarsAndDatabases() {
     .map((id) => {
       const group = SUMMARY_GROUPS[id];
       if (!group) return null;
-    return {
+      return {
         name: group.name, // No emoji
         value: id,
         description: `Summarize ${group.name.toLowerCase()}`,
-    };
+      };
     })
     .filter(Boolean);
 
@@ -195,7 +197,9 @@ async function main() {
 
     // Select week(s) - normalize to array
     const weekSelection = await selectWeek();
-    const weeks = Array.isArray(weekSelection) ? weekSelection : [weekSelection];
+    const weeks = Array.isArray(weekSelection)
+      ? weekSelection
+      : [weekSelection];
 
     if (displayOnly) {
       showInfo("Display mode: Results will not be saved to Notion\n");
@@ -210,9 +214,11 @@ async function main() {
 
     for (let i = 0; i < weeks.length; i++) {
       const { weekNumber, year, startDate, endDate } = weeks[i];
-      
+
       console.log(
-        `\n${"=".repeat(60)}\nProcessing week ${i + 1}/${weeks.length}: Week ${weekNumber}, ${year}\n${"=".repeat(60)}\n`
+        `\n${"=".repeat(60)}\nProcessing week ${i + 1}/${
+          weeks.length
+        }: Week ${weekNumber}, ${year}\n${"=".repeat(60)}\n`
       );
 
       // Initialize result structure for this week
@@ -262,7 +268,9 @@ async function main() {
           } else if (workResults.length > 1) {
             // Merge both calendar and notion results
             // Combine multiple errors if both workflows have errors
-            const errors = [workResults[0].error, workResults[1].error].filter(Boolean);
+            const errors = [workResults[0].error, workResults[1].error].filter(
+              Boolean
+            );
             workResult = {
               weekNumber,
               year,
@@ -335,7 +343,10 @@ async function main() {
           } else if (personalResults.length > 1) {
             // Merge both calendar and notion results
             // Combine multiple errors if both workflows have errors
-            const errors = [personalResults[0].error, personalResults[1].error].filter(Boolean);
+            const errors = [
+              personalResults[0].error,
+              personalResults[1].error,
+            ].filter(Boolean);
             personalResult = {
               weekNumber,
               year,
@@ -372,10 +383,14 @@ async function main() {
 
       // Determine overall success for this week
       const hasWorkSuccess = weekResult.work && !weekResult.work.error;
-      const hasPersonalSuccess = weekResult.personal && !weekResult.personal.error;
+      const hasPersonalSuccess =
+        weekResult.personal && !weekResult.personal.error;
       const hasAnySuccess = hasWorkSuccess || hasPersonalSuccess;
-      const hasAnySource = workCalendars.length > 0 || workNotionSources.length > 0 || 
-                          personalCalendars.length > 0 || personalNotionSources.length > 0;
+      const hasAnySource =
+        workCalendars.length > 0 ||
+        workNotionSources.length > 0 ||
+        personalCalendars.length > 0 ||
+        personalNotionSources.length > 0;
 
       if (!hasAnySource) {
         showError("No sources selected");
@@ -425,9 +440,7 @@ async function main() {
 
         // Show error if no results at all
         if (!weekResult.work && !weekResult.personal) {
-          showError(
-            `Week ${weekNumber}, ${year}: No sources processed`
-          );
+          showError(`Week ${weekNumber}, ${year}: No sources processed`);
         }
       });
 
@@ -440,10 +453,18 @@ async function main() {
       if (totalWorkSuccess > 0 || totalPersonalSuccess > 0) {
         const messages = [];
         if (totalWorkSuccess > 0) {
-          messages.push(`${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""} calculated successfully`);
+          messages.push(
+            `${totalWorkSuccess} work week${
+              totalWorkSuccess !== 1 ? "s" : ""
+            } calculated successfully`
+          );
         }
         if (totalPersonalSuccess > 0) {
-          messages.push(`${totalPersonalSuccess} personal week${totalPersonalSuccess !== 1 ? "s" : ""} calculated successfully`);
+          messages.push(
+            `${totalPersonalSuccess} personal week${
+              totalPersonalSuccess !== 1 ? "s" : ""
+            } calculated successfully`
+          );
         }
         showSuccess(messages.join(", ") + "!");
       }
@@ -451,10 +472,18 @@ async function main() {
       if (totalWorkFailure > 0 || totalPersonalFailure > 0) {
         const messages = [];
         if (totalWorkFailure > 0) {
-          messages.push(`${totalWorkFailure} work week${totalWorkFailure !== 1 ? "s" : ""} failed`);
+          messages.push(
+            `${totalWorkFailure} work week${
+              totalWorkFailure !== 1 ? "s" : ""
+            } failed`
+          );
         }
         if (totalPersonalFailure > 0) {
-          messages.push(`${totalPersonalFailure} personal week${totalPersonalFailure !== 1 ? "s" : ""} failed`);
+          messages.push(
+            `${totalPersonalFailure} personal week${
+              totalPersonalFailure !== 1 ? "s" : ""
+            } failed`
+          );
         }
         showError(messages.join(", ") + ".");
       }
@@ -493,7 +522,9 @@ async function main() {
             console.log(`Personal Recap - Week ${weekNumber}, ${year}`);
             console.log("=".repeat(60));
             displaySourceData(weekResult.personal, "all");
-            showError(`Failed to update Personal Recap: ${weekResult.personal.error}`);
+            showError(
+              `Failed to update Personal Recap: ${weekResult.personal.error}`
+            );
           }
         }
       });
@@ -509,31 +540,49 @@ async function main() {
       if (totalSuccess > 0 && totalFailure === 0) {
         const messages = [];
         if (totalWorkSuccess > 0) {
-          messages.push(`${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""}`);
+          messages.push(
+            `${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""}`
+          );
         }
         if (totalPersonalSuccess > 0) {
-          messages.push(`${totalPersonalSuccess} personal week${totalPersonalSuccess !== 1 ? "s" : ""}`);
+          messages.push(
+            `${totalPersonalSuccess} personal week${
+              totalPersonalSuccess !== 1 ? "s" : ""
+            }`
+          );
         }
-        showSuccess(
-          `All ${messages.join(" and ")} completed successfully!`
-        );
+        showSuccess(`All ${messages.join(" and ")} completed successfully!`);
       } else if (totalSuccess > 0 && totalFailure > 0) {
         const successMessages = [];
         const failureMessages = [];
         if (totalWorkSuccess > 0) {
-          successMessages.push(`${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""}`);
+          successMessages.push(
+            `${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""}`
+          );
         }
         if (totalPersonalSuccess > 0) {
-          successMessages.push(`${totalPersonalSuccess} personal week${totalPersonalSuccess !== 1 ? "s" : ""}`);
+          successMessages.push(
+            `${totalPersonalSuccess} personal week${
+              totalPersonalSuccess !== 1 ? "s" : ""
+            }`
+          );
         }
         if (totalWorkFailure > 0) {
-          failureMessages.push(`${totalWorkFailure} work week${totalWorkFailure !== 1 ? "s" : ""}`);
+          failureMessages.push(
+            `${totalWorkFailure} work week${totalWorkFailure !== 1 ? "s" : ""}`
+          );
         }
         if (totalPersonalFailure > 0) {
-          failureMessages.push(`${totalPersonalFailure} personal week${totalPersonalFailure !== 1 ? "s" : ""}`);
+          failureMessages.push(
+            `${totalPersonalFailure} personal week${
+              totalPersonalFailure !== 1 ? "s" : ""
+            }`
+          );
         }
         showSuccess(
-          `${successMessages.join(" and ")} completed successfully, ${failureMessages.join(" and ")} failed.`
+          `${successMessages.join(
+            " and "
+          )} completed successfully, ${failureMessages.join(" and ")} failed.`
         );
         process.exit(1);
       } else {

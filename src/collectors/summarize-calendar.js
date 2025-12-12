@@ -136,4 +136,3 @@ async function fetchCalendarSummary(
 module.exports = {
   fetchCalendarSummary,
 };
-

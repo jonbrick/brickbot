@@ -1,7 +1,7 @@
 // Syncs completed tasks from Notion Tasks database to Recap databases
 // Supports both Personal and Work recap types via recapType parameter
 
-const { fetchCompletedTasks } = require("../summarizers/summarize-tasks");
+const { fetchCompletedTasks } = require("../collectors/summarize-tasks");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");

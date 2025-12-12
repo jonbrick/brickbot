@@ -585,7 +585,7 @@ function transformCalendarEventsToRecapData(
     // Group tasks by category
     const tasksByCategory = {};
     tasks.forEach((task) => {
-      const categoryKey = getCategoryKey(task.type);
+      const categoryKey = getCategoryKey(task.category);
       if (categoryKey && categoryKey !== "work") {
         // Skip work tasks (not in CSV)
         if (!tasksByCategory[categoryKey]) {

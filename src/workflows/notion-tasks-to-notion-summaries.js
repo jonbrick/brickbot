@@ -118,7 +118,9 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
             ? ` [${task.workCategory}]`
             : "";
         console.log(
-          `    ${idx + 1}. ${task.dueDate} - ${task.title} [${task.type}]${categoryDisplay}`
+          `    ${idx + 1}. ${task.dueDate} - ${task.title} [${
+            task.category
+          }]${categoryDisplay}`
         );
       });
       console.log();
@@ -196,9 +198,7 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     }
 
     if (typeof showSuccess === "function") {
-      showSuccess(
-        `Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
-      );
+      showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
     } else {
       console.log(
         `✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
@@ -220,4 +220,3 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
 module.exports = {
   summarizeWeek,
 };
-

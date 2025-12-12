@@ -75,7 +75,7 @@ async function fetchCompletedTasks(startDate, endDate) {
     return tasks.map((task) => ({
       id: task.id,
       title: collector.extractProperty(task, "Task"),
-      type: collector.extractProperty(task, "Type"),
+      category: collector.extractProperty(task, "Category"),
       dueDate: collector.extractProperty(task, "Due Date"),
       workCategory: collector.extractProperty(task, "Work Category"),
     }));
@@ -87,4 +87,3 @@ async function fetchCompletedTasks(startDate, endDate) {
 module.exports = {
   fetchCompletedTasks,
 };
-

@@ -8,19 +8,19 @@ const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
  * @returns {string} 3-letter day abbreviation (Mon, Tue, Wed, Thu, Fri, Sat, Sun) or "?" if invalid
  */
 function getDayAbbreviation(dateStr) {
-  if (!dateStr || typeof dateStr !== 'string') {
+  if (!dateStr || typeof dateStr !== "string") {
     return "?";
   }
-  
+
   // Extract YYYY-MM-DD part if full datetime provided (handles YYYY-MM-DDTHH:MM:SS format)
-  const datePart = dateStr.split('T')[0].split(' ')[0];
+  const datePart = dateStr.split("T")[0].split(" ")[0];
   const date = new Date(datePart + "T00:00:00");
-  
+
   // Validate date
   if (isNaN(date.getTime())) {
     return "?";
   }
-  
+
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return dayNames[date.getDay()];
 }
@@ -51,17 +51,17 @@ function transformCalendarEventsToRecapData(
   // Helper to check if a date string is within the week range
   const isDateInWeek = (dateStr) => {
     if (!weekStartDate || !weekEndDate) return true; // No filtering if dates not provided
-    if (!dateStr || typeof dateStr !== 'string') return false; // Invalid date string
-    
+    if (!dateStr || typeof dateStr !== "string") return false; // Invalid date string
+
     // Extract YYYY-MM-DD part if full datetime provided
-    const datePart = dateStr.split('T')[0].split(' ')[0];
+    const datePart = dateStr.split("T")[0].split(" ")[0];
     const eventDate = new Date(datePart + "T00:00:00");
-    
+
     // Validate date
     if (isNaN(eventDate.getTime())) {
       return false; // Invalid date, exclude from week
     }
-    
+
     return eventDate >= weekStartDate && eventDate <= weekEndDate;
   };
 
@@ -95,9 +95,8 @@ function transformCalendarEventsToRecapData(
           filteredEvents.reduce((sum, event) => {
             const duration = event.durationHours;
             // Validate: must be number, not NaN, and >= 0
-            const safeDuration = (duration && !isNaN(duration) && duration >= 0) 
-              ? duration 
-              : 0;
+            const safeDuration =
+              duration && !isNaN(duration) && duration >= 0 ? duration : 0;
             return sum + safeDuration;
           }, 0) * 100
         ) / 100
@@ -117,20 +116,20 @@ function transformCalendarEventsToRecapData(
     if (!selectedCalendars || selectedCalendars.length === 0) {
       return true;
     }
-    
+
     // Direct match: source ID is in selected calendars
     if (selectedCalendars.includes(sourceId)) {
       return true;
     }
-    
+
     // Check if this source ID is part of any selected source's calendars
     // (for cases where a source might be referenced by its calendar fetchKey)
-    return selectedCalendars.some(selectedSourceId => {
+    return selectedCalendars.some((selectedSourceId) => {
       const source = WORK_RECAP_SOURCES[selectedSourceId];
       if (!source) return false;
-      
+
       // Check if any of the source's calendars match this source ID
-      return source.calendars?.some(cal => cal.fetchKey === sourceId);
+      return source.calendars?.some((cal) => cal.fetchKey === sourceId);
     });
   };
 
@@ -160,7 +159,9 @@ function transformCalendarEventsToRecapData(
 
   // Work Calendar blocks (only if "workCalendar" is selected)
   if (shouldCalculate("workCalendar")) {
-    const { getWorkCategoryByColor } = require("../config/calendar/color-mappings");
+    const {
+      getWorkCategoryByColor,
+    } = require("../config/calendar/color-mappings");
 
     // Get all events from the single Work Calendar
     const workCalendarEvents = calendarEvents.workCalendar || [];
@@ -205,9 +206,8 @@ function transformCalendarEventsToRecapData(
       const hoursTotal = categoryEvents.reduce((sum, event) => {
         const duration = event.durationHours;
         // Validate: must be number, not NaN, and >= 0
-        const safeDuration = (duration && !isNaN(duration) && duration >= 0) 
-          ? duration 
-          : 0;
+        const safeDuration =
+          duration && !isNaN(duration) && duration >= 0 ? duration : 0;
         return sum + safeDuration;
       }, 0);
       summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
@@ -220,9 +220,8 @@ function transformCalendarEventsToRecapData(
             const day = getDayAbbreviation(event.date);
             const duration = event.durationHours;
             // Validate: must be number, not NaN, and >= 0
-            const safeDuration = (duration && !isNaN(duration) && duration >= 0) 
-              ? duration 
-              : 0;
+            const safeDuration =
+              duration && !isNaN(duration) && duration >= 0 ? duration : 0;
             const durationRounded = Math.round(safeDuration * 100) / 100;
             return `${eventName} (${day} - ${durationRounded} hours)`;
           })
@@ -238,8 +237,8 @@ function transformCalendarEventsToRecapData(
     const tasksByCategory = {};
     tasks.forEach((task) => {
       // Filter IN work tasks (opposite of personal recap which filters OUT work tasks)
-      // Trim and normalize task type to handle whitespace
-      if (task.type && task.type.trim() === "💼 Work") {
+      // Trim and normalize task category to handle whitespace
+      if (task.category && task.category.trim() === "💼 Work") {
         const categoryKey = getWorkCategoryKey(task.workCategory);
         if (categoryKey) {
           if (!tasksByCategory[categoryKey]) {
@@ -286,4 +285,3 @@ function transformCalendarEventsToRecapData(
 module.exports = {
   transformCalendarEventsToRecapData,
 };
-

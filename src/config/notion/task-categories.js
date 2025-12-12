@@ -1,6 +1,6 @@
 /**
  * Task Category Mappings
- * Maps task Type values (with emojis) to Personal Recap property keys
+ * Maps task Category values (with emojis) to Personal Recap property keys
  */
 
 const TASK_CATEGORY_MAPPING = {
@@ -35,8 +35,8 @@ const TASK_STATUS_MAPPING = {
 };
 
 /**
- * Get category key from task Type value
- * @param {string} taskType - Task Type value (e.g., "💪 Physical Health")
+ * Get category key from task Category value
+ * @param {string} taskType - Task Category value (e.g., "💪 Physical Health")
  * @returns {string|null} Category key (e.g., "physicalHealth") or null if unmapped
  */
 function getCategoryKey(taskType) {

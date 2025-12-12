@@ -1,6 +1,6 @@
 // Syncs Strava activity data to Notion with de-duplication
 
-const StravaDatabase = require("../databases/StravaDatabase");
+const IntegrationDatabase = require("../databases/IntegrationDatabase");
 const { transformStravaToNotion } = require("../transformers/strava-to-notion-strava");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -13,7 +13,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncStravaToNotion(activities, options = {}) {
-  const workoutRepo = new StravaDatabase();
+  const workoutRepo = new IntegrationDatabase("strava");
   const results = {
     created: [],
     skipped: [],
@@ -47,14 +47,12 @@ async function syncStravaToNotion(activities, options = {}) {
  * Sync a single activity to Notion
  *
  * @param {Object} activity - Processed Strava activity
- * @param {StravaDatabase} workoutRepo - Workout database instance
+ * @param {IntegrationDatabase} workoutRepo - Workout database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleActivity(activity, workoutRepo) {
   // Check for existing record
-  const existing = await workoutRepo.findByActivityId(
-    activity.activityId
-  );
+  const existing = await workoutRepo.findByUniqueId(activity.activityId);
 
   if (existing) {
     return {

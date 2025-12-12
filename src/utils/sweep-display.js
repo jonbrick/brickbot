@@ -1,11 +1,9 @@
 /**
  * Sweep Display Utilities
- * Config-driven utilities for building source choices and handlers for sweep CLIs
+ * Config-driven utilities for formatting and displaying records for calendar sync
  */
 
-const {
-  SWEEP_SOURCES, // @deprecated - still used by formatRecordsForDisplay and displayRecordsTable
-} = require("../config/integrations/sources");
+const { INTEGRATIONS } = require("../config/unified-sources");
 const config = require("../config");
 
 /**
@@ -20,37 +18,26 @@ const config = require("../config");
 
 /**
  * Format records for display using config-driven field mappings
- * @deprecated Uses deprecated SWEEP_SOURCES.sweepToCalendar config. Should be refactored to use INTEGRATIONS.updateCalendar from unified-sources.js
  * @param {Array} records - Array of Notion record objects
- * @param {string} sourceId - Source ID (e.g., 'oura', 'strava')
+ * @param {string} sourceId - Integration ID (e.g., 'oura', 'strava')
  * @param {Object} notionService - NotionService instance
  * @returns {Array} Array of formatted record objects
  */
 function formatRecordsForDisplay(records, sourceId, notionService) {
-  const source = SWEEP_SOURCES[sourceId];
-  if (!source?.sweepToCalendar?.fields) {
-    throw new Error(`No field config found for source: ${sourceId}`);
+  const integration = INTEGRATIONS[sourceId];
+  if (!integration?.calendarSyncMetadata?.displayFields) {
+    throw new Error(
+      `No display fields config found for integration: ${sourceId}. Check INTEGRATIONS[${sourceId}].calendarSyncMetadata.displayFields`
+    );
   }
 
-  const fields = source.sweepToCalendar.fields;
-  const sourceType = source.sweepToCalendar.sourceType;
-  
-  // Map sourceType to integration ID (config.notion.properties uses integration keys)
-  const SOURCE_TYPE_TO_INTEGRATION = {
-    sleep: "oura",
-    strava: "strava",
-    github: "github",
-    steam: "steam",
-    withings: "withings",
-    bloodPressure: "bloodPressure",
-  };
-  
-  const integrationId = SOURCE_TYPE_TO_INTEGRATION[sourceType] || sourceId;
+  const fields = integration.calendarSyncMetadata.displayFields;
+  const integrationId = sourceId; // sourceId is already the integration ID
   const propConfig = config.notion.properties[integrationId];
   
   if (!propConfig) {
     throw new Error(
-      `Property config not found for sourceType "${sourceType}" (integration: "${integrationId}"). Check config.notion.properties.${integrationId}`
+      `Property config not found for integration: "${integrationId}". Check config.notion.properties.${integrationId}`
     );
   }
 
@@ -102,17 +89,24 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
 
 /**
  * Display records table using config-driven display format
- * @deprecated Uses deprecated SWEEP_SOURCES.sweepToCalendar config. Should be refactored to use INTEGRATIONS.updateCalendar from unified-sources.js
  * @param {Array} records - Array of formatted record objects
- * @param {string} sourceId - Source ID (e.g., 'oura', 'strava')
+ * @param {string} sourceId - Integration ID (e.g., 'oura', 'strava')
  */
 function displayRecordsTable(records, sourceId) {
-  const source = SWEEP_SOURCES[sourceId];
-  if (!source?.sweepToCalendar) {
-    throw new Error(`No sweep to calendar config for source: ${sourceId}`);
+  const integration = INTEGRATIONS[sourceId];
+  if (!integration?.calendarSyncMetadata) {
+    throw new Error(
+      `No calendar sync metadata found for integration: ${sourceId}. Check INTEGRATIONS[${sourceId}].calendarSyncMetadata`
+    );
   }
 
-  const { tableTitle, displayFormat, recordLabel } = source.sweepToCalendar;
+  const { tableTitle, displayFormat, recordLabel } = integration.calendarSyncMetadata;
+  
+  if (!tableTitle || !displayFormat || !recordLabel) {
+    throw new Error(
+      `Missing display config for integration: ${sourceId}. Check calendarSyncMetadata.tableTitle, displayFormat, and recordLabel`
+    );
+  }
 
   console.log("\n" + "=".repeat(120));
   console.log(tableTitle);
@@ -136,8 +130,6 @@ function displayRecordsTable(records, sourceId) {
 }
 
 module.exports = {
-  // buildSourceChoices, // @deprecated - removed, no longer used
-  // buildAllSourcesHandlers, // @deprecated - removed, no longer used
-  formatRecordsForDisplay, // @deprecated - still used by update-calendar.js, uses deprecated config
-  displayRecordsTable, // @deprecated - still used by update-calendar.js, uses deprecated config
+  formatRecordsForDisplay,
+  displayRecordsTable,
 };

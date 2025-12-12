@@ -4,12 +4,7 @@
  * Maintains backward compatibility while delegating to databases
  */
 
-const OuraDatabase = require("../databases/OuraDatabase");
-const StravaDatabase = require("../databases/StravaDatabase");
-const SteamDatabase = require("../databases/SteamDatabase");
-const GitHubDatabase = require("../databases/GitHubDatabase");
-const WithingsDatabase = require("../databases/WithingsDatabase");
-const BloodPressureDatabase = require("../databases/BloodPressureDatabase");
+const IntegrationDatabase = require("../databases/IntegrationDatabase");
 const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
 const NotionDatabase = require("../databases/NotionDatabase");
 
@@ -18,12 +13,12 @@ class NotionService extends NotionDatabase {
     super();
 
     // Initialize domain databases
-    this.sleepRepo = new OuraDatabase();
-    this.workoutRepo = new StravaDatabase();
-    this.steamRepo = new SteamDatabase();
-    this.prRepo = new GitHubDatabase();
-    this.bodyWeightRepo = new WithingsDatabase();
-    this.bloodPressureRepo = new BloodPressureDatabase();
+    this.sleepRepo = new IntegrationDatabase("oura");
+    this.workoutRepo = new IntegrationDatabase("strava");
+    this.steamRepo = new IntegrationDatabase("steam");
+    this.prRepo = new IntegrationDatabase("github");
+    this.bodyWeightRepo = new IntegrationDatabase("withings");
+    this.bloodPressureRepo = new IntegrationDatabase("bloodPressure");
     this.personalRecapRepo = new PersonalRecapDatabase();
   }
 
@@ -33,7 +28,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Sleep database (Oura)
-   * @returns {OuraDatabase}
+   * @returns {IntegrationDatabase}
    */
   getSleepRepository() {
     return this.sleepRepo;
@@ -41,7 +36,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Workout database (Strava)
-   * @returns {StravaDatabase}
+   * @returns {IntegrationDatabase}
    */
   getWorkoutRepository() {
     return this.workoutRepo;
@@ -49,7 +44,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Steam database
-   * @returns {SteamDatabase}
+   * @returns {IntegrationDatabase}
    */
   getSteamRepository() {
     return this.steamRepo;
@@ -57,7 +52,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get PR database (GitHub)
-   * @returns {GitHubDatabase}
+   * @returns {IntegrationDatabase}
    */
   getPRRepository() {
     return this.prRepo;
@@ -65,7 +60,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Body Weight database (Withings)
-   * @returns {WithingsDatabase}
+   * @returns {IntegrationDatabase}
    */
   getBodyWeightRepository() {
     return this.bodyWeightRepo;
@@ -73,7 +68,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Blood Pressure database
-   * @returns {BloodPressureDatabase}
+   * @returns {IntegrationDatabase}
    */
   getBloodPressureRepository() {
     return this.bloodPressureRepo;
@@ -102,10 +97,10 @@ class NotionService extends NotionDatabase {
 
   /**
    * Find sleep record by Sleep ID
-   * @deprecated Use getSleepRepository().findBySleepId() instead
+   * @deprecated Use getSleepRepository().findByUniqueId() instead
    */
   async findSleepBySleepId(sleepId) {
-    return await this.sleepRepo.findBySleepId(sleepId);
+    return await this.sleepRepo.findByUniqueId(sleepId);
   }
 
   /**
@@ -126,10 +121,10 @@ class NotionService extends NotionDatabase {
 
   /**
    * Find workout record by Activity ID
-   * @deprecated Use getWorkoutRepository().findByActivityId() instead
+   * @deprecated Use getWorkoutRepository().findByUniqueId() instead
    */
   async findWorkoutByActivityId(activityId) {
-    return await this.workoutRepo.findByActivityId(activityId);
+    return await this.workoutRepo.findByUniqueId(activityId);
   }
 
   /**
@@ -150,10 +145,10 @@ class NotionService extends NotionDatabase {
 
   /**
    * Find Steam gaming record by Activity ID
-   * @deprecated Use getSteamRepository().findByActivityId() instead
+   * @deprecated Use getSteamRepository().findByUniqueId() instead
    */
   async findSteamByActivityId(activityId) {
-    return await this.steamRepo.findByActivityId(activityId);
+    return await this.steamRepo.findByUniqueId(activityId);
   }
 
   /**
@@ -198,10 +193,10 @@ class NotionService extends NotionDatabase {
 
   /**
    * Find body weight record by Measurement ID
-   * @deprecated Use getBodyWeightRepository().findByMeasurementId() instead
+   * @deprecated Use getBodyWeightRepository().findByUniqueId() instead
    */
   async findBodyWeightByMeasurementId(measurementId) {
-    return await this.bodyWeightRepo.findByMeasurementId(measurementId);
+    return await this.bodyWeightRepo.findByUniqueId(measurementId);
   }
 
   /**

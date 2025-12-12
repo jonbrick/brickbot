@@ -1,6 +1,6 @@
 // Syncs Withings measurement data to Notion with de-duplication
 
-const WithingsDatabase = require("../databases/WithingsDatabase");
+const IntegrationDatabase = require("../databases/IntegrationDatabase");
 const { transformWithingsToNotion } = require("../transformers/withings-to-notion-withings");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -13,7 +13,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncWithingsToNotion(measurements, options = {}) {
-  const bodyWeightRepo = new WithingsDatabase();
+  const bodyWeightRepo = new IntegrationDatabase("withings");
   const results = {
     created: [],
     skipped: [],
@@ -47,14 +47,12 @@ async function syncWithingsToNotion(measurements, options = {}) {
  * Sync a single measurement to Notion
  *
  * @param {Object} measurement - Processed Withings measurement
- * @param {WithingsDatabase} bodyWeightRepo - Body weight database instance
+ * @param {IntegrationDatabase} bodyWeightRepo - Body weight database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleMeasurement(measurement, bodyWeightRepo) {
   // Check for existing record
-  const existing = await bodyWeightRepo.findByMeasurementId(
-    measurement.measurementId
-  );
+  const existing = await bodyWeightRepo.findByUniqueId(measurement.measurementId);
 
   if (existing) {
     return {

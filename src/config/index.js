@@ -7,7 +7,6 @@
 require("dotenv").config();
 
 const notion = require("./notion/index");
-const integrations = require("./integrations/sources");
 const sources = require("./integrations/credentials");
 const tokens = require("./tokens");
 const calendar = require("./calendar/credentials");
@@ -145,7 +144,6 @@ try {
 
 module.exports = {
   notion,
-  integrations,
   sources,
   tokens,
   calendar,

@@ -1032,7 +1032,27 @@ const INTEGRATIONS = {
       eventType: "dateTime",
       displayNameProperty: "nightOfDate",
       displayNameFormat: "date",
-      skipReason: "Missing bedtime or wake time"
+      skipReason: "Missing bedtime or wake time",
+      transformerFile: "../transformers/notion-oura-to-calendar-sleep.js",
+      transformerFunction: "transformSleepToCalendarEvent",
+      displayFields: [
+        { key: "nightOf", property: "nightOfDate" },
+        { key: "bedtime", property: "bedtime" },
+        { key: "wakeTime", property: "wakeTime" },
+        { key: "duration", property: "sleepDuration" },
+        { key: "efficiency", property: "efficiency" },
+        { key: "calendar", property: "googleCalendar", default: "Unknown" },
+      ],
+      tableTitle: "📊 SLEEP RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `📅 ${record.nightOf}: Sleep - ${record.duration}hrs (${record.efficiency}% efficiency) → ${record.calendar}`,
+      recordLabel: "sleep record",
+    },
+    databaseConfig: {
+      dateProperty: "nightOfDate",
+      uniqueIdProperty: "sleepId",
+      uniqueIdType: "text",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
   strava: {
@@ -1054,7 +1074,30 @@ const INTEGRATIONS = {
       eventType: "dateTime",
       displayNameProperty: "name",
       displayNameFormat: "text",
-      skipReason: "Missing date, start time, or duration"
+      skipReason: "Missing date, start time, or duration",
+      transformerFile: "../transformers/notion-strava-to-calendar-workouts.js",
+      transformerFunction: "transformWorkoutToCalendarEvent",
+      displayFields: [
+        { key: "name", property: "name" },
+        { key: "date", property: "date" },
+        {
+          key: "startTime",
+          property: "startTime",
+          format: (val) => (val ? new Date(val).toLocaleString() : "N/A"),
+        },
+        { key: "duration", property: "duration" },
+        { key: "type", property: "type" },
+      ],
+      tableTitle: "🏋️  WORKOUT RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `🏋️  ${record.date} ${record.startTime}: ${record.name} (${record.duration} min) - ${record.type}`,
+      recordLabel: "workout record",
+    },
+    databaseConfig: {
+      dateProperty: "date",
+      uniqueIdProperty: "activityId",
+      uniqueIdType: "number",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
   github: {
@@ -1076,7 +1119,55 @@ const INTEGRATIONS = {
       eventType: "allDay",
       displayNameProperty: "repository",
       displayNameFormat: "repoDate",
-      skipReason: "Missing date"
+      skipReason: "Missing date",
+      transformerFile: "../transformers/notion-github-to-calendar-prs.js",
+      transformerFunction: "transformPRToCalendarEvent",
+      useMultipleCalendarServices: true,
+      displayFields: [
+        {
+          key: "repository",
+          property: "repository",
+          format: (val) => {
+            if (!val) return "Unknown Repository";
+            const repoMatch = val.match(/^([^\s-]+)/);
+            if (repoMatch) {
+              const repoPath = repoMatch[1];
+              const parts = repoPath.split("/");
+              return parts[parts.length - 1];
+            }
+            return val;
+          },
+        },
+        { key: "date", property: "date" },
+        { key: "commitsCount", property: "commitsCount", default: 0 },
+        { key: "totalLinesAdded", property: "totalLinesAdded", default: 0 },
+        { key: "totalLinesDeleted", property: "totalLinesDeleted", default: 0 },
+        { key: "projectType", property: "projectType", default: "Personal" },
+        {
+          key: "linesAdded",
+          property: null, // Computed field - alias for totalLinesAdded
+          compute: (record) => record.totalLinesAdded || 0,
+        },
+        {
+          key: "linesDeleted",
+          property: null, // Computed field - alias for totalLinesDeleted
+          compute: (record) => record.totalLinesDeleted || 0,
+        },
+      ],
+      tableTitle: "💻 GITHUB PR RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `💻 ${record.date}: ${record.repository} - ${
+          record.commitsCount
+        } commit${record.commitsCount === 1 ? "" : "s"} (+${
+          record.linesAdded
+        }/-${record.linesDeleted} lines) → ${record.projectType}`,
+      recordLabel: "PR record",
+    },
+    databaseConfig: {
+      dateProperty: "date",
+      uniqueIdProperty: "uniqueId",
+      uniqueIdType: "text",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
   steam: {
@@ -1098,7 +1189,40 @@ const INTEGRATIONS = {
       eventType: "dateTime",
       displayNameProperty: "gameName",
       displayNameFormat: "text",
-      skipReason: "Missing date, start time, or end time"
+      skipReason: "Missing date, start time, or end time",
+      transformerFile: "../transformers/notion-steam-to-calendar-games.js",
+      transformerFunction: "transformSteamToCalendarEvent",
+      displayFields: [
+        { key: "gameName", property: "gameName" },
+        { key: "date", property: "date" },
+        { key: "hoursPlayed", property: "hoursPlayed" },
+        { key: "minutesPlayed", property: "minutesPlayed" },
+        { key: "sessionCount", property: "sessionCount" },
+        {
+          key: "playtime",
+          property: null, // Computed field
+          compute: (record) => {
+            const hours = record.hoursPlayed || 0;
+            const minutes = record.minutesPlayed || 0;
+            if (hours > 0) {
+              return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+          },
+        },
+      ],
+      tableTitle: "🎮 STEAM GAMING RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `🎮 ${record.date}: ${record.gameName} (${record.playtime}) - ${
+          record.sessionCount
+        } session${record.sessionCount === 1 ? "" : "s"}`,
+      recordLabel: "gaming record",
+    },
+    databaseConfig: {
+      dateProperty: "date",
+      uniqueIdProperty: "activityId",
+      uniqueIdType: "text",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
   withings: {
@@ -1120,7 +1244,26 @@ const INTEGRATIONS = {
       eventType: "allDay",
       displayNameProperty: "name",
       displayNameFormat: "text",
-      skipReason: "Missing date"
+      skipReason: "Missing date",
+      transformerFile: "../transformers/notion-withings-to-calendar-bodyweight.js",
+      transformerFunction: "transformBodyWeightToCalendarEvent",
+      displayFields: [
+        { key: "name", property: "name" },
+        { key: "date", property: "date" },
+        { key: "weight", property: "weight" },
+        { key: "fatPercentage", property: "fatPercentage" },
+        { key: "muscleMass", property: "muscleMass" },
+      ],
+      tableTitle: "⚖️  BODY WEIGHT RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `⚖️  ${record.date}: ${record.weight} lbs (${record.fatPercentage}% fat, ${record.muscleMass} lbs muscle)`,
+      recordLabel: "body weight record",
+    },
+    databaseConfig: {
+      dateProperty: "date",
+      uniqueIdProperty: "measurementId",
+      uniqueIdType: "text",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
   bloodPressure: {
@@ -1137,7 +1280,26 @@ const INTEGRATIONS = {
       eventType: "allDay",
       displayNameProperty: "name",
       displayNameFormat: "text",
-      skipReason: "Missing date"
+      skipReason: "Missing date",
+      transformerFile: "../transformers/notion-blood-pressure-to-calendar.js",
+      transformerFunction: "transformBloodPressureToCalendarEvent",
+      displayFields: [
+        { key: "name", property: "name" },
+        { key: "date", property: "date" },
+        { key: "systolicPressure", property: "systolicPressure" },
+        { key: "diastolicPressure", property: "diastolicPressure" },
+        { key: "pulse", property: "pulse" },
+      ],
+      tableTitle: "🩺 BLOOD PRESSURE RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `🩺 ${record.date}: BP ${record.systolicPressure}/${record.diastolicPressure} (Pulse: ${record.pulse} bpm)`,
+      recordLabel: "blood pressure record",
+    },
+    databaseConfig: {
+      dateProperty: "date",
+      uniqueIdProperty: null,
+      uniqueIdType: null,
+      calendarCreatedProperty: "calendarCreated",
     },
   },
 };

@@ -1,6 +1,6 @@
 // Syncs GitHub commit and PR data to Notion with de-duplication
 
-const GitHubDatabase = require("../databases/GitHubDatabase");
+const IntegrationDatabase = require("../databases/IntegrationDatabase");
 const { transformGitHubToNotion } = require("../transformers/github-to-notion-github");
 const config = require("../config");
 const { delay } = require("../utils/async");
@@ -13,7 +13,7 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncGitHubToNotion(activities, options = {}) {
-  const prRepo = new GitHubDatabase();
+  const prRepo = new IntegrationDatabase("github");
   const results = {
     created: [],
     skipped: [],
@@ -47,7 +47,7 @@ async function syncGitHubToNotion(activities, options = {}) {
  * Sync a single GitHub activity to Notion
  *
  * @param {Object} activity - Processed GitHub activity
- * @param {GitHubDatabase} prRepo - PR database instance
+ * @param {IntegrationDatabase} prRepo - PR database instance
  * @returns {Promise<Object>} Sync result
  */
 async function syncSingleActivity(activity, prRepo) {

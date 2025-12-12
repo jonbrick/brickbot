@@ -6,44 +6,7 @@ const config = require("../config");
 const { delay } = require("../utils/async");
 const { formatDate, formatDateOnly } = require("../utils/date");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
-
-// Database class name mapping
-const DATABASE_MAPPING = {
-  oura: "OuraDatabase",
-  strava: "StravaDatabase",
-  github: "GitHubDatabase",
-  steam: "SteamDatabase",
-  withings: "WithingsDatabase",
-  bloodPressure: "BloodPressureDatabase",
-};
-
-// Transformer file and function name mapping
-const TRANSFORMER_MAPPING = {
-  oura: {
-    file: "../transformers/notion-oura-to-calendar-sleep.js",
-    fn: "transformSleepToCalendarEvent",
-  },
-  strava: {
-    file: "../transformers/notion-strava-to-calendar-workouts.js",
-    fn: "transformWorkoutToCalendarEvent",
-  },
-  github: {
-    file: "../transformers/notion-github-to-calendar-prs.js",
-    fn: "transformPRToCalendarEvent",
-  },
-  steam: {
-    file: "../transformers/notion-steam-to-calendar-games.js",
-    fn: "transformSteamToCalendarEvent",
-  },
-  withings: {
-    file: "../transformers/notion-withings-to-calendar-bodyweight.js",
-    fn: "transformBodyWeightToCalendarEvent",
-  },
-  bloodPressure: {
-    file: "../transformers/notion-blood-pressure-to-calendar.js",
-    fn: "transformBloodPressureToCalendarEvent",
-  },
-};
+const IntegrationDatabase = require("../databases/IntegrationDatabase");
 
 /**
  * Get display name for a record based on integration config
@@ -62,7 +25,9 @@ function getDisplayName(record, repo, integrationConfig) {
     );
   }
 
-  const propertyName = config.notion.getPropertyName(props[metadata.displayNameProperty]);
+  const propertyName = config.notion.getPropertyName(
+    props[metadata.displayNameProperty]
+  );
   const value = repo.extractProperty(record, propertyName);
 
   switch (metadata.displayNameFormat) {
@@ -100,7 +65,12 @@ function getDisplayName(record, repo, integrationConfig) {
  */
 function validateEvent(event, eventType) {
   if (eventType === "dateTime") {
-    return !!(event.start && event.start.dateTime && event.end && event.end.dateTime);
+    return !!(
+      event.start &&
+      event.start.dateTime &&
+      event.end &&
+      event.end.dateTime
+    );
   } else if (eventType === "allDay") {
     return !!(event.start && event.start.date);
   }
@@ -119,37 +89,39 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
   // Get integration config
   const integrationConfig = INTEGRATIONS[integrationId];
   if (!integrationConfig || !integrationConfig.updateCalendar) {
-    throw new Error(`Integration ${integrationId} is not configured for calendar sync`);
+    throw new Error(
+      `Integration ${integrationId} is not configured for calendar sync`
+    );
   }
 
   const metadata = integrationConfig.calendarSyncMetadata;
 
-  // Load database class dynamically
-  const databaseClassName = DATABASE_MAPPING[integrationId];
-  if (!databaseClassName) {
-    throw new Error(`No database mapping found for integration: ${integrationId}`);
-  }
-  const DatabaseClass = require(`../databases/${databaseClassName}`);
-  const repo = new DatabaseClass();
+  // Create database instance using IntegrationDatabase
+  const repo = new IntegrationDatabase(integrationId);
 
-  // Load transformer dynamically
-  const transformerMapping = TRANSFORMER_MAPPING[integrationId];
-  if (!transformerMapping) {
-    throw new Error(`No transformer mapping found for integration: ${integrationId}`);
+  // Load transformer from config
+  const transformerFile = metadata.transformerFile;
+  const transformerFunction = metadata.transformerFunction;
+
+  if (!transformerFile || !transformerFunction) {
+    throw new Error(
+      `Transformer config missing for ${integrationId}. Check calendarSyncMetadata.transformerFile and transformerFunction.`
+    );
   }
-  const transformerModule = require(transformerMapping.file);
-  const transformFn = transformerModule[transformerMapping.fn];
+
+  const transformerModule = require(transformerFile);
+  const transformFn = transformerModule[transformerFunction];
   if (!transformFn) {
     throw new Error(
-      `Transformer function ${transformerMapping.fn} not found in ${transformerMapping.file}`
+      `Transformer function ${transformerFunction} not found in ${transformerFile}`
     );
   }
 
   // Initialize calendar service(s)
-  // GitHub uses multiple services (personal/work), others use single service
+  // Use multiple services if configured (e.g., GitHub for personal/work), otherwise single service
   let calendarService;
   let calendarServices;
-  if (integrationId === "github") {
+  if (metadata.useMultipleCalendarServices) {
     calendarServices = {
       personal: new GoogleCalendarService("personal"),
       work: new GoogleCalendarService("work"),
@@ -196,9 +168,10 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
         }
 
         // Get the appropriate calendar service (GitHub uses accountType)
-        const calService = accountType && calendarServices
-          ? calendarServices[accountType]
-          : calendarService;
+        const calService =
+          accountType && calendarServices
+            ? calendarServices[accountType]
+            : calendarService;
 
         if (!calService) {
           throw new Error(`Invalid account type: ${accountType}`);
@@ -245,7 +218,9 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
       }
     }
   } catch (error) {
-    throw new Error(`Failed to sync ${integrationId} to calendar: ${error.message}`);
+    throw new Error(
+      `Failed to sync ${integrationId} to calendar: ${error.message}`
+    );
   }
 
   return results;
@@ -254,4 +229,3 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
 module.exports = {
   syncToCalendar,
 };
-

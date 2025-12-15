@@ -1022,7 +1022,7 @@ const INTEGRATIONS = {
     displayMetadata: {
       tableTitle: "OURA SLEEP DATA",
       emptyMessage: "⚠️  No sleep data found for this date range\n",
-      displayType: "oura"
+      displayType: "oura",
     },
     updateCalendar: true,
     calendarSyncMetadata: {
@@ -1064,7 +1064,7 @@ const INTEGRATIONS = {
     displayMetadata: {
       tableTitle: "STRAVA ACTIVITIES",
       emptyMessage: "⚠️  No Strava activities found for this date range\n",
-      displayType: "strava"
+      displayType: "strava",
     },
     updateCalendar: true,
     calendarSyncMetadata: {
@@ -1109,7 +1109,7 @@ const INTEGRATIONS = {
     displayMetadata: {
       tableTitle: "GITHUB ACTIVITIES",
       emptyMessage: "⚠️  No GitHub activities found for this date range\n",
-      displayType: "github"
+      displayType: "github",
     },
     updateCalendar: true,
     calendarSyncMetadata: {
@@ -1178,8 +1178,9 @@ const INTEGRATIONS = {
     collect: true,
     displayMetadata: {
       tableTitle: "STEAM GAMING ACTIVITIES",
-      emptyMessage: "⚠️  No Steam gaming activities found for this date range\n",
-      displayType: "steam"
+      emptyMessage:
+        "⚠️  No Steam gaming activities found for this date range\n",
+      displayType: "steam",
     },
     updateCalendar: true,
     calendarSyncMetadata: {
@@ -1234,7 +1235,7 @@ const INTEGRATIONS = {
     displayMetadata: {
       tableTitle: "WITHINGS MEASUREMENTS",
       emptyMessage: "⚠️  No Withings measurements found for this date range\n",
-      displayType: "withings"
+      displayType: "withings",
     },
     updateCalendar: true,
     calendarSyncMetadata: {
@@ -1245,7 +1246,8 @@ const INTEGRATIONS = {
       displayNameProperty: "name",
       displayNameFormat: "text",
       skipReason: "Missing date",
-      transformerFile: "../transformers/notion-withings-to-calendar-bodyweight.js",
+      transformerFile:
+        "../transformers/notion-withings-to-calendar-bodyweight.js",
       transformerFunction: "transformBodyWeightToCalendarEvent",
       displayFields: [
         { key: "name", property: "name" },
@@ -1275,7 +1277,8 @@ const INTEGRATIONS = {
     updateCalendar: true,
     calendarSyncMetadata: {
       queryMethod: "getUnsyncedBloodPressure",
-      emptyMessage: "✅ No blood pressure records found without calendar events\n",
+      emptyMessage:
+        "✅ No blood pressure records found without calendar events\n",
       sourceType: "bloodPressure",
       eventType: "allDay",
       displayNameProperty: "name",
@@ -1300,6 +1303,68 @@ const INTEGRATIONS = {
       uniqueIdProperty: null,
       uniqueIdType: null,
       calendarCreatedProperty: "calendarCreated",
+    },
+  },
+  events: {
+    id: "events",
+    name: "Events",
+    notionDbEnvVar: "NOTION_EVENTS_DATABASE_ID",
+    calendarRouting: ["events"],
+    collect: false,
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      emptyMessage: "✅ No event records found without calendar events\n",
+      sourceType: "events",
+      eventType: "allDay",
+      displayNameProperty: "eventName",
+      displayNameFormat: "text",
+      skipReason: "Missing date or event name",
+      displayFields: [
+        { key: "eventName", property: "Event Name" },
+        { key: "category", property: "Category" },
+        { key: "date", property: "Date" },
+        { key: "subcategory", property: "Subcategory" },
+      ],
+      transformerFile: "../transformers/notion-events-to-calendar-events.js",
+      transformerFunction: "transformEventToCalendarEvent",
+      tableTitle: "📅 EVENT RECORDS TO SYNC",
+      displayFormat: (record) => `📅 ${record.date}: ${record.eventName}`,
+      recordLabel: "event record",
+    },
+    databaseConfig: {
+      dateProperty: "Date",
+      calendarEventIdProperty: "Calendar Event ID",
+    },
+  },
+  trips: {
+    id: "trips",
+    name: "Trips",
+    notionDbEnvVar: "NOTION_TRIPS_DATABASE_ID",
+    calendarRouting: ["trips"],
+    collect: false,
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      emptyMessage: "✅ No trip records found without calendar events\n",
+      sourceType: "trips",
+      eventType: "allDay",
+      displayNameProperty: "tripName",
+      displayNameFormat: "text",
+      skipReason: "Missing date or trip name",
+      displayFields: [
+        { key: "tripName", property: "Trip Name" },
+        { key: "category", property: "Category" },
+        { key: "date", property: "Date" },
+        { key: "emoji", property: "Emoji" },
+      ],
+      transformerFile: "../transformers/notion-trips-to-calendar-trips.js",
+      transformerFunction: "transformTripToCalendarEvent",
+      tableTitle: "✈️ TRIP RECORDS TO SYNC",
+      displayFormat: (record) => `✈️ ${record.date}: ${record.tripName}`,
+      recordLabel: "trip record",
+    },
+    databaseConfig: {
+      dateProperty: "Date",
+      calendarEventIdProperty: "Calendar Event ID",
     },
   },
 };

@@ -7,6 +7,7 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
+const IntegrationDatabase = require("../src/databases/IntegrationDatabase");
 const { selectCalendarDateRange } = require("../src/utils/cli");
 const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
@@ -25,7 +26,7 @@ const { INTEGRATIONS } = require("../src/config/unified-sources");
  */
 async function selectSourceAndAction() {
   const updaterIds = getUpdaterIds();
-  
+
   // Build choices from updater registry
   const sortedUpdaters = updaterIds
     .map((id) => ({
@@ -36,7 +37,9 @@ async function selectSourceAndAction() {
 
   const choices = [
     {
-      name: `All Sources (${sortedUpdaters.map((s) => s.name.split(" ")[0]).join(", ")})`,
+      name: `All Sources (${sortedUpdaters
+        .map((s) => s.name.split(" ")[0])
+        .join(", ")})`,
       value: "all",
     },
     ...sortedUpdaters.map((s) => ({
@@ -97,7 +100,9 @@ function printSyncResults(results, sourceType = null) {
     results.skipped.forEach((r) => {
       // Use displayName if available
       if (r.displayName && sourceType) {
-        console.log(`  ⏭️  ${formatRecordForLogging(r, sourceType)} - ${r.reason}`);
+        console.log(
+          `  ⏭️  ${formatRecordForLogging(r, sourceType)} - ${r.reason}`
+        );
       } else {
         // Fallback to pageId for backward compatibility
         console.log(`  ⏭️  Page ID: ${r.pageId} - ${r.reason}`);
@@ -131,7 +136,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   console.log("=".repeat(80) + "\n");
 
   const updaterIds = getUpdaterIds();
-  
+
   // Build sources list with names from INTEGRATIONS
   const sources = updaterIds
     .map((id) => ({
@@ -216,10 +221,27 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
 
   console.log(`📊 Querying Notion for unsynced ${sourceId} records...\n`);
 
-  const notionService = new NotionService();
+  // Create IntegrationDatabase instance to check pattern
+  const repo = new IntegrationDatabase(sourceId);
 
-  // Dynamically call the configured query method
-  const records = await notionService[queryMethod](startDate, endDate);
+  // Determine which pattern to use: event ID (text property) or checkbox
+  const useEventIdPattern =
+    repo.databaseConfig.calendarEventIdProperty !== undefined &&
+    repo.databaseConfig.calendarEventIdProperty !== null;
+
+  // Get unsynced records based on pattern
+  let records;
+  if (useEventIdPattern) {
+    // Use new event ID pattern
+    records = await repo.getUnsyncedByEventId(startDate, endDate);
+  } else if (queryMethod) {
+    // Use old pattern with NotionService queryMethod
+    const notionService = new NotionService();
+    records = await notionService[queryMethod](startDate, endDate);
+  } else {
+    // Fallback to IntegrationDatabase.getUnsynced() if no queryMethod
+    records = await repo.getUnsynced(startDate, endDate);
+  }
 
   if (records.length === 0) {
     console.log(emptyMessage);
@@ -227,10 +249,12 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
   }
 
   // Format and display records using config-driven utilities
+  // Use repo for new pattern, notionService for old pattern
+  const serviceForDisplay = useEventIdPattern ? repo : new NotionService();
   const formattedRecords = formatRecordsForDisplay(
     records,
     sourceId,
-    notionService
+    serviceForDisplay
   );
   displayRecordsTable(formattedRecords, sourceId);
 

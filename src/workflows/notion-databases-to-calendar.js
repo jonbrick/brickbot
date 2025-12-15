@@ -137,9 +137,16 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     total: 0,
   };
 
+  // Determine which pattern to use: event ID (text property) or checkbox
+  const useEventIdPattern =
+    repo.databaseConfig.calendarEventIdProperty !== undefined &&
+    repo.databaseConfig.calendarEventIdProperty !== null;
+
   try {
-    // Get unsynced records
-    const records = await repo.getUnsynced(startDate, endDate);
+    // Get unsynced records based on pattern
+    const records = useEventIdPattern
+      ? await repo.getUnsyncedByEventId(startDate, endDate)
+      : await repo.getUnsynced(startDate, endDate);
     results.total = records.length;
 
     if (records.length === 0) {
@@ -181,8 +188,12 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
         try {
           const createdEvent = await calService.createEvent(calendarId, event);
 
-          // Mark as synced in Notion
-          await repo.markSynced(record.id);
+          // Mark as synced in Notion (use appropriate pattern)
+          if (useEventIdPattern) {
+            await repo.markSyncedWithEventId(record.id, createdEvent.id);
+          } else {
+            await repo.markSynced(record.id);
+          }
 
           // Extract display name for consistent reporting
           const displayName = getDisplayName(record, repo, integrationConfig);

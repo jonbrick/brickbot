@@ -34,7 +34,7 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
   const fields = integration.calendarSyncMetadata.displayFields;
   const integrationId = sourceId; // sourceId is already the integration ID
   const propConfig = config.notion.properties[integrationId];
-  
+
   if (!propConfig) {
     throw new Error(
       `Property config not found for integration: "${integrationId}". Check config.notion.properties.${integrationId}`
@@ -56,9 +56,20 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
       }
 
       // Get property name from config
-      const propName = config.notion.getPropertyName(
-        propConfig[field.property]
-      );
+      // field.property can be either:
+      // 1. A config key (e.g., "eventName") - for backward compatibility
+      // 2. A Notion property name (e.g., "Event Name") - for new integrations
+      let propConfigEntry = propConfig[field.property];
+
+      // If not found by key, search by Notion property name
+      if (!propConfigEntry) {
+        propConfigEntry = Object.values(propConfig).find(
+          (prop) => prop && prop.name === field.property
+        );
+      }
+
+      // Get the actual Notion property name
+      const propName = config.notion.getPropertyName(propConfigEntry);
 
       // Extract value
       let value = notionService.extractProperty(record, propName);
@@ -100,8 +111,9 @@ function displayRecordsTable(records, sourceId) {
     );
   }
 
-  const { tableTitle, displayFormat, recordLabel } = integration.calendarSyncMetadata;
-  
+  const { tableTitle, displayFormat, recordLabel } =
+    integration.calendarSyncMetadata;
+
   if (!tableTitle || !displayFormat || !recordLabel) {
     throw new Error(
       `Missing display config for integration: ${sourceId}. Check calendarSyncMetadata.tableTitle, displayFormat, and recordLabel`

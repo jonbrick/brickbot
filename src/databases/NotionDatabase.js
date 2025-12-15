@@ -400,6 +400,41 @@ class NotionDatabase {
   }
 
   /**
+   * Extract date range from a Notion date property
+   * Returns both start and end dates for date range properties
+   *
+   * @param {Object} page - Notion page object
+   * @param {string} propertyName - Property name
+   * @returns {Object|null} Object with { start: "YYYY-MM-DD", end: "YYYY-MM-DD" } or null
+   */
+  extractDateRange(page, propertyName) {
+    const property = page.properties[propertyName];
+
+    if (!property || property.type !== "date" || !property.date) {
+      return null;
+    }
+
+    const start = property.date.start;
+    const end = property.date.end || property.date.start; // Fallback to start if no end
+
+    if (!start) {
+      return null;
+    }
+
+    // Format as YYYY-MM-DD for all-day events (strip time portion if present)
+    const formatDate = (dateStr) => {
+      if (!dateStr) return null;
+      // Extract date portion (YYYY-MM-DD) from ISO string
+      return dateStr.split("T")[0];
+    };
+
+    return {
+      start: formatDate(start),
+      end: formatDate(end),
+    };
+  }
+
+  /**
    * Format properties for Notion API
    *
    * @param {Object} properties - Simple key-value properties
@@ -578,4 +613,3 @@ class NotionDatabase {
 }
 
 module.exports = NotionDatabase;
-

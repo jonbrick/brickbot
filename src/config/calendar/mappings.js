@@ -81,6 +81,26 @@ const calendarMappings = {
   },
 
   /**
+   * Events calendar mapping
+   * All events go to events calendar (direct mapping)
+   */
+  events: {
+    type: "direct",
+    sourceDatabase: "events",
+    calendarId: process.env.EVENTS_CALENDAR_ID,
+  },
+
+  /**
+   * Trips calendar mapping
+   * All trips go to trips calendar (direct mapping)
+   */
+  trips: {
+    type: "direct",
+    sourceDatabase: "trips",
+    calendarId: process.env.TRIPS_CALENDAR_ID,
+  },
+
+  /**
    * Future calendar mappings (placeholders for upcoming integrations)
    */
 
@@ -231,7 +251,9 @@ function deriveSummarySource(groupId, group) {
     description:
       descriptionMap[groupId] ||
       (group.calendars.length > 1
-        ? `${group.name.split(" (")[0]} tracking from ${calendarNames} calendars`
+        ? `${
+            group.name.split(" (")[0]
+          } tracking from ${calendarNames} calendars`
         : `${group.name} tracking from ${calendarNames} calendar`),
     required: false,
     sourceType: group.sourceType,
@@ -427,7 +449,9 @@ function getDisplayNameForFetchKey(fetchKey, sourcesConfig) {
   // Look through all sources to find which one has this fetchKey
   for (const [sourceId, source] of Object.entries(sourcesConfig)) {
     if (source.calendars) {
-      const calendar = source.calendars.find((cal) => cal.fetchKey === fetchKey);
+      const calendar = source.calendars.find(
+        (cal) => cal.fetchKey === fetchKey
+      );
       if (calendar) {
         return source.displayName;
       }

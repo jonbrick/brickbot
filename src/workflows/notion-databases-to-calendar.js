@@ -142,9 +142,16 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     repo.databaseConfig.calendarEventIdProperty !== undefined &&
     repo.databaseConfig.calendarEventIdProperty !== null;
 
+  // Detect hybrid pattern: both event ID and checkbox properties exist
+  const useHybridPattern =
+    useEventIdPattern &&
+    repo.databaseConfig.calendarCreatedProperty !== undefined;
+
   try {
     // Get unsynced records based on pattern
-    const records = useEventIdPattern
+    const records = useHybridPattern
+      ? await repo.getUnsyncedByCheckbox(startDate, endDate)
+      : useEventIdPattern
       ? await repo.getUnsyncedByEventId(startDate, endDate)
       : await repo.getUnsynced(startDate, endDate);
     results.total = records.length;
@@ -159,6 +166,11 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
         // Transform to calendar event format
         const transformed = transformFn(record, repo);
         const { calendarId, event, accountType } = transformed;
+
+        // Extract existing event ID for hybrid pattern (if record already has one)
+        const existingEventId = useHybridPattern
+          ? repo.extractEventId(record)
+          : null;
 
         // Validate event
         if (!validateEvent(event, metadata.eventType)) {
@@ -184,12 +196,40 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
           throw new Error(`Invalid account type: ${accountType}`);
         }
 
-        // Create calendar event
+        // Create or update calendar event
+        let createdEvent;
+        let wasUpdated = false;
+
         try {
-          const createdEvent = await calService.createEvent(calendarId, event);
+          if (useHybridPattern && existingEventId) {
+            // Try to update existing event
+            const existingEvent = await calService.getEvent(
+              calendarId,
+              existingEventId
+            );
+            if (existingEvent) {
+              createdEvent = await calService.updateEvent(
+                calendarId,
+                existingEventId,
+                event
+              );
+              wasUpdated = true;
+            } else {
+              // Event not found, create new one
+              createdEvent = await calService.createEvent(calendarId, event);
+            }
+          } else {
+            // Create new event
+            createdEvent = await calService.createEvent(calendarId, event);
+          }
 
           // Mark as synced in Notion (use appropriate pattern)
-          if (useEventIdPattern) {
+          if (useHybridPattern) {
+            await repo.markSyncedWithEventIdAndCheckbox(
+              record.id,
+              createdEvent.id
+            );
+          } else if (useEventIdPattern) {
             await repo.markSyncedWithEventId(record.id, createdEvent.id);
           } else {
             await repo.markSynced(record.id);
@@ -201,6 +241,7 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
           const result = {
             skipped: false,
             created: true,
+            updated: wasUpdated,
             pageId: record.id,
             calendarId,
             eventId: createdEvent.id,

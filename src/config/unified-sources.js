@@ -1334,6 +1334,7 @@ const INTEGRATIONS = {
     databaseConfig: {
       dateProperty: "Date",
       calendarEventIdProperty: "Calendar Event ID",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
   trips: {
@@ -1365,6 +1366,7 @@ const INTEGRATIONS = {
     databaseConfig: {
       dateProperty: "Date",
       calendarEventIdProperty: "Calendar Event ID",
+      calendarCreatedProperty: "calendarCreated",
     },
   },
 };

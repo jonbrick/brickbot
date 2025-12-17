@@ -12,6 +12,8 @@ const {
   getYesterday,
   parseWeekNumber,
   getWeekNumber,
+  getWeekStart,
+  getWeekEnd,
 } = require("./date");
 
 /**
@@ -46,7 +48,9 @@ async function selectDateRange() {
       // Multiple weeks: calculate combined date range
       const startDates = weekSelection.map((w) => w.startDate);
       const endDates = weekSelection.map((w) => w.endDate);
-      const startDate = new Date(Math.min(...startDates.map((d) => d.getTime())));
+      const startDate = new Date(
+        Math.min(...startDates.map((d) => d.getTime()))
+      );
       const endDate = new Date(Math.max(...endDates.map((d) => d.getTime())));
       return { startDate, endDate };
     } else {
@@ -195,7 +199,9 @@ async function selectCalendarDateRange() {
       // Multiple weeks: calculate combined date range
       const startDates = weekSelection.map((w) => w.startDate);
       const endDates = weekSelection.map((w) => w.endDate);
-      const startDate = new Date(Math.min(...startDates.map((d) => d.getTime())));
+      const startDate = new Date(
+        Math.min(...startDates.map((d) => d.getTime()))
+      );
       const endDate = new Date(Math.max(...endDates.map((d) => d.getTime())));
       return { startDate, endDate };
     } else {
@@ -225,13 +231,10 @@ async function selectCalendarDateRange() {
       break;
 
     case "week": {
-      // Start = last Sunday, End = today 23:59:59 (not next Sunday)
+      // Start = last Sunday, End = Saturday 23:59:59
       const today = getToday();
-      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
-      startDate = new Date(today);
-      startDate.setDate(today.getDate() - dayOfWeek); // Go back to Sunday
-      endDate = getToday();
-      endDate.setHours(23, 59, 59, 999);
+      startDate = getWeekStart(today); // Sunday 00:00:00
+      endDate = getWeekEnd(today); // Saturday 23:59:59
       break;
     }
 

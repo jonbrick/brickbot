@@ -163,6 +163,91 @@ class IntegrationDatabase extends NotionDatabase {
   }
 
   /**
+   * Get unsynced records by checkbox (where Calendar Created checkbox is false)
+   * Similar to getUnsynced() but explicitly uses calendarCreatedProperty
+   *
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} Unsynced records
+   */
+  async getUnsyncedByCheckbox(startDate, endDate) {
+    try {
+      // Return empty array if databaseId is not configured
+      if (!this.databaseId) {
+        return [];
+      }
+
+      // Validate calendarCreatedProperty exists
+      if (!this.databaseConfig.calendarCreatedProperty) {
+        throw new Error(
+          `calendarCreatedProperty not configured for ${this.configKey}. Required for checkbox pattern.`
+        );
+      }
+
+      // Get property names
+      // For Events/Trips: databaseConfig contains actual Notion property names, use directly
+      // For old integrations: databaseConfig contains config keys, resolve through props
+      const datePropertyConfigKey = this.databaseConfig.dateProperty;
+      const calendarCreatedPropertyConfigKey =
+        this.databaseConfig.calendarCreatedProperty;
+
+      // Check if the config key exists in props (old pattern) or use directly (new pattern)
+      let datePropertyName;
+      let calendarCreatedPropertyName;
+
+      if (this.props[datePropertyConfigKey]) {
+        // Old pattern: config key exists in props, resolve through getPropertyName
+        datePropertyName = config.notion.getPropertyName(
+          this.props[datePropertyConfigKey]
+        );
+      } else {
+        // New pattern: databaseConfig contains actual Notion property name, use directly
+        datePropertyName = datePropertyConfigKey;
+      }
+
+      if (this.props[calendarCreatedPropertyConfigKey]) {
+        // Old pattern: config key exists in props, resolve through getPropertyName
+        calendarCreatedPropertyName = config.notion.getPropertyName(
+          this.props[calendarCreatedPropertyConfigKey]
+        );
+      } else {
+        // New pattern: databaseConfig contains actual Notion property name, use directly
+        calendarCreatedPropertyName = calendarCreatedPropertyConfigKey;
+      }
+
+      // Build filter: date range + calendarCreated checkbox equals false
+      const filter = {
+        and: [
+          {
+            property: datePropertyName,
+            date: {
+              on_or_after: formatDate(startDate),
+            },
+          },
+          {
+            property: datePropertyName,
+            date: {
+              on_or_before: formatDate(endDate),
+            },
+          },
+          {
+            property: calendarCreatedPropertyName,
+            checkbox: {
+              equals: false,
+            },
+          },
+        ],
+      };
+
+      return await this.queryDatabaseAll(this.databaseId, filter);
+    } catch (error) {
+      throw new Error(
+        `Failed to get unsynced ${this.configKey} records by checkbox: ${error.message}`
+      );
+    }
+  }
+
+  /**
    * Get unsynced records (where Calendar Event ID is empty)
    * Uses text property pattern instead of checkbox pattern
    *
@@ -436,6 +521,101 @@ class IntegrationDatabase extends NotionDatabase {
       throw new Error(
         `Failed to mark ${this.configKey} record as synced with event ID: ${error.message}`
       );
+    }
+  }
+
+  /**
+   * Mark record as synced with both Google Calendar event ID and checkbox
+   * Updates both calendarEventIdProperty (rich_text) and calendarCreatedProperty (checkbox)
+   * in a single updatePage() call
+   *
+   * @param {string} pageId - Notion page ID
+   * @param {string} eventId - Google Calendar event ID
+   * @returns {Promise<Object>} Updated page
+   */
+  async markSyncedWithEventIdAndCheckbox(pageId, eventId) {
+    try {
+      // Validate both properties exist
+      if (!this.databaseConfig.calendarEventIdProperty) {
+        throw new Error(
+          `calendarEventIdProperty not configured for ${this.configKey}. Required for event ID pattern.`
+        );
+      }
+      if (!this.databaseConfig.calendarCreatedProperty) {
+        throw new Error(
+          `calendarCreatedProperty not configured for ${this.configKey}. Required for checkbox pattern.`
+        );
+      }
+
+      // Resolve calendarEventIdProperty name
+      let eventIdPropertyName;
+      const eventIdPropertyConfigKey =
+        this.databaseConfig.calendarEventIdProperty;
+
+      if (this.props[eventIdPropertyConfigKey]) {
+        // Old pattern: config key exists in props, resolve through getPropertyName
+        eventIdPropertyName = config.notion.getPropertyName(
+          this.props[eventIdPropertyConfigKey]
+        );
+      } else {
+        // New pattern: databaseConfig contains actual Notion property name, use directly
+        eventIdPropertyName = eventIdPropertyConfigKey;
+      }
+
+      // Resolve calendarCreatedProperty name
+      const calendarCreatedPropertyName = config.notion.getPropertyName(
+        this.props[this.databaseConfig.calendarCreatedProperty]
+      );
+
+      // Update both properties in a single call
+      const properties = {
+        [eventIdPropertyName]: eventId, // rich_text property
+        [calendarCreatedPropertyName]: true, // checkbox property
+      };
+
+      return await this.updatePage(pageId, properties);
+    } catch (error) {
+      throw new Error(
+        `Failed to mark ${this.configKey} record as synced with event ID and checkbox: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Extract existing Google Calendar event ID from a record
+   * Helper method to get the event ID stored in calendarEventIdProperty
+   *
+   * @param {Object} record - Notion page object
+   * @returns {string|null} Event ID string or null if not found
+   */
+  extractEventId(record) {
+    try {
+      // Validate calendarEventIdProperty exists
+      if (!this.databaseConfig.calendarEventIdProperty) {
+        return null;
+      }
+
+      // Resolve property name
+      let propertyName;
+      const eventIdPropertyConfigKey =
+        this.databaseConfig.calendarEventIdProperty;
+
+      if (this.props[eventIdPropertyConfigKey]) {
+        // Old pattern: config key exists in props, resolve through getPropertyName
+        propertyName = config.notion.getPropertyName(
+          this.props[eventIdPropertyConfigKey]
+        );
+      } else {
+        // New pattern: databaseConfig contains actual Notion property name, use directly
+        propertyName = eventIdPropertyConfigKey;
+      }
+
+      // Extract value using extractProperty
+      const eventId = this.extractProperty(record, propertyName);
+      return eventId || null;
+    } catch (error) {
+      // Return null on error (non-critical helper method)
+      return null;
     }
   }
 }

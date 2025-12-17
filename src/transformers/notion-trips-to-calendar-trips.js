@@ -20,6 +20,18 @@ function getColorIdFromCategory(category) {
 }
 
 /**
+ * Extract emoji from subcategory (e.g., "🎸 Concerts" → "🎸")
+ * Uses Unicode emoji regex to properly handle multi-byte emojis
+ * @param {string|null} subcategory - Subcategory value from Notion
+ * @returns {string} Emoji with space, or empty string
+ */
+function extractEmoji(subcategory) {
+  if (!subcategory) return "";
+  const match = subcategory.match(/^(\p{Emoji})/u);
+  return match ? match[1] + " " : "";
+}
+
+/**
  * Add one day to a date string (YYYY-MM-DD)
  * @param {string} dateStr - Date string in YYYY-MM-DD format
  * @returns {string} Date string with one day added
@@ -48,9 +60,9 @@ function transformTripToCalendarEvent(record, repo) {
     record,
     config.notion.getPropertyName(props.category)
   );
-  const emoji = repo.extractProperty(
+  const subcategory = repo.extractProperty(
     record,
-    config.notion.getPropertyName(props.emoji)
+    config.notion.getPropertyName(props.subcategory)
   );
   const description = repo.extractProperty(
     record,
@@ -66,14 +78,15 @@ function transformTripToCalendarEvent(record, repo) {
     return null; // Skip if missing required fields
   }
 
-  // Build summary with emoji prefix (emoji is already just the character)
-  const emojiPrefix = emoji ? emoji + " " : "";
-  const summary = `${emojiPrefix}${tripName}`;
+  // Build summary with emoji prefix extracted from subcategory
+  const emoji = extractEmoji(subcategory);
+  const summary = `${emoji}${tripName}`;
 
   // Build description
   const descParts = [];
   if (description) descParts.push(description);
   if (category) descParts.push(`Category: ${category}`);
+  if (subcategory) descParts.push(`Type: ${subcategory}`);
 
   // Build event object
   // Google Calendar all-day events use exclusive end dates

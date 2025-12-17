@@ -34,5 +34,10 @@ module.exports = {
       type: "rich_text",
       enabled: true,
     },
+    calendarCreated: {
+      name: "Calendar Created",
+      type: "checkbox",
+      enabled: true,
+    },
   },
 };

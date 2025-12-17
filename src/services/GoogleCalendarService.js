@@ -86,6 +86,60 @@ class GoogleCalendarService {
   }
 
   /**
+   * Get a calendar event by ID
+   *
+   * @param {string} calendarId - Calendar ID
+   * @param {string} eventId - Event ID
+   * @returns {Promise<Object|null>} Event object or null if not found
+   */
+  async getEvent(calendarId, eventId) {
+    try {
+      const response = await this.calendar.events.get({
+        calendarId: calendarId,
+        eventId: eventId,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return null; // Event not found
+      }
+      throw new Error(
+        `Failed to get calendar event: ${
+          error.response?.data?.error?.message || error.message
+        }`
+      );
+    }
+  }
+
+  /**
+   * Update a calendar event
+   *
+   * @param {string} calendarId - Calendar ID
+   * @param {string} eventId - Event ID
+   * @param {Object} eventData - Event data
+   * @returns {Promise<Object>} Updated event
+   */
+  async updateEvent(calendarId, eventId, eventData) {
+    try {
+      const response = await this.calendar.events.update({
+        calendarId: calendarId,
+        eventId: eventId,
+        resource: eventData,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new Error("Event not found");
+      }
+      throw new Error(
+        `Failed to update calendar event: ${
+          error.response?.data?.error?.message || error.message
+        }`
+      );
+    }
+  }
+
+  /**
    * List events in a calendar for a date range
    *
    * @param {string} calendarId - Calendar ID

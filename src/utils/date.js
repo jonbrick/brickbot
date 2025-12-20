@@ -1,29 +1,29 @@
 /**
  * Date Utilities
- * 
+ *
  * Low-level date parsing, formatting, and manipulation utilities used throughout the application.
  * These are general-purpose functions that don't contain source-specific logic.
- * 
+ *
  * **Purpose:**
  * Provides building blocks for date operations: parsing various formats, formatting dates,
  * timezone conversions, date arithmetic, and calendar calculations.
- * 
+ *
  * **When to use:**
  * - For general date operations, formatting, and parsing that don't need source-specific logic
  * - For date manipulation (addDays, getWeekStart, getMonthEnd, etc.)
  * - For simple date formatting (formatDate, formatDateOnly, formatDateLong, formatTime)
  * - For time formatting (formatTimestampWithOffset)
  * - For calendar calculations (getWeekNumber, parseWeekNumber, etc.)
- * 
+ *
  * **When NOT to use:**
  * - For extracting dates from API responses - use `date-handler.js` → `extractSourceDate()` instead
  * - For source-specific date transformations - use `date-handler.js` instead
- * 
+ *
  * **Relationship to date-handler.js:**
  * - `date.js` provides the low-level utilities
  * - `date-handler.js` uses these utilities but applies source-specific transformations
  * - Collectors typically use `date-handler.js` for extraction, and `date.js` for formatting/manipulation
- * 
+ *
  * **Key Functions:**
  * - **Parsing**: `parseDate()` - parses various date string formats
  * - **Formatting**: `formatDate()`, `formatDateOnly()`, `formatDateLong()`, `formatTime()`
@@ -31,7 +31,7 @@
  * - **Special**: `calculateNightOf()` - Oura-specific "night of" calculation
  * - **Calendar**: `buildDateTime()` - combines date and time strings for calendar events
  * - **Manipulation**: `addDays()`, `addMonths()`, `getWeekStart()`, `getMonthEnd()`, etc.
- * 
+ *
  * @module date
  */
 
@@ -129,7 +129,7 @@ function parseWeekNumber(weekNumber, year = new Date().getFullYear()) {
 
   // Find January 1st of the year
   const jan1 = new Date(year, 0, 1);
-  
+
   // Find the Sunday of the week containing January 1st
   // This is the start of week 1
   const dayOfWeek = jan1.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -160,22 +160,22 @@ function parseWeekNumber(weekNumber, year = new Date().getFullYear()) {
 function getWeekNumber(date = new Date()) {
   const year = date.getFullYear();
   const jan1 = new Date(year, 0, 1);
-  
+
   // Find the Sunday of the week containing January 1st
   const dayOfWeek = jan1.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const daysToSunday = dayOfWeek === 0 ? 0 : -dayOfWeek;
   const week1Sunday = new Date(jan1);
   week1Sunday.setDate(jan1.getDate() + daysToSunday);
-  
+
   // Calculate days from week 1 Sunday to the given date
   const daysDiff = Math.floor((date - week1Sunday) / (1000 * 60 * 60 * 24));
   const weekNumber = Math.floor(daysDiff / 7) + 1;
-  
+
   // Handle edge case: if date is before week 1 Sunday, it's week 52/53 of previous year
   if (weekNumber < 1) {
     return getWeekNumber(new Date(year - 1, 11, 31));
   }
-  
+
   return weekNumber;
 }
 
@@ -328,6 +328,18 @@ function addDays(date, days) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
+}
+
+/**
+ * Add one day to a date string (YYYY-MM-DD)
+ * Used for Google Calendar all-day events which use exclusive end dates
+ * @param {string} dateStr - Date string in YYYY-MM-DD format
+ * @returns {string} Date string with one day added
+ */
+function addOneDay(dateStr) {
+  const date = new Date(dateStr + "T00:00:00");
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().split("T")[0];
 }
 
 /**
@@ -616,6 +628,7 @@ module.exports = {
   isValidDate,
   getDateRange,
   addDays,
+  addOneDay,
   calculateNightOf,
   addMonths,
   getWeekStart,

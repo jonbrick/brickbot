@@ -5,6 +5,7 @@ const { resolveCalendarId } = require("../utils/calendar-mapper");
 const {
   getColorIdFromNotionCategory,
 } = require("../config/calendar/color-mappings");
+const { addOneDay } = require("../utils/date");
 
 /**
  * Extract emoji from subcategory (e.g., "🎸 Concerts" → "🎸")
@@ -18,17 +19,6 @@ function extractEmoji(subcategory) {
   if (!value || typeof value !== "string") return "";
   const match = value.match(/^(\p{Emoji})/u);
   return match ? match[1] + " " : "";
-}
-
-/**
- * Add one day to a date string (YYYY-MM-DD)
- * @param {string} dateStr - Date string in YYYY-MM-DD format
- * @returns {string} Date string with one day added
- */
-function addOneDay(dateStr) {
-  const date = new Date(dateStr + "T00:00:00");
-  date.setDate(date.getDate() + 1);
-  return date.toISOString().split("T")[0];
 }
 
 /**

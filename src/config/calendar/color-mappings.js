@@ -32,6 +32,14 @@ const WORK_COLOR_MAPPING = {
   11: { category: "qa", displayName: "QA" }, // Tomato
 };
 
+// Events/Trips Category to Color Mapping
+// Maps Notion category select values (with emojis) to Google Calendar color IDs
+const EVENTS_TRIPS_CATEGORY_TO_COLOR = {
+  "🍻 Interpersonal": "3", // Grape (purple)
+  "💼 Work": "9", // Blueberry (blue)
+  "🌱 Personal": null, // Default (no color)
+};
+
 // PALE_BLUE	Enum	 Pale Blue ("1"), referred to as "Peacock" in th Calendar UI.
 // PALE_GREEN	Enum	 Pale Green ("2"), referred to as "Sage" in th Calendar UI.
 // MAUVE	Enum	 Mauve ("3"),, referred to as "Grape" in th Calendar UI.
@@ -100,11 +108,23 @@ function getWorkCategoryDisplayName(colorId) {
   return colorInfo ? colorInfo.displayName : "Meetings";
 }
 
+/**
+ * Get Google Calendar color ID from Notion category value (Events/Trips)
+ * @param {string|null} category - Notion category value (e.g., "🍻 Interpersonal", "💼 Work", "🌱 Personal")
+ * @returns {string|null} Google Calendar color ID or null if no color
+ */
+function getColorIdFromNotionCategory(category) {
+  if (!category) return null;
+  return EVENTS_TRIPS_CATEGORY_TO_COLOR[category] || null;
+}
+
 module.exports = {
   PERSONAL_COLOR_MAPPING,
   WORK_COLOR_MAPPING,
+  EVENTS_TRIPS_CATEGORY_TO_COLOR,
   getPersonalCategoryByColor,
   getPersonalCategoryDisplayName,
   getWorkCategoryByColor,
   getWorkCategoryDisplayName,
+  getColorIdFromNotionCategory,
 };

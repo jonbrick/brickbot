@@ -2,22 +2,9 @@
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
-
-/**
- * Category → Google Calendar color mapping
- * @param {string|null} category - Category value from Notion
- * @returns {string|null} Google Calendar color ID or null
- */
-function getColorIdFromCategory(category) {
-  if (!category) return null;
-
-  const colorMap = {
-    "🍻 Interpersonal": "3", // Grape (purple)
-    "💼 Work": "9", // Blueberry (blue)
-    "🌱 Personal": null, // Default (no color)
-  };
-  return colorMap[category] || null;
-}
+const {
+  getColorIdFromNotionCategory,
+} = require("../config/calendar/color-mappings");
 
 /**
  * Extract emoji from subcategory (e.g., "🎸 Concerts" → "🎸")
@@ -100,7 +87,7 @@ function transformTripToCalendarEvent(record, repo) {
   };
 
   // Add color if mapped
-  const colorId = getColorIdFromCategory(category);
+  const colorId = getColorIdFromNotionCategory(category);
   if (colorId) {
     event.colorId = colorId;
   }

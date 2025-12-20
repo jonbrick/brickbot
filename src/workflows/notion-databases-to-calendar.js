@@ -78,6 +78,97 @@ function validateEvent(event, eventType) {
 }
 
 /**
+ * Clean up orphaned calendar events for Events/Trips
+ * Deletes calendar events that don't have corresponding Notion records
+ *
+ * @param {string} integrationId - Integration ID
+ * @param {Object} repo - IntegrationDatabase instance
+ * @param {Object} calendarService - GoogleCalendarService instance
+ * @param {string} calendarId - Calendar ID to clean up
+ * @param {Date} startDate - Start date for cleanup range
+ * @param {Date} endDate - End date for cleanup range
+ * @param {Object} results - Results object to populate
+ * @returns {Promise<void>}
+ */
+async function cleanupOrphanedEvents(
+  integrationId,
+  repo,
+  calendarService,
+  calendarId,
+  startDate,
+  endDate,
+  results
+) {
+  try {
+    console.log(
+      `\n🧹 Cleaning up orphaned ${integrationId} calendar events...`
+    );
+
+    // Get ALL Notion records in date range (including synced ones)
+    const allRecords = await repo.getAllInDateRange(startDate, endDate);
+
+    // Build Set of valid Calendar Event IDs from Notion
+    const validEventIds = new Set();
+    for (const record of allRecords) {
+      const eventId = repo.extractEventId(record);
+      if (eventId) {
+        validEventIds.add(eventId);
+      }
+    }
+
+    console.log(
+      `   Found ${validEventIds.size} valid event IDs in Notion records`
+    );
+
+    // List Calendar events in the same date range
+    const calendarEvents = await calendarService.listEvents(
+      calendarId,
+      startDate,
+      endDate
+    );
+
+    console.log(`   Found ${calendarEvents.length} events in Google Calendar`);
+
+    // Delete orphaned events (events not in Notion)
+    let deletedCount = 0;
+    for (const calEvent of calendarEvents) {
+      if (!validEventIds.has(calEvent.id)) {
+        try {
+          await calendarService.deleteEvent(calendarId, calEvent.id);
+          results.deleted.push({
+            eventId: calEvent.id,
+            summary: calEvent.summary || "Untitled",
+            calendarId: calendarId,
+            deletedAt: new Date().toISOString(),
+          });
+          deletedCount++;
+
+          // Rate limiting between deletions
+          await delay(config.sources.rateLimits.googleCalendar.backoffMs);
+        } catch (error) {
+          // Log error but continue with other deletions
+          console.error(
+            `   ⚠️  Failed to delete event ${calEvent.id}: ${error.message}`
+          );
+          results.errors.push({
+            eventId: calEvent.id,
+            error: `Failed to delete: ${error.message}`,
+          });
+        }
+      }
+    }
+
+    console.log(`   🗑️  Deleted ${deletedCount} orphaned events\n`);
+  } catch (error) {
+    // Log error but don't fail the entire sync
+    console.error(`⚠️  Cleanup failed: ${error.message}\n`);
+    results.errors.push({
+      error: `Cleanup failed: ${error.message}`,
+    });
+  }
+}
+
+/**
  * Sync Notion database records to Google Calendar
  * @param {string} integrationId - Integration ID (e.g., 'oura', 'strava', 'github')
  * @param {Date} startDate - Start date
@@ -134,6 +225,7 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     created: [],
     skipped: [],
     errors: [],
+    deleted: [],
     total: 0,
   };
 
@@ -273,6 +365,46 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     throw new Error(
       `Failed to sync ${integrationId} to calendar: ${error.message}`
     );
+  }
+
+  // Run cleanup for Events/Trips only (hybrid pattern integrations)
+  if (integrationId === "events" || integrationId === "trips") {
+    try {
+      // Get the calendar ID used for this integration
+      // Use first record's calendarId from created events, or resolve from config
+      let cleanupCalendarId = null;
+
+      if (results.created.length > 0) {
+        // Use calendarId from first created event
+        cleanupCalendarId = results.created[0].calendarId;
+      } else {
+        // Resolve calendarId from config (for when no events were created)
+        const { resolveCalendarId } = require("../utils/calendar-mapper");
+        // We need a dummy record to resolve calendar ID - get first record from date range
+        const allRecords = await repo.getAllInDateRange(startDate, endDate);
+        if (allRecords.length > 0) {
+          const transformerModule = require(metadata.transformerFile);
+          const transformFn = transformerModule[metadata.transformerFunction];
+          const transformed = transformFn(allRecords[0], repo);
+          cleanupCalendarId = transformed?.calendarId;
+        }
+      }
+
+      if (cleanupCalendarId) {
+        await cleanupOrphanedEvents(
+          integrationId,
+          repo,
+          calendarService,
+          cleanupCalendarId,
+          startDate,
+          endDate,
+          results
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail the entire sync
+      console.error(`⚠️  Cleanup failed: ${error.message}`);
+    }
   }
 
   return results;

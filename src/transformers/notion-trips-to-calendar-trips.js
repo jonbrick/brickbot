@@ -22,12 +22,14 @@ function getColorIdFromCategory(category) {
 /**
  * Extract emoji from subcategory (e.g., "🎸 Concerts" → "🎸")
  * Uses Unicode emoji regex to properly handle multi-byte emojis
- * @param {string|null} subcategory - Subcategory value from Notion
+ * @param {string|Array|null} subcategory - Subcategory value from Notion
  * @returns {string} Emoji with space, or empty string
  */
 function extractEmoji(subcategory) {
-  if (!subcategory) return "";
-  const match = subcategory.match(/^(\p{Emoji})/u);
+  // Handle arrays (multi-select returns array)
+  const value = Array.isArray(subcategory) ? subcategory[0] : subcategory;
+  if (!value || typeof value !== "string") return "";
+  const match = value.match(/^(\p{Emoji})/u);
   return match ? match[1] + " " : "";
 }
 

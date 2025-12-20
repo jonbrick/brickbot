@@ -79,6 +79,7 @@ function printSyncResults(results, sourceType = null) {
   console.log(`📊 Total records processed: ${results.total}`);
   console.log(`✅ Created: ${results.created.length}`);
   console.log(`⏭️  Skipped: ${results.skipped.length}`);
+  console.log(`🗑️  Deleted: ${results.deleted?.length || 0}`);
   console.log(`❌ Errors: ${results.errors.length}\n`);
 
   if (results.created.length > 0) {
@@ -107,6 +108,14 @@ function printSyncResults(results, sourceType = null) {
         // Fallback to pageId for backward compatibility
         console.log(`  ⏭️  Page ID: ${r.pageId} - ${r.reason}`);
       }
+    });
+    console.log();
+  }
+
+  if (results.deleted && results.deleted.length > 0) {
+    console.log("Deleted orphaned events:");
+    results.deleted.forEach((d) => {
+      console.log(`  🗑️  ${d.summary} (Event ID: ${d.eventId})`);
     });
     console.log();
   }

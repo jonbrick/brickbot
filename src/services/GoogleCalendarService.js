@@ -140,6 +140,32 @@ class GoogleCalendarService {
   }
 
   /**
+   * Delete a calendar event
+   *
+   * @param {string} calendarId - Calendar ID
+   * @param {string} eventId - Event ID
+   * @returns {Promise<boolean>} True if deleted or already deleted
+   */
+  async deleteEvent(calendarId, eventId) {
+    try {
+      await this.calendar.events.delete({
+        calendarId: calendarId,
+        eventId: eventId,
+      });
+      return true;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return true; // Already deleted, treat as success
+      }
+      throw new Error(
+        `Failed to delete calendar event: ${
+          error.response?.data?.error?.message || error.message
+        }`
+      );
+    }
+  }
+
+  /**
    * List events in a calendar for a date range
    *
    * @param {string} calendarId - Calendar ID
@@ -182,7 +208,12 @@ class GoogleCalendarService {
       // Preserve invalid_grant errors for better error handling upstream
       const errorMessage = error.response?.data?.error || error.message;
       if (errorMessage.includes("invalid_grant")) {
-        throw new Error(`invalid_grant: ${error.response?.data?.error_description || "Refresh token expired or revoked"}`);
+        throw new Error(
+          `invalid_grant: ${
+            error.response?.data?.error_description ||
+            "Refresh token expired or revoked"
+          }`
+        );
       }
       throw new Error(`Failed to refresh token: ${error.message}`);
     }

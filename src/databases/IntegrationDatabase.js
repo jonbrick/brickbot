@@ -248,6 +248,61 @@ class IntegrationDatabase extends NotionDatabase {
   }
 
   /**
+   * Get all records in date range (regardless of sync status)
+   * Returns all records without any checkbox or event ID filtering
+   *
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} All records in date range
+   */
+  async getAllInDateRange(startDate, endDate) {
+    try {
+      // Return empty array if databaseId is not configured
+      if (!this.databaseId) {
+        return [];
+      }
+
+      // Get date property name (handles both old and new patterns)
+      const datePropertyConfigKey = this.databaseConfig.dateProperty;
+      let datePropertyName;
+
+      if (this.props[datePropertyConfigKey]) {
+        // Old pattern: config key exists in props, resolve through getPropertyName
+        datePropertyName = config.notion.getPropertyName(
+          this.props[datePropertyConfigKey]
+        );
+      } else {
+        // New pattern: databaseConfig contains actual Notion property name, use directly
+        datePropertyName = datePropertyConfigKey;
+      }
+
+      // Build filter: date range only (no checkbox filter)
+      const filter = {
+        and: [
+          {
+            property: datePropertyName,
+            date: {
+              on_or_after: formatDate(startDate),
+            },
+          },
+          {
+            property: datePropertyName,
+            date: {
+              on_or_before: formatDate(endDate),
+            },
+          },
+        ],
+      };
+
+      return await this.queryDatabaseAll(this.databaseId, filter);
+    } catch (error) {
+      throw new Error(
+        `Failed to get all ${this.configKey} records in date range: ${error.message}`
+      );
+    }
+  }
+
+  /**
    * Get unsynced records (where Calendar Event ID is empty)
    * Uses text property pattern instead of checkbox pattern
    *

@@ -66,16 +66,14 @@ function getIdentifier(record, sourceType) {
 
   const idField = idFields[sourceType];
   const id = idField ? record[idField] : null;
-  const idLabel = idField
-    ? idField.replace(/([A-Z])/g, " $1").trim()
-    : "ID";
+  const idLabel = idField ? idField.replace(/([A-Z])/g, " $1").trim() : "ID";
 
   return id ? `${idLabel}: ${id}` : "Unknown";
 }
 
 /**
  * Format record for logging
- * Returns: "Display Name (Identifier)"
+ * Returns: "Display Name (Identifier)" or "Display Name" or "Display Name (accountType)"
  *
  * @param {Object} record - Record from any workflow
  * @param {string} sourceType - Source type
@@ -84,7 +82,18 @@ function getIdentifier(record, sourceType) {
 function formatRecordForLogging(record, sourceType) {
   const displayName = getDisplayName(record, sourceType);
   const identifier = getIdentifier(record, sourceType);
-  return `${displayName} (${identifier})`;
+
+  // Only include identifier if it's meaningful (not "Unknown")
+  if (identifier && identifier !== "Unknown") {
+    return `${displayName} (${identifier})`;
+  }
+
+  // For GitHub, show accountType if available
+  if (record.accountType) {
+    return `${displayName} (${record.accountType})`;
+  }
+
+  return displayName;
 }
 
 module.exports = {
@@ -92,4 +101,3 @@ module.exports = {
   getIdentifier,
   formatRecordForLogging,
 };
-

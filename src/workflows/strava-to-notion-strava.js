@@ -1,9 +1,6 @@
 // Syncs Strava activity data to Notion with de-duplication
 
-const IntegrationDatabase = require("../databases/IntegrationDatabase");
-const { transformStravaToNotion } = require("../transformers/strava-to-notion-strava");
-const config = require("../config");
-const { delay } = require("../utils/async");
+const { syncIntegrationToNotion } = require("./helpers/sync-integration-to-notion");
 
 /**
  * Sync multiple Strava activities to Notion
@@ -13,73 +10,15 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncStravaToNotion(activities, options = {}) {
-  const workoutRepo = new IntegrationDatabase("strava");
-  const results = {
-    created: [],
-    skipped: [],
-    errors: [],
-    total: activities.length,
-  };
-
-  for (const activity of activities) {
-    try {
-      const result = await syncSingleActivity(activity, workoutRepo);
-      if (result.skipped) {
-        results.skipped.push(result);
-      } else {
-        results.created.push(result);
-      }
-
-      // Rate limiting between operations
-      await delay(config.sources.rateLimits.notion.backoffMs);
-    } catch (error) {
-      results.errors.push({
-        activity: activity.activityId,
-        error: error.message,
-      });
-    }
-  }
-
-  return results;
-}
-
-/**
- * Sync a single activity to Notion
- *
- * @param {Object} activity - Processed Strava activity
- * @param {IntegrationDatabase} workoutRepo - Workout database instance
- * @returns {Promise<Object>} Sync result
- */
-async function syncSingleActivity(activity, workoutRepo) {
-  // Check for existing record
-  const existing = await workoutRepo.findByUniqueId(activity.activityId);
-
-  if (existing) {
-    return {
-      skipped: true,
-      activityId: activity.activityId,
-      name: activity.name,
-      displayName: activity.name,
-      existingPageId: existing.id,
-    };
-  }
-
-  // Transform and create
-  const properties = transformStravaToNotion(activity);
-  const databaseId = config.notion.databases.strava;
-  const page = await workoutRepo.createPage(databaseId, properties);
-
-  return {
-    skipped: false,
-    created: true,
-    activityId: activity.activityId,
-    name: activity.name,
-    displayName: activity.name,
-    pageId: page.id,
-  };
+  return syncIntegrationToNotion(
+    "strava",
+    activities,
+    (item) => item.activityId,
+    (item) => item.name,
+    options
+  );
 }
 
 module.exports = {
   syncStravaToNotion,
-  syncSingleActivity,
 };

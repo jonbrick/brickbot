@@ -1,9 +1,6 @@
 // Syncs Oura sleep data to Notion with de-duplication
 
-const IntegrationDatabase = require("../databases/IntegrationDatabase");
-const { transformOuraToNotion } = require("../transformers/oura-to-notion-oura");
-const config = require("../config");
-const { delay } = require("../utils/async");
+const { syncIntegrationToNotion } = require("./helpers/sync-integration-to-notion");
 const { formatDate } = require("../utils/date");
 
 /**
@@ -14,73 +11,15 @@ const { formatDate } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncOuraToNotion(sessions, options = {}) {
-  const sleepRepo = new IntegrationDatabase("oura");
-  const results = {
-    created: [],
-    skipped: [],
-    errors: [],
-    total: sessions.length,
-  };
-
-  for (const session of sessions) {
-    try {
-      const result = await syncSingleSession(session, sleepRepo);
-      if (result.skipped) {
-        results.skipped.push(result);
-      } else {
-        results.created.push(result);
-      }
-
-      // Rate limiting between operations
-      await delay(config.sources.rateLimits.notion.backoffMs);
-    } catch (error) {
-      results.errors.push({
-        session: session.sleepId,
-        error: error.message,
-      });
-    }
-  }
-
-  return results;
-}
-
-/**
- * Sync a single sleep session to Notion
- *
- * @param {Object} session - Processed Oura sleep session
- * @param {IntegrationDatabase} sleepRepo - Sleep database instance
- * @returns {Promise<Object>} Sync result
- */
-async function syncSingleSession(session, sleepRepo) {
-  // Check for existing record
-  const existing = await sleepRepo.findByUniqueId(session.sleepId);
-
-  if (existing) {
-    return {
-      skipped: true,
-      sleepId: session.sleepId,
-      nightOf: session.nightOf,
-      displayName: formatDate(session.nightOf),
-      existingPageId: existing.id,
-    };
-  }
-
-  // Transform and create
-  const properties = transformOuraToNotion(session);
-  const databaseId = config.notion.databases.oura;
-  const page = await sleepRepo.createPage(databaseId, properties);
-
-  return {
-    skipped: false,
-    created: true,
-    sleepId: session.sleepId,
-    nightOf: session.nightOf,
-    displayName: formatDate(session.nightOf),
-    pageId: page.id,
-  };
+  return syncIntegrationToNotion(
+    "oura",
+    sessions,
+    (item) => item.sleepId,
+    (item) => formatDate(item.nightOf),
+    options
+  );
 }
 
 module.exports = {
   syncOuraToNotion,
-  syncSingleSession,
 };

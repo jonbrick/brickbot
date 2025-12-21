@@ -1,9 +1,6 @@
 // Syncs Steam gaming data to Notion with de-duplication
 
-const IntegrationDatabase = require("../databases/IntegrationDatabase");
-const { transformSteamToNotion } = require("../transformers/steam-to-notion-steam");
-const config = require("../config");
-const { delay } = require("../utils/async");
+const { syncIntegrationToNotion } = require("./helpers/sync-integration-to-notion");
 
 /**
  * Sync multiple Steam activities to Notion
@@ -13,73 +10,15 @@ const { delay } = require("../utils/async");
  * @returns {Promise<Object>} Sync results
  */
 async function syncSteamToNotion(activities, options = {}) {
-  const steamRepo = new IntegrationDatabase("steam");
-  const results = {
-    created: [],
-    skipped: [],
-    errors: [],
-    total: activities.length,
-  };
-
-  for (const activity of activities) {
-    try {
-      const result = await syncSingleActivity(activity, steamRepo);
-      if (result.skipped) {
-        results.skipped.push(result);
-      } else {
-        results.created.push(result);
-      }
-
-      // Rate limiting between operations
-      await delay(config.sources.rateLimits.notion.backoffMs);
-    } catch (error) {
-      results.errors.push({
-        activity: activity.activityId,
-        error: error.message,
-      });
-    }
-  }
-
-  return results;
-}
-
-/**
- * Sync a single gaming activity to Notion
- *
- * @param {Object} activity - Processed Steam gaming activity
- * @param {IntegrationDatabase} steamRepo - Steam database instance
- * @returns {Promise<Object>} Sync result
- */
-async function syncSingleActivity(activity, steamRepo) {
-  // Check for existing record using Activity ID
-  const existing = await steamRepo.findByUniqueId(activity.activityId);
-
-  if (existing) {
-    return {
-      skipped: true,
-      activityId: activity.activityId,
-      gameName: activity.gameName,
-      displayName: activity.gameName,
-      existingPageId: existing.id,
-    };
-  }
-
-  // Transform and create
-  const properties = transformSteamToNotion(activity);
-  const databaseId = config.notion.databases.steam;
-  const page = await steamRepo.createPage(databaseId, properties);
-
-  return {
-    skipped: false,
-    created: true,
-    activityId: activity.activityId,
-    gameName: activity.gameName,
-    displayName: activity.gameName,
-    pageId: page.id,
-  };
+  return syncIntegrationToNotion(
+    "steam",
+    activities,
+    (item) => item.activityId,
+    (item) => item.gameName,
+    options
+  );
 }
 
 module.exports = {
   syncSteamToNotion,
-  syncSingleActivity,
 };

@@ -731,9 +731,7 @@ brickbot/
 │   │   ├── collect-oura.js                                 # Layer 1: Integration name
 │   │   ├── collect-strava.js                               # Layer 1: Integration name
 │   │   ├── collect-steam.js                                # Layer 1: Integration name
-│   │   ├── collect-withings.js                             # Layer 1: Integration name
-│   │   ├── summarize-tasks.js                             # Layer 3: Notion aggregation
-│   │   └── summarize-calendar.js                          # Layer 3: Calendar aggregation
+│   │   └── collect-withings.js                             # Layer 1: Integration name
 │   │
 │   ├── config/                                             # Configuration (split by domain)
 │   │   ├── calendar/                                       # Layer 2: Calendar configs
@@ -770,6 +768,10 @@ brickbot/
 │   │   ├── SteamService.js                                 # Layer 1: Integration API
 │   │   ├── TokenService.js
 │   │   └── WithingsService.js                              # Layer 1: Integration API
+│   │
+│   ├── summarizers/                                        # Layer 3: Data summarization
+│   │   ├── summarize-tasks.js                             # Layer 3: Notion aggregation
+│   │   └── summarize-calendar.js                          # Layer 3: Calendar aggregation
 │   │
 │   ├── transformers/                                       # Data transformation layer
 │   │   ├── github-to-notion-github.js                      # Layer 1: Integration → Notion

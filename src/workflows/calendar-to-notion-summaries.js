@@ -1,7 +1,7 @@
 // Orchestrates fetching calendar events and aggregating them into weekly data for Recap databases
 // Supports both Personal and Work recap types via recapType parameter
 
-const { fetchCalendarSummary } = require("../collectors/summarize-calendar");
+const { fetchCalendarSummary } = require("../summarizers/summarize-calendar");
 const config = require("../config");
 // Import entire date module instead of destructuring to avoid module loading timing issues
 const { parseWeekNumber } = require("../utils/date");

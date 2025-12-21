@@ -9,6 +9,7 @@ const steam = require("./steam");
 const github = require("./github");
 const withings = require("./withings");
 const bloodPressure = require("./blood-pressure");
+const medications = require("./medications");
 const events = require("./events");
 const trips = require("./trips");
 const personalRecap = require("./personal-recap");
@@ -22,6 +23,7 @@ const databases = {
   steam: steam.database,
   withings: withings.database,
   bloodPressure: bloodPressure.database,
+  medications: medications.database,
   events: events.database,
   trips: trips.database,
   personalRecap: personalRecap.database,
@@ -36,6 +38,7 @@ const properties = {
   github: github.properties,
   withings: withings.properties,
   bloodPressure: bloodPressure.properties,
+  medications: medications.properties,
   events: events.properties,
   trips: trips.properties,
   personalRecap: personalRecap.properties,
@@ -50,6 +53,7 @@ const fieldMappings = {
   github: github.fieldMappings,
   withings: withings.fieldMappings,
   bloodPressure: bloodPressure.fieldMappings,
+  medications: medications.fieldMappings || {},
   events: events.fieldMappings || {},
   trips: trips.fieldMappings || {},
   personalRecap: personalRecap.fieldMappings,

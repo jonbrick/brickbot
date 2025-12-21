@@ -257,6 +257,13 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
       try {
         // Transform to calendar event format
         const transformed = transformFn(record, repo);
+        if (!transformed) {
+          results.skipped.push({
+            id: record.id,
+            reason: metadata.skipReason || "Transformer returned null",
+          });
+          continue;
+        }
         const { calendarId, event, accountType } = transformed;
 
         // Extract existing event ID for hybrid pattern (if record already has one)

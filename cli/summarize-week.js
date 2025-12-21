@@ -488,44 +488,29 @@ async function main() {
         showError(messages.join(", ") + ".");
       }
     } else {
-      // Update mode - show summary for each successful week
+      // Update mode - workflow already prints success messages, just show errors
       results.forEach((weekResult) => {
         const { weekNumber, year } = weekResult;
 
-        // Display work results
-        if (weekResult.work) {
-          if (weekResult.work.updated) {
-            console.log(`\n${"=".repeat(60)}`);
-            console.log(`Work Recap - Week ${weekNumber}, ${year}`);
-            console.log("=".repeat(60));
-            const summaryData = collectSourceData(weekResult.work, "all");
-            showSummary(summaryData);
-          } else if (weekResult.work.error) {
-            console.log(`\n${"=".repeat(60)}`);
-            console.log(`Work Recap - Week ${weekNumber}, ${year}`);
-            console.log("=".repeat(60));
-            displaySourceData(weekResult.work, "all");
-            showError(`Failed to update Work Recap: ${weekResult.work.error}`);
-          }
+        // Only show output for errors (success messages already printed by workflow)
+        if (
+          weekResult.work &&
+          weekResult.work.error &&
+          !weekResult.work.updated
+        ) {
+          showError(
+            `Work Recap Week ${weekNumber}, ${year}: ${weekResult.work.error}`
+          );
         }
 
-        // Display personal results
-        if (weekResult.personal) {
-          if (weekResult.personal.updated) {
-            console.log(`\n${"=".repeat(60)}`);
-            console.log(`Personal Recap - Week ${weekNumber}, ${year}`);
-            console.log("=".repeat(60));
-            const summaryData = collectSourceData(weekResult.personal, "all");
-            showSummary(summaryData);
-          } else if (weekResult.personal.error) {
-            console.log(`\n${"=".repeat(60)}`);
-            console.log(`Personal Recap - Week ${weekNumber}, ${year}`);
-            console.log("=".repeat(60));
-            displaySourceData(weekResult.personal, "all");
-            showError(
-              `Failed to update Personal Recap: ${weekResult.personal.error}`
-            );
-          }
+        if (
+          weekResult.personal &&
+          weekResult.personal.error &&
+          !weekResult.personal.updated
+        ) {
+          showError(
+            `Personal Recap Week ${weekNumber}, ${year}: ${weekResult.personal.error}`
+          );
         }
       });
 

@@ -120,8 +120,9 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
         }
       }
 
-      // Skip optional text fields that are empty
-      if (dataConfig?.type === "optionalText" && !summary[dataKey]) return;
+      // Only include count and decimal fields (skip text blocks for cleaner output)
+      if (!dataConfig?.type || !["count", "decimal"].includes(dataConfig.type))
+        return;
 
       const displayText = formatDataForDisplay(dataKey, summary[dataKey]);
       data.push(displayText);
@@ -235,7 +236,6 @@ async function aggregateCalendarDataForWeek(
         startDate,
         endDate,
         fetchConfig.accountType,
-        fetchConfig.isSleepCalendar,
         fetchConfig.ignoreAllDayEvents
       ),
     }));

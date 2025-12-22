@@ -196,12 +196,6 @@ async function aggregateCalendarDataForWeek(
   };
 
   try {
-    if (typeof showProgress === "function") {
-      showProgress(`Summarizing week ${weekNumber} of ${year}...`);
-    } else {
-      console.log(`⏳ Summarizing week ${weekNumber} of ${year}...`);
-    }
-
     // Calculate week date range
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 
@@ -368,11 +362,6 @@ async function aggregateCalendarDataForWeek(
     }
 
     // Update week recap
-    if (typeof showProgress === "function") {
-      showProgress(`Updating ${databaseName} database...`);
-    } else {
-      console.log(`⏳ Updating ${databaseName} database...`);
-    }
     await recapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
 
     // Rate limiting

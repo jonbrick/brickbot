@@ -76,12 +76,6 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
   };
 
   try {
-    if (typeof showProgress === "function") {
-      showProgress(`Summarizing week ${weekNumber} of ${year}...`);
-    } else {
-      console.log(`⏳ Summarizing week ${weekNumber} of ${year}...`);
-    }
-
     // Calculate week date range
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 
@@ -163,11 +157,6 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     }
 
     // Update week recap
-    if (typeof showProgress === "function") {
-      showProgress(`Updating ${databaseName} database...`);
-    } else {
-      console.log(`⏳ Updating ${databaseName} database...`);
-    }
     await recapRepo.updateWeekRecap(weekRecap.id, summary, sourcesToFetch);
 
     // Rate limiting

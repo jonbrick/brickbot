@@ -2,7 +2,6 @@
 
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const { formatDateOnly } = require("../utils/date");
-const { createSpinner } = require("../utils/cli");
 const config = require("../config");
 
 /**
@@ -26,8 +25,6 @@ async function fetchCalendarSummary(
     throw new Error("Calendar ID is required");
   }
 
-  const spinner = createSpinner("Fetching calendar events...");
-
   try {
     const calendarService = new GoogleCalendarService(accountType);
     const events = await calendarService.listEvents(
@@ -37,7 +34,6 @@ async function fetchCalendarSummary(
     );
 
     if (!events || events.length === 0) {
-      spinner.succeed("No calendar events found for this date range");
       return [];
     }
 
@@ -91,11 +87,8 @@ async function fetchCalendarSummary(
       })
       .filter((event) => event !== null); // Remove null entries
 
-    spinner.succeed(`Fetched ${processed.length} calendar events`);
-
     return processed;
   } catch (error) {
-    spinner.fail(`Failed to fetch calendar events: ${error.message}`);
     throw error;
   }
 }

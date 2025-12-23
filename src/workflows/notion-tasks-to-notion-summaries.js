@@ -93,9 +93,13 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
         throw new Error("TASKS_DATABASE_ID is not configured.");
       }
       if (typeof showProgress === "function") {
-        showProgress("Fetching completed tasks...");
+        showProgress(
+          `Fetching ${recapType === "work" ? "Work" : "Personal"} tasks...`
+        );
       } else {
-        console.log("⏳ Fetching completed tasks...");
+        console.log(
+          `⏳ Fetching ${recapType === "work" ? "Work" : "Personal"} tasks...`
+        );
       }
       tasks = await fetchCompletedTasks(startDate, endDate);
       await delay(config.sources.rateLimits.notion.backoffMs);
@@ -187,10 +191,16 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     }
 
     if (typeof showSuccess === "function") {
-      showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+      showSuccess(
+        `${recapType === "work" ? "Work" : "Personal"} Tasks: ${data.join(
+          ", "
+        )}`
+      );
     } else {
       console.log(
-        `✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
+        `✅ ${recapType === "work" ? "Work" : "Personal"} Tasks: ${data.join(
+          ", "
+        )}`
       );
     }
 

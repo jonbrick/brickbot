@@ -235,9 +235,17 @@ async function aggregateCalendarDataForWeek(
     }));
 
     if (typeof showProgress === "function") {
-      showProgress(`Fetching ${calendarFetches.length} calendar(s)...`);
+      showProgress(
+        `Fetching ${recapType === "work" ? "Work" : "Personal"} calendars (${
+          calendarFetches.length
+        })...`
+      );
     } else {
-      console.log(`⏳ Fetching ${calendarFetches.length} calendar(s)...`);
+      console.log(
+        `⏳ Fetching ${recapType === "work" ? "Work" : "Personal"} calendars (${
+          calendarFetches.length
+        })...`
+      );
     }
     const fetchResults = await Promise.all(
       calendarFetches.map((f) =>
@@ -374,10 +382,16 @@ async function aggregateCalendarDataForWeek(
     const data = buildSuccessData(calendarsToFetch, summary, sourcesConfig);
 
     if (typeof showSuccess === "function") {
-      showSuccess(`Updated week ${weekNumber} of ${year}: ${data.join(", ")}`);
+      showSuccess(
+        `${recapType === "work" ? "Work" : "Personal"} Calendar: ${data.join(
+          ", "
+        )}`
+      );
     } else {
       console.log(
-        `✅ Updated week ${weekNumber} of ${year}: ${data.join(", ")}`
+        `✅ ${recapType === "work" ? "Work" : "Personal"} Calendar: ${data.join(
+          ", "
+        )}`
       );
     }
 

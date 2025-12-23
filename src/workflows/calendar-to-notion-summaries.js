@@ -78,54 +78,92 @@ function formatDataForDisplay(dataKey, value) {
 }
 
 /**
- * Build success message data array from selected calendars and summary data
- * Uses config-driven approach with data derived from DATA_SOURCES
- * @param {Array<string>} calendarsToFetch - Array of source IDs to include
- * @param {Object} summary - Summary object with data values
- * @param {Object} sourcesConfig - Sources configuration object (PERSONAL_RECAP_SOURCES or WORK_RECAP_SOURCES)
- * @returns {Array<string>} Array of formatted data strings
+ * Build success message data from summary for selected calendars
+ * Shows only session counts in grouped format: "Category (count)"
+ * @param {Array<string>} calendarsToFetch - Calendar IDs to include
+ * @param {Object} summary - Summary object with calculated values
+ * @param {Object} sourcesConfig - Sources configuration
+ * @returns {Array<string>} Formatted data strings
  */
 function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
   const data = [];
+  const addedCategories = new Set();
 
-  // Import DATA_SOURCES to check data types
-  const { DATA_SOURCES } = require("../config/unified-sources");
+  // Category display name mapping
+  const categoryDisplayNames = {
+    meetings: "Meetings",
+    design: "Design",
+    coding: "Coding",
+    crit: "Crit",
+    sketch: "Sketch",
+    research: "Research",
+    personalAndSocial: "Personal",
+    rituals: "Rituals",
+    qa: "QA",
+    workPRs: "PRs",
+    earlyWakeup: "Early",
+    sleepIn: "In",
+    sober: "Sober",
+    drinking: "Drinking",
+    workout: "Workout",
+    reading: "Reading",
+    meditation: "Meditation",
+    art: "Art",
+    personalCoding: "Coding",
+    music: "Music",
+    videoGames: "Games",
+    bodyWeight: "Weight",
+    bloodPressure: "BP",
+    personalPRs: "PRs",
+    personal: "Personal",
+    interpersonal: "Interpersonal",
+    home: "Home",
+    physicalHealth: "Physical",
+    mentalHealth: "Mental",
+  };
 
-  // Iterate through selected calendars
   calendarsToFetch.forEach((sourceId) => {
-    const source = sourcesConfig[sourceId];
-    if (!source) return;
-
-    // Get data for this source from DATA_SOURCES (single source of truth)
     const sourceData = mappings.getRecapSourceData(sourceId);
+    if (!sourceData || sourceData.length === 0) return;
 
-    // For each data field, check if it exists in summary and format for display
     sourceData.forEach((dataKey) => {
-      // Skip if data doesn't exist in summary
-      if (summary[dataKey] === undefined || summary[dataKey] === null) return;
+      const value = summary[dataKey];
+      if (value === undefined || value === null) return;
 
-      // Get data config to check type
-      const sourceConfig = DATA_SOURCES[sourceId];
-      let dataConfig = null;
+      // Only include "Sessions" or "Days" fields (skip HoursTotal, Blocks, etc.)
+      const isSessionsField = dataKey.endsWith("Sessions");
+      const isDaysField = dataKey.endsWith("Days");
+      const isCountField =
+        dataKey.endsWith("Complete") ||
+        dataKey === "workPRsSessions" ||
+        dataKey === "personalPRsSessions";
 
-      if (sourceConfig?.data?.[dataKey]) {
-        dataConfig = sourceConfig.data[dataKey];
-      } else if (sourceConfig?.categories) {
-        // Check category-based data
-        for (const category of Object.values(sourceConfig.categories)) {
-          if (category.data?.[dataKey]) {
-            dataConfig = category.data[dataKey];
-            break;
-          }
-        }
-      }
+      if (!isSessionsField && !isDaysField && !isCountField) return;
 
-      // Only include count and decimal fields (skip text blocks for cleaner output)
-      if (!dataConfig?.type || !["count", "decimal"].includes(dataConfig.type))
-        return;
+      // Extract category from dataKey
+      let category = dataKey
+        .replace(/Sessions$/, "")
+        .replace(/Days$/, "")
+        .replace(/Complete$/, "");
 
-      const displayText = formatDataForDisplay(dataKey, summary[dataKey]);
-      data.push(displayText);
+      // Skip if we already added this category (prevents duplicates)
+      if (addedCategories.has(category)) return;
+
+      // Track this category
+      addedCategories.add(category);
+
+      // Get display name
+      const displayName =
+        categoryDisplayNames[category] ||
+        category.charAt(0).toUpperCase() + category.slice(1);
+
+      data.push(
+        `${displayName} (${
+          typeof value === "number" && !Number.isInteger(value)
+            ? value.toFixed(1)
+            : value
+        })`
+      );
     });
   });
 

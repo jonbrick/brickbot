@@ -176,13 +176,30 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       const taskData = [];
       successMessageFields.forEach((field) => {
         if (summary[field] !== undefined) {
-          // Convert field name to display name (e.g., "personalTasksComplete" -> "personal tasks")
-          const displayName = field
-            .replace("TasksComplete", "")
-            .replace(/([A-Z])/g, " $1")
-            .toLowerCase()
-            .trim();
-          taskData.push(`${summary[field]} ${displayName} tasks`);
+          // Extract category and format as "Category (count)"
+          let category = field.replace("TasksComplete", "");
+
+          // Handle special cases (acronyms)
+          const categoryDisplayNames = {
+            research: "Research",
+            sketch: "Sketch",
+            design: "Design",
+            coding: "Coding",
+            crit: "Crit",
+            qa: "QA",
+            admin: "Admin",
+            social: "Social",
+            ooo: "OOO",
+            personal: "Personal",
+            interpersonal: "Interpersonal",
+            home: "Home",
+            physicalHealth: "Physical",
+            mentalHealth: "Mental",
+          };
+
+          const displayName = categoryDisplayNames[category] || 
+            category.charAt(0).toUpperCase() + category.slice(1);
+          taskData.push(`${displayName} (${summary[field]})`);
         }
       });
       if (taskData.length > 0) {

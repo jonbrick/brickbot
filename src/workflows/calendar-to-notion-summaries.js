@@ -9,6 +9,7 @@ const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
 // Import entire mappings module to avoid destructuring timing issues
 const mappings = require("../config/calendar/mappings");
+const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
 
 /**
  * Format a data key and value into human-readable display text
@@ -78,43 +79,40 @@ function formatDataForDisplay(dataKey, value) {
 }
 
 /**
- * Build success message data from summary for selected calendars
- * Shows only session counts in grouped format: "Category (count)"
- * @param {Array<string>} calendarsToFetch - Calendar IDs to include
+ * Build success message data grouped by SUMMARY_GROUPS with emojis
+ * @param {Array<string>} calendarsToFetch - Calendar group IDs to include
  * @param {Object} summary - Summary object with calculated values
  * @param {Object} sourcesConfig - Sources configuration
- * @returns {Array<string>} Formatted data strings
+ * @returns {Array<string>} Formatted lines for display
  */
 function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
-  const data = [];
-  const addedCategories = new Set();
+  const lines = [];
 
-  // Category display name mapping
-  const categoryDisplayNames = {
-    meetings: "Meetings",
-    design: "Design",
-    coding: "Coding",
-    crit: "Crit",
-    sketch: "Sketch",
-    research: "Research",
-    personalAndSocial: "Personal",
-    rituals: "Rituals",
-    qa: "QA",
-    workPRs: "PRs",
-    earlyWakeup: "Early",
-    sleepIn: "In",
+  const displayNames = {
+    earlyWakeup: "Early Wakeup",
+    sleepIn: "Sleep In",
     sober: "Sober",
     drinking: "Drinking",
     workout: "Workout",
     reading: "Reading",
     meditation: "Meditation",
     art: "Art",
-    personalCoding: "Coding",
+    coding: "Coding",
     music: "Music",
     videoGames: "Games",
     bodyWeight: "Weight",
-    bloodPressure: "BP",
+    avgSystolic: "Systolic",
+    avgDiastolic: "Diastolic",
     personalPRs: "PRs",
+    workPRs: "PRs",
+    meetings: "Meetings",
+    design: "Design",
+    crit: "Crit",
+    sketch: "Sketch",
+    research: "Research",
+    personalAndSocial: "Personal",
+    rituals: "Rituals",
+    qa: "QA",
     personal: "Personal",
     interpersonal: "Interpersonal",
     home: "Home",
@@ -122,52 +120,114 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
     mentalHealth: "Mental",
   };
 
-  calendarsToFetch.forEach((sourceId) => {
-    const sourceData = mappings.getRecapSourceData(sourceId);
-    if (!sourceData || sourceData.length === 0) return;
+  const groupShortNames = {
+    sleep: "Sleep",
+    drinkingDays: "Drinking",
+    workout: "Workout",
+    reading: "Reading",
+    meditation: "Meditation",
+    art: "Art",
+    coding: "Coding",
+    music: "Music",
+    videoGames: "Games",
+    bodyWeight: "Weight",
+    bloodPressure: "BP",
+    personalPRs: "PRs",
+    workPRs: "PRs",
+    personalCalendar: "Calendar",
+    workCalendar: "Calendar",
+  };
 
-    sourceData.forEach((dataKey) => {
-      const value = summary[dataKey];
-      if (value === undefined || value === null) return;
+  calendarsToFetch.forEach((groupId) => {
+    const group = SUMMARY_GROUPS[groupId];
+    if (!group) return;
 
-      // Only include "Sessions" or "Days" fields (skip HoursTotal, Blocks, etc.)
-      const isSessionsField = dataKey.endsWith("Sessions");
-      const isDaysField = dataKey.endsWith("Days");
-      const isCountField =
-        dataKey.endsWith("Complete") ||
-        dataKey === "workPRsSessions" ||
-        dataKey === "personalPRsSessions";
+    const emoji = group.emoji || "";
+    const groupName = groupShortNames[groupId] || group.name.split(" (")[0];
+    const calendarIds = group.calendars || [];
 
-      if (!isSessionsField && !isDaysField && !isCountField) return;
+    const counts = [];
+    const addedCategories = new Set();
 
-      // Extract category from dataKey
-      let category = dataKey
-        .replace(/Sessions$/, "")
-        .replace(/Days$/, "")
-        .replace(/Complete$/, "");
+    calendarIds.forEach((calId) => {
+      const calendar = CALENDARS[calId];
+      if (!calendar) return;
 
-      // Skip if we already added this category (prevents duplicates)
-      if (addedCategories.has(category)) return;
+      // Handle calendars with categories (personalCalendar, workCalendar)
+      if (calendar.categories) {
+        Object.entries(calendar.categories).forEach(
+          ([categoryKey, category]) => {
+            if (!category.dataFields || categoryKey === "ignore") return;
 
-      // Track this category
-      addedCategories.add(category);
+            category.dataFields.forEach((field) => {
+              const dataKey = field.notionProperty;
+              const value = summary[dataKey];
+              if (value === undefined || value === null) return;
 
-      // Get display name
-      const displayName =
-        categoryDisplayNames[category] ||
-        category.charAt(0).toUpperCase() + category.slice(1);
+              const isSessionsField = dataKey.endsWith("Sessions");
+              const isDaysField = dataKey.endsWith("Days");
+              if (!isSessionsField && !isDaysField) return;
 
-      data.push(
-        `${displayName} (${
-          typeof value === "number" && !Number.isInteger(value)
-            ? value.toFixed(1)
-            : value
-        })`
-      );
+              const cat = dataKey.replace(/Sessions$/, "").replace(/Days$/, "");
+              if (addedCategories.has(cat)) return;
+              addedCategories.add(cat);
+
+              const name = displayNames[cat] || cat;
+              counts.push(`${name} (${value})`);
+            });
+          }
+        );
+      }
+      // Handle simple calendars with dataFields
+      else if (calendar.dataFields && calendar.dataFields.length > 0) {
+        calendar.dataFields.forEach((field) => {
+          const dataKey = field.notionProperty;
+          const value = summary[dataKey];
+          if (value === undefined || value === null) return;
+
+          const isSessionsField = dataKey.endsWith("Sessions");
+          const isDaysField = dataKey.endsWith("Days");
+          const isHealthMetric =
+            field.type === "decimal" && !dataKey.endsWith("HoursTotal");
+
+          if (!isSessionsField && !isDaysField && !isHealthMetric) return;
+
+          // Extract category key for deduplication
+          let category = dataKey
+            .replace(/Sessions$/, "")
+            .replace(/Days$/, "")
+            .replace(/Average$/, "");
+
+          // Use dataKey directly for decimal fields (avgSystolic, avgDiastolic)
+          if (isHealthMetric && !dataKey.endsWith("Average")) {
+            category = dataKey;
+          }
+
+          if (addedCategories.has(category)) return;
+          addedCategories.add(category);
+
+          const name =
+            displayNames[category] || displayNames[dataKey] || category;
+          const formattedValue =
+            typeof value === "number" && !Number.isInteger(value)
+              ? value.toFixed(1)
+              : value;
+
+          counts.push(`${name} (${formattedValue})`);
+        });
+      }
     });
+
+    if (counts.length === 0) return;
+
+    if (calendarIds.length > 1 || counts.length > 1) {
+      lines.push(`   ${emoji} ${groupName}: ${counts.join(", ")}`);
+    } else {
+      lines.push(`   ${emoji} ${counts[0]}`);
+    }
   });
 
-  return data;
+  return lines;
 }
 
 /**
@@ -421,15 +481,15 @@ async function aggregateCalendarDataForWeek(
 
     if (typeof showSuccess === "function") {
       showSuccess(
-        `${recapType === "work" ? "Work" : "Personal"} Calendar: ${data.join(
-          ", "
+        `${recapType === "work" ? "Work" : "Personal"} Calendar:\n${data.join(
+          "\n"
         )}`
       );
     } else {
       console.log(
-        `✅ ${recapType === "work" ? "Work" : "Personal"} Calendar: ${data.join(
-          ", "
-        )}`
+        `✅ ${
+          recapType === "work" ? "Work" : "Personal"
+        } Calendar:\n${data.join("\n")}`
       );
     }
 

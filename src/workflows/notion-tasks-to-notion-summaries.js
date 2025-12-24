@@ -6,6 +6,7 @@ const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
+const { SUMMARY_GROUPS } = require("../config/unified-sources");
 
 /**
  * Summarize a week's Notion database data and update Recap database
@@ -197,7 +198,8 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
             mentalHealth: "Mental",
           };
 
-          const displayName = categoryDisplayNames[category] || 
+          const displayName =
+            categoryDisplayNames[category] ||
             category.charAt(0).toUpperCase() + category.slice(1);
           taskData.push(`${displayName} (${summary[field]})`);
         }
@@ -207,17 +209,20 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       }
     }
 
+    const taskGroupKey = recapType === "work" ? "workTasks" : "tasks";
+    const taskEmoji = SUMMARY_GROUPS[taskGroupKey]?.emoji || "";
+
     if (typeof showSuccess === "function") {
       showSuccess(
-        `${recapType === "work" ? "Work" : "Personal"} Tasks: ${data.join(
-          ", "
-        )}`
+        `${
+          recapType === "work" ? "Work" : "Personal"
+        } Tasks:\n   ${taskEmoji} Tasks: ${data.join(", ")}`
       );
     } else {
       console.log(
-        `✅ ${recapType === "work" ? "Work" : "Personal"} Tasks: ${data.join(
-          ", "
-        )}`
+        `✅ ${
+          recapType === "work" ? "Work" : "Personal"
+        } Tasks:\n   ${taskEmoji} Tasks: ${data.join(", ")}`
       );
     }
 

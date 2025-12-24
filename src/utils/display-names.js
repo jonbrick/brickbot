@@ -1,103 +1,62 @@
 /**
- * Display Name Utilities
- * Standardized display name formatting for all data sources
+ * Display name utilities for CLI output
+ * Provides short names for groups and categories with override support
  */
-
-const { formatDate } = require("./date");
 
 /**
- * Get standardized display name for a record
- * This ensures consistent naming across Notion and Calendar syncs
- *
- * @param {Object} record - Record from any workflow
- * @param {string} sourceType - Source type: 'withings', 'strava', 'github', 'steam', 'oura', 'sleep'
- * @returns {string} Display name
+ * Override lookup for short names where derivation doesn't work
  */
-function getDisplayName(record, sourceType) {
-  if (!record) return "Unknown";
+const SHORT_NAME_OVERRIDES = {
+  // SUMMARY_GROUPS overrides
+  drinkingDays: "Drinking",
+  videoGames: "Games",
+  bodyWeight: "Weight",
+  bloodPressure: "BP",
+  personalPRs: "PRs",
+  workPRs: "PRs",
+  personalCalendar: "Calendar",
+  workCalendar: "Calendar",
 
-  switch (sourceType) {
-    case "withings":
-      // Prefer the descriptive name field
-      return record.name || record.date || record.summary || "Unknown";
+  // Category overrides
+  physicalHealth: "Physical",
+  mentalHealth: "Mental",
+  personalAndSocial: "Personal",
 
-    case "strava":
-      return record.name || record.summary || "Unknown";
+  // Field-specific overrides
+  avgSystolic: "Systolic",
+  avgDiastolic: "Diastolic",
+};
 
-    case "github":
-      // Format: "repository (date)"
-      const date = record.date ? ` (${record.date})` : "";
-      return `${record.repository || "Unknown"}${date}`;
-
-    case "steam":
-      return record.gameName || record.summary || "Unknown";
-
-    case "oura":
-    case "sleep":
-      // Format date for sleep records
-      return record.nightOf
-        ? formatDate(record.nightOf)
-        : record.summary || "Unknown";
-
-    default:
-      // Fallback: try common fields
-      return record.name || record.summary || record.date || "Unknown";
+/**
+ * Get short display name for a SUMMARY_GROUP
+ * @param {string} groupId - Group identifier (e.g., "sleep", "workout")
+ * @param {string} fullName - Full name from group.name (e.g., "Sleep (Early Wakeup + Sleep In)")
+ * @returns {string} Short name for display (e.g., "Sleep")
+ */
+function getGroupShortName(groupId, fullName) {
+  if (SHORT_NAME_OVERRIDES[groupId]) {
+    return SHORT_NAME_OVERRIDES[groupId];
   }
+  // Derive: "Sleep (Early Wakeup + Sleep In)" → "Sleep"
+  return fullName ? fullName.split(" (")[0] : groupId;
 }
 
 /**
- * Get identifier for a record (for logging/debugging)
- *
- * @param {Object} record - Record from any workflow
- * @param {string} sourceType - Source type
- * @returns {string} Identifier string
+ * Get short display name for a category or field
+ * @param {string} key - Category key or field key (e.g., "physicalHealth", "avgSystolic")
+ * @param {string} label - Label from dataField (e.g., "Physical Health - Sessions")
+ * @returns {string} Short name for display (e.g., "Physical")
  */
-function getIdentifier(record, sourceType) {
-  if (!record) return "Unknown";
-
-  const idFields = {
-    withings: "measurementId",
-    strava: "activityId",
-    github: "uniqueId",
-    steam: "activityId",
-    oura: "sleepId",
-    sleep: "sleepId",
-  };
-
-  const idField = idFields[sourceType];
-  const id = idField ? record[idField] : null;
-  const idLabel = idField ? idField.replace(/([A-Z])/g, " $1").trim() : "ID";
-
-  return id ? `${idLabel}: ${id}` : "Unknown";
-}
-
-/**
- * Format record for logging
- * Returns: "Display Name (Identifier)" or "Display Name" or "Display Name (accountType)"
- *
- * @param {Object} record - Record from any workflow
- * @param {string} sourceType - Source type
- * @returns {string} Formatted string
- */
-function formatRecordForLogging(record, sourceType) {
-  const displayName = getDisplayName(record, sourceType);
-  const identifier = getIdentifier(record, sourceType);
-
-  // Only include identifier if it's meaningful (not "Unknown")
-  if (identifier && identifier !== "Unknown") {
-    return `${displayName} (${identifier})`;
+function getCategoryShortName(key, label) {
+  if (SHORT_NAME_OVERRIDES[key]) {
+    return SHORT_NAME_OVERRIDES[key];
   }
-
-  // For GitHub, show accountType if available
-  if (record.accountType) {
-    return `${displayName} (${record.accountType})`;
-  }
-
-  return displayName;
+  // Derive: "Early Wakeup - Days" → "Early Wakeup"
+  return label ? label.split(" - ")[0] : key;
 }
 
 module.exports = {
-  getDisplayName,
-  getIdentifier,
-  formatRecordForLogging,
+  SHORT_NAME_OVERRIDES,
+  getGroupShortName,
+  getCategoryShortName,
 };

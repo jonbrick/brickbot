@@ -10,6 +10,7 @@ const { showProgress, showSuccess, showError } = require("../utils/cli");
 // Import entire mappings module to avoid destructuring timing issues
 const mappings = require("../config/calendar/mappings");
 const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
+const { getGroupShortName, getCategoryShortName } = require("../utils/display-names");
 
 /**
  * Format a data key and value into human-readable display text
@@ -88,62 +89,12 @@ function formatDataForDisplay(dataKey, value) {
 function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
   const lines = [];
 
-  const displayNames = {
-    earlyWakeup: "Early Wakeup",
-    sleepIn: "Sleep In",
-    sober: "Sober",
-    drinking: "Drinking",
-    workout: "Workout",
-    reading: "Reading",
-    meditation: "Meditation",
-    art: "Art",
-    coding: "Coding",
-    music: "Music",
-    videoGames: "Games",
-    bodyWeight: "Weight",
-    avgSystolic: "Systolic",
-    avgDiastolic: "Diastolic",
-    personalPRs: "PRs",
-    workPRs: "PRs",
-    meetings: "Meetings",
-    design: "Design",
-    crit: "Crit",
-    sketch: "Sketch",
-    research: "Research",
-    personalAndSocial: "Personal",
-    rituals: "Rituals",
-    qa: "QA",
-    personal: "Personal",
-    interpersonal: "Interpersonal",
-    home: "Home",
-    physicalHealth: "Physical",
-    mentalHealth: "Mental",
-  };
-
-  const groupShortNames = {
-    sleep: "Sleep",
-    drinkingDays: "Drinking",
-    workout: "Workout",
-    reading: "Reading",
-    meditation: "Meditation",
-    art: "Art",
-    coding: "Coding",
-    music: "Music",
-    videoGames: "Games",
-    bodyWeight: "Weight",
-    bloodPressure: "BP",
-    personalPRs: "PRs",
-    workPRs: "PRs",
-    personalCalendar: "Calendar",
-    workCalendar: "Calendar",
-  };
-
   calendarsToFetch.forEach((groupId) => {
     const group = SUMMARY_GROUPS[groupId];
     if (!group) return;
 
     const emoji = group.emoji || "";
-    const groupName = groupShortNames[groupId] || group.name.split(" (")[0];
+    const groupName = getGroupShortName(groupId, group.name);
     const calendarIds = group.calendars || [];
 
     const counts = [];
@@ -172,7 +123,7 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
               if (addedCategories.has(cat)) return;
               addedCategories.add(cat);
 
-              const name = displayNames[cat] || cat;
+              const name = getCategoryShortName(cat, field.label);
               counts.push(`${name} (${value})`);
             });
           }
@@ -206,8 +157,7 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
           if (addedCategories.has(category)) return;
           addedCategories.add(category);
 
-          const name =
-            displayNames[category] || displayNames[dataKey] || category;
+          const name = getCategoryShortName(category, field.label);
           const formattedValue =
             typeof value === "number" && !Number.isInteger(value)
               ? value.toFixed(1)

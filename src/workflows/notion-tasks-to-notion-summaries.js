@@ -6,7 +6,8 @@ const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
-const { SUMMARY_GROUPS } = require("../config/unified-sources");
+const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
+const { getCategoryShortName } = require("../utils/display-names");
 
 /**
  * Summarize a week's Notion database data and update Recap database
@@ -180,27 +181,9 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
           // Extract category and format as "Category (count)"
           let category = field.replace("TasksComplete", "");
 
-          // Handle special cases (acronyms)
-          const categoryDisplayNames = {
-            research: "Research",
-            sketch: "Sketch",
-            design: "Design",
-            coding: "Coding",
-            crit: "Crit",
-            qa: "QA",
-            admin: "Admin",
-            social: "Social",
-            ooo: "OOO",
-            personal: "Personal",
-            interpersonal: "Interpersonal",
-            home: "Home",
-            physicalHealth: "Physical",
-            mentalHealth: "Mental",
-          };
-
-          const displayName =
-            categoryDisplayNames[category] ||
-            category.charAt(0).toUpperCase() + category.slice(1);
+          const categoryConfig = CALENDARS[taskSourceKey]?.categories?.[category];
+          const label = categoryConfig?.dataFields?.[0]?.label;
+          const displayName = getCategoryShortName(category, label);
           taskData.push(`${displayName} (${summary[field]})`);
         }
       });

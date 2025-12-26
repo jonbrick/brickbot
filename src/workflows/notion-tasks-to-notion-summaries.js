@@ -184,7 +184,8 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
           const categoryConfig = CALENDARS[taskSourceKey]?.categories?.[category];
           const label = categoryConfig?.dataFields?.[0]?.label;
           const displayName = getCategoryShortName(category, label);
-          taskData.push(`${displayName} (${summary[field]})`);
+          const categoryEmoji = categoryConfig?.emoji || "";
+          taskData.push({ emoji: categoryEmoji, text: `${displayName} (${summary[field]})` });
         }
       });
       if (taskData.length > 0) {
@@ -195,18 +196,15 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     const taskGroupKey = recapType === "work" ? "workTasks" : "tasks";
     const taskEmoji = SUMMARY_GROUPS[taskGroupKey]?.emoji || "";
 
+    const taskLines = data.map(item => 
+      item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
+    ).join("\n");
+    const message = `${recapType === "work" ? "Work" : "Personal"} Tasks:\n   ${taskEmoji} Tasks:\n${taskLines}`;
+
     if (typeof showSuccess === "function") {
-      showSuccess(
-        `${
-          recapType === "work" ? "Work" : "Personal"
-        } Tasks:\n   ${taskEmoji} Tasks: ${data.join(", ")}`
-      );
+      showSuccess(message);
     } else {
-      console.log(
-        `✅ ${
-          recapType === "work" ? "Work" : "Personal"
-        } Tasks:\n   ${taskEmoji} Tasks: ${data.join(", ")}`
-      );
+      console.log(`✅ ${message}`);
     }
 
     return results;

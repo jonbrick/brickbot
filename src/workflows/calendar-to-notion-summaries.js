@@ -124,7 +124,8 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
               addedCategories.add(cat);
 
               const name = getCategoryShortName(cat, field.label);
-              counts.push(`${name} (${value})`);
+              const categoryEmoji = category.emoji || "";
+              counts.push({ emoji: categoryEmoji, text: `${name} (${value})` });
             });
           }
         );
@@ -163,17 +164,31 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
               ? value.toFixed(1)
               : value;
 
-          counts.push(`${name} (${formattedValue})`);
+          const calendarEmoji = calendar.emoji || "";
+          counts.push({ emoji: calendarEmoji, text: `${name} (${formattedValue})` });
         });
       }
     });
 
     if (counts.length === 0) return;
 
-    if (calendarIds.length > 1 || counts.length > 1) {
-      lines.push(`   ${emoji} ${groupName}: ${counts.join(", ")}`);
+    const isMultiCalendarGroup = calendarIds.length > 1;
+
+    if (isMultiCalendarGroup) {
+      // Multi-calendar group: individual items, no header
+      counts.forEach(item => {
+        lines.push(`   ${item.emoji} ${item.text}`);
+      });
+    } else if (counts.length > 1) {
+      // Category-based calendar: header with line breaks
+      const itemLines = counts.map(item => 
+        item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
+      ).join("\n");
+      lines.push(`   ${emoji} ${groupName}:\n${itemLines}`);
     } else {
-      lines.push(`   ${emoji} ${counts[0]}`);
+      // Single item: inline format - use group emoji only
+      const item = counts[0];
+      lines.push(`   ${emoji} ${item.text}`);
     }
   });
 

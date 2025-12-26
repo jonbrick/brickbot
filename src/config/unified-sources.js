@@ -301,7 +301,7 @@ const CALENDARS = {
     id: "personalPRs",
     envVar: "PERSONAL_PRS_CALENDAR_ID",
     name: "Personal PRs",
-    emoji: "🖥️",
+    emoji: "💾",
     dataFields: [
       {
         type: "count",
@@ -319,7 +319,7 @@ const CALENDARS = {
     id: "workPRs",
     envVar: "WORK_PRS_CALENDAR_ID",
     name: "Work PRs",
-    emoji: "🖥️",
+    emoji: "💾",
     dataFields: [
       {
         type: "count",
@@ -344,6 +344,7 @@ const CALENDARS = {
     ],
     categories: {
       personal: {
+        emoji: "🌱",
         dataFields: [
           {
             type: "count",
@@ -363,6 +364,7 @@ const CALENDARS = {
         ],
       },
       interpersonal: {
+        emoji: "🍻",
         dataFields: [
           {
             type: "count",
@@ -382,6 +384,7 @@ const CALENDARS = {
         ],
       },
       home: {
+        emoji: "🏠",
         dataFields: [
           {
             type: "count",
@@ -401,6 +404,7 @@ const CALENDARS = {
         ],
       },
       physicalHealth: {
+        emoji: "💪",
         dataFields: [
           {
             type: "count",
@@ -420,6 +424,7 @@ const CALENDARS = {
         ],
       },
       mentalHealth: {
+        emoji: "❤️",
         dataFields: [
           {
             type: "count",
@@ -439,6 +444,7 @@ const CALENDARS = {
         ],
       },
       ignore: {
+        emoji: "🚫",
         dataFields: [
           {
             type: "optionalText",
@@ -460,6 +466,7 @@ const CALENDARS = {
     ],
     categories: {
       meetings: {
+        emoji: "💼",
         dataFields: [
           {
             type: "count",
@@ -479,6 +486,7 @@ const CALENDARS = {
         ],
       },
       design: {
+        emoji: "🎨",
         dataFields: [
           {
             type: "count",
@@ -498,6 +506,7 @@ const CALENDARS = {
         ],
       },
       coding: {
+        emoji: "🖥️",
         dataFields: [
           {
             type: "count",
@@ -517,6 +526,7 @@ const CALENDARS = {
         ],
       },
       crit: {
+        emoji: "⚠️",
         dataFields: [
           {
             type: "count",
@@ -536,6 +546,7 @@ const CALENDARS = {
         ],
       },
       sketch: {
+        emoji: "💡",
         dataFields: [
           {
             type: "count",
@@ -555,6 +566,7 @@ const CALENDARS = {
         ],
       },
       research: {
+        emoji: "🧪",
         dataFields: [
           {
             type: "count",
@@ -574,6 +586,7 @@ const CALENDARS = {
         ],
       },
       personalAndSocial: {
+        emoji: "🌱",
         dataFields: [
           {
             type: "count",
@@ -593,6 +606,7 @@ const CALENDARS = {
         ],
       },
       rituals: {
+        emoji: "🔁",
         dataFields: [
           {
             type: "count",
@@ -612,6 +626,7 @@ const CALENDARS = {
         ],
       },
       qa: {
+        emoji: "🔎",
         dataFields: [
           {
             type: "count",
@@ -640,6 +655,7 @@ const CALENDARS = {
     dataFields: [],
     categories: {
       personal: {
+        emoji: "🌱",
         dataFields: [
           {
             type: "count",
@@ -654,6 +670,7 @@ const CALENDARS = {
         ],
       },
       interpersonal: {
+        emoji: "🍻",
         dataFields: [
           {
             type: "count",
@@ -668,6 +685,7 @@ const CALENDARS = {
         ],
       },
       home: {
+        emoji: "🏠",
         dataFields: [
           {
             type: "count",
@@ -682,6 +700,7 @@ const CALENDARS = {
         ],
       },
       physicalHealth: {
+        emoji: "💪",
         dataFields: [
           {
             type: "count",
@@ -696,6 +715,7 @@ const CALENDARS = {
         ],
       },
       mentalHealth: {
+        emoji: "❤️",
         dataFields: [
           {
             type: "count",
@@ -719,6 +739,7 @@ const CALENDARS = {
     dataFields: [],
     categories: {
       research: {
+        emoji: "🧪",
         dataFields: [
           {
             type: "count",
@@ -733,6 +754,7 @@ const CALENDARS = {
         ],
       },
       sketch: {
+        emoji: "💡",
         dataFields: [
           {
             type: "count",
@@ -747,6 +769,7 @@ const CALENDARS = {
         ],
       },
       design: {
+        emoji: "🎨",
         dataFields: [
           {
             type: "count",
@@ -761,6 +784,7 @@ const CALENDARS = {
         ],
       },
       coding: {
+        emoji: "🖥️",
         dataFields: [
           {
             type: "count",
@@ -775,6 +799,7 @@ const CALENDARS = {
         ],
       },
       crit: {
+        emoji: "⚠️",
         dataFields: [
           {
             type: "count",
@@ -789,6 +814,7 @@ const CALENDARS = {
         ],
       },
       qa: {
+        emoji: "🔎",
         dataFields: [
           {
             type: "count",
@@ -803,6 +829,7 @@ const CALENDARS = {
         ],
       },
       admin: {
+        emoji: "📝",
         dataFields: [
           {
             type: "count",
@@ -817,6 +844,7 @@ const CALENDARS = {
         ],
       },
       social: {
+        emoji: "🍸",
         dataFields: [
           {
             type: "count",
@@ -831,6 +859,7 @@ const CALENDARS = {
         ],
       },
       ooo: {
+        emoji: "🏝️",
         dataFields: [
           {
             type: "count",
@@ -955,7 +984,7 @@ const SUMMARY_GROUPS = {
   personalPRs: {
     id: "personalPRs",
     name: "Personal PRs",
-    emoji: "🖥️",
+    emoji: "💾",
     calendars: ["personalPRs"],
     sourceType: "personal",
     isNotionSource: false,
@@ -964,7 +993,7 @@ const SUMMARY_GROUPS = {
   workPRs: {
     id: "workPRs",
     name: "Work PRs",
-    emoji: "🖥️",
+    emoji: "💾",
     calendars: ["workPRs"],
     sourceType: "work",
     isNotionSource: false,

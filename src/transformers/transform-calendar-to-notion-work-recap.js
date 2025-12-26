@@ -1,6 +1,7 @@
 // Converts raw Google Calendar events into aggregated weekly data for Work Recap database
 
 const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
+const { CALENDARS } = require("../config/unified-sources");
 
 /**
  * Get 3-letter day abbreviation from a date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
@@ -182,17 +183,7 @@ function transformCalendarEventsToRecapData(
     });
 
     // Calculate data for each category
-    const categories = [
-      "meetings",
-      "design",
-      "coding",
-      "crit",
-      "sketch",
-      "research",
-      "personalAndSocial",
-      "rituals",
-      "qa",
-    ];
+    const categories = Object.keys(CALENDARS.workCalendar.categories);
 
     categories.forEach((category) => {
       const categoryEvents = eventsByCategory[category] || [];
@@ -250,17 +241,7 @@ function transformCalendarEventsToRecapData(
     });
 
     // Calculate data for each category
-    const taskCategories = [
-      "research",
-      "sketch",
-      "design",
-      "coding",
-      "crit",
-      "qa",
-      "admin",
-      "social",
-      "ooo",
-    ];
+    const taskCategories = Object.keys(CALENDARS.workTasks.categories);
 
     taskCategories.forEach((category) => {
       const categoryTasks = tasksByCategory[category] || [];

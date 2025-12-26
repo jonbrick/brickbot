@@ -1,6 +1,7 @@
 // Converts raw Google Calendar events into aggregated weekly data for Personal Recap database
 
 const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
+const { CALENDARS } = require("../config/unified-sources");
 
 /**
  * Get 3-letter day abbreviation from a date string (YYYY-MM-DD)
@@ -526,14 +527,7 @@ function transformCalendarEventsToRecapData(
     });
 
     // Calculate data for each category
-    const categories = [
-      "personal",
-      "interpersonal",
-      "home",
-      "physicalHealth",
-      "mentalHealth",
-      "ignore",
-    ];
+    const categories = Object.keys(CALENDARS.personalCalendar.categories);
 
     categories.forEach((category) => {
       const categoryEvents = eventsByCategory[category] || [];
@@ -596,13 +590,7 @@ function transformCalendarEventsToRecapData(
     });
 
     // Calculate data for each category
-    const taskCategories = [
-      "personal",
-      "interpersonal",
-      "home",
-      "physicalHealth",
-      "mentalHealth",
-    ];
+    const taskCategories = Object.keys(CALENDARS.tasks.categories);
 
     taskCategories.forEach((category) => {
       const categoryTasks = tasksByCategory[category] || [];

@@ -4,6 +4,111 @@
  */
 
 /**
+ * FIELD_TEMPLATES - Reusable field pattern factories
+ * Eliminates ~200 lines of repetitive dataField definitions
+ *
+ * Each template returns an array of field definition objects with:
+ * - type: "count" | "decimal" | "optionalText"
+ * - label: Human-readable label for Notion
+ * - notionProperty: Camel-case property name
+ */
+const FIELD_TEMPLATES = {
+  /**
+   * Standard activity pattern: Days, Sessions, Hours, Blocks
+   * Used by: workout, reading, meditation, cooking, art, coding, music, videoGames
+   *
+   * Example: standardActivity("meditation", "Meditation")
+   * Generates: meditationDays, meditationSessions, meditationHoursTotal, meditationBlocks
+   */
+  standardActivity: (id, name) => [
+    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+    {
+      type: "count",
+      label: `${name} - Sessions`,
+      notionProperty: `${id}Sessions`,
+    },
+    {
+      type: "decimal",
+      label: `${name} - Hours Total`,
+      notionProperty: `${id}HoursTotal`,
+    },
+    {
+      type: "optionalText",
+      label: `${name} - Blocks`,
+      notionProperty: `${id}Blocks`,
+    },
+  ],
+
+  /**
+   * Simple counter pattern: Just days
+   * Used by: normalWakeUp, sober
+   */
+  simpleCounter: (id, name) => [
+    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+  ],
+
+  /**
+   * Counter with blocks pattern: Days + Blocks (no hours/sessions)
+   * Used by: drinking
+   */
+  counterWithBlocks: (id, name) => [
+    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+    {
+      type: "optionalText",
+      label: `${name} - Blocks`,
+      notionProperty: `${id}Blocks`,
+    },
+  ],
+
+  /**
+   * Sleep days pattern: Just days (hours handled at summary level)
+   * Used by: sleepIn (with special sleepHoursTotal added separately)
+   */
+  sleepDays: (id, name) => [
+    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+  ],
+
+  /**
+   * Category activity pattern: Sessions, Hours, Blocks (no Days)
+   * Used by: personalCalendar categories, workCalendar categories
+   */
+  categoryActivity: (id, name) => [
+    {
+      type: "count",
+      label: `${name} - Sessions`,
+      notionProperty: `${id}Sessions`,
+    },
+    {
+      type: "decimal",
+      label: `${name} - Hours Total`,
+      notionProperty: `${id}HoursTotal`,
+    },
+    {
+      type: "optionalText",
+      label: `${name} - Blocks`,
+      notionProperty: `${id}Blocks`,
+    },
+  ],
+
+  /**
+   * Task category pattern: Tasks Complete + Task Details
+   * Used by: tasks categories, workTasks categories
+   */
+  taskCategory: (id, name) => [
+    {
+      type: "count",
+      label: `${name} - Tasks Complete`,
+      notionProperty: `${id}TasksComplete`,
+    },
+    {
+      type: "optionalText",
+      label: `${name} - Task Details`,
+      notionProperty: `${id}TaskDetails`,
+    },
+  ],
+};
+
+/**
  * CALENDARS - The atomic units
  * Each calendar represents a single Google Calendar
  */
@@ -13,25 +118,17 @@ const CALENDARS = {
     envVar: "NORMAL_WAKE_UP_CALENDAR_ID",
     name: "Normal Wake Up",
     emoji: "☀️",
-    dataFields: [
-      {
-        type: "count",
-        label: "Early Wakeup - Days",
-        notionProperty: "earlyWakeupDays",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.simpleCounter("earlyWakeup", "Early Wakeup"),
   },
   sleepIn: {
     id: "sleepIn",
     envVar: "SLEEP_IN_CALENDAR_ID",
     name: "Sleep In",
     emoji: "🌙",
+    // Special case: sleepHoursTotal is aggregated across both normalWakeUp + sleepIn
+    // That's why it uses "sleepHoursTotal" instead of "sleepInHoursTotal"
     dataFields: [
-      {
-        type: "count",
-        label: "Sleep In - Days",
-        notionProperty: "sleepInDays",
-      },
+      ...FIELD_TEMPLATES.sleepDays("sleepIn", "Sleep In"),
       {
         type: "decimal",
         label: "Sleep - Hours Total",
@@ -44,255 +141,70 @@ const CALENDARS = {
     envVar: "WORKOUT_CALENDAR_ID",
     name: "Workout",
     emoji: "💪",
-    dataFields: [
-      {
-        type: "count",
-        label: "Workout - Days",
-        notionProperty: "workoutDays",
-      },
-      {
-        type: "count",
-        label: "Workout - Sessions",
-        notionProperty: "workoutSessions",
-      },
-      {
-        type: "decimal",
-        label: "Workout - Hours Total",
-        notionProperty: "workoutHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Workout - Blocks",
-        notionProperty: "workoutBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("workout", "Workout"),
   },
   sober: {
     id: "sober",
     envVar: "SOBER_CALENDAR_ID",
     name: "Sober",
     emoji: "💧",
-    dataFields: [
-      {
-        type: "count",
-        label: "Sober - Days",
-        notionProperty: "soberDays",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.simpleCounter("sober", "Sober"),
   },
   drinking: {
     id: "drinking",
     envVar: "DRINKING_CALENDAR_ID",
     name: "Drinking",
     emoji: "🍷",
-    dataFields: [
-      {
-        type: "count",
-        label: "Drinking - Days",
-        notionProperty: "drinkingDays",
-      },
-      {
-        type: "optionalText",
-        label: "Drinking - Blocks",
-        notionProperty: "drinkingBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.counterWithBlocks("drinking", "Drinking"),
   },
   reading: {
     id: "reading",
     envVar: "READING_CALENDAR_ID",
     name: "Reading",
     emoji: "📖",
-    dataFields: [
-      {
-        type: "count",
-        label: "Reading - Days",
-        notionProperty: "readingDays",
-      },
-      {
-        type: "count",
-        label: "Reading - Sessions",
-        notionProperty: "readingSessions",
-      },
-      {
-        type: "decimal",
-        label: "Reading - Hours Total",
-        notionProperty: "readingHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Reading - Blocks",
-        notionProperty: "readingBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("reading", "Reading"),
   },
   meditation: {
     id: "meditation",
     envVar: "MEDITATION_CALENDAR_ID",
     name: "Meditation",
     emoji: "🧘",
-    dataFields: [
-      {
-        type: "count",
-        label: "Meditation - Days",
-        notionProperty: "meditationDays",
-      },
-      {
-        type: "count",
-        label: "Meditation - Sessions",
-        notionProperty: "meditationSessions",
-      },
-      {
-        type: "decimal",
-        label: "Meditation - Hours Total",
-        notionProperty: "meditationHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Meditation - Blocks",
-        notionProperty: "meditationBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("meditation", "Meditation"),
   },
   cooking: {
     id: "cooking",
     envVar: "COOKING_CALENDAR_ID",
     name: "Cooking",
-    emoji: "🍳",
-    dataFields: [
-      {
-        type: "count",
-        label: "Cooking - Days",
-        notionProperty: "cookingDays",
-      },
-      {
-        type: "count",
-        label: "Cooking - Sessions",
-        notionProperty: "cookingSessions",
-      },
-      {
-        type: "decimal",
-        label: "Cooking - Hours Total",
-        notionProperty: "cookingHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Cooking - Blocks",
-        notionProperty: "cookingBlocks",
-      },
-    ],
+    emoji: "🍗",
+    dataFields: FIELD_TEMPLATES.standardActivity("cooking", "Cooking"),
   },
   art: {
     id: "art",
     envVar: "ART_CALENDAR_ID",
     name: "Art",
     emoji: "🎨",
-    dataFields: [
-      {
-        type: "count",
-        label: "Art - Days",
-        notionProperty: "artDays",
-      },
-      {
-        type: "count",
-        label: "Art - Sessions",
-        notionProperty: "artSessions",
-      },
-      {
-        type: "decimal",
-        label: "Art - Hours Total",
-        notionProperty: "artHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Art - Blocks",
-        notionProperty: "artBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("art", "Art"),
   },
   coding: {
     id: "coding",
     envVar: "CODING_CALENDAR_ID",
     name: "Coding",
     emoji: "🖥️",
-    dataFields: [
-      {
-        type: "count",
-        label: "Coding - Days",
-        notionProperty: "codingDays",
-      },
-      {
-        type: "count",
-        label: "Coding - Sessions",
-        notionProperty: "codingSessions",
-      },
-      {
-        type: "decimal",
-        label: "Coding - Hours Total",
-        notionProperty: "codingHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Coding - Blocks",
-        notionProperty: "codingBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("coding", "Coding"),
   },
   music: {
     id: "music",
     envVar: "MUSIC_CALENDAR_ID",
     name: "Music",
     emoji: "🎸",
-    dataFields: [
-      {
-        type: "count",
-        label: "Music - Days",
-        notionProperty: "musicDays",
-      },
-      {
-        type: "count",
-        label: "Music - Sessions",
-        notionProperty: "musicSessions",
-      },
-      {
-        type: "decimal",
-        label: "Music - Hours Total",
-        notionProperty: "musicHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Music - Blocks",
-        notionProperty: "musicBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("music", "Music"),
   },
   videoGames: {
     id: "videoGames",
     envVar: "VIDEO_GAMES_CALENDAR_ID",
     name: "Video Games",
     emoji: "🎮",
-    dataFields: [
-      {
-        type: "count",
-        label: "Video Games - Days",
-        notionProperty: "videoGamesDays",
-      },
-      {
-        type: "count",
-        label: "Video Games - Sessions",
-        notionProperty: "videoGamesSessions",
-      },
-      {
-        type: "decimal",
-        label: "Video Games - Hours Total",
-        notionProperty: "videoGamesHoursTotal",
-      },
-      {
-        type: "optionalText",
-        label: "Video Games - Blocks",
-        notionProperty: "videoGamesBlocks",
-      },
-    ],
+    dataFields: FIELD_TEMPLATES.standardActivity("videoGames", "Video Games"),
   },
   bodyWeight: {
     id: "bodyWeight",
@@ -373,143 +285,43 @@ const CALENDARS = {
     categories: {
       personal: {
         emoji: "🌱",
-        dataFields: [
-          {
-            type: "count",
-            label: "Personal - Sessions",
-            notionProperty: "personalSessions",
-          },
-          {
-            type: "decimal",
-            label: "Personal - Hours Total",
-            notionProperty: "personalHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Personal - Blocks",
-            notionProperty: "personalBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("personal", "Personal"),
       },
       family: {
         emoji: "💜",
-        dataFields: [
-          {
-            type: "count",
-            label: "Family - Sessions",
-            notionProperty: "familySessions",
-          },
-          {
-            type: "decimal",
-            label: "Family - Hours Total",
-            notionProperty: "familyHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Family - Blocks",
-            notionProperty: "familyBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("family", "Family"),
       },
       relationship: {
         emoji: "❤️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Relationship - Sessions",
-            notionProperty: "relationshipSessions",
-          },
-          {
-            type: "decimal",
-            label: "Relationship - Hours Total",
-            notionProperty: "relationshipHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Relationship - Blocks",
-            notionProperty: "relationshipBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity(
+          "relationship",
+          "Relationship"
+        ),
       },
       interpersonal: {
         emoji: "🍻",
-        dataFields: [
-          {
-            type: "count",
-            label: "Interpersonal - Sessions",
-            notionProperty: "interpersonalSessions",
-          },
-          {
-            type: "decimal",
-            label: "Interpersonal - Hours Total",
-            notionProperty: "interpersonalHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Interpersonal - Blocks",
-            notionProperty: "interpersonalBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity(
+          "interpersonal",
+          "Interpersonal"
+        ),
       },
       home: {
         emoji: "🏠",
-        dataFields: [
-          {
-            type: "count",
-            label: "Home - Sessions",
-            notionProperty: "homeSessions",
-          },
-          {
-            type: "decimal",
-            label: "Home - Hours Total",
-            notionProperty: "homeHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Home - Blocks",
-            notionProperty: "homeBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("home", "Home"),
       },
       physicalHealth: {
         emoji: "💪",
-        dataFields: [
-          {
-            type: "count",
-            label: "Physical Health - Sessions",
-            notionProperty: "physicalHealthSessions",
-          },
-          {
-            type: "decimal",
-            label: "Physical Health - Hours Total",
-            notionProperty: "physicalHealthHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Physical Health - Blocks",
-            notionProperty: "physicalHealthBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity(
+          "physicalHealth",
+          "Physical Health"
+        ),
       },
       mentalHealth: {
         emoji: "❤️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Mental Health - Sessions",
-            notionProperty: "mentalHealthSessions",
-          },
-          {
-            type: "decimal",
-            label: "Mental Health - Hours Total",
-            notionProperty: "mentalHealthHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Mental Health - Blocks",
-            notionProperty: "mentalHealthBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity(
+          "mentalHealth",
+          "Mental Health"
+        ),
       },
       ignore: {
         emoji: "🚫",
@@ -535,183 +347,42 @@ const CALENDARS = {
     categories: {
       meetings: {
         emoji: "💼",
-        dataFields: [
-          {
-            type: "count",
-            label: "Meetings - Sessions",
-            notionProperty: "meetingsSessions",
-          },
-          {
-            type: "decimal",
-            label: "Meetings - Hours Total",
-            notionProperty: "meetingsHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Meetings - Blocks",
-            notionProperty: "meetingsBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("meetings", "Meetings"),
       },
       design: {
         emoji: "🎨",
-        dataFields: [
-          {
-            type: "count",
-            label: "Design - Sessions",
-            notionProperty: "designSessions",
-          },
-          {
-            type: "decimal",
-            label: "Design - Hours Total",
-            notionProperty: "designHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Design - Blocks",
-            notionProperty: "designBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("design", "Design"),
       },
       coding: {
         emoji: "🖥️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Coding - Sessions",
-            notionProperty: "codingSessions",
-          },
-          {
-            type: "decimal",
-            label: "Coding - Hours Total",
-            notionProperty: "codingHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Coding - Blocks",
-            notionProperty: "codingBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("coding", "Coding"),
       },
       crit: {
         emoji: "⚠️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Crit - Sessions",
-            notionProperty: "critSessions",
-          },
-          {
-            type: "decimal",
-            label: "Crit - Hours Total",
-            notionProperty: "critHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Crit - Blocks",
-            notionProperty: "critBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("crit", "Crit"),
       },
       sketch: {
         emoji: "💡",
-        dataFields: [
-          {
-            type: "count",
-            label: "Sketch - Sessions",
-            notionProperty: "sketchSessions",
-          },
-          {
-            type: "decimal",
-            label: "Sketch - Hours Total",
-            notionProperty: "sketchHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Sketch - Blocks",
-            notionProperty: "sketchBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("sketch", "Sketch"),
       },
       research: {
         emoji: "🧪",
-        dataFields: [
-          {
-            type: "count",
-            label: "Research - Sessions",
-            notionProperty: "researchSessions",
-          },
-          {
-            type: "decimal",
-            label: "Research - Hours Total",
-            notionProperty: "researchHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Research - Blocks",
-            notionProperty: "researchBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("research", "Research"),
       },
       personalAndSocial: {
         emoji: "🌱",
-        dataFields: [
-          {
-            type: "count",
-            label: "Personal & Social - Sessions",
-            notionProperty: "personalAndSocialSessions",
-          },
-          {
-            type: "decimal",
-            label: "Personal & Social - Hours Total",
-            notionProperty: "personalAndSocialHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Personal & Social - Blocks",
-            notionProperty: "personalAndSocialBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity(
+          "personalAndSocial",
+          "Personal & Social"
+        ),
       },
       rituals: {
         emoji: "🔁",
-        dataFields: [
-          {
-            type: "count",
-            label: "Rituals - Sessions",
-            notionProperty: "ritualsSessions",
-          },
-          {
-            type: "decimal",
-            label: "Rituals - Hours Total",
-            notionProperty: "ritualsHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "Rituals - Blocks",
-            notionProperty: "ritualsBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("rituals", "Rituals"),
       },
       qa: {
         emoji: "🔎",
-        dataFields: [
-          {
-            type: "count",
-            label: "QA - Sessions",
-            notionProperty: "qaSessions",
-          },
-          {
-            type: "decimal",
-            label: "QA - Hours Total",
-            notionProperty: "qaHoursTotal",
-          },
-          {
-            type: "optionalText",
-            label: "QA - Blocks",
-            notionProperty: "qaBlocks",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.categoryActivity("qa", "QA"),
       },
     },
   },
@@ -724,78 +395,32 @@ const CALENDARS = {
     categories: {
       personal: {
         emoji: "🌱",
-        dataFields: [
-          {
-            type: "count",
-            label: "Personal - Tasks Complete",
-            notionProperty: "personalTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Personal - Task Details",
-            notionProperty: "personalTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("personal", "Personal"),
       },
       interpersonal: {
         emoji: "🍻",
-        dataFields: [
-          {
-            type: "count",
-            label: "Interpersonal - Tasks Complete",
-            notionProperty: "interpersonalTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Interpersonal - Task Details",
-            notionProperty: "interpersonalTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory(
+          "interpersonal",
+          "Interpersonal"
+        ),
       },
       home: {
         emoji: "🏠",
-        dataFields: [
-          {
-            type: "count",
-            label: "Home - Tasks Complete",
-            notionProperty: "homeTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Home - Task Details",
-            notionProperty: "homeTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("home", "Home"),
       },
       physicalHealth: {
         emoji: "💪",
-        dataFields: [
-          {
-            type: "count",
-            label: "Physical Health - Tasks Complete",
-            notionProperty: "physicalHealthTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Physical Health - Task Details",
-            notionProperty: "physicalHealthTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory(
+          "physicalHealth",
+          "Physical Health"
+        ),
       },
       mentalHealth: {
         emoji: "❤️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Mental Health - Tasks Complete",
-            notionProperty: "mentalHealthTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Mental Health - Task Details",
-            notionProperty: "mentalHealthTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory(
+          "mentalHealth",
+          "Mental Health"
+        ),
       },
     },
   },
@@ -808,138 +433,39 @@ const CALENDARS = {
     categories: {
       research: {
         emoji: "🧪",
-        dataFields: [
-          {
-            type: "count",
-            label: "Research - Tasks Complete",
-            notionProperty: "researchTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Research - Task Details",
-            notionProperty: "researchTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("research", "Research"),
       },
       sketch: {
         emoji: "💡",
-        dataFields: [
-          {
-            type: "count",
-            label: "Sketch - Tasks Complete",
-            notionProperty: "sketchTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Sketch - Task Details",
-            notionProperty: "sketchTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("sketch", "Sketch"),
       },
       design: {
         emoji: "🎨",
-        dataFields: [
-          {
-            type: "count",
-            label: "Design - Tasks Complete",
-            notionProperty: "designTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Design - Task Details",
-            notionProperty: "designTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("design", "Design"),
       },
       coding: {
         emoji: "🖥️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Coding - Tasks Complete",
-            notionProperty: "codingTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Coding - Task Details",
-            notionProperty: "codingTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("coding", "Coding"),
       },
       crit: {
         emoji: "⚠️",
-        dataFields: [
-          {
-            type: "count",
-            label: "Crit - Tasks Complete",
-            notionProperty: "critTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Crit - Task Details",
-            notionProperty: "critTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("crit", "Crit"),
       },
       qa: {
         emoji: "🔎",
-        dataFields: [
-          {
-            type: "count",
-            label: "QA - Tasks Complete",
-            notionProperty: "qaTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "QA - Task Details",
-            notionProperty: "qaTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("qa", "QA"),
       },
       admin: {
         emoji: "📝",
-        dataFields: [
-          {
-            type: "count",
-            label: "Admin - Tasks Complete",
-            notionProperty: "adminTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Admin - Task Details",
-            notionProperty: "adminTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("admin", "Admin"),
       },
       social: {
         emoji: "🍸",
-        dataFields: [
-          {
-            type: "count",
-            label: "Social - Tasks Complete",
-            notionProperty: "socialTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "Social - Task Details",
-            notionProperty: "socialTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("social", "Social"),
       },
       ooo: {
         emoji: "🏝️",
-        dataFields: [
-          {
-            type: "count",
-            label: "OOO - Tasks Complete",
-            notionProperty: "oooTasksComplete",
-          },
-          {
-            type: "optionalText",
-            label: "OOO - Task Details",
-            notionProperty: "oooTaskDetails",
-          },
-        ],
+        dataFields: FIELD_TEMPLATES.taskCategory("ooo", "OOO"),
       },
     },
   },
@@ -2224,6 +1750,7 @@ function getAvailableSources() {
 }
 
 module.exports = {
+  FIELD_TEMPLATES,
   CALENDARS,
   SUMMARY_GROUPS,
   INTEGRATIONS,

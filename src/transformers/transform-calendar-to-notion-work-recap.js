@@ -62,6 +62,20 @@ function transformCalendarEventsToRecapData(
   };
 
   /**
+   * Truncate text to Notion's 2000 character limit
+   * @param {string} text - Text to truncate
+   * @param {number} maxLength - Maximum length (default: 2000)
+   * @returns {string} Truncated text
+   */
+  function truncateForNotion(text, maxLength = 2000) {
+    if (!text || text.length <= maxLength) {
+      return text;
+    }
+    // Truncate and add ellipsis with info about truncation
+    return text.substring(0, maxLength - 20) + "... (truncated)";
+  }
+
+  /**
    * Process sessions with details (no hours)
    * Used by: workPRs
    */
@@ -80,14 +94,17 @@ function transformCalendarEventsToRecapData(
     );
 
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
-    summary[`${calendarId}Details`] =
-      filteredEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          return `${eventName} (${day})`;
-        })
-        .join(", ") || "";
+    
+    const detailsText = filteredEvents
+      .map((event) => {
+        const eventName = event.summary || "Untitled Event";
+        const day = getDayAbbreviation(event.date);
+        return `${eventName} (${day})`;
+      })
+      .join(", ") || "";
+    
+    // Truncate to Notion's 2000 character limit
+    summary[`${calendarId}Details`] = truncateForNotion(detailsText);
   }
 
   const summary = {};

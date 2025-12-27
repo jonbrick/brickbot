@@ -186,9 +186,23 @@ function formatBlocksWithTimeRanges(events) {
 }
 
 /**
+ * Truncate text to Notion's 2000 character limit
+ * @param {string} text - Text to truncate
+ * @param {number} maxLength - Maximum length (default: 2000)
+ * @returns {string} Truncated text
+ */
+function truncateForNotion(text, maxLength = 2000) {
+  if (!text || text.length <= maxLength) {
+    return text;
+  }
+  // Truncate and add ellipsis with info about truncation
+  return text.substring(0, maxLength - 20) + "... (truncated)";
+}
+
+/**
  * Format tasks as day-grouped blocks
  * @param {Array} tasks - Array of task objects with dueDate and title
- * @returns {string} Formatted tasks string
+ * @returns {string} Formatted tasks string (truncated to 2000 chars if needed)
  * Example: "Mon:\nTask1\nTask2\n\nTue:\nTask3"
  */
 function formatTasksByDay(tasks) {
@@ -212,7 +226,10 @@ function formatTasksByDay(tasks) {
       return `${dayAbbr}:\n${dayTasks.join("\n")}`;
     });
 
-  return dayBlocks.join("\n\n");
+  const formatted = dayBlocks.join("\n\n");
+  
+  // Truncate to Notion's 2000 character limit
+  return truncateForNotion(formatted);
 }
 
 module.exports = {

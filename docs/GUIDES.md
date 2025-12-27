@@ -1,0 +1,701 @@
+# Brickbot Extension Guides
+
+**How-to guides for extending the system**
+
+> **Quick Links**: [Quickstart](../QUICKSTART.md) · [README](../README.md) · [Architecture](ARCHITECTURE.md) · [Reference](REFERENCE.md) · [Internals](INTERNALS.md)
+
+## Documentation Navigation
+
+**You are here:** `docs/GUIDES.md` - Step-by-step how-to guides
+
+**Other docs:**
+
+- **[../QUICKSTART.md](../QUICKSTART.md)** - 5-minute overview
+- **[../README.md](../README.md)** - Installation and setup
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Core architecture and design principles
+- **[REFERENCE.md](REFERENCE.md)** - Naming conventions and quick reference
+- **[INTERNALS.md](INTERNALS.md)** - Design patterns and best practices
+
+## Table of Contents
+
+- [Adding a New Integration](#adding-a-new-integration)
+- [Adding a New Calendar](#adding-a-new-calendar)
+- [Adding a New Summary Group](#adding-a-new-summary-group)
+- [Modifying Transformers](#modifying-transformers)
+- [Testing Your Changes](#testing-your-changes)
+
+## Adding a New Integration
+
+**Goal**: Connect a new external API (e.g., Apple Health, Spotify, RescueTime) to collect data into Notion.
+
+**Time estimate**: 2-4 hours for a simple integration
+
+### Step 1: Add to INTEGRATIONS Registry
+
+**File**: `src/config/unified-sources.js`
+
+Add your integration to the `INTEGRATIONS` object:
+
+```javascript
+INTEGRATIONS: {
+  // ... existing integrations
+
+  myNewApi: {
+    id: "myNewApi",
+    name: "My New API",
+    emoji: "🎯",
+
+    databaseConfig: {
+      // Database behavior config
+      dateProperty: "date",                    // Property name for date filtering
+      uniqueIdProperty: "itemId",              // Property name for unique ID
+      calendarEventIdProperty: "Calendar Event ID",  // For calendar sync
+      calendarCreatedProperty: "Calendar Created",    // Checkbox for sync status
+    },
+
+    apiConfig: {
+      baseUrl: "https://api.mynewapi.com",
+      requiresAuth: true,
+      authType: "oauth", // or "apiKey"
+      rateLimitPerMinute: 60,
+    },
+  },
+}
+```
+
+### Step 2: Create Environment Variables
+
+**File**: `.env`
+
+```bash
+# My New API
+MYNEWAPI_CLIENT_ID=your_client_id
+MYNEWAPI_CLIENT_SECRET=your_client_secret
+MYNEWAPI_ACCESS_TOKEN=your_access_token
+MYNEWAPI_REFRESH_TOKEN=your_refresh_token
+NOTION_MYNEWAPI_DATABASE_ID=your_notion_database_id
+```
+
+### Step 3: Create Notion Config
+
+**File**: `src/config/notion/my-new-api.js`
+
+```javascript
+/**
+ * Notion configuration for My New API integration
+ * @layer 1 - Integration (API-Specific)
+ */
+
+module.exports = {
+  database: process.env.NOTION_MYNEWAPI_DATABASE_ID,
+
+  properties: {
+    title: {
+      name: "Title",
+      type: "title",
+      enabled: true,
+    },
+    date: {
+      name: "Date",
+      type: "date",
+      enabled: true,
+    },
+    itemId: {
+      name: "Item ID",
+      type: "text",
+      enabled: true,
+    },
+    calendarEventId: {
+      name: "Calendar Event ID",
+      type: "text",
+      enabled: false, // Only needed if syncing to calendar
+    },
+    calendarCreated: {
+      name: "Calendar Created",
+      type: "checkbox",
+      enabled: false, // Only needed if syncing to calendar
+    },
+    // ... your custom properties
+    customMetric: {
+      name: "Custom Metric",
+      type: "number",
+      enabled: true,
+    },
+  },
+
+  fieldMappings: {
+    title: "title",
+    date: "date",
+    itemId: "itemId",
+    customMetric: "customMetric",
+  },
+};
+```
+
+**Update**: `src/config/notion/index.js`
+
+```javascript
+const myNewApi = require("./my-new-api");
+
+module.exports = {
+  databases: {
+    // ... existing
+    myNewApi: myNewApi.database,
+  },
+  properties: {
+    // ... existing
+    myNewApi: myNewApi.properties,
+  },
+  getPropertyName: function (property) {
+    return property?.name || property;
+  },
+};
+```
+
+### Step 4: Create Service
+
+**File**: `src/services/MyNewApiService.js`
+
+```javascript
+/**
+ * Service for interacting with My New API
+ * @layer 1 - Integration (API-Specific)
+ */
+
+class MyNewApiService {
+  constructor() {
+    this.accessToken = process.env.MYNEWAPI_ACCESS_TOKEN;
+    this.baseUrl = "https://api.mynewapi.com";
+  }
+
+  /**
+   * Fetch items for date range
+   * @param {Date} startDate - Start date
+   * @param {Date} endDate - End date
+   * @returns {Promise<Array>} Array of items
+   */
+  async fetchItems(startDate, endDate) {
+    const url = `${this.baseUrl}/items`;
+    const params = new URLSearchParams({
+      start_date: startDate.toISOString().split("T")[0],
+      end_date: endDate.toISOString().split("T")[0],
+    });
+
+    const response = await fetch(`${url}?${params}`, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.items || [];
+  }
+}
+
+module.exports = MyNewApiService;
+```
+
+### Step 5: Create Collector
+
+**File**: `src/collectors/collect-my-new-api.js`
+
+```javascript
+/**
+ * Collector for My New API data
+ * @layer 1 - Integration (API-Specific)
+ */
+
+const MyNewApiService = require("../services/MyNewApiService");
+const logger = require("../utils/logger");
+
+/**
+ * Fetch items from My New API
+ * @param {Date} startDate
+ * @param {Date} endDate
+ * @returns {Promise<Array>}
+ */
+async function fetchMyNewApiData(startDate, endDate) {
+  try {
+    logger.info(`Fetching My New API data from ${startDate} to ${endDate}`);
+
+    const service = new MyNewApiService();
+    const items = await service.fetchItems(startDate, endDate);
+
+    // Transform to standard format
+    const formatted = items.map((item) => ({
+      itemId: item.id,
+      title: item.name,
+      date: item.timestamp,
+      customMetric: item.value,
+      // ... more fields
+    }));
+
+    logger.info(`Fetched ${formatted.length} items from My New API`);
+    return formatted;
+  } catch (error) {
+    logger.error(`Error fetching My New API data: ${error.message}`);
+    throw error;
+  }
+}
+
+module.exports = {
+  fetchMyNewApiData,
+};
+```
+
+### Step 6: Create Transformer
+
+**File**: `src/transformers/my-new-api-to-notion-my-new-api.js`
+
+```javascript
+/**
+ * Transform My New API data to Notion format
+ * @layer 1 - Integration (API-Specific)
+ */
+
+const config = require("../config");
+
+/**
+ * Transform item to Notion properties
+ * @param {Object} item - Item from API
+ * @returns {Object} Notion properties
+ */
+function transformMyNewApiToNotion(item) {
+  const props = config.notion.properties.myNewApi;
+
+  return {
+    [config.notion.getPropertyName(props.title)]: item.title,
+    [config.notion.getPropertyName(props.date)]: item.date,
+    [config.notion.getPropertyName(props.itemId)]: item.itemId,
+    [config.notion.getPropertyName(props.customMetric)]: item.customMetric,
+  };
+}
+
+module.exports = {
+  transformMyNewApiToNotion,
+};
+```
+
+### Step 7: Create Workflow
+
+**File**: `src/workflows/my-new-api-to-notion-my-new-api.js`
+
+```javascript
+/**
+ * Workflow: Sync My New API data to Notion
+ * @layer 1 - Integration (API-Specific)
+ */
+
+const IntegrationDatabase = require("../databases/IntegrationDatabase");
+const {
+  transformMyNewApiToNotion,
+} = require("../transformers/my-new-api-to-notion-my-new-api");
+const { delay } = require("../utils/async");
+const logger = require("../utils/logger");
+
+/**
+ * Sync items to Notion
+ * @param {Array} items - Items from API
+ * @returns {Promise<Object>} Results summary
+ */
+async function syncMyNewApiToNotion(items) {
+  const db = new IntegrationDatabase("myNewApi");
+  const results = {
+    created: [],
+    skipped: [],
+    errors: [],
+    total: items.length,
+  };
+
+  logger.info(`Syncing ${items.length} items to Notion...`);
+
+  for (const item of items) {
+    try {
+      // Check for existing
+      const existing = await db.findByUniqueId(item.itemId);
+
+      if (existing) {
+        logger.debug(`Skipping existing item: ${item.itemId}`);
+        results.skipped.push({ itemId: item.itemId });
+        continue;
+      }
+
+      // Transform and create
+      const properties = transformMyNewApiToNotion(item);
+      const page = await db.createPage(properties);
+
+      logger.info(`Created item: ${item.itemId}`);
+      results.created.push({ itemId: item.itemId, pageId: page.id });
+
+      // Rate limiting
+      await delay(330); // ~3 requests/second for Notion API
+    } catch (error) {
+      logger.error(`Error syncing item ${item.itemId}: ${error.message}`);
+      results.errors.push({ itemId: item.itemId, error: error.message });
+    }
+  }
+
+  return results;
+}
+
+module.exports = {
+  syncMyNewApiToNotion,
+};
+```
+
+### Step 8: Wire Up Auto-Discovery
+
+**No code changes needed!** The `collectors/index.js` and `updaters/index.js` files automatically discover your integration based on the `INTEGRATIONS` registry.
+
+Just follow the naming convention:
+
+- Collector function: `fetch{IntegrationName}Data` (e.g., `fetchMyNewApiData`)
+- Workflow function: `sync{IntegrationName}ToNotion` (e.g., `syncMyNewApiToNotion`)
+
+### Step 9: Test Your Integration
+
+```bash
+# Test collecting data
+yarn collect
+# Select your date range
+# Select "My New API"
+
+# Verify data in Notion
+# Check your Notion database for new records
+```
+
+**That's it!** Your new integration is now fully wired into the system.
+
+---
+
+## Adding a New Calendar
+
+**Goal**: Create a new Google Calendar to track a specific domain (e.g., Meditation, Reading, Cycling).
+
+**Time estimate**: 15-30 minutes
+
+### Step 1: Create Google Calendar
+
+1. Go to Google Calendar
+2. Create a new calendar (e.g., "Meditation Tracker")
+3. Copy the Calendar ID from settings
+4. Add to `.env`: `GOOGLE_CALENDAR_MEDITATION_ID=your_calendar_id`
+
+### Step 2: Add to CALENDARS Registry
+
+**File**: `src/config/unified-sources.js`
+
+```javascript
+CALENDARS: {
+  // ... existing calendars
+
+  meditation: {
+    id: "meditation",
+    name: "Meditation",
+    emoji: "🧘",
+    calendarId: process.env.GOOGLE_CALENDAR_MEDITATION_ID,
+    notionSource: "myMeditationApi", // Which integration feeds this
+    eventConfig: {
+      colorId: "5", // Google Calendar color ID
+      transparency: "opaque",
+    },
+  },
+}
+```
+
+### Step 3: Add to SUMMARY_GROUPS
+
+**File**: `src/config/unified-sources.js`
+
+Add your calendar to the appropriate summary group:
+
+```javascript
+SUMMARY_GROUPS: {
+  personalRecap: {
+    // ... existing config
+    calendars: [
+      // ... existing calendars
+      "meditation",
+    ],
+  },
+}
+```
+
+### Step 4: Create Calendar Transformer
+
+**File**: `src/transformers/notion-my-meditation-api-to-calendar-meditation.js`
+
+```javascript
+/**
+ * Transform Notion meditation records to Google Calendar events
+ * @layer 2 - Domain (Source-Agnostic)
+ */
+
+const config = require("../config");
+const { buildTransformer } = require("./buildTransformer");
+
+module.exports = buildTransformer({
+  calendarId: "meditation",
+  sourceIntegration: "myMeditationApi",
+
+  // Event title template
+  titleTemplate: (record) => {
+    const duration = record.properties.Duration?.number || 0;
+    return `Meditation (${duration} min)`;
+  },
+
+  // Event description template
+  descriptionTemplate: (record) => {
+    const type = record.properties.Type?.select?.name || "Unknown";
+    return `Type: ${type}`;
+  },
+
+  // Additional fields
+  extractAdditionalFields: (record) => ({
+    duration: record.properties.Duration?.number || 0,
+    type: record.properties.Type?.select?.name || "Unknown",
+  }),
+});
+```
+
+### Step 5: Test Calendar Sync
+
+```bash
+# Sync to calendar
+yarn update
+# Select your date range
+# Select "Meditation"
+
+# Verify in Google Calendar
+# Check for new meditation events
+```
+
+**Done!** Your new calendar is now integrated.
+
+---
+
+## Adding a New Summary Group
+
+**Goal**: Create a new weekly summary that combines multiple calendars (e.g., Health Recap, Work Recap).
+
+**Time estimate**: 10-20 minutes
+
+### Add to SUMMARY_GROUPS Registry
+
+**File**: `src/config/unified-sources.js`
+
+```javascript
+SUMMARY_GROUPS: {
+  // ... existing groups
+
+  healthRecap: {
+    id: "healthRecap",
+    name: "Health Recap",
+    emoji: "🏥",
+    calendars: ["sleep", "workouts", "bodyWeight", "meditation"],
+
+    aggregations: {
+      totalWorkoutTime: {
+        calendar: "workouts",
+        metric: "duration",
+        aggregation: "sum",
+      },
+      avgSleepHours: {
+        calendar: "sleep",
+        metric: "duration",
+        aggregation: "average",
+      },
+      // ... more aggregations
+    },
+
+    notionDatabase: process.env.NOTION_HEALTH_RECAP_DATABASE_ID,
+  },
+}
+```
+
+**That's it!** The `deriveDataSources()` function automatically generates everything else.
+
+---
+
+## Modifying Transformers
+
+### Changing Event Titles
+
+**File**: Transformer file (e.g., `notion-oura-to-calendar-sleep.js`)
+
+```javascript
+titleTemplate: (record) => {
+  const hours = record.properties.Duration?.number || 0;
+  const quality = record.properties.Score?.number || 0;
+  return `Sleep: ${hours}h (${quality}% quality)`; // Customize here
+},
+```
+
+### Adding Event Description
+
+```javascript
+descriptionTemplate: (record) => {
+  const restfulness = record.properties.Restfulness?.number || 0;
+  const deepSleep = record.properties["Deep Sleep"]?.number || 0;
+
+  return `
+Restfulness: ${restfulness}%
+Deep Sleep: ${deepSleep}h
+
+View full details in Notion
+  `.trim();
+},
+```
+
+### Changing Event Colors
+
+**File**: `src/config/unified-sources.js`
+
+```javascript
+CALENDARS: {
+  sleep: {
+    // ... other config
+    eventConfig: {
+      colorId: "5", // Change color ID (1-11)
+      transparency: "opaque", // or "transparent"
+    },
+  },
+}
+```
+
+**Google Calendar Color IDs**:
+
+- 1: Lavender
+- 2: Sage
+- 3: Grape
+- 4: Flamingo
+- 5: Banana
+- 6: Tangerine
+- 7: Peacock
+- 8: Graphite
+- 9: Blueberry
+- 10: Basil
+- 11: Tomato
+
+---
+
+## Testing Your Changes
+
+### Unit Testing Transformers
+
+```javascript
+const { transformOuraToNotion } = require("./oura-to-notion-oura");
+
+const testData = {
+  sleepId: "test_123",
+  totalSleep: 28800, // seconds
+  score: 85,
+  // ... more fields
+};
+
+const result = transformOuraToNotion(testData);
+console.log(result);
+```
+
+### Integration Testing
+
+```bash
+# Test with a small date range first
+yarn collect
+# Select "Yesterday"
+# Select your integration
+
+# Verify in Notion
+# Check database for new records
+
+# Test calendar sync
+yarn update
+# Select "Yesterday"
+# Select your calendar
+
+# Verify in Google Calendar
+```
+
+### Debugging Tips
+
+1. **Enable debug logging**: Set `LOG_LEVEL=debug` in `.env`
+2. **Check API responses**: Add `console.log(response)` in service files
+3. **Inspect Notion properties**: Use Notion API explorer
+4. **Check calendar events**: Use Google Calendar API explorer
+
+---
+
+## Common Patterns
+
+### Using BaseWorkflow
+
+If your workflow needs batch processing with progress tracking:
+
+```javascript
+const BaseWorkflow = require("./BaseWorkflow");
+
+class MyWorkflow extends BaseWorkflow {
+  constructor() {
+    super({
+      name: "My Workflow",
+      batchSize: 10,
+      delayBetweenBatches: 1000,
+    });
+  }
+
+  async processBatch(items) {
+    // Your batch processing logic
+    return items.map((item) => this.processItem(item));
+  }
+
+  async processItem(item) {
+    // Your item processing logic
+    return { success: true, item };
+  }
+}
+```
+
+### Using buildTransformer
+
+For simple calendar transformers:
+
+```javascript
+const { buildTransformer } = require("./buildTransformer");
+
+module.exports = buildTransformer({
+  calendarId: "myCalendar",
+  sourceIntegration: "myIntegration",
+  titleTemplate: (record) =>
+    `My Event: ${record.properties.Name?.title[0]?.plain_text}`,
+  descriptionTemplate: (record) =>
+    `Details: ${record.properties.Details?.rich_text[0]?.plain_text}`,
+});
+```
+
+### Error Handling Pattern
+
+```javascript
+async function myFunction() {
+  try {
+    // Your logic
+  } catch (error) {
+    logger.error(`Error in myFunction: ${error.message}`);
+    // Return graceful result or rethrow
+    return { success: false, error: error.message };
+  }
+}
+```
+
+---
+
+## Need Help?
+
+- **Architecture questions?** See [ARCHITECTURE.md](ARCHITECTURE.md)
+- **Naming conventions?** See [REFERENCE.md](REFERENCE.md)
+- **Design patterns?** See [INTERNALS.md](INTERNALS.md)
+- **Setup issues?** See [../README.md](../README.md)

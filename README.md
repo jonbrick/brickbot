@@ -4,6 +4,38 @@
 
 Brickbot automatically collects data from external sources (GitHub, Oura, Strava, Steam, Withings), syncs it to Notion, creates calendar events, and generates AI-powered insights about your productivity, health, and habits.
 
+## Documentation
+
+### Quick Navigation
+
+**📁 Root Level** (start here):
+
+- **[QUICKSTART.md](QUICKSTART.md)** - 5-minute overview for first-time readers
+- **[README.md](README.md)** (this file) - Installation and setup instructions
+
+**📁 docs/** (detailed documentation):
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System architecture and design principles
+- **[docs/GUIDES.md](docs/GUIDES.md)** - Step-by-step guides for extending the system
+- **[docs/REFERENCE.md](docs/REFERENCE.md)** - Quick reference for naming conventions and API mappings
+- **[docs/INTERNALS.md](docs/INTERNALS.md)** - Deep dive into design patterns and code quality
+
+### Documentation Structure
+
+**Root Level** contains the two entry points:
+
+- **QUICKSTART.md**: Read this first if you want a high-level overview (5 minutes)
+- **README.md**: Read this first if you want to install and run the system
+
+**docs/ Directory** contains all detailed documentation:
+
+- Start with **ARCHITECTURE.md** to understand core concepts
+- Use **GUIDES.md** when you need to add a feature or extend the system
+- Use **REFERENCE.md** for quick lookups (naming conventions, API mappings, env vars)
+- Read **INTERNALS.md** for deep understanding of design patterns and best practices
+
+> **New to Brickbot?** Start with [QUICKSTART.md](QUICKSTART.md) for a high-level overview, then return here for installation instructions.
+
 ## Installation
 
 ### Prerequisites
@@ -661,7 +693,7 @@ yarn collect
 
 ## Documentation
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Technical architecture, system flow, and design patterns
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - Technical architecture, system flow, and design patterns
 
 ## Adding New Data Sources
 
@@ -676,7 +708,7 @@ The modular architecture makes adding new integrations straightforward:
 7. **Create Workflow** (`src/workflows/`) - Can leverage BaseWorkflow for batch logic
 8. **Update CLI Scripts** - Add new source to selection menus
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed extension guide and patterns.
+See [docs/GUIDES.md](docs/GUIDES.md) for detailed extension guide and patterns.
 
 ## Next Steps
 
@@ -692,11 +724,13 @@ Once setup is complete:
 Adding a new calendar integration follows a simple 4-step process:
 
 1. **Add environment variable to `.env`**:
+
    ```bash
    MEDITATION_CALENDAR_ID=xxxxx@group.calendar.google.com
    ```
 
 2. **Add entry to CALENDARS in `src/config/unified-sources.js`**:
+
    ```javascript
    meditation: {
      id: "meditation",
@@ -719,6 +753,7 @@ Adding a new calendar integration follows a simple 4-step process:
    ```
 
 3. **Add entry to SUMMARY_GROUPS in `src/config/unified-sources.js`**:
+
    ```javascript
    meditation: {
      id: "meditation",
@@ -732,12 +767,14 @@ Adding a new calendar integration follows a simple 4-step process:
 4. **Add Notion columns** to your Personal Recap or Work Recap database (columns are automatically generated from `dataFields` definitions).
 
 That's it! The unified config architecture automatically:
+
 - Generates `DATA_SOURCES` entries
 - Creates `PERSONAL_RECAP_SOURCES` / `WORK_RECAP_SOURCES` entries
 - Generates Notion property definitions
 - Makes the calendar available for reporting
 
 All configuration now lives in `src/config/unified-sources.js` with three registries:
+
 - **CALENDARS** - Atomic time-tracking units with dataFields
 - **SUMMARY_GROUPS** - How calendars combine for reporting
 - **INTEGRATIONS** - API → Notion routing

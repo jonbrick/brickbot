@@ -324,62 +324,12 @@ class IntegrationDatabase extends NotionDatabase {
         );
       }
 
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/9c70b6e1-e392-42ab-a599-dec64aa33ee8",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "IntegrationDatabase.js:173",
-            message: "getUnsyncedByEventId entry",
-            data: {
-              configKey: this.configKey,
-              databaseConfig: this.databaseConfig,
-              dateProperty: this.databaseConfig.dateProperty,
-              calendarEventIdProperty:
-                this.databaseConfig.calendarEventIdProperty,
-              propsKeys: Object.keys(this.props || {}),
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-
       // Get property names
       // For Events/Trips: databaseConfig contains actual Notion property names, use directly
       // For old integrations: databaseConfig contains config keys, resolve through props
       const datePropertyConfigKey = this.databaseConfig.dateProperty;
       const eventIdPropertyConfigKey =
         this.databaseConfig.calendarEventIdProperty;
-
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/9c70b6e1-e392-42ab-a599-dec64aa33ee8",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "IntegrationDatabase.js:190",
-            message: "Before property name resolution",
-            data: {
-              datePropertyConfigKey,
-              eventIdPropertyConfigKey,
-              propsDateExists: !!this.props[datePropertyConfigKey],
-              propsEventIdExists: !!this.props[eventIdPropertyConfigKey],
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
 
       // Check if the config key exists in props (old pattern) or use directly (new pattern)
       let datePropertyName;
@@ -405,32 +355,6 @@ class IntegrationDatabase extends NotionDatabase {
         calendarEventIdPropertyName = eventIdPropertyConfigKey;
       }
 
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/9c70b6e1-e392-42ab-a599-dec64aa33ee8",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "IntegrationDatabase.js:230",
-            message: "After property name resolution",
-            data: {
-              datePropertyName,
-              calendarEventIdPropertyName,
-              datePropertyNameIsNull: datePropertyName === null,
-              eventIdPropertyNameIsNull: calendarEventIdPropertyName === null,
-              dateUsedDirect: !this.props[datePropertyConfigKey],
-              eventIdUsedDirect: !this.props[eventIdPropertyConfigKey],
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-
       // Build filter: date range + calendarEventId is empty
       const filter = {
         and: [
@@ -454,29 +378,6 @@ class IntegrationDatabase extends NotionDatabase {
           },
         ],
       };
-
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/9c70b6e1-e392-42ab-a599-dec64aa33ee8",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "IntegrationDatabase.js:260",
-            message: "Filter built",
-            data: {
-              filter: JSON.stringify(filter),
-              datePropertyName,
-              calendarEventIdPropertyName,
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "A",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
 
       return await this.queryDatabaseAll(this.databaseId, filter);
     } catch (error) {
@@ -503,31 +404,6 @@ class IntegrationDatabase extends NotionDatabase {
         );
       }
 
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/9c70b6e1-e392-42ab-a599-dec64aa33ee8",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "IntegrationDatabase.js:231",
-            message: "markSyncedWithEventId entry",
-            data: {
-              configKey: this.configKey,
-              calendarEventIdProperty:
-                this.databaseConfig.calendarEventIdProperty,
-              propsEventIdExists:
-                !!this.props[this.databaseConfig.calendarEventIdProperty],
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
-
       // Check if the config key exists in props (old pattern) or use directly (new pattern)
       let propertyName;
       const eventIdPropertyConfigKey =
@@ -542,29 +418,6 @@ class IntegrationDatabase extends NotionDatabase {
         // New pattern: databaseConfig contains actual Notion property name, use directly
         propertyName = eventIdPropertyConfigKey;
       }
-
-      // #region agent log
-      fetch(
-        "http://127.0.0.1:7242/ingest/9c70b6e1-e392-42ab-a599-dec64aa33ee8",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            location: "IntegrationDatabase.js:280",
-            message: "After property name resolution in markSynced",
-            data: {
-              propertyName,
-              propertyNameIsNull: propertyName === null,
-              usedDirectValue: !this.props[eventIdPropertyConfigKey],
-            },
-            timestamp: Date.now(),
-            sessionId: "debug-session",
-            runId: "run1",
-            hypothesisId: "B",
-          }),
-        }
-      ).catch(() => {});
-      // #endregion
 
       // Update rich_text property with event ID
       const properties = {

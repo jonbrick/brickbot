@@ -339,7 +339,7 @@ const CALENDARS = {
     id: "workCalendar",
     envVar: "WORK_MAIN_CALENDAR_ID",
     name: "Work Calendar",
-    emoji: "💼",
+    emoji: "📅",
     dataFields: [
       // Note: Work calendar has nested categories handled at DATA_SOURCES level
       // This represents the atomic calendar unit
@@ -631,7 +631,7 @@ const SUMMARY_GROUPS = {
   workCalendar: {
     id: "workCalendar",
     name: "Work Calendar",
-    emoji: "💼",
+    emoji: "📅",
     calendars: ["workCalendar"],
     sourceType: "work",
     isNotionSource: false,

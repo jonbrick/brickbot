@@ -1,19 +1,17 @@
 // Converts raw Google Calendar events into aggregated weekly data for Personal Recap database
 
 const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
-const { CALENDARS, SUMMARY_GROUPS, FETCH_KEY_MAPPING } = require("../config/unified-sources");
+const {
+  CALENDARS,
+  SUMMARY_GROUPS,
+  FETCH_KEY_MAPPING,
+} = require("../config/unified-sources");
 const { PARSERS } = require("../parsers/calendar-parsers");
-
-/**
- * Get 3-letter day abbreviation from a date string (YYYY-MM-DD)
- * @param {string} dateStr - Date string in YYYY-MM-DD format
- * @returns {string} 3-letter day abbreviation (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
- */
-function getDayAbbreviation(dateStr) {
-  const date = new Date(dateStr + "T00:00:00");
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return dayNames[date.getDay()];
-}
+const {
+  getDayAbbreviation,
+  isDateInWeek,
+  calculateCalendarData,
+} = require("../utils/calendar-data-helpers");
 
 /**
  * Transform calendar events to weekly recap data
@@ -46,70 +44,38 @@ function transformCalendarEventsToRecapData(
   selectedCalendars = null,
   tasks = []
 ) {
-  // Helper to check if a date string is within the week range
-  const isDateInWeek = (dateStr) => {
-    if (!weekStartDate || !weekEndDate) return true; // No filtering if dates not provided
-    const eventDate = new Date(dateStr + "T00:00:00");
-    return eventDate >= weekStartDate && eventDate <= weekEndDate;
-  };
-
-  // Helper function to calculate data for a calendar
-  const calculateCalendarData = (
-    events,
-    includeHours = false,
-    includeSessions = false
-  ) => {
-    if (!events || events.length === 0) {
-      return {
-        days: 0,
-        sessions: includeSessions ? 0 : undefined,
-        hoursTotal: includeHours ? 0 : undefined,
-      };
-    }
-
-    // Filter events to only include those within the week
-    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
-
-    // Count unique dates
-    const uniqueDates = new Set(filteredEvents.map((event) => event.date));
-    const days = uniqueDates.size;
-
-    // Count sessions (number of events)
-    const sessions = includeSessions ? filteredEvents.length : undefined;
-
-    // Calculate total hours
-    const hoursTotal = includeHours
-      ? Math.round(
-          filteredEvents.reduce(
-            (sum, event) => sum + (event.durationHours || 0),
-            0
-          ) * 100
-        ) / 100
-      : undefined;
-
-    return {
-      days,
-      sessions,
-      hoursTotal,
-    };
-  };
-
   /**
    * Process standard activity calendar (Days, Sessions, HoursTotal, Blocks)
    * Used by: workout, reading, meditation, coding, art, music, videoGames, cooking
    */
-  function processStandardActivity(calendarId, calendarEvents, summary, isDateInWeek, getDayAbbreviation) {
+  function processStandardActivity(
+    calendarId,
+    calendarEvents,
+    summary,
+    weekStartDate,
+    weekEndDate
+  ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
-    const data = calculateCalendarData(events, true, true);
+    const data = calculateCalendarData(
+      events,
+      weekStartDate,
+      weekEndDate,
+      true,
+      true
+    );
 
     summary[`${calendarId}Days`] = data.days || 0;
-    summary[`${calendarId}Sessions`] = data.sessions !== undefined ? data.sessions : 0;
-    summary[`${calendarId}HoursTotal`] = data.hoursTotal !== undefined ? data.hoursTotal : 0;
+    summary[`${calendarId}Sessions`] =
+      data.sessions !== undefined ? data.sessions : 0;
+    summary[`${calendarId}HoursTotal`] =
+      data.hoursTotal !== undefined ? data.hoursTotal : 0;
 
     // Calculate blocks
-    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+    const filteredEvents = events.filter((event) =>
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
     summary[`${calendarId}Blocks`] =
       filteredEvents
         .map((event) => {
@@ -126,11 +92,23 @@ function transformCalendarEventsToRecapData(
    * Process days-only calendar
    * Used by: sober
    */
-  function processDaysOnly(calendarId, calendarEvents, summary) {
+  function processDaysOnly(
+    calendarId,
+    calendarEvents,
+    summary,
+    weekStartDate,
+    weekEndDate
+  ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
-    const data = calculateCalendarData(events, false, false);
+    const data = calculateCalendarData(
+      events,
+      weekStartDate,
+      weekEndDate,
+      false,
+      false
+    );
     summary[`${calendarId}Days`] = data.days || 0;
   }
 
@@ -138,15 +116,29 @@ function transformCalendarEventsToRecapData(
    * Process days with blocks (conditional hours display)
    * Used by: drinking
    */
-  function processDaysWithBlocks(calendarId, calendarEvents, summary, isDateInWeek, getDayAbbreviation) {
+  function processDaysWithBlocks(
+    calendarId,
+    calendarEvents,
+    summary,
+    weekStartDate,
+    weekEndDate
+  ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
-    const data = calculateCalendarData(events, false, false);
+    const data = calculateCalendarData(
+      events,
+      weekStartDate,
+      weekEndDate,
+      false,
+      false
+    );
     summary[`${calendarId}Days`] = data.days || 0;
 
     // Calculate blocks with conditional hour display
-    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+    const filteredEvents = events.filter((event) =>
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
     summary[`${calendarId}Blocks`] =
       filteredEvents
         .map((event) => {
@@ -167,19 +159,31 @@ function transformCalendarEventsToRecapData(
    * Process multi-calendar aggregate
    * Used by: sleep (combines earlyWakeup + sleepIn)
    */
-  function processMultiCalendar(groupId, group, calendarEvents, summary) {
+  function processMultiCalendar(
+    groupId,
+    group,
+    calendarEvents,
+    summary,
+    weekStartDate,
+    weekEndDate
+  ) {
     if (groupId === "sleep") {
       const earlyWakeup = calculateCalendarData(
         calendarEvents.earlyWakeup || [],
+        weekStartDate,
+        weekEndDate,
         true,
         false
       );
       const sleepIn = calculateCalendarData(
         calendarEvents.sleepIn || [],
+        weekStartDate,
+        weekEndDate,
         true,
         false
       );
-      const sleepHoursTotal = (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
+      const sleepHoursTotal =
+        (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
 
       summary.earlyWakeupDays = earlyWakeup.days || 0;
       summary.sleepInDays = sleepIn.days || 0;
@@ -192,10 +196,18 @@ function transformCalendarEventsToRecapData(
    * Process sessions with details (no hours)
    * Used by: personalPRs
    */
-  function processSessionsDetails(calendarId, calendarEvents, summary, isDateInWeek, getDayAbbreviation) {
+  function processSessionsDetails(
+    calendarId,
+    calendarEvents,
+    summary,
+    weekStartDate,
+    weekEndDate
+  ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
-    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+    const filteredEvents = events.filter((event) =>
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
 
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
 
@@ -265,8 +277,8 @@ function transformCalendarEventsToRecapData(
               group.calendars[0],
               calendarEvents,
               summary,
-              isDateInWeek,
-              getDayAbbreviation
+              weekStartDate,
+              weekEndDate
             );
           }
           break;
@@ -276,16 +288,25 @@ function transformCalendarEventsToRecapData(
           if (groupId === "drinkingDays") {
             // Process sober (days only) if selected
             if (shouldCalculate("sober") || shouldCalculate("drinkingDays")) {
-              processDaysOnly("sober", calendarEvents, summary);
+              processDaysOnly(
+                "sober",
+                calendarEvents,
+                summary,
+                weekStartDate,
+                weekEndDate
+              );
             }
             // Process drinking (days with blocks) if selected
-            if (shouldCalculate("drinking") || shouldCalculate("drinkingDays")) {
+            if (
+              shouldCalculate("drinking") ||
+              shouldCalculate("drinkingDays")
+            ) {
               processDaysWithBlocks(
                 "drinking",
                 calendarEvents,
                 summary,
-                isDateInWeek,
-                getDayAbbreviation
+                weekStartDate,
+                weekEndDate
               );
             }
           }
@@ -293,7 +314,14 @@ function transformCalendarEventsToRecapData(
 
         case "multiCalendar":
           // Process aggregated calendars (sleep)
-          processMultiCalendar(groupId, group, calendarEvents, summary);
+          processMultiCalendar(
+            groupId,
+            group,
+            calendarEvents,
+            summary,
+            weekStartDate,
+            weekEndDate
+          );
           break;
 
         case "sessionsDetails":
@@ -303,8 +331,8 @@ function transformCalendarEventsToRecapData(
               group.calendars[0],
               calendarEvents,
               summary,
-              isDateInWeek,
-              getDayAbbreviation
+              weekStartDate,
+              weekEndDate
             );
           }
           break;
@@ -312,9 +340,12 @@ function transformCalendarEventsToRecapData(
         case "customParser":
           // Use custom parser from registry
           if (group.parser && PARSERS[group.parser]) {
+            // Create bound version of isDateInWeek for parsers
+            const isDateInWeekFn = (dateStr) =>
+              isDateInWeek(dateStr, weekStartDate, weekEndDate);
             const parserResult = PARSERS[group.parser](
               calendarEvents,
-              isDateInWeek,
+              isDateInWeekFn,
               group
             );
             Object.assign(summary, parserResult);
@@ -341,7 +372,7 @@ function transformCalendarEventsToRecapData(
 
     // Filter events within week date range
     const filteredEvents = personalCalendarEvents.filter((event) =>
-      isDateInWeek(event.date)
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
 
     // Group events by category for per-category data

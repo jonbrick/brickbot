@@ -1,30 +1,8 @@
 // Converts raw Google Calendar events into aggregated weekly data for Work Recap database
 
 const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
-const { CALENDARS } = require("../config/unified-sources");
-
-/**
- * Get 3-letter day abbreviation from a date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
- * @param {string|null|undefined} dateStr - Date string in YYYY-MM-DD format (or full datetime)
- * @returns {string} 3-letter day abbreviation (Mon, Tue, Wed, Thu, Fri, Sat, Sun) or "?" if invalid
- */
-function getDayAbbreviation(dateStr) {
-  if (!dateStr || typeof dateStr !== "string") {
-    return "?";
-  }
-
-  // Extract YYYY-MM-DD part if full datetime provided (handles YYYY-MM-DDTHH:MM:SS format)
-  const datePart = dateStr.split("T")[0].split(" ")[0];
-  const date = new Date(datePart + "T00:00:00");
-
-  // Validate date
-  if (isNaN(date.getTime())) {
-    return "?";
-  }
-
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return dayNames[date.getDay()];
-}
+const { CALENDARS, SUMMARY_GROUPS, FETCH_KEY_MAPPING } = require("../config/unified-sources");
+const { getDayAbbreviation, isDateInWeek, calculateCalendarData } = require("../utils/calendar-data-helpers");
 
 /**
  * Transform calendar events to weekly recap data
@@ -49,67 +27,6 @@ function transformCalendarEventsToRecapData(
   selectedCalendars = null,
   tasks = []
 ) {
-  // Helper to check if a date string is within the week range
-  const isDateInWeek = (dateStr) => {
-    if (!weekStartDate || !weekEndDate) return true; // No filtering if dates not provided
-    if (!dateStr || typeof dateStr !== "string") return false; // Invalid date string
-
-    // Extract YYYY-MM-DD part if full datetime provided
-    const datePart = dateStr.split("T")[0].split(" ")[0];
-    const eventDate = new Date(datePart + "T00:00:00");
-
-    // Validate date
-    if (isNaN(eventDate.getTime())) {
-      return false; // Invalid date, exclude from week
-    }
-
-    return eventDate >= weekStartDate && eventDate <= weekEndDate;
-  };
-
-  // Helper function to calculate data for a calendar
-  const calculateCalendarData = (
-    events,
-    includeHours = false,
-    includeSessions = false
-  ) => {
-    if (!events || events.length === 0) {
-      return {
-        days: 0,
-        sessions: includeSessions ? 0 : undefined,
-        hoursTotal: includeHours ? 0 : undefined,
-      };
-    }
-
-    // Filter events to only include those within the week
-    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
-
-    // Count unique dates
-    const uniqueDates = new Set(filteredEvents.map((event) => event.date));
-    const days = uniqueDates.size;
-
-    // Count sessions (number of events)
-    const sessions = includeSessions ? filteredEvents.length : undefined;
-
-    // Calculate total hours (validate duration to prevent NaN/negative values)
-    const hoursTotal = includeHours
-      ? Math.round(
-          filteredEvents.reduce((sum, event) => {
-            const duration = event.durationHours;
-            // Validate: must be number, not NaN, and >= 0
-            const safeDuration =
-              duration && !isNaN(duration) && duration >= 0 ? duration : 0;
-            return sum + safeDuration;
-          }, 0) * 100
-        ) / 100
-      : undefined;
-
-    return {
-      days,
-      sessions,
-      hoursTotal,
-    };
-  };
-
   // Helper to determine if a source should be calculated based on selection
   // Accepts source IDs (e.g., "workCalendar", "workPRs", "workTasks")
   const shouldCalculate = (sourceId) => {
@@ -134,22 +51,21 @@ function transformCalendarEventsToRecapData(
     });
   };
 
-  const summary = {};
-
-  // Work PRs data (only if "workPRs" is selected)
-  if (shouldCalculate("workPRs")) {
-    const prsEvents = calendarEvents.workPRs || [];
-    const filteredPRsEvents = prsEvents.filter((event) =>
-      isDateInWeek(event.date)
+  /**
+   * Process sessions with details (no hours)
+   * Used by: workPRs
+   */
+  function processSessionsDetails(calendarId, calendarEvents, summary, weekStartDate, weekEndDate) {
+    const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
+    const events = calendarEvents[fetchKey] || [];
+    
+    const filteredEvents = events.filter((event) => 
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
-
-    // Always include all fields for selected calendar (clean slate)
-    // Calculate sessions (count of events)
-    summary.workPRsSessions = filteredPRsEvents.length || 0;
-
-    // Calculate details (formatted as "title (day)" - no hours)
-    summary.workPRsDetails =
-      filteredPRsEvents
+    
+    summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
+    summary[`${calendarId}Details`] =
+      filteredEvents
         .map((event) => {
           const eventName = event.summary || "Untitled Event";
           const day = getDayAbbreviation(event.date);
@@ -157,6 +73,33 @@ function transformCalendarEventsToRecapData(
         })
         .join(", ") || "";
   }
+
+  const summary = {};
+
+  // ========================================
+  // Config-driven calendar processing
+  // ========================================
+  // Process calendars using patterns defined in SUMMARY_GROUPS
+  Object.entries(SUMMARY_GROUPS)
+    .filter(([id, group]) => {
+      return (
+        group.sourceType === "work" &&
+        !group.isNotionSource &&
+        group.processingPattern === "sessionsDetails" &&
+        shouldCalculate(id)
+      );
+    })
+    .forEach(([groupId, group]) => {
+      if (group.calendars && group.calendars.length > 0) {
+        processSessionsDetails(
+          group.calendars[0],
+          calendarEvents,
+          summary,
+          weekStartDate,
+          weekEndDate
+        );
+      }
+    });
 
   // Work Calendar blocks (only if "workCalendar" is selected)
   if (shouldCalculate("workCalendar")) {
@@ -169,7 +112,7 @@ function transformCalendarEventsToRecapData(
 
     // Filter events within week date range
     const filteredEvents = workCalendarEvents.filter((event) =>
-      isDateInWeek(event.date)
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
 
     // Group events by category for per-category data

@@ -103,9 +103,92 @@ function calculateCalendarData(events, weekStartDate, weekEndDate, includeHours 
   };
 }
 
+/**
+ * Format time range with smart am/pm display
+ * @param {Date} start - Start time
+ * @param {Date} end - End time
+ * @returns {string} Formatted time range
+ * Examples: "8:00-9:00pm", "11:30am-2:00pm", "9:00-10:30am"
+ */
+function formatTimeRange(start, end) {
+  const startHours = start.getHours();
+  const endHours = end.getHours();
+  const startMinutes = String(start.getMinutes()).padStart(2, "0");
+  const endMinutes = String(end.getMinutes()).padStart(2, "0");
+
+  const startPeriod = startHours >= 12 ? "pm" : "am";
+  const endPeriod = endHours >= 12 ? "pm" : "am";
+
+  const startDisplay = (startHours % 12 || 12) + ":" + startMinutes;
+  const endDisplay = (endHours % 12 || 12) + ":" + endMinutes;
+
+  // Only show am/pm on start if different periods
+  if (startPeriod === endPeriod) {
+    return `${startDisplay}-${endDisplay}${endPeriod}`;
+  } else {
+    return `${startDisplay}${startPeriod}-${endDisplay}${endPeriod}`;
+  }
+}
+
+/**
+ * Format events as day-grouped blocks with time ranges
+ * @param {Array} events - Array of event objects with date, summary, startDateTime, endDateTime, isAllDayEvent
+ * @returns {string} Formatted blocks string
+ * Example: "Mon:\nEvent1 (8:00-9:00pm)\nEvent2 (2:00-3:00pm)\nTue:\nEvent3 (10:00am-12:00pm)"
+ */
+function formatBlocksWithTimeRanges(events) {
+  if (!events || events.length === 0) return "";
+
+  // Group events by date
+  const eventsByDate = {};
+  events.forEach((event) => {
+    if (!eventsByDate[event.date]) {
+      eventsByDate[event.date] = [];
+    }
+    eventsByDate[event.date].push(event);
+  });
+
+  // Format each day
+  const dayBlocks = Object.keys(eventsByDate)
+    .sort()
+    .map((date) => {
+      const dayAbbr = getDayAbbreviation(date);
+
+      // Sort events within day by start time (all-day first)
+      const dayEvents = eventsByDate[date]
+        .sort((a, b) => {
+          if (a.isAllDayEvent && !b.isAllDayEvent) return -1;
+          if (!a.isAllDayEvent && b.isAllDayEvent) return 1;
+          if (!a.startDateTime || !b.startDateTime) return 0;
+          return new Date(a.startDateTime) - new Date(b.startDateTime);
+        })
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+
+          if (event.isAllDayEvent) {
+            return `${eventName} (all day)`;
+          }
+
+          if (event.startDateTime && event.endDateTime) {
+            const start = new Date(event.startDateTime);
+            const end = new Date(event.endDateTime);
+            const timeRange = formatTimeRange(start, end);
+            return `${eventName} (${timeRange})`;
+          }
+
+          return eventName;
+        });
+
+      return `${dayAbbr}:\n${dayEvents.join("\n")}`;
+    });
+
+  return dayBlocks.join("\n\n");
+}
+
 module.exports = {
   getDayAbbreviation,
   isDateInWeek,
   calculateCalendarData,
+  formatBlocksWithTimeRanges,
 };
 

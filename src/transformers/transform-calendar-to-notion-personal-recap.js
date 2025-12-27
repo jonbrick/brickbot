@@ -11,6 +11,7 @@ const {
   getDayAbbreviation,
   isDateInWeek,
   calculateCalendarData,
+  formatBlocksWithTimeRanges,
 } = require("../utils/calendar-data-helpers");
 
 /**
@@ -76,16 +77,7 @@ function transformCalendarEventsToRecapData(
     const filteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
-    summary[`${calendarId}Blocks`] =
-      filteredEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
+    summary[`${calendarId}Blocks`] = formatBlocksWithTimeRanges(filteredEvents);
   }
 
   /**
@@ -139,20 +131,7 @@ function transformCalendarEventsToRecapData(
     const filteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
-    summary[`${calendarId}Blocks`] =
-      filteredEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          if (duration > 0) {
-            const durationRounded = Math.round(duration * 100) / 100;
-            return `${eventName} (${day} - ${durationRounded} hours)`;
-          } else {
-            return `${eventName} (${day})`;
-          }
-        })
-        .join(", ") || "";
+    summary[`${calendarId}Blocks`] = formatBlocksWithTimeRanges(filteredEvents);
   }
 
   /**
@@ -393,17 +372,8 @@ function transformCalendarEventsToRecapData(
 
       // For "ignore" category, only calculate blocks
       if (category === "ignore") {
-        // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
-        summary[`${category}Blocks`] =
-          categoryEvents
-            .map((event) => {
-              const eventName = event.summary || "Untitled Event";
-              const day = getDayAbbreviation(event.date);
-              const duration = event.durationHours || 0;
-              const durationRounded = Math.round(duration * 100) / 100;
-              return `${eventName} (${day} - ${durationRounded} hours)`;
-            })
-            .join(", ") || "";
+        // Calculate blocks
+        summary[`${category}Blocks`] = formatBlocksWithTimeRanges(categoryEvents);
       } else {
         // Always include all fields for selected calendar (clean slate)
         // Calculate sessions (count of events)
@@ -416,17 +386,8 @@ function transformCalendarEventsToRecapData(
         );
         summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
-        // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
-        summary[`${category}Blocks`] =
-          categoryEvents
-            .map((event) => {
-              const eventName = event.summary || "Untitled Event";
-              const day = getDayAbbreviation(event.date);
-              const duration = event.durationHours || 0;
-              const durationRounded = Math.round(duration * 100) / 100;
-              return `${eventName} (${day} - ${durationRounded} hours)`;
-            })
-            .join(", ") || "";
+        // Calculate blocks
+        summary[`${category}Blocks`] = formatBlocksWithTimeRanges(categoryEvents);
       }
     });
   }

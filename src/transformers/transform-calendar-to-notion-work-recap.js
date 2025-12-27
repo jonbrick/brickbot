@@ -2,7 +2,7 @@
 
 const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
 const { CALENDARS, SUMMARY_GROUPS, FETCH_KEY_MAPPING } = require("../config/unified-sources");
-const { getDayAbbreviation, isDateInWeek, calculateCalendarData } = require("../utils/calendar-data-helpers");
+const { getDayAbbreviation, isDateInWeek, calculateCalendarData, formatBlocksWithTimeRanges } = require("../utils/calendar-data-helpers");
 
 /**
  * Transform calendar events to weekly recap data
@@ -146,20 +146,8 @@ function transformCalendarEventsToRecapData(
       }, 0);
       summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
-      // Calculate blocks (formatted as "Event Name (Day - X.XX hours), Event Name 2 (Day - Y.YY hours)")
-      summary[`${category}Blocks`] =
-        categoryEvents
-          .map((event) => {
-            const eventName = event.summary || "Untitled Event";
-            const day = getDayAbbreviation(event.date);
-            const duration = event.durationHours;
-            // Validate: must be number, not NaN, and >= 0
-            const safeDuration =
-              duration && !isNaN(duration) && duration >= 0 ? duration : 0;
-            const durationRounded = Math.round(safeDuration * 100) / 100;
-            return `${eventName} (${day} - ${durationRounded} hours)`;
-          })
-          .join(", ") || "";
+      // Calculate blocks
+      summary[`${category}Blocks`] = formatBlocksWithTimeRanges(categoryEvents);
     });
   }
 

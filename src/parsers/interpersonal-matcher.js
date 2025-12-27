@@ -59,11 +59,11 @@ const familyPatterns = FAMILY_KEYWORDS.map((keyword) =>
  *
  * @param {Object} event - Calendar event
  * @param {string} event.summary - Event title
- * @param {string} currentWeekPageId - Current week's Personal Recap page ID
- * @param {Array<Object>} relationships - Array of relationship records
+ * @param {number} currentWeekNumber - Current week number (1-53)
+ * @param {Array<Object>} relationships - Array of relationship records with activeWeekNumbers
  * @returns {string} Category: "family", "relationship", or "interpersonal"
  */
-function matchInterpersonalCategory(event, currentWeekPageId, relationships) {
+function matchInterpersonalCategory(event, currentWeekNumber, relationships) {
   const summary = event.summary || "";
 
   // 1. Check family keywords (word boundary, case-insensitive)
@@ -74,17 +74,15 @@ function matchInterpersonalCategory(event, currentWeekPageId, relationships) {
   }
 
   // 2. Check relationships (name + nicknames, with word boundaries and active week validation)
-  if (relationships && relationships.length > 0 && currentWeekPageId) {
+  if (relationships && relationships.length > 0 && currentWeekNumber) {
     for (const rel of relationships) {
+      const activeWeekNumbers = rel.activeWeekNumbers || [];
+
       // Check primary name with word boundaries
       if (rel.name) {
         const namePattern = buildWordBoundaryPattern(rel.name);
         if (namePattern.test(summary)) {
-          // Verify current week is in their active weeks
-          if (
-            rel.activeWeekIds &&
-            rel.activeWeekIds.includes(currentWeekPageId)
-          ) {
+          if (activeWeekNumbers.includes(currentWeekNumber)) {
             return "relationship";
           }
         }
@@ -96,13 +94,11 @@ function matchInterpersonalCategory(event, currentWeekPageId, relationships) {
           .split(",")
           .map((n) => n.trim())
           .filter(Boolean);
+
         for (const nickname of nicknames) {
           const nicknamePattern = buildWordBoundaryPattern(nickname);
           if (nicknamePattern.test(summary)) {
-            if (
-              rel.activeWeekIds &&
-              rel.activeWeekIds.includes(currentWeekPageId)
-            ) {
+            if (activeWeekNumbers.includes(currentWeekNumber)) {
               return "relationship";
             }
           }

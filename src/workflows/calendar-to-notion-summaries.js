@@ -10,7 +10,10 @@ const { showProgress, showSuccess, showError } = require("../utils/cli");
 // Import entire mappings module to avoid destructuring timing issues
 const mappings = require("../config/calendar/mappings");
 const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
-const { getGroupShortName, getCategoryShortName } = require("../utils/display-names");
+const {
+  getGroupShortName,
+  getCategoryShortName,
+} = require("../utils/display-names");
 
 /**
  * Format a data key and value into human-readable display text
@@ -165,7 +168,10 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
               : value;
 
           const calendarEmoji = calendar.emoji || "";
-          counts.push({ emoji: calendarEmoji, text: `${name} (${formattedValue})` });
+          counts.push({
+            emoji: calendarEmoji,
+            text: `${name} (${formattedValue})`,
+          });
         });
       }
     });
@@ -176,14 +182,16 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
 
     if (isMultiCalendarGroup) {
       // Multi-calendar group: individual items, no header
-      counts.forEach(item => {
+      counts.forEach((item) => {
         lines.push(`   ${item.emoji} ${item.text}`);
       });
     } else if (counts.length > 1) {
       // Category-based calendar: header with line breaks
-      const itemLines = counts.map(item => 
-        item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
-      ).join("\n");
+      const itemLines = counts
+        .map((item) =>
+          item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
+        )
+        .join("\n");
       lines.push(`   ${emoji} ${groupName}:\n${itemLines}`);
     } else {
       // Single item: inline format - use group emoji only
@@ -418,29 +426,57 @@ async function aggregateCalendarDataForWeek(
               relationshipsDbId
             );
 
-            // Extract relationship data with active week IDs
-            const relationships = relationshipsPages.map((page) => {
-              const nameProperty = page.properties["Name"];
-              const name = nameProperty?.title?.[0]?.plain_text || "";
+            // Extract relationship data with active week numbers
+            const relationships = await Promise.all(
+              relationshipsPages.map(async (page) => {
+                const nameProperty = page.properties["Name"];
+                const name = nameProperty?.title?.[0]?.plain_text || "";
 
-              const nicknamesProperty = page.properties["Nicknames"];
-              const nicknames =
-                nicknamesProperty?.rich_text?.[0]?.plain_text || "";
+                const nicknamesProperty = page.properties["Nicknames"];
+                const nicknames =
+                  nicknamesProperty?.rich_text?.[0]?.plain_text || "";
 
-              // Extract relation property (array of page objects with id)
-              const activeWeeksProperty = page.properties["⏰ 2025 Weeks"];
-              const activeWeekIds =
-                activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
+                // Extract relation property (array of page objects with id)
+                const activeWeeksProperty = page.properties["⏰ 2025 Weeks"];
+                const activeWeekPageIds =
+                  activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
 
-              return {
-                name,
-                nicknames,
-                activeWeekIds,
-              };
-            });
+                // Fetch each related week page to get its week number from title
+                const activeWeekNumbers = [];
+                for (const weekPageId of activeWeekPageIds) {
+                  try {
+                    const weekPage =
+                      await relationshipsDb.client.pages.retrieve({
+                        page_id: weekPageId,
+                      });
+                    // Extract week number from title like "Week 05" -> 5
+                    const titleProp =
+                      weekPage.properties["Name"] ||
+                      weekPage.properties["Week"];
+                    const title = titleProp?.title?.[0]?.plain_text || "";
+                    const match = title.match(/Week (\d+)/i);
+                    if (match) {
+                      activeWeekNumbers.push(parseInt(match[1], 10));
+                    }
+                  } catch (error) {
+                    // Skip if we can't fetch the page
+                    console.warn(
+                      `   ⚠️ Could not fetch week page ${weekPageId}`
+                    );
+                  }
+                }
+
+                return {
+                  name,
+                  nicknames,
+                  activeWeekNumbers,
+                };
+              })
+            );
 
             relationshipsContext = {
-              currentWeekPageId: weekRecap.id,
+              currentWeekNumber: weekNumber,
+              currentYear: year,
               relationships,
             };
 

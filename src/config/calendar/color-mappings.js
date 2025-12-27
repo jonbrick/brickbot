@@ -85,16 +85,22 @@ function getPersonalCategoryDisplayName(colorId) {
  * Handles interpersonal splitting into family/relationship/interpersonal
  *
  * @param {Object} event - Calendar event with colorId and summary
- * @param {string|null} currentWeekPageId - Current week's page ID for relationship matching
- * @param {Array<Object>} relationships - Array of relationship records with activeWeekIds
+ * @param {number|null} currentWeekNumber - Current week number (1-53) for relationship matching
+ * @param {Array<Object>} relationships - Array of relationship records with activeWeekNumbers
  * @returns {string} Category key
  */
-function getEnhancedPersonalCategory(event, currentWeekPageId = null, relationships = []) {
-  const { matchInterpersonalCategory } = require("../../parsers/interpersonal-matcher");
+function getEnhancedPersonalCategory(
+  event,
+  currentWeekNumber = null,
+  relationships = []
+) {
+  const {
+    matchInterpersonalCategory,
+  } = require("../../parsers/interpersonal-matcher");
 
   // Check if it's interpersonal color (3 = Grape)
   if (event.colorId === "3" || event.colorId === 3) {
-    return matchInterpersonalCategory(event, currentWeekPageId, relationships);
+    return matchInterpersonalCategory(event, currentWeekNumber, relationships);
   }
 
   // Use standard color mapping for all other colors

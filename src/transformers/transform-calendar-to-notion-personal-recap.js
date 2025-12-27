@@ -366,7 +366,7 @@ function transformCalendarEventsToRecapData(
     } = require("../config/calendar/color-mappings");
 
     // Extract relationship context
-    const currentWeekPageId = relationshipsContext?.currentWeekPageId || null;
+    const currentWeekNumber = relationshipsContext?.currentWeekNumber || null;
     const relationships = relationshipsContext?.relationships || [];
 
     // Get all events from the single Personal Calendar
@@ -380,7 +380,7 @@ function transformCalendarEventsToRecapData(
     // Group events by category for per-category data
     const eventsByCategory = {};
     filteredEvents.forEach((event) => {
-      const category = getEnhancedPersonalCategory(event, currentWeekPageId, relationships);
+      const category = getEnhancedPersonalCategory(event, currentWeekNumber, relationships);
       if (!eventsByCategory[category]) {
         eventsByCategory[category] = [];
       }
@@ -420,7 +420,7 @@ function transformCalendarEventsToRecapData(
     const { getCategoryKey } = require("../config/notion/task-categories");
 
     // Extract relationship context for interpersonal category splitting
-    const currentWeekPageId = relationshipsContext?.currentWeekPageId || null;
+    const currentWeekNumber = relationshipsContext?.currentWeekNumber || null;
     const relationships = relationshipsContext?.relationships || [];
 
     // Group tasks by category (with interpersonal splitting)
@@ -433,7 +433,7 @@ function transformCalendarEventsToRecapData(
         const pseudoEvent = { summary: task.title };
         categoryKey = matchInterpersonalCategory(
           pseudoEvent,
-          currentWeekPageId,
+          currentWeekNumber,
           relationships
         );
       }

@@ -292,7 +292,7 @@ const CALENDARS = {
         dataFields: FIELD_TEMPLATES.categoryActivity("family", "Family"),
       },
       relationship: {
-        emoji: "❤️",
+        emoji: "🩵",
         dataFields: FIELD_TEMPLATES.categoryActivity(
           "relationship",
           "Relationship"
@@ -396,6 +396,17 @@ const CALENDARS = {
       personal: {
         emoji: "🌱",
         dataFields: FIELD_TEMPLATES.taskCategory("personal", "Personal"),
+      },
+      family: {
+        emoji: "💜",
+        dataFields: FIELD_TEMPLATES.taskCategory("family", "Family"),
+      },
+      relationship: {
+        emoji: "🩵",
+        dataFields: FIELD_TEMPLATES.taskCategory(
+          "relationship",
+          "Relationship"
+        ),
       },
       interpersonal: {
         emoji: "🍻",

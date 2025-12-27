@@ -185,10 +185,41 @@ function formatBlocksWithTimeRanges(events) {
   return dayBlocks.join("\n\n");
 }
 
+/**
+ * Format tasks as day-grouped blocks
+ * @param {Array} tasks - Array of task objects with dueDate and title
+ * @returns {string} Formatted tasks string
+ * Example: "Mon:\nTask1\nTask2\n\nTue:\nTask3"
+ */
+function formatTasksByDay(tasks) {
+  if (!tasks || tasks.length === 0) return "";
+
+  // Group tasks by dueDate
+  const tasksByDate = {};
+  tasks.forEach((task) => {
+    if (!tasksByDate[task.dueDate]) {
+      tasksByDate[task.dueDate] = [];
+    }
+    tasksByDate[task.dueDate].push(task);
+  });
+
+  // Format each day
+  const dayBlocks = Object.keys(tasksByDate)
+    .sort()
+    .map((date) => {
+      const dayAbbr = getDayAbbreviation(date);
+      const dayTasks = tasksByDate[date].map((task) => task.title);
+      return `${dayAbbr}:\n${dayTasks.join("\n")}`;
+    });
+
+  return dayBlocks.join("\n\n");
+}
+
 module.exports = {
   getDayAbbreviation,
   isDateInWeek,
   calculateCalendarData,
   formatBlocksWithTimeRanges,
+  formatTasksByDay,
 };
 

@@ -50,7 +50,8 @@ async function selectDateRange(options = {}) {
     // Week-level options (always available)
     { name: "This week (Sun-Sat)", value: "week" },
     { name: "Last week (Sun-Sat)", value: "lastWeek" },
-    { name: "Week Range (start to end)", value: "weekPicker" },
+    { name: "Single Week Picker", value: "singleWeek" },
+    { name: "Week Range (start to end)", value: "weekRange" },
     { name: "Month Picker (all weeks in month)", value: "monthPicker" },
 
     new inquirer.Separator(),
@@ -139,29 +140,158 @@ async function selectDateRange(options = {}) {
       break;
     }
 
-    case "weekPicker": {
-      const weekSelection = await selectWeek();
-      weeks = Array.isArray(weekSelection) ? weekSelection : [weekSelection];
+    case "singleWeek": {
+      const currentDate = getToday();
+      const currentYear = currentDate.getFullYear();
+      const currentWeek = getWeekNumber(currentDate);
 
-      // Calculate combined date range
+      const { weekType } = await inquirer.prompt([
+        {
+          type: "list",
+          name: "weekType",
+          message: "Select week:",
+          choices: [
+            {
+              name: `Current Week (Week ${currentWeek}, ${currentYear})`,
+              value: "current",
+            },
+            { name: "Custom Week", value: "custom" },
+          ],
+          pageSize: 10,
+        },
+      ]);
+
+      let weekNumber, year;
+
+      if (weekType === "current") {
+        weekNumber = currentWeek;
+        year = currentYear;
+      } else {
+        const answers = await inquirer.prompt([
+          {
+            type: "input",
+            name: "year",
+            message: "Year:",
+            default: currentYear.toString(),
+            validate: (input) => {
+              const yearNum = parseInt(input);
+              if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+                return "Please enter a valid year (2000-2100)";
+              }
+              return true;
+            },
+          },
+          {
+            type: "input",
+            name: "weekNumber",
+            message: "Week number (1-52/53):",
+            validate: (input) => {
+              const weekNum = parseInt(input);
+              if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
+                return "Please enter a valid week number (1-53)";
+              }
+              return true;
+            },
+          },
+        ]);
+
+        weekNumber = parseInt(answers.weekNumber);
+        year = parseInt(answers.year);
+      }
+
+      const { startDate: wkStart, endDate: wkEnd } = parseWeekNumber(
+        weekNumber,
+        year
+      );
+      startDate = wkStart;
+      endDate = wkEnd;
+
+      weeks = [{ weekNumber, year, startDate, endDate }];
+
+      console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
+      break;
+    }
+
+    case "weekRange": {
+      const currentDate = getToday();
+      const currentYear = currentDate.getFullYear();
+
+      const answers = await inquirer.prompt([
+        {
+          type: "input",
+          name: "year",
+          message: "Year:",
+          default: currentYear.toString(),
+          validate: (input) => {
+            const yearNum = parseInt(input);
+            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+              return "Please enter a valid year (2000-2100)";
+            }
+            return true;
+          },
+        },
+        {
+          type: "input",
+          name: "startWeek",
+          message: "Start week number (1-53):",
+          validate: (input) => {
+            const weekNum = parseInt(input);
+            if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
+              return "Please enter a valid week number (1-53)";
+            }
+            return true;
+          },
+        },
+        {
+          type: "input",
+          name: "endWeek",
+          message: "End week number (1-53):",
+          validate: (input) => {
+            const weekNum = parseInt(input);
+            if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
+              return "Please enter a valid week number (1-53)";
+            }
+            return true;
+          },
+        },
+      ]);
+
+      const year = parseInt(answers.year);
+      let startWeek = parseInt(answers.startWeek);
+      let endWeek = parseInt(answers.endWeek);
+
+      if (startWeek > endWeek) {
+        console.log("⚠️  Start week is after end week, swapping...");
+        [startWeek, endWeek] = [endWeek, startWeek];
+      }
+
+      const weekNumbers = [];
+      for (let weekNum = startWeek; weekNum <= endWeek; weekNum++) {
+        weekNumbers.push(weekNum);
+      }
+
+      weeks = weekNumbers.map((wn) => {
+        const { startDate: wkStart, endDate: wkEnd } = parseWeekNumber(
+          wn,
+          year
+        );
+        return { weekNumber: wn, year, startDate: wkStart, endDate: wkEnd };
+      });
+
       const allStartDates = weeks.map((w) => w.startDate);
       const allEndDates = weeks.map((w) => w.endDate);
       startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
       endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
 
-      // Display selected weeks with dates
-      if (weeks.length === 1) {
-        console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
-      } else {
-        const weekNumbers = weeks.map((w) => w.weekNumber).join(", ");
-        console.log(
-          `\n✅ Selected: Weeks ${weekNumbers} (${weeks[0].year})\n`
-        );
-        weeks.forEach((week) => {
-          console.log(`   ${formatWeekDisplay(week)}`);
-        });
-        console.log();
-      }
+      console.log(
+        `\n✅ Selected: Weeks ${weekNumbers[0]}-${
+          weekNumbers[weekNumbers.length - 1]
+        }, ${year} (${weekNumbers.length} weeks)\n`
+      );
+      weeks.forEach((week) => {
+        console.log(`   ${formatWeekDisplay(week)}`);
+      });
+      console.log();
       break;
     }
 
@@ -528,164 +658,6 @@ async function promptMultiSelect(message, choices) {
   return values;
 }
 
-/**
- * Select week by week number and year
- * Prompts user to select a week using ISO-8601 week numbering
- * Supports single week or multiple weeks (comma-separated)
- *
- * @returns {Promise<{weekNumber: number, year: number, startDate: Date, endDate: Date}|Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>>} Week selection (single object or array)
- */
-async function selectWeek() {
-  const currentDate = getToday();
-  const currentYear = currentDate.getFullYear();
-  const currentWeek = getWeekNumber(currentDate);
-
-  const { weekType } = await inquirer.prompt([
-    {
-      type: "list",
-      name: "weekType",
-      message: "Select week:",
-      choices: [
-        {
-          name: `Current Week (Week ${currentWeek}, ${currentYear})`,
-          value: "current",
-        },
-        { name: "Custom Week", value: "custom" },
-        { name: "Week Range (start to end)", value: "range" },
-      ],
-      pageSize: 10, // Show all options without scrolling
-    },
-  ]);
-
-  let weekNumber, year;
-  let weekNumbers = [];
-
-  if (weekType === "current") {
-    weekNumber = currentWeek;
-    year = currentYear;
-  } else if (weekType === "range") {
-    const answers = await inquirer.prompt([
-      {
-        type: "input",
-        name: "year",
-        message: "Year:",
-        default: currentYear.toString(),
-        validate: (input) => {
-          const yearNum = parseInt(input);
-          if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-            return "Please enter a valid year (2000-2100)";
-          }
-          return true;
-        },
-      },
-      {
-        type: "input",
-        name: "startWeek",
-        message: "Start week number (1-53):",
-        validate: (input) => {
-          const weekNum = parseInt(input);
-          if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
-            return "Please enter a valid week number (1-53)";
-          }
-          return true;
-        },
-      },
-      {
-        type: "input",
-        name: "endWeek",
-        message: "End week number (1-53):",
-        validate: (input) => {
-          const weekNum = parseInt(input);
-          if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
-            return "Please enter a valid week number (1-53)";
-          }
-          return true;
-        },
-      },
-    ]);
-
-    year = parseInt(answers.year);
-    let startWeek = parseInt(answers.startWeek);
-    let endWeek = parseInt(answers.endWeek);
-
-    // Auto-swap if reversed
-    if (startWeek > endWeek) {
-      console.log("⚠️  Start week is after end week, swapping...");
-      [startWeek, endWeek] = [endWeek, startWeek];
-    }
-
-    // Generate all consecutive weeks in range
-    weekNumbers = [];
-    for (let weekNum = startWeek; weekNum <= endWeek; weekNum++) {
-      weekNumbers.push(weekNum);
-    }
-  } else {
-    // Custom single week
-    const answers = await inquirer.prompt([
-      {
-        type: "input",
-        name: "year",
-        message: "Year:",
-        default: currentYear.toString(),
-        validate: (input) => {
-          const yearNum = parseInt(input);
-          if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-            return "Please enter a valid year (2000-2100)";
-          }
-          return true;
-        },
-      },
-      {
-        type: "input",
-        name: "weekNumber",
-        message: "Week number (1-52/53):",
-        validate: (input) => {
-          const weekNum = parseInt(input);
-          if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
-            return "Please enter a valid week number (1-53)";
-          }
-          return true;
-        },
-      },
-    ]);
-
-    weekNumber = parseInt(answers.weekNumber);
-    year = parseInt(answers.year);
-  }
-
-  // Handle week range
-  if (weekType === "range" && weekNumbers.length > 0) {
-    const weeks = weekNumbers.map((wn) => {
-      const { startDate, endDate } = parseWeekNumber(wn, year);
-      return { weekNumber: wn, year, startDate, endDate };
-    });
-
-    const { formatWeekDisplay } = require("./date-pickers");
-    
-    console.log(
-      `\n📅 Week Range: Weeks ${weekNumbers[0]}-${weekNumbers[weekNumbers.length - 1]}, ${year} (${weekNumbers.length} weeks)\n`
-    );
-    weeks.forEach((week) => {
-      console.log(`   ${formatWeekDisplay(week)}`);
-    });
-    console.log();
-
-    return weeks;
-  }
-
-  // Handle single week
-  // Calculate week date range
-  const { startDate, endDate } = parseWeekNumber(weekNumber, year);
-
-  console.log(
-    `\n📅 Week selected: Week ${weekNumber}, ${year} (${formatDateLong(
-      startDate
-    )} to ${formatDateLong(endDate)})\n`
-  );
-
-  return { weekNumber, year, startDate, endDate };
-}
-
 module.exports = {
   selectDateRange,
   selectSources,
@@ -702,5 +674,4 @@ module.exports = {
   promptText,
   promptSelect,
   promptMultiSelect,
-  selectWeek,
 };

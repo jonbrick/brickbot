@@ -1,8 +1,18 @@
 // Converts raw Google Calendar events into aggregated weekly data for Work Recap database
 
 const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
-const { CALENDARS, SUMMARY_GROUPS, FETCH_KEY_MAPPING } = require("../config/unified-sources");
-const { getDayAbbreviation, isDateInWeek, calculateCalendarData, formatBlocksWithTimeRanges } = require("../utils/calendar-data-helpers");
+const {
+  CALENDARS,
+  SUMMARY_GROUPS,
+  FETCH_KEY_MAPPING,
+} = require("../config/unified-sources");
+const {
+  getDayAbbreviation,
+  isDateInWeek,
+  calculateCalendarData,
+  formatBlocksWithTimeRanges,
+  formatTasksByDay,
+} = require("../utils/calendar-data-helpers");
 
 /**
  * Transform calendar events to weekly recap data
@@ -55,14 +65,20 @@ function transformCalendarEventsToRecapData(
    * Process sessions with details (no hours)
    * Used by: workPRs
    */
-  function processSessionsDetails(calendarId, calendarEvents, summary, weekStartDate, weekEndDate) {
+  function processSessionsDetails(
+    calendarId,
+    calendarEvents,
+    summary,
+    weekStartDate,
+    weekEndDate
+  ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
-    
-    const filteredEvents = events.filter((event) => 
+
+    const filteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
-    
+
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
     summary[`${calendarId}Details`] =
       filteredEvents
@@ -180,14 +196,8 @@ function transformCalendarEventsToRecapData(
       // Count completed tasks
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
-      // Build task details string (format: "Task name (Day)" - no duration)
-      summary[`${category}TaskDetails`] =
-        categoryTasks
-          .map((task) => {
-            const day = task.dueDate ? getDayAbbreviation(task.dueDate) : "?";
-            return `${task.title || "Untitled Task"} (${day})`;
-          })
-          .join(", ") || "";
+      // Build task details string (format: day-grouped with newlines)
+      summary[`${category}TaskDetails`] = formatTasksByDay(categoryTasks);
     });
   }
 

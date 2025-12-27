@@ -52,6 +52,7 @@ async function selectAction() {
       name: "source",
       message: "Select data source:",
       choices,
+      pageSize: 20, // Show all options without scrolling
     },
     {
       type: "list",

@@ -12,7 +12,9 @@ const {
   isDateInWeek,
   calculateCalendarData,
   formatBlocksWithTimeRanges,
+  formatTasksByDay,
 } = require("../utils/calendar-data-helpers");
+const { matchInterpersonalCategory } = require("../parsers/interpersonal-matcher");
 
 /**
  * Transform calendar events to weekly recap data
@@ -401,10 +403,25 @@ function transformCalendarEventsToRecapData(
   if (shouldCalculate("tasks") && tasks.length > 0) {
     const { getCategoryKey } = require("../config/notion/task-categories");
 
-    // Group tasks by category
+    // Extract relationship context for interpersonal category splitting
+    const currentWeekPageId = relationshipsContext?.currentWeekPageId || null;
+    const relationships = relationshipsContext?.relationships || [];
+
+    // Group tasks by category (with interpersonal splitting)
     const tasksByCategory = {};
     tasks.forEach((task) => {
-      const categoryKey = getCategoryKey(task.category);
+      let categoryKey = getCategoryKey(task.category);
+      
+      // Split interpersonal tasks into family/relationship/interpersonal
+      if (categoryKey === "interpersonal") {
+        const pseudoEvent = { summary: task.title };
+        categoryKey = matchInterpersonalCategory(
+          pseudoEvent,
+          currentWeekPageId,
+          relationships
+        );
+      }
+      
       if (categoryKey && categoryKey !== "work") {
         // Skip work tasks (not in CSV)
         if (!tasksByCategory[categoryKey]) {
@@ -423,14 +440,8 @@ function transformCalendarEventsToRecapData(
       // Count completed tasks
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
-      // Build task details string (format: "Task name (Day)" - no duration)
-      summary[`${category}TaskDetails`] =
-        categoryTasks
-          .map((task) => {
-            const day = getDayAbbreviation(task.dueDate);
-            return `${task.title} (${day})`;
-          })
-          .join(", ") || "";
+      // Build task details string (format: day-grouped with newlines)
+      summary[`${category}TaskDetails`] = formatTasksByDay(categoryTasks);
     });
   }
 

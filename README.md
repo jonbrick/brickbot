@@ -532,7 +532,7 @@ Select "Yesterday" and one database to test.
 yarn summarize
 ```
 
-Generate weekly summaries to test the recap pipeline.
+Generate weekly summaries to test the summary pipeline.
 
 ## Usage
 
@@ -560,7 +560,7 @@ Creates calendar events from Notion records (PRs, workouts, sleep, body weight, 
 yarn summarize
 ```
 
-Pulls calendar data, aggregates metrics, generates AI summaries, and creates weekly recap pages in Notion.
+Pulls calendar data, aggregates metrics, generates AI summaries, and creates weekly summary pages in Notion.
 
 ### Token Management
 
@@ -734,7 +734,7 @@ Adding a new calendar integration follows a simple 4-step process:
    },
    ```
 
-4. **Add Notion columns** to your Personal Recap or Work Recap database (columns are automatically generated from `dataFields` definitions).
+4. **Add Notion columns** to your Personal Summary or Work Summary database (columns are automatically generated from `dataFields` definitions).
 
 That's it! The unified config architecture automatically:
 

@@ -12,8 +12,8 @@ const bloodPressure = require("./blood-pressure");
 const medications = require("./medications");
 const events = require("./events");
 const trips = require("./trips");
-const personalRecap = require("./personal-recap");
-const workRecap = require("./work-recap");
+const personalRecap = require("./personal-summary");
+const workRecap = require("./work-summary");
 const relationships = require("./relationships");
 
 // Aggregate database IDs

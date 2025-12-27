@@ -75,7 +75,7 @@ class NotionService extends NotionDatabase {
   }
 
   /**
-   * Get Personal Recap database
+   * Get Personal Summary database
    * @returns {RecapDatabase}
    */
   getPersonalRecapRepository() {
@@ -232,7 +232,7 @@ class NotionService extends NotionDatabase {
   }
 
   /**
-   * Find week recap record
+   * Find week summary record
    * @deprecated Use getPersonalRecapRepository().findWeekRecap() instead
    */
   async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
@@ -245,7 +245,7 @@ class NotionService extends NotionDatabase {
   }
 
   /**
-   * Update week recap with summary data
+   * Update week summary with summary data
    * @deprecated Use getPersonalRecapRepository().updateWeekRecap() instead
    */
   async updateWeekRecap(pageId, summaryData) {

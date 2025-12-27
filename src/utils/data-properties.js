@@ -1,14 +1,14 @@
 /**
  * Data Properties Builder
  * Config-driven property building using the data source registry
- * Replaces the repetitive if-block pattern in personal-recap-properties.js
+ * Replaces the repetitive if-block pattern in personal-summary-properties.js
  */
 
 const config = require('../config');
 const { getSourceDataKeys } = require('../config/unified-sources');
 
 /**
- * Build properties object for Personal Recap database update
+ * Build properties object for Personal Summary database update
  * Uses config-driven approach to replace repetitive property assignments
  * 
  * @param {Object} summaryData - Summary data to convert to properties
@@ -78,7 +78,7 @@ function buildDataProperties(summaryData, props, selectedSources = []) {
   if (missingProps.length > 0) {
     throw new Error(
       `Missing property configuration(s) in personalRecap config: ${missingProps.join(', ')}. ` +
-      `Please add these properties to src/config/notion/personal-recap.js`
+      `Please add these properties to src/config/notion/personal-summary.js`
     );
   }
   

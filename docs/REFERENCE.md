@@ -77,16 +77,16 @@ notion-oura-to-calendar-oura.js  // Wrong! Should use domain name: sleep
 config.calendar.calendars.oura  // Wrong! Should be: config.calendar.calendars.sleep
 ```
 
-#### Layer 3: Aggregation (Calendar → Recap)
+#### Layer 3: Aggregation (Calendar → Summary)
 
 Use **summary group names**:
 
 ```javascript
 // Files
-calendar-to-notion-personal-recap.js
+calendar-to-notion-personal-summary.js
 notion-tasks-to-notion-summaries.js
 
-// Variables
+// Variables (internal identifiers - keep as-is)
 const personalRecapData = aggregatePersonalData();
 const workRecapData = aggregateWorkData();
 ```
@@ -113,11 +113,11 @@ notion-{integration}-to-calendar-{domain}.js
 ```
 Examples: `notion-oura-to-calendar-sleep.js`, `notion-strava-to-calendar-workouts.js`
 
-**Layer 3** (Calendar → Recap):
+**Layer 3** (Calendar → Summary):
 ```
-transform-calendar-to-notion-{recap-type}.js
+transform-calendar-to-notion-{summary-type}.js
 ```
-Examples: `transform-calendar-to-notion-personal-recap.js`
+Examples: `transform-calendar-to-notion-personal-summary.js`
 
 #### Workflows
 ```
@@ -138,7 +138,7 @@ Examples: `OuraService.js`, `StravaService.js`, `GitHubService.js`
 ```
 {Purpose}Database.js
 ```
-Examples: `IntegrationDatabase.js`, `NotionDatabase.js`, `RecapDatabase.js`
+Examples: `IntegrationDatabase.js`, `NotionDatabase.js`, `RecapDatabase.js` (internal class name - keep as-is)
 
 ### Variable Naming
 
@@ -222,7 +222,7 @@ src/
 ├── transformers/        # All layers: Data format conversion
 │   ├── oura-to-notion-oura.js                    # Layer 1
 │   ├── notion-oura-to-calendar-sleep.js          # Layer 2
-│   └── transform-calendar-to-notion-personal-recap.js  # Layer 3
+│   └── transform-calendar-to-notion-personal-summary.js  # Layer 3
 │
 ├── workflows/           # All layers: Orchestration
 │   ├── oura-to-notion-oura.js                    # Layer 1
@@ -272,7 +272,7 @@ All files should include a `@layer` annotation in their JSDoc header:
 
 /**
  * Description of what this file does
- * @layer 3 - Recap (Domain Aggregation)
+ * @layer 3 - Summary (Domain Aggregation)
  */
 ```
 
@@ -342,7 +342,7 @@ SUMMARY_GROUPS: {
 ```javascript
 personalRecap: {
   id: "personalRecap",
-  name: "Personal Recap",
+  name: "Personal Summary",
   emoji: "📊",
   calendars: ["sleep", "workouts", "bodyWeight", "videoGames"],
   notionDatabase: process.env.NOTION_PERSONAL_RECAP_DATABASE_ID,

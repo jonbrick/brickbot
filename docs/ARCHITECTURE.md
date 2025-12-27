@@ -101,17 +101,17 @@ Notion (Strava database) → notion-strava-to-calendar-workouts.js → Google Ca
 
 **Key Principle**: ✅ Always use domain names in Layer 2. Google Calendar is the source of truth for domain abstractions.
 
-### Layer 3: Calendar → Recap (Aggregation)
+### Layer 3: Calendar → Summary (Aggregation)
 
 **Purpose**: Aggregate calendar events into weekly summaries and insights
 
 - Combines multiple calendars into summary groups
 - Generates AI-powered insights
-- Creates Personal Recap and Work Recap pages in Notion
+- Creates Personal Summary and Work Summary pages in Notion
 - Files: `calendar-to-notion-summaries.js`, `notion-tasks-to-notion-summaries.js`
 
 ```
-Google Calendar (all domains) → summarize-calendar.js → Notion (Personal Recap / Work Recap)
+Google Calendar (all domains) → summarize-calendar.js → Notion (Personal Summary / Work Summary)
 ```
 
 **Key Principle**: Uses domain names from calendars to create aggregated insights.
@@ -146,7 +146,7 @@ Defines how calendars combine for reporting:
 SUMMARY_GROUPS: {
   personalRecap: {
     id: "personalRecap",
-    name: "Personal Recap",
+    name: "Personal Summary",
     calendars: ["sleep", "workouts", "bodyWeight", "videoGames"],
     // ... aggregation logic
   },
@@ -204,7 +204,7 @@ INTEGRATIONS: {
 
 - **IntegrationDatabase**: Generic class for all integrations (config-driven)
 - **NotionDatabase**: Base class with CRUD operations
-- **RecapDatabase**: Handles recap-specific logic
+- **RecapDatabase**: Handles summary-specific logic
 - Repository pattern: domain-specific queries
 
 ### Transformer Layer (`src/transformers/`)
@@ -314,7 +314,7 @@ sleep: {
 4. Calendar service creates events in Sleep calendar
 5. Records marked as synced in Notion
 
-### Example 3: Generating Weekly Recap
+### Example 3: Generating Weekly Summary
 
 **User Action**: `yarn summarize`
 
@@ -323,7 +323,7 @@ sleep: {
 2. Group by domain (sleep, workouts, etc.)
 3. Calculate aggregated metrics
 4. Generate AI summaries via OpenAI
-5. Create/update Personal Recap page in Notion
+5. Create/update Personal Summary page in Notion
 
 ## Extension Points
 

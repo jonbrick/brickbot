@@ -1,4 +1,4 @@
-// Converts raw Google Calendar events into aggregated weekly data for Personal Recap database
+// Converts raw Google Calendar events into aggregated weekly data for Personal Summary database
 
 const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
 const {
@@ -17,7 +17,7 @@ const {
 const { matchInterpersonalCategory } = require("../parsers/interpersonal-matcher");
 
 /**
- * Transform calendar events to weekly recap data
+ * Transform calendar events to weekly summary data
  * Filters events to only include those within the week date range
  *
  * @param {Object} calendarEvents - Object with calendar event arrays

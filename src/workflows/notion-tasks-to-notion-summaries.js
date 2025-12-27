@@ -1,5 +1,5 @@
-// Syncs completed tasks from Notion Tasks database to Recap databases
-// Supports both Personal and Work recap types via recapType parameter
+// Syncs completed tasks from Notion Tasks database to Summary databases
+// Supports both Personal and Work summary types via recapType parameter
 
 const { fetchCompletedTasks } = require("../summarizers/summarize-tasks");
 const config = require("../config");
@@ -10,7 +10,7 @@ const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
 const { getCategoryShortName } = require("../utils/display-names");
 
 /**
- * Summarize a week's Notion database data and update Recap database
+ * Summarize a week's Notion database data and update Summary database
  *
  * @param {string} recapType - "personal" or "work"
  * @param {number} weekNumber - Week number (1-52/53)
@@ -33,14 +33,14 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
 
   const transformFunction =
     recapType === "personal"
-      ? require("../transformers/transform-calendar-to-notion-personal-recap")
+      ? require("../transformers/transform-calendar-to-notion-personal-summary")
           .transformCalendarEventsToRecapData
-      : require("../transformers/transform-calendar-to-notion-work-recap")
+      : require("../transformers/transform-calendar-to-notion-work-summary")
           .transformCalendarEventsToRecapData;
 
   const taskSourceKey = recapType === "personal" ? "tasks" : "workTasks";
   const databaseName =
-    recapType === "personal" ? "Personal Recap" : "Work Recap";
+    recapType === "personal" ? "Personal Summary" : "Work Summary";
 
   // Define success message fields based on recapType
   const successMessageFields =
@@ -135,7 +135,7 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
         if (relationshipsDbId) {
           const relationshipsDb = new NotionDatabase();
 
-          // Find current week's Personal Recap page
+          // Find current week's Personal Summary page
           const recapRepo = new RecapDatabase(recapType);
           const weekRecap = await recapRepo.findWeekRecap(
             weekNumber,
@@ -234,7 +234,7 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       return results;
     }
 
-    // Find or get week recap record
+    // Find or get week summary record
     const recapRepo = new RecapDatabase(recapType);
     const weekRecap = await recapRepo.findWeekRecap(
       weekNumber,
@@ -244,17 +244,17 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     );
 
     if (!weekRecap) {
-      const errorMessage = `Week recap record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
+      const errorMessage = `Week summary record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
       if (typeof showError === "function") {
         showError(errorMessage);
       } else {
         console.error(errorMessage);
       }
-      results.error = "Week recap record not found";
+      results.error = "Week summary record not found";
       return results;
     }
 
-    // Update week recap
+    // Update week summary
     await recapRepo.updateWeekRecap(weekRecap.id, summary, sourcesToFetch);
 
     // Rate limiting

@@ -1,5 +1,5 @@
 /**
- * Personal Recap Database Configuration
+ * Personal Summary Database Configuration
  * Properties are generated dynamically from unified-sources.js to ensure consistency
  */
 
@@ -22,3 +22,4 @@ module.exports = {
   properties,
   fieldMappings,
 };
+

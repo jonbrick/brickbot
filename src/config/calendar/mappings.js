@@ -186,7 +186,7 @@ const calendarMappings = {
 };
 
 /**
- * Get data for a Personal Recap source
+ * Get data for a Personal Summary source
  * Derives data from DATA_SOURCES to avoid duplication
  * @param {string} sourceId - Source identifier (e.g., 'sleep', 'workout')
  * @returns {Array<string>} Array of data keys for this source
@@ -280,8 +280,8 @@ function deriveSummarySource(groupId, group) {
 }
 
 /**
- * Personal Recap Data Sources Configuration
- * Defines which calendars feed into Personal Recap database and their metadata
+ * Personal Summary Data Sources Configuration
+ * Defines which calendars feed into Personal Summary database and their metadata
  * Derived from unified-sources.js SUMMARY_GROUPS configuration
  * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
  */
@@ -292,8 +292,8 @@ const PERSONAL_RECAP_SOURCES = Object.fromEntries(
 );
 
 /**
- * Work Recap Data Sources Configuration
- * Defines which calendars feed into Work Recap database and their metadata
+ * Work Summary Data Sources Configuration
+ * Defines which calendars feed into Work Summary database and their metadata
  * Derived from unified-sources.js SUMMARY_GROUPS configuration
  * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
  */
@@ -304,7 +304,7 @@ const WORK_RECAP_SOURCES = Object.fromEntries(
 );
 
 /**
- * Get all available Personal Recap sources
+ * Get all available Personal Summary sources
  * Filters sources to only include those with configured environment variables
  * @returns {Array<Object>} Array of available sources with metadata
  */
@@ -332,7 +332,7 @@ function getAvailableRecapSources() {
 }
 
 /**
- * Get all available Work Recap sources
+ * Get all available Work Summary sources
  * Filters sources to only include those with configured environment variables
  * @returns {Array<Object>} Array of available sources with metadata
  */

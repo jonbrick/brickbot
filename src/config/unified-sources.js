@@ -1442,12 +1442,12 @@ function mapToNotionType(displayType) {
  * Derive properties from unified sources configuration
  * Collects all dataFields (including categories) from CALENDARS based on SUMMARY_GROUPS
  * @param {string} sourceType - "personal" or "work"
- * @returns {Object} Properties object compatible with recap.js format
+ * @returns {Object} Properties object compatible with summary.js format
  */
 function derivePropertiesFromUnified(sourceType) {
   const properties = {
     // Special metadata properties (not in data sources)
-    title: { name: "Week Recap", type: "title", enabled: true },
+    title: { name: "Week Summary", type: "title", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
     weekNumber: { name: "Week Number", type: "number", enabled: true },
     year: { name: "Year", type: "number", enabled: true },
@@ -1519,18 +1519,18 @@ function derivePropertiesFromUnified(sourceType) {
 }
 
 /**
- * Generate Personal Recap properties object from data sources
+ * Generate Personal Summary properties object from data sources
  * This becomes the source of truth for Notion property definitions
- * @returns {Object} Properties object compatible with personal-recap.js format
+ * @returns {Object} Properties object compatible with personal-summary.js format
  */
 function generatePersonalRecapProperties() {
   return derivePropertiesFromUnified("personal");
 }
 
 /**
- * Generate Work Recap properties object from work data sources
+ * Generate Work Summary properties object from work data sources
  * This becomes the source of truth for Notion property definitions
- * @returns {Object} Properties object compatible with work-recap.js format
+ * @returns {Object} Properties object compatible with work-summary.js format
  */
 function generateWorkRecapProperties() {
   return derivePropertiesFromUnified("work");

@@ -1,6 +1,6 @@
 /**
  * Task Category Mappings
- * Maps task Category values (with emojis) to Personal Recap property keys
+ * Maps task Category values (with emojis) to Personal Summary property keys
  */
 
 const TASK_CATEGORY_MAPPING = {

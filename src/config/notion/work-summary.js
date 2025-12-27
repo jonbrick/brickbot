@@ -1,5 +1,5 @@
 /**
- * Work Recap Database Configuration
+ * Work Summary Database Configuration
  * Properties are generated dynamically from unified-sources.js to ensure consistency
  */
 

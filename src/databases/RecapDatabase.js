@@ -1,4 +1,4 @@
-// Unified recap database for both Personal and Work recaps
+// Unified summary database for both Personal and Work summaries
 // Replaces PersonalRecapDatabase and WorkRecapDatabase
 
 const NotionDatabase = require("./NotionDatabase");
@@ -6,7 +6,7 @@ const config = require("../config");
 const { buildDataProperties } = require("../utils/data-properties");
 
 /**
- * Generic recap database for both Personal and Work recaps
+ * Generic summary database for both Personal and Work summaries
  * Follows the same pattern as IntegrationDatabase
  *
  * @param {string} recapType - "personal" or "work"
@@ -28,7 +28,7 @@ class RecapDatabase extends NotionDatabase {
   }
 
   /**
-   * Find week recap record by week number and year
+   * Find week summary record by week number and year
    * Falls back to date range query if Week Number property doesn't exist
    *
    * @param {number} weekNumber - Week number (1-52/53)
@@ -47,7 +47,7 @@ class RecapDatabase extends NotionDatabase {
     // Format week number with zero-padding (e.g., "01", "48")
     const weekNumberStr = String(weekNumber).padStart(2, "0");
     const recapLabel =
-      this.recapType === "personal" ? "Personal Recap" : "Work Recap";
+      this.recapType === "personal" ? "Personal Summary" : "Work Summary";
     const titleValue = `Week ${weekNumberStr} ${recapLabel}`;
 
     // Query by title property
@@ -72,7 +72,7 @@ class RecapDatabase extends NotionDatabase {
   }
 
   /**
-   * Update week recap with summary data
+   * Update week summary with summary data
    *
    * @param {string} pageId - Page ID to update
    * @param {Object} summaryData - Summary data to update

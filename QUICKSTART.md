@@ -63,11 +63,11 @@ Personal data pipeline that automatically collects data from external sources (G
 - Multiple integrations can feed one domain (e.g., future: Oura + Apple Health → Sleep calendar)
 - Example: Notion Sleep records → Google Calendar sleep events
 
-### Layer 3: Calendar → Recap (Aggregation)
+### Layer 3: Calendar → Summary (Aggregation)
 
 - Calendar events → Weekly summaries in Notion
 - Aggregates domain data into insights
-- Example: All week's calendar events → Personal Recap page with stats
+- Example: All week's calendar events → Personal Summary page with stats
 
 ## Key Concepts
 
@@ -111,7 +111,7 @@ Creates Google Calendar events from Notion records (sleep, workouts, PRs, body w
 yarn summarize
 ```
 
-Pulls calendar data, aggregates metrics, generates AI summaries, creates weekly recap.
+Pulls calendar data, aggregates metrics, generates AI summaries, creates weekly summary.
 
 ## Common Workflows
 
@@ -166,7 +166,7 @@ Just 4 steps in `unified-sources.js`:
 
 ### Understanding a Data Flow
 
-- **Oura sleep**: API → collect-oura.js → oura-to-notion-oura.js → IntegrationDatabase("oura") → Notion → notion-oura-to-calendar-sleep.js → Google Calendar → calendar-to-notion-summaries.js → Personal Recap
+- **Oura sleep**: API → collect-oura.js → oura-to-notion-oura.js → IntegrationDatabase("oura") → Notion → notion-oura-to-calendar-sleep.js → Google Calendar → calendar-to-notion-summaries.js → Personal Summary
 
 ---
 

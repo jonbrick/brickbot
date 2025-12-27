@@ -2,15 +2,15 @@
 
 /**
  * Summarize Week CLI
- * Command-line interface for summarizing calendar events and database records into Work and Personal Recap databases
+ * Command-line interface for summarizing calendar events and database records into Work and Personal Summary databases
  *
  * Data Sources:
- * Personal Recap:
+ * Personal Summary:
  * - Google Calendar: Sleep, Drinking Days, Workout, Reading, Coding, Art, Video Games,
  *   Meditation, Music, Body Weight, Personal Calendar, Personal PRs
  * - Notion Database: Personal Tasks (TASKS_DATABASE_ID)
  *
- * Work Recap:
+ * Work Summary:
  * - Google Calendar: Work Calendar (meetings, design, coding, crit, sketch, research,
  *   personalAndSocial, rituals, qa), Work PRs
  * - Notion Database: Work Tasks (TASKS_DATABASE_ID, filtered by Category = "💼 Work")
@@ -51,13 +51,13 @@ async function selectAction(
   // Generate dynamic prompt message based on selected source types
   let updateMessage;
   if (hasWork && hasPersonal) {
-    updateMessage = "Update Work and Personal Recap databases";
+    updateMessage = "Update Work and Personal Summary databases";
   } else if (hasWork) {
-    updateMessage = "Update Work Recap database";
+    updateMessage = "Update Work Summary database";
   } else if (hasPersonal) {
-    updateMessage = "Update Personal Recap database";
+    updateMessage = "Update Personal Summary database";
   } else {
-    updateMessage = "Update Recap database";
+    updateMessage = "Update Summary database";
   }
 
   const { action } = await inquirer.prompt([
@@ -131,7 +131,7 @@ async function selectCalendarsAndDatabases() {
  */
 async function main() {
   try {
-    console.log("\n📊 Recap Summarization\n");
+    console.log("\n📊 Summary Generation\n");
     console.log(
       "Summarizes data from Google Calendar events and Notion database records\n"
     );
@@ -297,7 +297,7 @@ async function main() {
           };
           workFailureCount++;
           showError(
-            `Failed to process Work Recap for Week ${weekNumber}, ${year}: ${errorMessage}`
+            `Failed to process Work Summary for Week ${weekNumber}, ${year}: ${errorMessage}`
           );
         }
       }
@@ -373,7 +373,7 @@ async function main() {
           };
           personalFailureCount++;
           showError(
-            `Failed to process Personal Recap for Week ${weekNumber}, ${year}: ${errorMessage}`
+            `Failed to process Personal Summary for Week ${weekNumber}, ${year}: ${errorMessage}`
           );
         }
       }
@@ -408,7 +408,7 @@ async function main() {
         // Display work results
         if (weekResult.work) {
           console.log(`\n${"=".repeat(60)}`);
-          console.log(`Work Recap - Week ${weekNumber}, ${year}`);
+          console.log(`Work Summary - Week ${weekNumber}, ${year}`);
           console.log("=".repeat(60));
           if (weekResult.work.summary) {
             displaySourceData(weekResult.work, "all");
@@ -416,14 +416,14 @@ async function main() {
               showError(`Warning: ${weekResult.work.error}`);
             }
           } else if (weekResult.work.error) {
-            showError(`Work Recap error: ${weekResult.work.error}`);
+            showError(`Work Summary error: ${weekResult.work.error}`);
           }
         }
 
         // Display personal results
         if (weekResult.personal) {
           console.log(`\n${"=".repeat(60)}`);
-          console.log(`Personal Recap - Week ${weekNumber}, ${year}`);
+          console.log(`Personal Summary - Week ${weekNumber}, ${year}`);
           console.log("=".repeat(60));
           if (weekResult.personal.summary) {
             displaySourceData(weekResult.personal, "all");
@@ -431,7 +431,7 @@ async function main() {
               showError(`Warning: ${weekResult.personal.error}`);
             }
           } else if (weekResult.personal.error) {
-            showError(`Personal Recap error: ${weekResult.personal.error}`);
+            showError(`Personal Summary error: ${weekResult.personal.error}`);
           }
         }
 
@@ -496,7 +496,7 @@ async function main() {
           !weekResult.work.updated
         ) {
           showError(
-            `Work Recap Week ${weekNumber}, ${year}: ${weekResult.work.error}`
+            `Work Summary Week ${weekNumber}, ${year}: ${weekResult.work.error}`
           );
         }
 
@@ -506,7 +506,7 @@ async function main() {
           !weekResult.personal.updated
         ) {
           showError(
-            `Personal Recap Week ${weekNumber}, ${year}: ${weekResult.personal.error}`
+            `Personal Summary Week ${weekNumber}, ${year}: ${weekResult.personal.error}`
           );
         }
       });

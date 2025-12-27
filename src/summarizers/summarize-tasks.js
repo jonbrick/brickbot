@@ -1,9 +1,9 @@
 /**
  * @fileoverview Collect Completed Tasks from Notion
- * @layer 3 - Calendar → Recap (Domain name)
+ * @layer 3 - Calendar → Summary (Domain name)
  *
  * Purpose: Fetches completed tasks from Notion Tasks database for a specific date range,
- * preparing it for Personal Recap aggregation.
+ * preparing it for Personal Summary aggregation.
  *
  * Responsibilities:
  * - Query Notion Tasks database

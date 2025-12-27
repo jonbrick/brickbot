@@ -1,4 +1,4 @@
-// Converts raw Google Calendar events into aggregated weekly data for Work Recap database
+// Converts raw Google Calendar events into aggregated weekly data for Work Summary database
 
 const { WORK_RECAP_SOURCES } = require("../config/calendar/mappings");
 const {
@@ -15,7 +15,7 @@ const {
 } = require("../utils/calendar-data-helpers");
 
 /**
- * Transform calendar events to weekly recap data
+ * Transform calendar events to weekly summary data
  * Filters events to only include those within the week date range
  *
  * @param {Object} calendarEvents - Object with calendar event arrays

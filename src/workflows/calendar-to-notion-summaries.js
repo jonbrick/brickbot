@@ -1,5 +1,5 @@
-// Orchestrates fetching calendar events and aggregating them into weekly data for Recap databases
-// Supports both Personal and Work recap types via recapType parameter
+// Orchestrates fetching calendar events and aggregating them into weekly data for Summary databases
+// Supports both Personal and Work summary types via recapType parameter
 
 const { fetchCalendarSummary } = require("../summarizers/summarize-calendar");
 const config = require("../config");
@@ -204,7 +204,7 @@ function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
 }
 
 /**
- * Aggregate calendar data for a week and update Recap database
+ * Aggregate calendar data for a week and update Summary database
  *
  * @param {string} recapType - "personal" or "work"
  * @param {number} weekNumber - Week number (1-52/53)
@@ -233,9 +233,9 @@ async function aggregateCalendarDataForWeek(
 
   const transformFunction =
     recapType === "personal"
-      ? require("../transformers/transform-calendar-to-notion-personal-recap")
+      ? require("../transformers/transform-calendar-to-notion-personal-summary")
           .transformCalendarEventsToRecapData
-      : require("../transformers/transform-calendar-to-notion-work-recap")
+      : require("../transformers/transform-calendar-to-notion-work-summary")
           .transformCalendarEventsToRecapData;
 
   const sourcesConfig =
@@ -250,7 +250,7 @@ async function aggregateCalendarDataForWeek(
 
   const defaultAccountType = recapType === "personal" ? "personal" : "work";
   const databaseName =
-    recapType === "personal" ? "Personal Recap" : "Work Recap";
+    recapType === "personal" ? "Personal Summary" : "Work Summary";
 
   const accountType = options.accountType || defaultAccountType;
   const displayOnly = options.displayOnly || false;
@@ -411,7 +411,7 @@ async function aggregateCalendarDataForWeek(
         if (relationshipsDbId) {
           const relationshipsDb = new NotionDatabase();
 
-          // Find current week's Personal Recap page to get its ID
+          // Find current week's Personal Summary page to get its ID
           const recapRepo = new RecapDatabase(recapType);
           const weekRecap = await recapRepo.findWeekRecap(
             weekNumber,
@@ -510,7 +510,7 @@ async function aggregateCalendarDataForWeek(
       return results;
     }
 
-    // Find or get week recap record
+    // Find or get week summary record
     const recapRepo = new RecapDatabase(recapType);
     const weekRecap = await recapRepo.findWeekRecap(
       weekNumber,
@@ -520,17 +520,17 @@ async function aggregateCalendarDataForWeek(
     );
 
     if (!weekRecap) {
-      const errorMessage = `Week recap record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
+      const errorMessage = `Week summary record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
       if (typeof showError === "function") {
         showError(errorMessage);
       } else {
         console.error(errorMessage);
       }
-      results.error = "Week recap record not found";
+      results.error = "Week summary record not found";
       return results;
     }
 
-    // Update week recap
+    // Update week summary
     await recapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
 
     // Rate limiting

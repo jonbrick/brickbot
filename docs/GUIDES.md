@@ -481,7 +481,7 @@ yarn update
 
 ## Adding a New Summary Group
 
-**Goal**: Create a new weekly summary that combines multiple calendars (e.g., Health Recap, Work Recap).
+**Goal**: Create a new weekly summary that combines multiple calendars (e.g., Health Summary, Work Summary).
 
 **Time estimate**: 10-20 minutes
 
@@ -495,7 +495,7 @@ SUMMARY_GROUPS: {
 
   healthRecap: {
     id: "healthRecap",
-    name: "Health Recap",
+    name: "Health Summary",
     emoji: "🏥",
     calendars: ["sleep", "workouts", "bodyWeight", "meditation"],
 

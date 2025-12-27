@@ -7,31 +7,32 @@ const { buildDataProperties } = require("../utils/data-properties");
 
 /**
  * Generic summary database for both Personal and Work summaries
- * Handles both weekly summaries and monthly recaps
+ * Handles both weekly summaries and monthly summaries
  * Follows the same pattern as IntegrationDatabase
  *
- * @param {string} recapType - "personal" or "work"
+ * @param {string} summaryType - "personal" or "work"
  */
 class SummaryDatabase extends NotionDatabase {
-  constructor(recapType) {
+  constructor(summaryType) {
     super();
 
-    // Validate recapType
-    if (!["personal", "work"].includes(recapType)) {
+    // Validate summaryType
+    if (!["personal", "work"].includes(summaryType)) {
       throw new Error(
-        `Invalid recapType: ${recapType}. Must be "personal" or "work"`
+        `Invalid summaryType: ${summaryType}. Must be "personal" or "work"`
       );
     }
 
-    this.recapType = recapType;
-    
+    this.summaryType = summaryType;
+
     // For weekly summaries
-    this.databaseId = config.notion.databases[`${recapType}Summary`];
-    this.props = config.notion.properties[`${recapType}Summary`];
-    
-    // For monthly recaps (separate database)
-    this.monthlyDatabaseId = config.notion.databases[`${recapType}MonthlyRecap`];
-    this.monthlyProps = config.notion.properties[`${recapType}MonthlyRecap`];
+    this.databaseId = config.notion.databases[`${summaryType}Summary`];
+    this.props = config.notion.properties[`${summaryType}Summary`];
+
+    // For monthly summaries (separate database)
+    this.monthlyDatabaseId =
+      config.notion.databases[`${summaryType}MonthlyRecap`];
+    this.monthlyProps = config.notion.properties[`${summaryType}MonthlyRecap`];
   }
 
   /**
@@ -53,9 +54,9 @@ class SummaryDatabase extends NotionDatabase {
 
     // Format week number with zero-padding (e.g., "01", "48")
     const weekNumberStr = String(weekNumber).padStart(2, "0");
-    const recapLabel =
-      this.recapType === "personal" ? "Personal Summary" : "Work Summary";
-    const titleValue = `Week ${weekNumberStr} ${recapLabel}`;
+    const summaryLabel =
+      this.summaryType === "personal" ? "Personal Summary" : "Work Summary";
+    const titleValue = `Week ${weekNumberStr} ${summaryLabel}`;
 
     // Query by title property
     try {
@@ -85,14 +86,14 @@ class SummaryDatabase extends NotionDatabase {
    */
   async queryWeeklySummariesByWeeks(weeks) {
     const summaries = [];
-    
+
     for (const week of weeks) {
       const summary = await this.findWeekSummary(week.weekNumber, week.year);
       if (summary) {
         summaries.push(summary);
       }
     }
-    
+
     return summaries;
   }
 
@@ -116,24 +117,39 @@ class SummaryDatabase extends NotionDatabase {
   }
 
   /**
-   * Find month recap record by month and year
+   * Find monthly summary record by month and year
    *
    * @param {number} month - Month (1-12)
    * @param {number} year - Year
    * @returns {Promise<Object|null>} Existing page or null
    */
-  async findMonthRecap(month, year) {
+  async findMonthlySummary(month, year) {
     if (!this.monthlyDatabaseId) {
       return null;
     }
 
-    const titleProperty = config.notion.getPropertyName(this.monthlyProps.title);
+    const titleProperty = config.notion.getPropertyName(
+      this.monthlyProps.title
+    );
 
-    // Format: "12. Dec Recap"
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // Format: "12. Dec Summary"
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const monthStr = String(month).padStart(2, "0");
     const monthAbbr = monthNames[month - 1];
-    const titleValue = `${monthStr}. ${monthAbbr} Recap`;
+    const titleValue = `${monthStr}. ${monthAbbr} Summary`;
 
     try {
       const filter = {
@@ -156,49 +172,66 @@ class SummaryDatabase extends NotionDatabase {
   }
 
   /**
-   * Update month recap with summary data
-   * Note: Monthly recap records must be pre-created in Notion with format "12. Dec Recap"
+   * Update monthly summary with summary data
+   * Note: Monthly summary records must be pre-created in Notion with format "12. Dec Summary"
    *
    * @param {string} pageId - Page ID to update (required - record must exist)
    * @param {Object} summaryData - Summary data to update
    * @returns {Promise<Object>} Updated page
    */
-  async upsertMonthRecap(pageId, summaryData) {
+  async upsertMonthlySummary(pageId, summaryData) {
     if (!this.monthlyDatabaseId) {
-      throw new Error(`Monthly recap database ID not configured`);
+      throw new Error(`Monthly summary database ID not configured`);
     }
 
     // Require existing pageId - records must be pre-created in Notion
     if (!pageId) {
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
       const monthStr = String(summaryData.month).padStart(2, "0");
       const monthAbbr = monthNames[summaryData.month - 1];
-      const expectedTitle = `${monthStr}. ${monthAbbr} Recap`;
+      const expectedTitle = `${monthStr}. ${monthAbbr} Summary`;
       throw new Error(
-        `Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`
+        `Monthly summary record not found. Please create a record in Notion with title: "${expectedTitle}"`
       );
     }
 
     const properties = {};
-    
+
     // Add personal data if present
     if (summaryData.personalBlocksDetails !== undefined) {
-      properties[config.notion.getPropertyName(this.monthlyProps.personalBlocksDetails)] =
-        summaryData.personalBlocksDetails || "";
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.personalBlocksDetails)
+      ] = summaryData.personalBlocksDetails || "";
     }
     if (summaryData.personalTasksDetails !== undefined) {
-      properties[config.notion.getPropertyName(this.monthlyProps.personalTasksDetails)] =
-        summaryData.personalTasksDetails || "";
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.personalTasksDetails)
+      ] = summaryData.personalTasksDetails || "";
     }
-    
+
     // Add work data if present
     if (summaryData.workBlocksDetails !== undefined) {
-      properties[config.notion.getPropertyName(this.monthlyProps.workBlocksDetails)] =
-        summaryData.workBlocksDetails || "";
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.workBlocksDetails)
+      ] = summaryData.workBlocksDetails || "";
     }
     if (summaryData.workTasksDetails !== undefined) {
-      properties[config.notion.getPropertyName(this.monthlyProps.workTasksDetails)] =
-        summaryData.workTasksDetails || "";
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.workTasksDetails)
+      ] = summaryData.workTasksDetails || "";
     }
 
     return await this.updatePage(pageId, properties);
@@ -206,4 +239,3 @@ class SummaryDatabase extends NotionDatabase {
 }
 
 module.exports = SummaryDatabase;
-

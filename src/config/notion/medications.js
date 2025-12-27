@@ -9,7 +9,7 @@
 const MEDICATION_FIELDS = [
   { key: "gabapentin", label: "Gabapentin" },
   { key: "hydroxyzine", label: "Hydroxyzine" },
-  { key: "setraline", label: "Setraline" },
+  { key: "sertraline", label: "Sertraline" },
 ];
 
 const database = process.env.NOTION_MEDICATIONS_DATABASE_ID;
@@ -24,7 +24,7 @@ const properties = {
   },
   gabapentin: { name: "Gabapentin", type: "checkbox", enabled: true },
   hydroxyzine: { name: "Hydroxyzine", type: "checkbox", enabled: true },
-  setraline: { name: "Setraline", type: "checkbox", enabled: true },
+  sertraline: { name: "Sertraline", type: "checkbox", enabled: true },
 };
 
 const fieldMappings = {
@@ -33,7 +33,7 @@ const fieldMappings = {
   calendarCreated: "calendarCreated",
   gabapentin: "gabapentin",
   hydroxyzine: "hydroxyzine",
-  setraline: "setraline",
+  sertraline: "sertraline",
 };
 
 module.exports = {

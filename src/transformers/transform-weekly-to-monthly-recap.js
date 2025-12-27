@@ -7,6 +7,21 @@ const { MONTHLY_RECAP_EXCLUSIONS } = require("../config/unified-sources");
 const config = require("../config");
 
 /**
+ * Extract week number from page title
+ * @param {Object} page - Notion page object
+ * @param {Object} summaryDb - SummaryDatabase instance
+ * @returns {number|null} Week number or null if not found
+ */
+function extractWeekNumberFromTitle(page, summaryDb) {
+  const title = summaryDb.extractProperty(
+    page,
+    config.notion.getPropertyName(summaryDb.props.title)
+  );
+  const weekMatch = title?.match(/Week (\d+)/);
+  return weekMatch ? parseInt(weekMatch[1], 10) : null;
+}
+
+/**
  * Strip day headers (Mon:, Tue:, etc.) from text blocks
  * @param {string} text - Text with day headers
  * @returns {string} Text without day headers
@@ -29,6 +44,29 @@ function collapseNewlines(text) {
   
   // Replace 2+ newlines with single newline
   return text.replace(/\n{2,}/g, "\n").trim();
+}
+
+/**
+ * Filter and format events/tasks for monthly recap
+ * - Strips time patterns like "(12:39-1:27pm)"
+ * - Converts newlines to comma separation
+ * @param {string} text - Text with newline-separated events
+ * @returns {string} Comma-separated filtered events
+ */
+function filterAndFormatEvents(text) {
+  if (!text || typeof text !== "string") return "";
+  
+  // Split into individual lines (events/tasks)
+  const lines = text.split("\n").map(line => line.trim()).filter(Boolean);
+  
+  // Transform each line
+  const formatted = lines
+    .map(line => line.replace(/\(\d{1,2}:\d{2}(?:-\d{1,2}:\d{2})?[ap]m\)/gi, ""))  // Strip time patterns
+    .map(line => line.trim())
+    .filter(Boolean);  // Remove empty lines after stripping
+  
+  // Join with commas instead of newlines
+  return formatted.join(", ");
 }
 
 /**
@@ -84,10 +122,7 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
   
   // Process each weekly recap
   weeklySummaries.forEach((weekSummary) => {
-    const weekNumber = summaryDb.extractProperty(
-      weekSummary,
-      config.notion.getPropertyName(summaryDb.props.weekNumber)
-    );
+    const weekNumber = extractWeekNumberFromTitle(weekSummary, summaryDb);
     if (!weekNumber) return;
     
     // Collect all blocks fields for this week
@@ -103,8 +138,9 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
         // Strip day headers from this field's content
         const stripped = stripDayHeaders(fieldValue);
         const collapsed = collapseNewlines(stripped);
-        if (collapsed.trim()) {
-          weekBlocks.push(collapsed);
+        const formatted = filterAndFormatEvents(collapsed);
+        if (formatted.trim()) {
+          weekBlocks.push(formatted);
         }
       }
     });
@@ -147,10 +183,7 @@ function combineWeeklyTasks(weeklySummaries, recapType, summaryDb) {
   
   // Process each weekly recap
   weeklySummaries.forEach((weekSummary) => {
-    const weekNumber = summaryDb.extractProperty(
-      weekSummary,
-      config.notion.getPropertyName(summaryDb.props.weekNumber)
-    );
+    const weekNumber = extractWeekNumberFromTitle(weekSummary, summaryDb);
     if (!weekNumber) return;
     
     // Collect all task fields for this week
@@ -166,8 +199,9 @@ function combineWeeklyTasks(weeklySummaries, recapType, summaryDb) {
         // Strip day headers from this field's content
         const stripped = stripDayHeaders(fieldValue);
         const collapsed = collapseNewlines(stripped);
-        if (collapsed.trim()) {
-          weekTasks.push(collapsed);
+        const formatted = filterAndFormatEvents(collapsed);
+        if (formatted.trim()) {
+          weekTasks.push(formatted);
         }
       }
     });
@@ -212,6 +246,7 @@ module.exports = {
   transformWeeklyToMonthlyRecap,
   stripDayHeaders,
   collapseNewlines,
+  filterAndFormatEvents,
   transformWeeklyText,
   combineWeeklyBlocks,
   combineWeeklyTasks,

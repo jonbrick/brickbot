@@ -1,5 +1,4 @@
 // Unified summary database for both Personal and Work summaries
-// Replaces PersonalSummaryDatabase and WorkSummaryDatabase
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
@@ -117,13 +116,13 @@ class SummaryDatabase extends NotionDatabase {
   }
 
   /**
-   * Find monthly summary record by month and year
+   * Find monthly recap record by month and year
    *
    * @param {number} month - Month (1-12)
    * @param {number} year - Year
    * @returns {Promise<Object|null>} Existing page or null
    */
-  async findMonthlySummary(month, year) {
+  async findMonthRecap(month, year) {
     if (!this.monthlyDatabaseId) {
       return null;
     }
@@ -149,7 +148,7 @@ class SummaryDatabase extends NotionDatabase {
     ];
     const monthStr = String(month).padStart(2, "0");
     const monthAbbr = monthNames[month - 1];
-    const titleValue = `${monthStr}. ${monthAbbr} Summary`;
+    const titleValue = `${monthStr}. ${monthAbbr} Recap`;
 
     try {
       const filter = {
@@ -172,16 +171,16 @@ class SummaryDatabase extends NotionDatabase {
   }
 
   /**
-   * Update monthly summary with summary data
-   * Note: Monthly summary records must be pre-created in Notion with format "12. Dec Summary"
+   * Update monthly recap with summary data
+   * Note: Monthly recap records must be pre-created in Notion with format "12. Dec Summary"
    *
    * @param {string} pageId - Page ID to update (required - record must exist)
    * @param {Object} summaryData - Summary data to update
    * @returns {Promise<Object>} Updated page
    */
-  async upsertMonthlySummary(pageId, summaryData) {
+  async upsertMonthRecap(pageId, summaryData) {
     if (!this.monthlyDatabaseId) {
-      throw new Error(`Monthly summary database ID not configured`);
+      throw new Error(`Monthly recap database ID not configured`);
     }
 
     // Require existing pageId - records must be pre-created in Notion
@@ -204,7 +203,7 @@ class SummaryDatabase extends NotionDatabase {
       const monthAbbr = monthNames[summaryData.month - 1];
       const expectedTitle = `${monthStr}. ${monthAbbr} Summary`;
       throw new Error(
-        `Monthly summary record not found. Please create a record in Notion with title: "${expectedTitle}"`
+        `Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`
       );
     }
 

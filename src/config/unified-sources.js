@@ -274,6 +274,7 @@ const CALENDARS = {
     ],
   },
   personalCalendar: {
+    ignoreAllDayEvents: true,
     id: "personalCalendar",
     envVar: "PERSONAL_MAIN_CALENDAR_ID",
     name: "Personal Calendar",
@@ -630,6 +631,7 @@ const SUMMARY_GROUPS = {
     processingPattern: "sessionsDetails",
   },
   personalCalendar: {
+    ignoreAllDayEvents: true,
     id: "personalCalendar",
     name: "Personal Calendar",
     emoji: "📅",

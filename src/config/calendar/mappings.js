@@ -273,6 +273,13 @@ function deriveSummarySource(groupId, group) {
   // Add special properties for sleep
   if (groupId === "sleep") {
     source.isSleepCalendar = true;
+  }
+
+  // Set ignoreAllDayEvents from group config (if present)
+  // Fallback: sleep group always ignores all-day events (legacy behavior)
+  if (group.ignoreAllDayEvents !== undefined) {
+    source.ignoreAllDayEvents = group.ignoreAllDayEvents;
+  } else if (groupId === "sleep") {
     source.ignoreAllDayEvents = true;
   }
 

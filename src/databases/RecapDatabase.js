@@ -1,10 +1,32 @@
-// Domain-specific operations for Work Recap Notion database
+// Unified recap database for both Personal and Work recaps
+// Replaces PersonalRecapDatabase and WorkRecapDatabase
 
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { buildDataProperties } = require("../utils/data-properties");
 
-class WorkRecapDatabase extends NotionDatabase {
+/**
+ * Generic recap database for both Personal and Work recaps
+ * Follows the same pattern as IntegrationDatabase
+ *
+ * @param {string} recapType - "personal" or "work"
+ */
+class RecapDatabase extends NotionDatabase {
+  constructor(recapType) {
+    super();
+
+    // Validate recapType
+    if (!["personal", "work"].includes(recapType)) {
+      throw new Error(
+        `Invalid recapType: ${recapType}. Must be "personal" or "work"`
+      );
+    }
+
+    this.recapType = recapType;
+    this.databaseId = config.notion.databases[`${recapType}Recap`];
+    this.props = config.notion.properties[`${recapType}Recap`];
+  }
+
   /**
    * Find week recap record by week number and year
    * Falls back to date range query if Week Number property doesn't exist
@@ -16,18 +38,17 @@ class WorkRecapDatabase extends NotionDatabase {
    * @returns {Promise<Object|null>} Existing page or null
    */
   async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
-    const databaseId = config.notion.databases.workRecap;
-    if (!databaseId) {
+    if (!this.databaseId) {
       return null;
     }
 
-    const titleProperty = config.notion.getPropertyName(
-      config.notion.properties.workRecap.title
-    );
+    const titleProperty = config.notion.getPropertyName(this.props.title);
 
     // Format week number with zero-padding (e.g., "01", "48")
     const weekNumberStr = String(weekNumber).padStart(2, "0");
-    const titleValue = `Week ${weekNumberStr} Work Recap`;
+    const recapLabel =
+      this.recapType === "personal" ? "Personal Recap" : "Work Recap";
+    const titleValue = `Week ${weekNumberStr} ${recapLabel}`;
 
     // Query by title property
     try {
@@ -38,7 +59,7 @@ class WorkRecapDatabase extends NotionDatabase {
         },
       };
 
-      const results = await this.queryDatabase(databaseId, filter);
+      const results = await this.queryDatabase(this.databaseId, filter);
       if (results.length > 0) {
         return results[0];
       }
@@ -55,16 +76,14 @@ class WorkRecapDatabase extends NotionDatabase {
    *
    * @param {string} pageId - Page ID to update
    * @param {Object} summaryData - Summary data to update
-   * @param {Array<string>} selectedCalendars - Array of calendar keys to ensure all fields are included for (e.g., ["workCalendar", "workPRs"])
+   * @param {Array<string>} selectedCalendars - Array of calendar keys to ensure all fields are included for
    * @returns {Promise<Object>} Updated page
    */
   async updateWeekRecap(pageId, summaryData, selectedCalendars = []) {
-    const props = config.notion.properties.workRecap;
-
     // Build properties with validation - throws clear error if config is missing
     const properties = buildDataProperties(
       summaryData,
-      props,
+      this.props,
       selectedCalendars
     );
 
@@ -72,5 +91,5 @@ class WorkRecapDatabase extends NotionDatabase {
   }
 }
 
-module.exports = WorkRecapDatabase;
+module.exports = RecapDatabase;
 

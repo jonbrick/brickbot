@@ -220,11 +220,8 @@ async function aggregateCalendarDataForWeek(
     );
   }
 
-  // Select components based on recapType
-  const RecapDatabase =
-    recapType === "personal"
-      ? require("../databases/PersonalRecapDatabase")
-      : require("../databases/WorkRecapDatabase");
+  // Use unified RecapDatabase with recapType parameter
+  const RecapDatabase = require("../databases/RecapDatabase");
 
   const transformFunction =
     recapType === "personal"
@@ -407,7 +404,7 @@ async function aggregateCalendarDataForWeek(
           const relationshipsDb = new NotionDatabase();
 
           // Find current week's Personal Recap page to get its ID
-          const recapRepo = new RecapDatabase();
+          const recapRepo = new RecapDatabase(recapType);
           const weekRecap = await recapRepo.findWeekRecap(
             weekNumber,
             year,
@@ -478,7 +475,7 @@ async function aggregateCalendarDataForWeek(
     }
 
     // Find or get week recap record
-    const recapRepo = new RecapDatabase();
+    const recapRepo = new RecapDatabase(recapType);
     const weekRecap = await recapRepo.findWeekRecap(
       weekNumber,
       year,

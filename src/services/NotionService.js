@@ -5,7 +5,7 @@
  */
 
 const IntegrationDatabase = require("../databases/IntegrationDatabase");
-const PersonalRecapDatabase = require("../databases/PersonalRecapDatabase");
+const RecapDatabase = require("../databases/RecapDatabase");
 const NotionDatabase = require("../databases/NotionDatabase");
 
 class NotionService extends NotionDatabase {
@@ -19,7 +19,7 @@ class NotionService extends NotionDatabase {
     this.prRepo = new IntegrationDatabase("github");
     this.bodyWeightRepo = new IntegrationDatabase("withings");
     this.bloodPressureRepo = new IntegrationDatabase("bloodPressure");
-    this.personalRecapRepo = new PersonalRecapDatabase();
+    this.personalRecapRepo = new RecapDatabase("personal");
   }
 
   // ========================================
@@ -76,7 +76,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Personal Recap database
-   * @returns {PersonalRecapDatabase}
+   * @returns {RecapDatabase}
    */
   getPersonalRecapRepository() {
     return this.personalRecapRepo;
@@ -85,7 +85,7 @@ class NotionService extends NotionDatabase {
   /**
    * Get Recap database (deprecated - use getPersonalRecapRepository)
    * @deprecated Use getPersonalRecapRepository() instead
-   * @returns {PersonalRecapDatabase}
+   * @returns {RecapDatabase}
    */
   getRecapRepository() {
     return this.personalRecapRepo;

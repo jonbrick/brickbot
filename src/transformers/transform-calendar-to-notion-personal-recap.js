@@ -1,7 +1,8 @@
 // Converts raw Google Calendar events into aggregated weekly data for Personal Recap database
 
 const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
-const { CALENDARS } = require("../config/unified-sources");
+const { CALENDARS, SUMMARY_GROUPS, FETCH_KEY_MAPPING } = require("../config/unified-sources");
+const { PARSERS } = require("../parsers/calendar-parsers");
 
 /**
  * Get 3-letter day abbreviation from a date string (YYYY-MM-DD)
@@ -93,6 +94,121 @@ function transformCalendarEventsToRecapData(
     };
   };
 
+  /**
+   * Process standard activity calendar (Days, Sessions, HoursTotal, Blocks)
+   * Used by: workout, reading, meditation, coding, art, music, videoGames, cooking
+   */
+  function processStandardActivity(calendarId, calendarEvents, summary, isDateInWeek, getDayAbbreviation) {
+    const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
+    const events = calendarEvents[fetchKey] || [];
+
+    const data = calculateCalendarData(events, true, true);
+
+    summary[`${calendarId}Days`] = data.days || 0;
+    summary[`${calendarId}Sessions`] = data.sessions !== undefined ? data.sessions : 0;
+    summary[`${calendarId}HoursTotal`] = data.hoursTotal !== undefined ? data.hoursTotal : 0;
+
+    // Calculate blocks
+    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+    summary[`${calendarId}Blocks`] =
+      filteredEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          const duration = event.durationHours || 0;
+          const durationRounded = Math.round(duration * 100) / 100;
+          return `${eventName} (${day} - ${durationRounded} hours)`;
+        })
+        .join(", ") || "";
+  }
+
+  /**
+   * Process days-only calendar
+   * Used by: sober
+   */
+  function processDaysOnly(calendarId, calendarEvents, summary) {
+    const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
+    const events = calendarEvents[fetchKey] || [];
+
+    const data = calculateCalendarData(events, false, false);
+    summary[`${calendarId}Days`] = data.days || 0;
+  }
+
+  /**
+   * Process days with blocks (conditional hours display)
+   * Used by: drinking
+   */
+  function processDaysWithBlocks(calendarId, calendarEvents, summary, isDateInWeek, getDayAbbreviation) {
+    const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
+    const events = calendarEvents[fetchKey] || [];
+
+    const data = calculateCalendarData(events, false, false);
+    summary[`${calendarId}Days`] = data.days || 0;
+
+    // Calculate blocks with conditional hour display
+    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+    summary[`${calendarId}Blocks`] =
+      filteredEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          const duration = event.durationHours || 0;
+          if (duration > 0) {
+            const durationRounded = Math.round(duration * 100) / 100;
+            return `${eventName} (${day} - ${durationRounded} hours)`;
+          } else {
+            return `${eventName} (${day})`;
+          }
+        })
+        .join(", ") || "";
+  }
+
+  /**
+   * Process multi-calendar aggregate
+   * Used by: sleep (combines earlyWakeup + sleepIn)
+   */
+  function processMultiCalendar(groupId, group, calendarEvents, summary) {
+    if (groupId === "sleep") {
+      const earlyWakeup = calculateCalendarData(
+        calendarEvents.earlyWakeup || [],
+        true,
+        false
+      );
+      const sleepIn = calculateCalendarData(
+        calendarEvents.sleepIn || [],
+        true,
+        false
+      );
+      const sleepHoursTotal = (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
+
+      summary.earlyWakeupDays = earlyWakeup.days || 0;
+      summary.sleepInDays = sleepIn.days || 0;
+      summary.sleepHoursTotal = Math.round(sleepHoursTotal * 100) / 100;
+    }
+    // Add other multi-calendar patterns here if needed
+  }
+
+  /**
+   * Process sessions with details (no hours)
+   * Used by: personalPRs
+   */
+  function processSessionsDetails(calendarId, calendarEvents, summary, isDateInWeek, getDayAbbreviation) {
+    const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
+    const events = calendarEvents[fetchKey] || [];
+    const filteredEvents = events.filter((event) => isDateInWeek(event.date));
+
+    summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
+
+    summary[`${calendarId}Details`] =
+      filteredEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          return `${eventName} (${day})`;
+        })
+        .join(", ") || "";
+  }
+
   // Helper to determine if a source should be calculated based on selection
   // Accepts source IDs (e.g., "sleep", "sober", "drinking", "workout")
   const shouldCalculate = (sourceId) => {
@@ -124,383 +240,95 @@ function transformCalendarEventsToRecapData(
 
   const summary = {};
 
-  // Sleep data (only if "sleep" is selected)
-  if (shouldCalculate("sleep")) {
-    const earlyWakeup = calculateCalendarData(
-      calendarEvents.earlyWakeup || [],
-      true,
-      false
-    );
-    const sleepIn = calculateCalendarData(
-      calendarEvents.sleepIn || [],
-      true,
-      false
-    );
-    const sleepHoursTotal =
-      (earlyWakeup.hoursTotal || 0) + (sleepIn.hoursTotal || 0);
+  // ========================================
+  // Config-driven calendar processing
+  // ========================================
+  // Process calendars using patterns defined in SUMMARY_GROUPS
+  Object.entries(SUMMARY_GROUPS)
+    .filter(([id, group]) => {
+      // Filter to personal, non-Notion, non-category-based sources
+      return (
+        group.sourceType === "personal" &&
+        !group.isNotionSource &&
+        group.processingPattern !== "categoryBased" &&
+        shouldCalculate(id)
+      );
+    })
+    .forEach(([groupId, group]) => {
+      const pattern = group.processingPattern;
 
-    // Always include all fields for selected calendar (clean slate)
-    summary.earlyWakeupDays = earlyWakeup.days || 0;
-    summary.sleepInDays = sleepIn.days || 0;
-    summary.sleepHoursTotal = Math.round(sleepHoursTotal * 100) / 100;
-  }
-
-  // Sober data (only if "sober" is selected)
-  if (shouldCalculate("sober")) {
-    const sober = calculateCalendarData(
-      calendarEvents.sober || [],
-      false,
-      false
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.soberDays = sober.days || 0;
-  }
-
-  // Drinking data (only if "drinking" is selected)
-  if (shouldCalculate("drinking")) {
-    const drinking = calculateCalendarData(
-      calendarEvents.drinking || [],
-      false,
-      false
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.drinkingDays = drinking.days || 0;
-
-    // Calculate drinking blocks (event summaries) from drinking events
-    const drinkingEvents = calendarEvents.drinking || [];
-    const filteredDrinkingEvents = drinkingEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.drinkingBlocks =
-      filteredDrinkingEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          if (duration > 0) {
-            const durationRounded = Math.round(duration * 100) / 100;
-            return `${eventName} (${day} - ${durationRounded} hours)`;
-          } else {
-            return `${eventName} (${day})`;
+      switch (pattern) {
+        case "standardActivity":
+          // Process single calendar with Days, Sessions, Hours, Blocks
+          if (group.calendars && group.calendars.length > 0) {
+            processStandardActivity(
+              group.calendars[0],
+              calendarEvents,
+              summary,
+              isDateInWeek,
+              getDayAbbreviation
+            );
           }
-        })
-        .join(", ") || "";
-  }
+          break;
 
-  // Workout data (only if "workout" is selected)
-  if (shouldCalculate("workout")) {
-    const workout = calculateCalendarData(
-      calendarEvents.workout || [],
-      true,
-      true
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.workoutDays = workout.days || 0;
-    summary.workoutSessions =
-      workout.sessions !== undefined ? workout.sessions : 0;
-    summary.workoutHoursTotal =
-      workout.hoursTotal !== undefined ? workout.hoursTotal : 0;
+        case "daysWithBlocks":
+          // Handle drinkingDays group which includes sober and drinking
+          if (groupId === "drinkingDays") {
+            // Process sober (days only) if selected
+            if (shouldCalculate("sober") || shouldCalculate("drinkingDays")) {
+              processDaysOnly("sober", calendarEvents, summary);
+            }
+            // Process drinking (days with blocks) if selected
+            if (shouldCalculate("drinking") || shouldCalculate("drinkingDays")) {
+              processDaysWithBlocks(
+                "drinking",
+                calendarEvents,
+                summary,
+                isDateInWeek,
+                getDayAbbreviation
+              );
+            }
+          }
+          break;
 
-    // Calculate workout blocks (event summaries) from workout events
-    const workoutEvents = calendarEvents.workout || [];
-    const filteredWorkoutEvents = workoutEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.workoutBlocks =
-      filteredWorkoutEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
+        case "multiCalendar":
+          // Process aggregated calendars (sleep)
+          processMultiCalendar(groupId, group, calendarEvents, summary);
+          break;
 
-  // Reading data (only if "reading" is selected)
-  if (shouldCalculate("reading")) {
-    const reading = calculateCalendarData(
-      calendarEvents.reading || [],
-      true,
-      true
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.readingDays = reading.days || 0;
-    summary.readingSessions =
-      reading.sessions !== undefined ? reading.sessions : 0;
-    summary.readingHoursTotal =
-      reading.hoursTotal !== undefined ? reading.hoursTotal : 0;
+        case "sessionsDetails":
+          // Process PRs-style calendars
+          if (group.calendars && group.calendars.length > 0) {
+            processSessionsDetails(
+              group.calendars[0],
+              calendarEvents,
+              summary,
+              isDateInWeek,
+              getDayAbbreviation
+            );
+          }
+          break;
 
-    // Calculate reading blocks (event summaries) from reading events
-    const readingEvents = calendarEvents.reading || [];
-    const filteredReadingEvents = readingEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.readingBlocks =
-      filteredReadingEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
+        case "customParser":
+          // Use custom parser from registry
+          if (group.parser && PARSERS[group.parser]) {
+            const parserResult = PARSERS[group.parser](
+              calendarEvents,
+              isDateInWeek,
+              group
+            );
+            Object.assign(summary, parserResult);
+          }
+          break;
 
-  // Coding data (only if "coding" is selected)
-  if (shouldCalculate("coding")) {
-    const coding = calculateCalendarData(
-      calendarEvents.coding || [],
-      true,
-      true
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.codingDays = coding.days || 0;
-    summary.codingSessions =
-      coding.sessions !== undefined ? coding.sessions : 0;
-    summary.codingHoursTotal =
-      coding.hoursTotal !== undefined ? coding.hoursTotal : 0;
+        default:
+          console.warn(`Unknown processing pattern: ${pattern} for ${groupId}`);
+      }
+    });
 
-    // Calculate coding blocks (event summaries) from coding events
-    const codingEvents = calendarEvents.coding || [];
-    const filteredCodingEvents = codingEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.codingBlocks =
-      filteredCodingEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
-
-  // Art data (only if "art" is selected)
-  if (shouldCalculate("art")) {
-    const art = calculateCalendarData(calendarEvents.art || [], true, true);
-    // Always include all fields for selected calendar (clean slate)
-    summary.artDays = art.days || 0;
-    summary.artSessions = art.sessions !== undefined ? art.sessions : 0;
-    summary.artHoursTotal = art.hoursTotal !== undefined ? art.hoursTotal : 0;
-
-    // Calculate art blocks (event summaries) from art events
-    const artEvents = calendarEvents.art || [];
-    const filteredArtEvents = artEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.artBlocks =
-      filteredArtEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
-
-  // Video Games data (only if "videoGames" is selected)
-  if (shouldCalculate("videoGames")) {
-    const videoGames = calculateCalendarData(
-      calendarEvents.videoGames || [],
-      true,
-      true
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.videoGamesDays = videoGames.days || 0;
-    summary.videoGamesSessions =
-      videoGames.sessions !== undefined ? videoGames.sessions : 0;
-    summary.videoGamesHoursTotal =
-      videoGames.hoursTotal !== undefined ? videoGames.hoursTotal : 0;
-
-    // Calculate video games blocks (event summaries) from video games events
-    const videoGamesEvents = calendarEvents.videoGames || [];
-    const filteredVideoGamesEvents = videoGamesEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.videoGamesBlocks =
-      filteredVideoGamesEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
-
-  // Meditation data (only if "meditation" is selected)
-  if (shouldCalculate("meditation")) {
-    const meditation = calculateCalendarData(
-      calendarEvents.meditation || [],
-      true,
-      true
-    );
-    // Always include all fields for selected calendar (clean slate)
-    summary.meditationDays = meditation.days || 0;
-    summary.meditationSessions =
-      meditation.sessions !== undefined ? meditation.sessions : 0;
-    summary.meditationHoursTotal =
-      meditation.hoursTotal !== undefined ? meditation.hoursTotal : 0;
-
-    // Calculate meditation blocks (event summaries) from meditation events
-    const meditationEvents = calendarEvents.meditation || [];
-    const filteredMeditationEvents = meditationEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.meditationBlocks =
-      filteredMeditationEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
-
-  // Music data (only if "music" is selected)
-  if (shouldCalculate("music")) {
-    const music = calculateCalendarData(calendarEvents.music || [], true, true);
-    // Always include all fields for selected calendar (clean slate)
-    summary.musicDays = music.days || 0;
-    summary.musicSessions = music.sessions !== undefined ? music.sessions : 0;
-    summary.musicHoursTotal =
-      music.hoursTotal !== undefined ? music.hoursTotal : 0;
-
-    // Calculate music blocks (event summaries) from music events
-    const musicEvents = calendarEvents.music || [];
-    const filteredMusicEvents = musicEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-    summary.musicBlocks =
-      filteredMusicEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          const duration = event.durationHours || 0;
-          const durationRounded = Math.round(duration * 100) / 100;
-          return `${eventName} (${day} - ${durationRounded} hours)`;
-        })
-        .join(", ") || "";
-  }
-
-  // Body Weight data (only if "bodyWeight" is selected)
-  if (shouldCalculate("bodyWeight")) {
-    const bodyWeightEvents = calendarEvents.bodyWeight || [];
-    const filteredBodyWeightEvents = bodyWeightEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-
-    // Extract weight values from event summaries using regex
-    // Matches patterns like "Weight: 201.4 lbs" or "201.4 lbs"
-    const weights = filteredBodyWeightEvents
-      .map((event) => {
-        const match = event.summary.match(/(\d+\.?\d*)\s*lbs?/i);
-        return match ? parseFloat(match[1]) : null;
-      })
-      .filter((weight) => weight !== null);
-
-    // Always include field for selected calendar (clean slate)
-    // Calculate average
-    if (weights.length > 0) {
-      const sum = weights.reduce((acc, weight) => acc + weight, 0);
-      summary.bodyWeightAverage = Math.round((sum / weights.length) * 10) / 10; // Round to 1 decimal
-    } else {
-      // Set to 0 if no weights found (will need to handle null/undefined in property builder)
-      summary.bodyWeightAverage = 0;
-    }
-  }
-
-  // Blood Pressure data (only if "bloodPressure" is selected)
-  if (shouldCalculate("bloodPressure")) {
-    const bloodPressureEvents = calendarEvents.bloodPressure || [];
-    const filteredBloodPressureEvents = bloodPressureEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-
-    // Extract values from event title/summary using regex
-    // Title format: "BP: 147/95"
-    const readings = filteredBloodPressureEvents
-      .map((event) => {
-        const summary = event.summary || "";
-
-        // Extract systolic and diastolic from "BP: {systolic}/{diastolic}"
-        const match = summary.match(/BP:\s*(\d+\.?\d*)\/(\d+\.?\d*)/i);
-        if (match) {
-          return {
-            systolic: parseFloat(match[1]),
-            diastolic: parseFloat(match[2]),
-          };
-        }
-        return { systolic: null, diastolic: null };
-      })
-      .filter(
-        (reading) => reading.systolic !== null || reading.diastolic !== null
-      );
-
-    // Always include all fields for selected calendar (clean slate)
-    if (readings.length > 0) {
-      // Calculate averages using internal counts (not stored in Notion)
-      const systolicSum = readings.reduce(
-        (sum, r) => sum + (r.systolic || 0),
-        0
-      );
-      const diastolicSum = readings.reduce(
-        (sum, r) => sum + (r.diastolic || 0),
-        0
-      );
-
-      // Count valid readings for each metric (used for calculation only)
-      const systolicCount = readings.filter((r) => r.systolic !== null).length;
-      const diastolicCount = readings.filter(
-        (r) => r.diastolic !== null
-      ).length;
-
-      summary.avgSystolic =
-        systolicCount > 0
-          ? Math.round((systolicSum / systolicCount) * 10) / 10
-          : 0;
-      summary.avgDiastolic =
-        diastolicCount > 0
-          ? Math.round((diastolicSum / diastolicCount) * 10) / 10
-          : 0;
-    } else {
-      // Set to 0 if no readings found
-      summary.avgSystolic = 0;
-      summary.avgDiastolic = 0;
-    }
-  }
-
-  // Personal PRs data (only if "personalPRs" is selected)
-  if (shouldCalculate("personalPRs")) {
-    const prsEvents = calendarEvents.personalPRs || [];
-    const filteredPRsEvents = prsEvents.filter((event) =>
-      isDateInWeek(event.date)
-    );
-
-    // Always include all fields for selected calendar (clean slate)
-    // Calculate sessions (count of events)
-    summary.personalPRsSessions = filteredPRsEvents.length || 0;
-
-    // Calculate details (formatted as "title (day)" - no hours)
-    summary.personalPRsDetails =
-      filteredPRsEvents
-        .map((event) => {
-          const eventName = event.summary || "Untitled Event";
-          const day = getDayAbbreviation(event.date);
-          return `${eventName} (${day})`;
-        })
-        .join(", ") || "";
-  }
+  // ========================================
+  // Category-based processing (kept as-is)
+  // ========================================
 
   // Personal Calendar blocks (only if "personalCalendar" is selected)
   if (shouldCalculate("personalCalendar")) {

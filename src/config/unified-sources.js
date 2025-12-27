@@ -154,6 +154,34 @@ const CALENDARS = {
       },
     ],
   },
+  cooking: {
+    id: "cooking",
+    envVar: "COOKING_CALENDAR_ID",
+    name: "Cooking",
+    emoji: "🍳",
+    dataFields: [
+      {
+        type: "count",
+        label: "Cooking - Days",
+        notionProperty: "cookingDays",
+      },
+      {
+        type: "count",
+        label: "Cooking - Sessions",
+        notionProperty: "cookingSessions",
+      },
+      {
+        type: "decimal",
+        label: "Cooking - Hours Total",
+        notionProperty: "cookingHoursTotal",
+      },
+      {
+        type: "optionalText",
+        label: "Cooking - Blocks",
+        notionProperty: "cookingBlocks",
+      },
+    ],
+  },
   art: {
     id: "art",
     envVar: "ART_CALENDAR_ID",
@@ -890,6 +918,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "multiCalendar",
   },
   drinkingDays: {
     id: "drinkingDays",
@@ -899,6 +928,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "daysWithBlocks",
   },
   workout: {
     id: "workout",
@@ -908,6 +938,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
   },
   reading: {
     id: "reading",
@@ -917,6 +948,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
   },
   meditation: {
     id: "meditation",
@@ -926,6 +958,17 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
+  },
+  cooking: {
+    id: "cooking",
+    name: "Cooking",
+    emoji: "🍗",
+    calendars: ["cooking"],
+    sourceType: "personal",
+    isNotionSource: false,
+    summarize: true,
+    processingPattern: "standardActivity",
   },
   art: {
     id: "art",
@@ -935,6 +978,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
   },
   coding: {
     id: "coding",
@@ -944,6 +988,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
   },
   music: {
     id: "music",
@@ -953,6 +998,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
   },
   videoGames: {
     id: "videoGames",
@@ -962,6 +1008,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "standardActivity",
   },
   bodyWeight: {
     id: "bodyWeight",
@@ -971,6 +1018,8 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "customParser",
+    parser: "weightParser",
   },
   bloodPressure: {
     id: "bloodPressure",
@@ -980,6 +1029,8 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "customParser",
+    parser: "bloodPressureParser",
   },
   personalPRs: {
     id: "personalPRs",
@@ -989,6 +1040,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "sessionsDetails",
   },
   workPRs: {
     id: "workPRs",
@@ -998,6 +1050,7 @@ const SUMMARY_GROUPS = {
     sourceType: "work",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "sessionsDetails",
   },
   personalCalendar: {
     id: "personalCalendar",
@@ -1007,6 +1060,7 @@ const SUMMARY_GROUPS = {
     sourceType: "personal",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "categoryBased",
   },
   workCalendar: {
     id: "workCalendar",
@@ -1016,6 +1070,7 @@ const SUMMARY_GROUPS = {
     sourceType: "work",
     isNotionSource: false,
     summarize: true,
+    processingPattern: "categoryBased",
   },
   tasks: {
     id: "tasks",
@@ -1025,6 +1080,7 @@ const SUMMARY_GROUPS = {
     databaseIdEnvVar: "TASKS_DATABASE_ID",
     sourceType: "personal",
     summarize: true,
+    processingPattern: "categoryBased",
   },
   workTasks: {
     id: "workTasks",
@@ -1034,6 +1090,7 @@ const SUMMARY_GROUPS = {
     databaseIdEnvVar: "TASKS_DATABASE_ID",
     sourceType: "work",
     summarize: true,
+    processingPattern: "categoryBased",
   },
 };
 
@@ -1440,6 +1497,7 @@ const FETCH_KEY_MAPPING = {
   drinking: "drinking",
   reading: "reading",
   meditation: "meditation",
+  cooking: "cooking",
   art: "art",
   coding: "coding",
   music: "music",

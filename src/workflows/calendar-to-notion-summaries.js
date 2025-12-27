@@ -396,6 +396,70 @@ async function aggregateCalendarDataForWeek(
       console.log();
     }
 
+    // Fetch relationships context for interpersonal matching (personal recap only)
+    let relationshipsContext = null;
+    if (recapType === "personal") {
+      try {
+        const NotionDatabase = require("../databases/NotionDatabase");
+        const relationshipsDbId = config.notion.databases.relationships;
+
+        if (relationshipsDbId) {
+          const relationshipsDb = new NotionDatabase();
+
+          // Find current week's Personal Recap page to get its ID
+          const recapRepo = new RecapDatabase();
+          const weekRecap = await recapRepo.findWeekRecap(
+            weekNumber,
+            year,
+            startDate,
+            endDate
+          );
+
+          if (weekRecap) {
+            // Fetch all relationships
+            const relationshipsPages = await relationshipsDb.queryDatabaseAll(
+              relationshipsDbId
+            );
+
+            // Extract relationship data with active week IDs
+            const relationships = relationshipsPages.map((page) => {
+              const nameProperty = page.properties["Name"];
+              const name = nameProperty?.title?.[0]?.plain_text || "";
+
+              const nicknamesProperty = page.properties["Nicknames"];
+              const nicknames =
+                nicknamesProperty?.rich_text?.[0]?.plain_text || "";
+
+              // Extract relation property (array of page objects with id)
+              const activeWeeksProperty = page.properties["⏰ 2025 Weeks"];
+              const activeWeekIds =
+                activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
+
+              return {
+                name,
+                nicknames,
+                activeWeekIds,
+              };
+            });
+
+            relationshipsContext = {
+              currentWeekPageId: weekRecap.id,
+              relationships,
+            };
+
+            if (relationships.length > 0) {
+              console.log(
+                `   📋 Loaded ${relationships.length} relationship(s) for matching`
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`   ⚠️ Could not fetch relationships: ${error.message}`);
+        // Continue without relationships context
+      }
+    }
+
     // Calculate summary (only for selected calendars)
     // Note: tasks are handled by notion-tasks-to-notion-summaries workflow
     const summary = transformFunction(
@@ -403,7 +467,8 @@ async function aggregateCalendarDataForWeek(
       startDate,
       endDate,
       calendarsToFetch,
-      [] // No tasks in calendar workflow
+      [], // No tasks in calendar workflow
+      relationshipsContext
     );
     results.summary = summary;
 

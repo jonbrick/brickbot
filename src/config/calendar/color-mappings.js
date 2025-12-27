@@ -10,7 +10,7 @@
 // Maps colorId (string) to category object with category key and display name
 const PERSONAL_COLOR_MAPPING = {
   2: { category: "personal", displayName: "Personal" }, // Sage/Green (default)
-  3: { category: "interpersonal", displayName: "Interpersonal" }, // Grape
+  3: { category: "interpersonal", displayName: "Interpersonal" }, // Grape - Handled by interpersonal matcher for family/relationship split
   5: { category: "home", displayName: "Home" }, // Citron
   8: { category: "physicalHealth", displayName: "Physical Health" }, // Graphite
   9: { category: "ignore", displayName: "Ignore" }, // Blueberry
@@ -81,6 +81,27 @@ function getPersonalCategoryDisplayName(colorId) {
 }
 
 /**
+ * Get enhanced category for personal calendar events
+ * Handles interpersonal splitting into family/relationship/interpersonal
+ *
+ * @param {Object} event - Calendar event with colorId and summary
+ * @param {string|null} currentWeekPageId - Current week's page ID for relationship matching
+ * @param {Array<Object>} relationships - Array of relationship records with activeWeekIds
+ * @returns {string} Category key
+ */
+function getEnhancedPersonalCategory(event, currentWeekPageId = null, relationships = []) {
+  const { matchInterpersonalCategory } = require("../../parsers/interpersonal-matcher");
+
+  // Check if it's interpersonal color (3 = Grape)
+  if (event.colorId === "3" || event.colorId === 3) {
+    return matchInterpersonalCategory(event, currentWeekPageId, relationships);
+  }
+
+  // Use standard color mapping for all other colors
+  return getPersonalCategoryByColor(event.colorId);
+}
+
+/**
  * Get Work Calendar category key by color ID
  * @param {string|null|undefined} colorId - Google Calendar color ID
  * @returns {string} Category key
@@ -124,6 +145,7 @@ module.exports = {
   EVENTS_TRIPS_CATEGORY_TO_COLOR,
   getPersonalCategoryByColor,
   getPersonalCategoryDisplayName,
+  getEnhancedPersonalCategory,
   getWorkCategoryByColor,
   getWorkCategoryDisplayName,
   getColorIdFromNotionCategory,

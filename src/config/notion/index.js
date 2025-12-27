@@ -14,6 +14,7 @@ const events = require("./events");
 const trips = require("./trips");
 const personalRecap = require("./personal-recap");
 const workRecap = require("./work-recap");
+const relationships = require("./relationships");
 
 // Aggregate database IDs
 const databases = {
@@ -28,6 +29,7 @@ const databases = {
   trips: trips.database,
   personalRecap: personalRecap.database,
   workRecap: workRecap.database,
+  relationships: relationships.database,
 };
 
 // Aggregate properties
@@ -43,6 +45,7 @@ const properties = {
   trips: trips.properties,
   personalRecap: personalRecap.properties,
   workRecap: workRecap.properties,
+  relationships: relationships.properties,
 };
 
 // Aggregate field mappings
@@ -58,6 +61,7 @@ const fieldMappings = {
   trips: trips.fieldMappings || {},
   personalRecap: personalRecap.fieldMappings,
   workRecap: workRecap.fieldMappings,
+  relationships: relationships.fieldMappings || {},
 };
 
 // Color mappings (for categorization and display)

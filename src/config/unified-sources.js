@@ -391,6 +391,46 @@ const CALENDARS = {
           },
         ],
       },
+      family: {
+        emoji: "💜",
+        dataFields: [
+          {
+            type: "count",
+            label: "Family - Sessions",
+            notionProperty: "familySessions",
+          },
+          {
+            type: "decimal",
+            label: "Family - Hours Total",
+            notionProperty: "familyHoursTotal",
+          },
+          {
+            type: "optionalText",
+            label: "Family - Blocks",
+            notionProperty: "familyBlocks",
+          },
+        ],
+      },
+      relationship: {
+        emoji: "❤️",
+        dataFields: [
+          {
+            type: "count",
+            label: "Relationship - Sessions",
+            notionProperty: "relationshipSessions",
+          },
+          {
+            type: "decimal",
+            label: "Relationship - Hours Total",
+            notionProperty: "relationshipHoursTotal",
+          },
+          {
+            type: "optionalText",
+            label: "Relationship - Blocks",
+            notionProperty: "relationshipBlocks",
+          },
+        ],
+      },
       interpersonal: {
         emoji: "🍻",
         dataFields: [

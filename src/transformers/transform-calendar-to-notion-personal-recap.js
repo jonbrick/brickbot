@@ -43,7 +43,8 @@ function transformCalendarEventsToRecapData(
   weekStartDate = null,
   weekEndDate = null,
   selectedCalendars = null,
-  tasks = []
+  tasks = [],
+  relationshipsContext = null
 ) {
   /**
    * Process standard activity calendar (Days, Sessions, HoursTotal, Blocks)
@@ -343,8 +344,12 @@ function transformCalendarEventsToRecapData(
   // Personal Calendar blocks (only if "personalCalendar" is selected)
   if (shouldCalculate("personalCalendar")) {
     const {
-      getPersonalCategoryByColor,
+      getEnhancedPersonalCategory,
     } = require("../config/calendar/color-mappings");
+
+    // Extract relationship context
+    const currentWeekPageId = relationshipsContext?.currentWeekPageId || null;
+    const relationships = relationshipsContext?.relationships || [];
 
     // Get all events from the single Personal Calendar
     const personalCalendarEvents = calendarEvents.personalCalendar || [];
@@ -357,7 +362,7 @@ function transformCalendarEventsToRecapData(
     // Group events by category for per-category data
     const eventsByCategory = {};
     filteredEvents.forEach((event) => {
-      const category = getPersonalCategoryByColor(event.colorId);
+      const category = getEnhancedPersonalCategory(event, currentWeekPageId, relationships);
       if (!eventsByCategory[category]) {
         eventsByCategory[category] = [];
       }

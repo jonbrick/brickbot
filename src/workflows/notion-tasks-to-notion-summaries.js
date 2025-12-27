@@ -133,7 +133,8 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       startDate,
       endDate,
       sourcesToFetch,
-      tasks
+      tasks,
+      null // No relationships context needed for tasks workflow
     );
     results.summary = summary;
 
@@ -181,11 +182,15 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
           // Extract category and format as "Category (count)"
           let category = field.replace("TasksComplete", "");
 
-          const categoryConfig = CALENDARS[taskSourceKey]?.categories?.[category];
+          const categoryConfig =
+            CALENDARS[taskSourceKey]?.categories?.[category];
           const label = categoryConfig?.dataFields?.[0]?.label;
           const displayName = getCategoryShortName(category, label);
           const categoryEmoji = categoryConfig?.emoji || "";
-          taskData.push({ emoji: categoryEmoji, text: `${displayName} (${summary[field]})` });
+          taskData.push({
+            emoji: categoryEmoji,
+            text: `${displayName} (${summary[field]})`,
+          });
         }
       });
       if (taskData.length > 0) {
@@ -196,10 +201,14 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     const taskGroupKey = recapType === "work" ? "workTasks" : "tasks";
     const taskEmoji = SUMMARY_GROUPS[taskGroupKey]?.emoji || "";
 
-    const taskLines = data.map(item => 
-      item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
-    ).join("\n");
-    const message = `${recapType === "work" ? "Work" : "Personal"} Tasks:\n   ${taskEmoji} Tasks:\n${taskLines}`;
+    const taskLines = data
+      .map((item) =>
+        item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
+      )
+      .join("\n");
+    const message = `${
+      recapType === "work" ? "Work" : "Personal"
+    } Tasks:\n   ${taskEmoji} Tasks:\n${taskLines}`;
 
     if (typeof showSuccess === "function") {
       showSuccess(message);

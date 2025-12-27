@@ -296,7 +296,8 @@ async function selectDateRange(options = {}) {
     }
 
     case "monthPicker": {
-      weeks = await selectMonthForWeeks();
+      const { weeks: selectedWeeks } = await selectMonthForWeeks();
+      weeks = selectedWeeks;
 
       // Calculate combined date range
       const allStartDates = weeks.map((w) => w.startDate);

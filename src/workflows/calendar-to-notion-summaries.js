@@ -228,8 +228,8 @@ async function aggregateCalendarDataForWeek(
     );
   }
 
-  // Use unified RecapDatabase with recapType parameter
-  const RecapDatabase = require("../databases/RecapDatabase");
+  // Use unified SummaryDatabase with recapType parameter
+  const SummaryDatabase = require("../databases/SummaryDatabase");
 
   const transformFunction =
     recapType === "personal"
@@ -412,15 +412,15 @@ async function aggregateCalendarDataForWeek(
           const relationshipsDb = new NotionDatabase();
 
           // Find current week's Personal Summary page to get its ID
-          const recapRepo = new RecapDatabase(recapType);
-          const weekRecap = await recapRepo.findWeekRecap(
+          const summaryRepo = new SummaryDatabase(recapType);
+          const weekSummary = await summaryRepo.findWeekSummary(
             weekNumber,
             year,
             startDate,
             endDate
           );
 
-          if (weekRecap) {
+          if (weekSummary) {
             // Fetch all relationships
             const relationshipsPages = await relationshipsDb.queryDatabaseAll(
               relationshipsDbId
@@ -511,15 +511,15 @@ async function aggregateCalendarDataForWeek(
     }
 
     // Find or get week summary record
-    const recapRepo = new RecapDatabase(recapType);
-    const weekRecap = await recapRepo.findWeekRecap(
+    const summaryRepo = new SummaryDatabase(recapType);
+    const weekSummary = await summaryRepo.findWeekSummary(
       weekNumber,
       year,
       startDate,
       endDate
     );
 
-    if (!weekRecap) {
+    if (!weekSummary) {
       const errorMessage = `Week summary record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
       if (typeof showError === "function") {
         showError(errorMessage);
@@ -531,7 +531,7 @@ async function aggregateCalendarDataForWeek(
     }
 
     // Update week summary
-    await recapRepo.updateWeekRecap(weekRecap.id, summary, calendarsToFetch);
+    await summaryRepo.updateWeekSummary(weekSummary.id, summary, calendarsToFetch);
 
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);

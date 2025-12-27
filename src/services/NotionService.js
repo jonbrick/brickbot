@@ -5,7 +5,7 @@
  */
 
 const IntegrationDatabase = require("../databases/IntegrationDatabase");
-const RecapDatabase = require("../databases/RecapDatabase");
+const SummaryDatabase = require("../databases/SummaryDatabase");
 const NotionDatabase = require("../databases/NotionDatabase");
 
 class NotionService extends NotionDatabase {
@@ -19,7 +19,7 @@ class NotionService extends NotionDatabase {
     this.prRepo = new IntegrationDatabase("github");
     this.bodyWeightRepo = new IntegrationDatabase("withings");
     this.bloodPressureRepo = new IntegrationDatabase("bloodPressure");
-    this.personalRecapRepo = new RecapDatabase("personal");
+    this.personalSummaryRepo = new SummaryDatabase("personal");
   }
 
   // ========================================
@@ -76,19 +76,19 @@ class NotionService extends NotionDatabase {
 
   /**
    * Get Personal Summary database
-   * @returns {RecapDatabase}
+   * @returns {SummaryDatabase}
    */
   getPersonalRecapRepository() {
-    return this.personalRecapRepo;
+    return this.personalSummaryRepo;
   }
 
   /**
    * Get Recap database (deprecated - use getPersonalRecapRepository)
    * @deprecated Use getPersonalRecapRepository() instead
-   * @returns {RecapDatabase}
+   * @returns {SummaryDatabase}
    */
   getRecapRepository() {
-    return this.personalRecapRepo;
+    return this.personalSummaryRepo;
   }
 
   // ========================================
@@ -236,7 +236,7 @@ class NotionService extends NotionDatabase {
    * @deprecated Use getPersonalRecapRepository().findWeekRecap() instead
    */
   async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
-    return await this.personalRecapRepo.findWeekRecap(
+    return await this.personalSummaryRepo.findWeekSummary(
       weekNumber,
       year,
       startDate,
@@ -249,7 +249,7 @@ class NotionService extends NotionDatabase {
    * @deprecated Use getPersonalRecapRepository().updateWeekRecap() instead
    */
   async updateWeekRecap(pageId, summaryData) {
-    return await this.personalRecapRepo.updateWeekRecap(pageId, summaryData);
+    return await this.personalSummaryRepo.updateWeekSummary(pageId, summaryData);
   }
 }
 

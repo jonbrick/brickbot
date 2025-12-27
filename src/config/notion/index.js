@@ -12,8 +12,9 @@ const bloodPressure = require("./blood-pressure");
 const medications = require("./medications");
 const events = require("./events");
 const trips = require("./trips");
-const personalRecap = require("./personal-summary");
-const workRecap = require("./work-summary");
+const personalSummary = require("./personal-summary");
+const workSummary = require("./work-summary");
+const monthlyRecap = require("./monthly-recap");
 const relationships = require("./relationships");
 
 // Aggregate database IDs
@@ -27,8 +28,10 @@ const databases = {
   medications: medications.database,
   events: events.database,
   trips: trips.database,
-  personalRecap: personalRecap.database,
-  workRecap: workRecap.database,
+  personalSummary: personalSummary.database,
+  workSummary: workSummary.database,
+  personalMonthlyRecap: process.env.MONTHLY_RECAP_ID,
+  workMonthlyRecap: process.env.MONTHLY_RECAP_ID,
   relationships: relationships.database,
 };
 
@@ -43,8 +46,10 @@ const properties = {
   medications: medications.properties,
   events: events.properties,
   trips: trips.properties,
-  personalRecap: personalRecap.properties,
-  workRecap: workRecap.properties,
+  personalSummary: personalSummary.properties,
+  workSummary: workSummary.properties,
+  personalMonthlyRecap: monthlyRecap.properties,
+  workMonthlyRecap: monthlyRecap.properties,
   relationships: relationships.properties,
 };
 
@@ -59,8 +64,8 @@ const fieldMappings = {
   medications: medications.fieldMappings || {},
   events: events.fieldMappings || {},
   trips: trips.fieldMappings || {},
-  personalRecap: personalRecap.fieldMappings,
-  workRecap: workRecap.fieldMappings,
+  personalSummary: personalSummary.fieldMappings,
+  workSummary: workSummary.fieldMappings,
   relationships: relationships.fieldMappings || {},
 };
 

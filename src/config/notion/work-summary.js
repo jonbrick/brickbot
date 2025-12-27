@@ -3,10 +3,10 @@
  * Properties are generated dynamically from unified-sources.js to ensure consistency
  */
 
-const { generateWorkRecapProperties } = require("../unified-sources");
+const { generateWorkSummaryProperties } = require("../unified-sources");
 
 // Generate properties dynamically from main.js
-const properties = generateWorkRecapProperties();
+const properties = generateWorkSummaryProperties();
 
 // Generate fieldMappings automatically (identity mappings)
 const fieldMappings = {};
@@ -18,8 +18,7 @@ Object.keys(properties).forEach((key) => {
 });
 
 module.exports = {
-  database: process.env.WORK_WEEK_RECAP_DATABASE_ID,
+  database: process.env.WORK_WEEK_SUMMARY_ID,
   properties,
   fieldMappings,
 };
-

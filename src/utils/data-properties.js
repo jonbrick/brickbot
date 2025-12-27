@@ -12,7 +12,7 @@ const { getSourceDataKeys } = require('../config/unified-sources');
  * Uses config-driven approach to replace repetitive property assignments
  * 
  * @param {Object} summaryData - Summary data to convert to properties
- * @param {Object} props - Property configuration from config.notion.properties.personalRecap
+ * @param {Object} props - Property configuration from config.notion.properties.personalSummary
  * @param {Array<string>} selectedSources - Array of source keys to ensure all fields are included for (e.g., ["sleep", "workout"])
  * @returns {Object} Properties object ready for Notion API
  * @throws {Error} If any property configuration is missing
@@ -77,7 +77,7 @@ function buildDataProperties(summaryData, props, selectedSources = []) {
   // Check for missing property configurations and throw clear error
   if (missingProps.length > 0) {
     throw new Error(
-      `Missing property configuration(s) in personalRecap config: ${missingProps.join(', ')}. ` +
+      `Missing property configuration(s) in personalSummary config: ${missingProps.join(', ')}. ` +
       `Please add these properties to src/config/notion/personal-summary.js`
     );
   }

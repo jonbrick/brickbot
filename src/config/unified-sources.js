@@ -1523,7 +1523,7 @@ function derivePropertiesFromUnified(sourceType) {
  * This becomes the source of truth for Notion property definitions
  * @returns {Object} Properties object compatible with personal-summary.js format
  */
-function generatePersonalRecapProperties() {
+function generatePersonalSummaryProperties() {
   return derivePropertiesFromUnified("personal");
 }
 
@@ -1532,7 +1532,7 @@ function generatePersonalRecapProperties() {
  * This becomes the source of truth for Notion property definitions
  * @returns {Object} Properties object compatible with work-summary.js format
  */
-function generateWorkRecapProperties() {
+function generateWorkSummaryProperties() {
   return derivePropertiesFromUnified("work");
 }
 
@@ -1760,6 +1760,52 @@ function getAvailableSources() {
   return Object.keys(DATA_SOURCES).filter(isSourceAvailable);
 }
 
+/**
+ * Monthly Recap Exclusions
+ * Fields to exclude when aggregating weekly recaps into monthly recaps
+ */
+const MONTHLY_RECAP_EXCLUSIONS = {
+  personal: {
+    blocks: ["ignoreBlocks"],
+    tasks: [], // No task exclusions for personal
+  },
+  work: {
+    blocks: ["personalAndSocialBlocks", "ritualsBlocks"],
+    tasks: [], // No task exclusions for work
+  },
+};
+
+/**
+ * Generate Monthly Recap properties object
+ * Simple 4-field structure: blocksDetails and tasksDetails for both personal and work
+ * @returns {Object} Properties object compatible with monthly-recap.js format
+ */
+function generateMonthlyRecapProperties() {
+  return {
+    title: { name: "Month Recap", type: "title", enabled: true },
+    personalBlocksDetails: {
+      name: "Personal Blocks Details",
+      type: "text",
+      enabled: true,
+    },
+    personalTasksDetails: {
+      name: "Personal Tasks Details",
+      type: "text",
+      enabled: true,
+    },
+    workBlocksDetails: {
+      name: "Work Blocks Details",
+      type: "text",
+      enabled: true,
+    },
+    workTasksDetails: {
+      name: "Work Tasks Details",
+      type: "text",
+      enabled: true,
+    },
+  };
+}
+
 module.exports = {
   FIELD_TEMPLATES,
   CALENDARS,
@@ -1771,8 +1817,10 @@ module.exports = {
   FIELD_TYPES,
   mapToNotionType,
   derivePropertiesFromUnified,
-  generatePersonalRecapProperties,
-  generateWorkRecapProperties,
+  generatePersonalSummaryProperties,
+  generateWorkSummaryProperties,
+  MONTHLY_RECAP_EXCLUSIONS,
+  generateMonthlyRecapProperties,
   DATA_SOURCES,
   getSourceDataKeys,
   getSourceData,

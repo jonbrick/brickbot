@@ -123,7 +123,7 @@ function formatMonthWeeksDisplay(monthName, year, weeks) {
 /**
  * Month picker - select all weeks within a calendar month
  *
- * @returns {Promise<Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>>}
+ * @returns {Promise<{month: number, year: number, weeks: Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>}>}
  */
 async function selectMonthForWeeks() {
   const currentDate = getToday();
@@ -209,7 +209,7 @@ async function selectMonthForWeeks() {
   // Display formatted output
   formatMonthWeeksDisplay(monthName, year, weeks);
 
-  return weeks;
+  return { month, year, weeks };
 }
 
 /**

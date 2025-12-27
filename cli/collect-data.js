@@ -24,7 +24,7 @@ const { INTEGRATIONS } = require("../src/config/unified-sources");
  */
 async function selectAction() {
   const collectorIds = getCollectorIds();
-  
+
   // Build choices from collector registry
   const sortedCollectors = collectorIds
     .map((id) => ({
@@ -35,7 +35,9 @@ async function selectAction() {
 
   const choices = [
     {
-      name: `All Sources (${sortedCollectors.map((s) => s.name.split(" ")[0]).join(", ")})`,
+      name: `All Sources (${sortedCollectors
+        .map((s) => s.name.split(" ")[0])
+        .join(", ")})`,
       value: "all",
     },
     ...sortedCollectors.map((s) => ({
@@ -137,7 +139,7 @@ async function handleAllSources(startDate, endDate, action) {
   console.log("=".repeat(80) + "\n");
 
   const collectorIds = getCollectorIds();
-  
+
   // Build sources list with names from INTEGRATIONS
   const sources = collectorIds
     .map((id) => ({
@@ -233,12 +235,16 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
   const displayData = transformFn ? transformFn(fetchedData) : fetchedData;
 
   // Always display the table
-  printDataTable(displayData, displayMetadata.displayType, displayMetadata.tableTitle);
+  printDataTable(
+    displayData,
+    displayMetadata.displayType,
+    displayMetadata.tableTitle
+  );
 
   // Sync to Notion if requested
   if (action === "sync") {
     console.log("\n📤 Syncing to Notion...\n");
-    
+
     // Use fetched data (not transformed) for sync
     const results = await syncFn(fetchedData);
     printSyncResults(results);
@@ -253,8 +259,10 @@ async function main() {
     const actionString = await selectAction();
     const [source, action] = actionString.split("-");
 
-    // Select date range
-    const { startDate, endDate } = await selectDateRange();
+    // Select date range (day granularity - default)
+    const { startDate, endDate } = await selectDateRange({
+      minGranularity: "day",
+    });
 
     // Route to appropriate handler based on source
     if (source === "all") {

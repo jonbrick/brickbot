@@ -17,53 +17,63 @@ const {
 } = require("./date");
 
 /**
- * Select date range with consistent UI
- * Options: Week Picker, Today, Yesterday, This Week, Custom Range
+ * Universal date range selector with context-aware options
+ * Subtractive design: all options by default, filtered by minGranularity
  *
- * @returns {Promise<{startDate: Date, endDate: Date}>} Selected date range
+ * @param {Object} options - Configuration options
+ * @param {string} options.minGranularity - "day" (default) | "week" - minimum selection unit
+ * @param {boolean} options.allowFuture - Allow future dates (default: true)
+ * @returns {Promise<{startDate: Date, endDate: Date, weeks?: Array}>} Selected date range with optional weeks metadata
  */
-async function selectDateRange() {
+async function selectDateRange(options = {}) {
+  const { minGranularity = "day", allowFuture = true } = options;
+
+  // Import month picker helpers
+  const {
+    selectMonthForWeeks,
+    deriveWeeksFromDateRange,
+    formatWeekDisplay,
+  } = require("./date-pickers");
+
+  // Build choices based on granularity
+  const allChoices = [
+    // Day-level options (only if minGranularity allows)
+    ...(minGranularity === "day"
+      ? [
+          { name: "Today", value: "today" },
+          { name: "Yesterday", value: "yesterday" },
+          { name: "Last 30 days", value: "last30" },
+          new inquirer.Separator(),
+        ]
+      : []),
+
+    // Week-level options (always available)
+    { name: "This week (Sun-Sat)", value: "week" },
+    { name: "Last week (Sun-Sat)", value: "lastWeek" },
+    { name: "Week Range (start to end)", value: "weekPicker" },
+    { name: "Month Picker (all weeks in month)", value: "monthPicker" },
+
+    new inquirer.Separator(),
+
+    // Custom range (only if minGranularity === "day")
+    ...(minGranularity === "day"
+      ? [{ name: "Custom Range", value: "custom" }]
+      : []),
+  ];
+
   const { rangeType } = await inquirer.prompt([
     {
       type: "list",
       name: "rangeType",
       message: "Select date range:",
-      choices: [
-        { name: "Today", value: "today" },
-        { name: "Yesterday", value: "yesterday" },
-        { name: "This week (Sun-Sat)", value: "week" },
-        { name: "Last week (Sun-Sat)", value: "lastWeek" },
-        { name: "Last 30 days", value: "last30" },
-        { name: "Week Picker", value: "weekPicker" },
-        { name: "Custom Range", value: "custom" },
-      ],
+      choices: allChoices,
+      pageSize: 20, // Show all options without scrolling
     },
   ]);
 
-  // Handle week picker option
-  if (rangeType === "weekPicker") {
-    const weekSelection = await selectWeek();
-    // Handle both single week and multiple weeks
-    if (Array.isArray(weekSelection)) {
-      // Multiple weeks: calculate combined date range
-      const startDates = weekSelection.map((w) => w.startDate);
-      const endDates = weekSelection.map((w) => w.endDate);
-      const startDate = new Date(
-        Math.min(...startDates.map((d) => d.getTime()))
-      );
-      const endDate = new Date(Math.max(...endDates.map((d) => d.getTime())));
-      return { startDate, endDate };
-    } else {
-      // Single week
-      return {
-        startDate: weekSelection.startDate,
-        endDate: weekSelection.endDate,
-      };
-    }
-  }
+  let startDate, endDate, weeks;
 
-  let startDate, endDate;
-
+  // Handle each selection type
   switch (rangeType) {
     case "today":
       startDate = getToday();
@@ -76,34 +86,6 @@ async function selectDateRange() {
       endDate = getYesterday();
       endDate.setHours(23, 59, 59, 999);
       break;
-
-    case "week": {
-      const today = getToday();
-      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
-      startDate = new Date(today);
-      startDate.setDate(today.getDate() - dayOfWeek); // Go back to Sunday
-      endDate = getToday();
-      endDate.setHours(23, 59, 59, 999);
-      break;
-    }
-
-    case "lastWeek": {
-      // Get last complete week (Sunday-Saturday)
-      const today = getToday();
-      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
-      // Get this week's Sunday
-      const thisWeekSunday = new Date(today);
-      thisWeekSunday.setDate(today.getDate() - dayOfWeek);
-      // Last week's Sunday is 7 days before this week's Sunday
-      startDate = new Date(thisWeekSunday);
-      startDate.setDate(thisWeekSunday.getDate() - 7);
-      startDate.setHours(0, 0, 0, 0);
-      // Last week's Saturday is 6 days after last week's Sunday
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      endDate.setHours(23, 59, 59, 999);
-      break;
-    }
 
     case "last30": {
       startDate = new Date(getToday());
@@ -113,155 +95,84 @@ async function selectDateRange() {
       break;
     }
 
-    case "custom": {
-      const answers = await inquirer.prompt([
-        {
-          type: "input",
-          name: "startDate",
-          message: "Start date (YYYY-MM-DD or 'yesterday', 'today'):",
-          validate: (input) => {
-            try {
-              parseDate(input);
-              return true;
-            } catch (e) {
-              return "Invalid date format";
-            }
-          },
-        },
-        {
-          type: "input",
-          name: "endDate",
-          message: "End date (YYYY-MM-DD or 'yesterday', 'today'):",
-          validate: (input) => {
-            try {
-              parseDate(input);
-              return true;
-            } catch (e) {
-              return "Invalid date format";
-            }
-          },
-        },
-      ]);
-
-      startDate = parseDate(answers.startDate);
-      endDate = parseDate(answers.endDate);
-
-      if (startDate > endDate) {
-        console.log("⚠️  Start date is after end date, swapping...");
-        [startDate, endDate] = [endDate, startDate];
-      }
-      endDate.setHours(23, 59, 59, 999);
-      break;
-    }
-  }
-
-  console.log(
-    `\n📅 Date range selected: ${formatDateLong(startDate)} to ${formatDateLong(
-      endDate
-    )}\n`
-  );
-
-  return { startDate, endDate };
-}
-
-/**
- * Select date range for calendar syncing
- *
- * Calendar sync works with already-recorded sleep data, so date ranges
- * should never include future dates. This function provides explicit past-only
- * date logic optimized for calendar syncing workflows.
- *
- * @returns {Promise<{startDate: Date, endDate: Date}>} Selected date range
- */
-async function selectCalendarDateRange() {
-  const { rangeType } = await inquirer.prompt([
-    {
-      type: "list",
-      name: "rangeType",
-      message: "Select date range:",
-      choices: [
-        { name: "Today", value: "today" },
-        { name: "Yesterday", value: "yesterday" },
-        { name: "This week (Sun-Sat)", value: "week" },
-        { name: "Last week (Sun-Sat)", value: "lastWeek" },
-        { name: "Last 30 days", value: "last30" },
-        { name: "Week Picker", value: "weekPicker" },
-        { name: "Custom Range", value: "custom" },
-      ],
-    },
-  ]);
-
-  // Handle week picker option
-  if (rangeType === "weekPicker") {
-    const weekSelection = await selectWeek();
-    // Handle both single week and multiple weeks
-    if (Array.isArray(weekSelection)) {
-      // Multiple weeks: calculate combined date range
-      const startDates = weekSelection.map((w) => w.startDate);
-      const endDates = weekSelection.map((w) => w.endDate);
-      const startDate = new Date(
-        Math.min(...startDates.map((d) => d.getTime()))
-      );
-      const endDate = new Date(Math.max(...endDates.map((d) => d.getTime())));
-      return { startDate, endDate };
-    } else {
-      // Single week
-      return {
-        startDate: weekSelection.startDate,
-        endDate: weekSelection.endDate,
-      };
-    }
-  }
-
-  let startDate, endDate;
-
-  switch (rangeType) {
-    case "today":
-      // Start = today, End = today 23:59:59
-      startDate = getToday();
-      endDate = getToday();
-      endDate.setHours(23, 59, 59, 999);
-      break;
-
-    case "yesterday":
-      // Start = yesterday, End = yesterday 23:59:59
-      startDate = getYesterday();
-      endDate = getYesterday();
-      endDate.setHours(23, 59, 59, 999);
-      break;
-
     case "week": {
-      // Start = last Sunday, End = Saturday 23:59:59
       const today = getToday();
       startDate = getWeekStart(today); // Sunday 00:00:00
       endDate = getWeekEnd(today); // Saturday 23:59:59
+
+      // Also return week metadata
+      const weekNumber = getWeekNumber(today);
+      weeks = [
+        {
+          weekNumber,
+          year: today.getFullYear(),
+          startDate,
+          endDate,
+        },
+      ];
+
+      console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
       break;
     }
 
     case "lastWeek": {
-      // Get last complete week (Sunday-Saturday)
       const today = getToday();
-      const dayOfWeek = today.getDay(); // 0=Sunday, 6=Saturday
-      // Get this week's Sunday
-      const thisWeekSunday = new Date(today);
-      thisWeekSunday.setDate(today.getDate() - dayOfWeek);
-      // Last week's Sunday is 7 days before this week's Sunday
-      startDate = new Date(thisWeekSunday);
-      startDate.setDate(thisWeekSunday.getDate() - 7);
-      startDate.setHours(0, 0, 0, 0);
-      // Last week's Saturday is 6 days after last week's Sunday
-      endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      endDate.setHours(23, 59, 59, 999);
+      // Get date from last week
+      const lastWeekDate = new Date(today);
+      lastWeekDate.setDate(today.getDate() - 7);
+
+      startDate = getWeekStart(lastWeekDate); // Sunday 00:00:00
+      endDate = getWeekEnd(lastWeekDate); // Saturday 23:59:59
+
+      // Also return week metadata
+      const weekNumber = getWeekNumber(lastWeekDate);
+      weeks = [
+        {
+          weekNumber,
+          year: lastWeekDate.getFullYear(),
+          startDate,
+          endDate,
+        },
+      ];
+
+      console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
       break;
     }
 
-    case "last30": {
-      // Start = 29 days ago, End = today 23:59:59
-      startDate = new Date(getToday());
-      startDate.setDate(startDate.getDate() - 29); // 29 days ago
-      endDate = getToday();
-      endDate.setHours(23, 59, 59, 999);
+    case "weekPicker": {
+      const weekSelection = await selectWeek();
+      weeks = Array.isArray(weekSelection) ? weekSelection : [weekSelection];
+
+      // Calculate combined date range
+      const allStartDates = weeks.map((w) => w.startDate);
+      const allEndDates = weeks.map((w) => w.endDate);
+      startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
+      endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
+
+      // Display selected weeks with dates
+      if (weeks.length === 1) {
+        console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
+      } else {
+        const weekNumbers = weeks.map((w) => w.weekNumber).join(", ");
+        console.log(
+          `\n✅ Selected: Weeks ${weekNumbers} (${weeks[0].year})\n`
+        );
+        weeks.forEach((week) => {
+          console.log(`   ${formatWeekDisplay(week)}`);
+        });
+        console.log();
+      }
+      break;
+    }
+
+    case "monthPicker": {
+      weeks = await selectMonthForWeeks();
+
+      // Calculate combined date range
+      const allStartDates = weeks.map((w) => w.startDate);
+      const allEndDates = weeks.map((w) => w.endDate);
+      startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
+      endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
       break;
     }
 
@@ -302,17 +213,23 @@ async function selectCalendarDateRange() {
         console.log("⚠️  Start date is after end date, swapping...");
         [startDate, endDate] = [endDate, startDate];
       }
+      endDate.setHours(23, 59, 59, 999);
+
+      console.log(
+        `\n📅 Selected: ${formatDateLong(startDate)} to ${formatDateLong(
+          endDate
+        )}\n`
+      );
       break;
     }
   }
 
-  console.log(
-    `\n📅 Selected range: ${formatDateLong(startDate)} to ${formatDateLong(
-      endDate
-    )}\n`
-  );
+  // If week granularity and no weeks array yet, derive it from date range
+  if (minGranularity === "week" && !weeks) {
+    weeks = deriveWeeksFromDateRange(startDate, endDate);
+  }
 
-  return { startDate, endDate };
+  return { startDate, endDate, weeks };
 }
 
 /**
@@ -335,6 +252,7 @@ async function selectSources(availableSources) {
           value: source.toLowerCase(),
         })),
       ],
+      pageSize: 20, // Show all sources without scrolling
       validate: (answer) => {
         if (answer.length === 0) {
           return "You must select at least one source";
@@ -582,6 +500,7 @@ async function promptSelect(message, choices) {
       name: "value",
       message,
       choices,
+      pageSize: 20, // Show all options without scrolling
     },
   ]);
 
@@ -602,6 +521,7 @@ async function promptMultiSelect(message, choices) {
       name: "values",
       message,
       choices,
+      pageSize: 20, // Show all options without scrolling
     },
   ]);
 
@@ -631,8 +551,9 @@ async function selectWeek() {
           value: "current",
         },
         { name: "Custom Week", value: "custom" },
-        { name: "Multiple Weeks", value: "multiple" },
+        { name: "Week Range (start to end)", value: "range" },
       ],
+      pageSize: 10, // Show all options without scrolling
     },
   ]);
 
@@ -642,7 +563,7 @@ async function selectWeek() {
   if (weekType === "current") {
     weekNumber = currentWeek;
     year = currentYear;
-  } else if (weekType === "multiple") {
+  } else if (weekType === "range") {
     const answers = await inquirer.prompt([
       {
         type: "input",
@@ -659,22 +580,24 @@ async function selectWeek() {
       },
       {
         type: "input",
-        name: "weekNumbers",
-        message: "Week numbers (comma-separated, e.g., 1,2,3 or 13,14,50):",
+        name: "startWeek",
+        message: "Start week number (1-53):",
         validate: (input) => {
-          if (!input || !input.trim()) {
-            return "Please enter at least one week number";
+          const weekNum = parseInt(input);
+          if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
+            return "Please enter a valid week number (1-53)";
           }
-          const weeks = input
-            .split(",")
-            .map((w) => parseInt(w.trim()))
-            .filter((w) => !isNaN(w));
-          if (weeks.length === 0) {
-            return "Please enter at least one valid week number";
-          }
-          const invalid = weeks.filter((w) => w < 1 || w > 53);
-          if (invalid.length > 0) {
-            return `Invalid week numbers: ${invalid.join(", ")}. Must be 1-53.`;
+          return true;
+        },
+      },
+      {
+        type: "input",
+        name: "endWeek",
+        message: "End week number (1-53):",
+        validate: (input) => {
+          const weekNum = parseInt(input);
+          if (isNaN(weekNum) || weekNum < 1 || weekNum > 53) {
+            return "Please enter a valid week number (1-53)";
           }
           return true;
         },
@@ -682,15 +605,20 @@ async function selectWeek() {
     ]);
 
     year = parseInt(answers.year);
-    // Parse, deduplicate, and sort week numbers
-    weekNumbers = [
-      ...new Set(
-        answers.weekNumbers
-          .split(",")
-          .map((w) => parseInt(w.trim()))
-          .filter((w) => !isNaN(w) && w >= 1 && w <= 53)
-      ),
-    ].sort((a, b) => a - b);
+    let startWeek = parseInt(answers.startWeek);
+    let endWeek = parseInt(answers.endWeek);
+
+    // Auto-swap if reversed
+    if (startWeek > endWeek) {
+      console.log("⚠️  Start week is after end week, swapping...");
+      [startWeek, endWeek] = [endWeek, startWeek];
+    }
+
+    // Generate all consecutive weeks in range
+    weekNumbers = [];
+    for (let weekNum = startWeek; weekNum <= endWeek; weekNum++) {
+      weekNumbers.push(weekNum);
+    }
   } else {
     // Custom single week
     const answers = await inquirer.prompt([
@@ -725,24 +653,20 @@ async function selectWeek() {
     year = parseInt(answers.year);
   }
 
-  // Handle multiple weeks
-  if (weekType === "multiple" && weekNumbers.length > 0) {
+  // Handle week range
+  if (weekType === "range" && weekNumbers.length > 0) {
     const weeks = weekNumbers.map((wn) => {
       const { startDate, endDate } = parseWeekNumber(wn, year);
       return { weekNumber: wn, year, startDate, endDate };
     });
 
+    const { formatWeekDisplay } = require("./date-pickers");
+    
     console.log(
-      `\n📅 Weeks selected: ${weekNumbers
-        .map((wn) => `Week ${wn}`)
-        .join(", ")} of ${year}\n`
+      `\n📅 Week Range: Weeks ${weekNumbers[0]}-${weekNumbers[weekNumbers.length - 1]}, ${year} (${weekNumbers.length} weeks)\n`
     );
     weeks.forEach((week) => {
-      console.log(
-        `  Week ${week.weekNumber}: ${formatDateLong(
-          week.startDate
-        )} to ${formatDateLong(week.endDate)}`
-      );
+      console.log(`   ${formatWeekDisplay(week)}`);
     });
     console.log();
 
@@ -764,7 +688,6 @@ async function selectWeek() {
 
 module.exports = {
   selectDateRange,
-  selectCalendarDateRange,
   selectSources,
   confirmOperation,
   showProgress,

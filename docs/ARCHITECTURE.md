@@ -316,7 +316,7 @@ sleep: {
 
 ### Example 3: Generating Weekly Recap
 
-**User Action**: `yarn week:5-run-all`
+**User Action**: `yarn summarize`
 
 **Flow**:
 1. Fetch all calendar events for the week

@@ -8,7 +8,7 @@ require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
 const IntegrationDatabase = require("../src/databases/IntegrationDatabase");
-const { selectCalendarDateRange } = require("../src/utils/cli");
+const { selectDateRange } = require("../src/utils/cli");
 const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
   formatRecordsForDisplay,
@@ -300,8 +300,11 @@ async function main() {
     // Select source and action
     const { source, action } = await selectSourceAndAction();
 
-    // Select date range
-    const { startDate, endDate } = await selectCalendarDateRange();
+    // Select date range (day granularity, no future dates for calendar sync)
+    const { startDate, endDate } = await selectDateRange({ 
+      minGranularity: "day",
+      allowFuture: false 
+    });
 
     // Route to appropriate handler
     if (source === "all") {

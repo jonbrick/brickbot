@@ -19,7 +19,7 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const {
-  selectWeek,
+  selectDateRange,
   showSuccess,
   showError,
   showSummary,
@@ -195,11 +195,8 @@ async function main() {
     const action = await selectAction(sourceTypes);
     const displayOnly = action === "display";
 
-    // Select week(s) - normalize to array
-    const weekSelection = await selectWeek();
-    const weeks = Array.isArray(weekSelection)
-      ? weekSelection
-      : [weekSelection];
+    // Select week(s) - week granularity mode always returns weeks array
+    const { weeks } = await selectDateRange({ minGranularity: "week" });
 
     if (displayOnly) {
       showInfo("Display mode: Results will not be saved to Notion\n");

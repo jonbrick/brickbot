@@ -513,7 +513,7 @@ This will validate all your API credentials.
 #### 2. Test Data Collection
 
 ```bash
-yarn 1-collect
+yarn collect
 ```
 
 Select "Yesterday" and one data source to test.
@@ -521,18 +521,18 @@ Select "Yesterday" and one data source to test.
 #### 3. Test Calendar Sync
 
 ```bash
-yarn 2-sync-cal
+yarn update
 ```
 
 Select "Yesterday" and one database to test.
 
-#### 4. Test Weekly Pipeline
+#### 4. Test Weekly Summary
 
 ```bash
-yarn week:1-pull
+yarn summarize
 ```
 
-Pull data for the current week to test Notion queries.
+Generate weekly summaries to test the recap pipeline.
 
 ## Usage
 
@@ -554,37 +554,13 @@ yarn update
 
 Creates calendar events from Notion records (PRs, workouts, sleep, body weight, video games).
 
-#### 3. Process Apple Notes
+#### 3. Generate Weekly Summaries
 
 ```bash
-yarn 3-sweep-notes
+yarn summarize
 ```
 
-Transforms unprocessed Apple Notes into categorized Notion tasks using AI.
-
-### Weekly Analysis
-
-Run the complete weekly analysis:
-
-```bash
-yarn week:5-run-all
-```
-
-Or run individual steps:
-
-```bash
-yarn week:1-pull        # Pull weekly data
-yarn week:2-summarize   # Generate AI summaries
-yarn week:3-retro       # Create retrospective
-yarn week:4-recap       # Generate final recap
-```
-
-### Monthly Analysis
-
-```bash
-yarn week:6-retro-month  # Generate monthly retrospective
-yarn week:7-recap-month   # Generate monthly recap
-```
+Pulls calendar data, aggregates metrics, generates AI summaries, and creates weekly recap pages in Notion.
 
 ### Token Management
 
@@ -606,13 +582,7 @@ yarn update         # Sync to calendar
 ### Weekly Review
 
 ```bash
-yarn week:5-run-all # Run complete pipeline for current week
-```
-
-### Task Management
-
-```bash
-yarn 3-sweep-notes   # Process Apple Notes to Notion tasks
+yarn summarize # Generate weekly summaries and insights
 ```
 
 ## Testing & Validation
@@ -714,10 +684,10 @@ See [docs/GUIDES.md](docs/GUIDES.md) for detailed extension guide and patterns.
 
 Once setup is complete:
 
-1. Run a test collection: `yarn 1-collect`
-2. Sync to calendar: `yarn 2-sync-cal`
-3. Set up a daily cron job or manual routine
-4. Explore weekly insights: `yarn week:5-run-all`
+1. Run a test collection: `yarn collect`
+2. Sync to calendar: `yarn update`
+3. Generate weekly insights: `yarn summarize`
+4. Set up a daily cron job or manual routine
 
 ### Example: Adding a New Calendar
 

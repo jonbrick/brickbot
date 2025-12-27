@@ -108,7 +108,7 @@ Creates Google Calendar events from Notion records (sleep, workouts, PRs, body w
 ### 3. Generate Weekly Insights
 
 ```bash
-yarn week:5-run-all
+yarn summarize
 ```
 
 Pulls calendar data, aggregates metrics, generates AI summaries, creates weekly recap.
@@ -125,7 +125,7 @@ yarn update   # Sync to calendar
 **Weekly:**
 
 ```bash
-yarn week:5-run-all  # Full analysis pipeline
+yarn summarize  # Full analysis pipeline
 ```
 
 **Setup:**

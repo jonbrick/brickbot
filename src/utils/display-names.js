@@ -55,8 +55,43 @@ function getCategoryShortName(key, label) {
   return label ? label.split(" - ")[0] : key;
 }
 
+/**
+ * Format a record for logging output
+ * @param {Object} record - Record object with displayName, name, or other identifying fields
+ * @param {string} sourceType - Source type (e.g., "withings", "oura", "strava")
+ * @returns {string} Formatted string for logging
+ */
+function formatRecordForLogging(record, sourceType) {
+  // Prefer displayName if available (used by sync workflows)
+  if (record.displayName) {
+    return record.displayName;
+  }
+  
+  // Fallback to name field
+  if (record.name) {
+    return record.name;
+  }
+  
+  // Last resort: use source-specific identifiers
+  switch (sourceType) {
+    case "withings":
+      return record.measurementId || "Unknown";
+    case "oura":
+      return record.sleepId || record.nightOf || "Unknown";
+    case "strava":
+      return record.activityId || "Unknown";
+    case "steam":
+      return record.gameName || "Unknown";
+    case "github":
+      return record.repository || "Unknown";
+    default:
+      return "Unknown";
+  }
+}
+
 module.exports = {
   SHORT_NAME_OVERRIDES,
   getGroupShortName,
   getCategoryShortName,
+  formatRecordForLogging,
 };

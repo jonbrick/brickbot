@@ -224,6 +224,7 @@ function deriveSummarySource(groupId, group) {
     }
     const calendarKey = CALENDAR_KEY_MAPPING[calId] || calendar.id;
     return {
+      id: calId,
       key: calendarKey,
       envVar: calendar.envVar,
       required: true,
@@ -273,14 +274,6 @@ function deriveSummarySource(groupId, group) {
   // Add special properties for sleep
   if (groupId === "sleep") {
     source.isSleepCalendar = true;
-  }
-
-  // Set ignoreAllDayEvents from group config (if present)
-  // Fallback: sleep group always ignores all-day events (legacy behavior)
-  if (group.ignoreAllDayEvents !== undefined) {
-    source.ignoreAllDayEvents = group.ignoreAllDayEvents;
-  } else if (groupId === "sleep") {
-    source.ignoreAllDayEvents = true;
   }
 
   return source;
@@ -443,12 +436,23 @@ function buildCalendarFetches(
       const calendarId = process.env[calendar.envVar];
       if (!calendarId) continue;
 
+      // Look up calendar definition to get filter properties from CALENDARS
+      const calendarDef = CALENDARS[calendar.id];
+      // Fallback chain: CALENDARS -> source (for backward compatibility) -> defaults
+      const ignoreAllDayEvents =
+        calendarDef?.ignoreAllDayEvents ??
+        source.ignoreAllDayEvents ??
+        (source.isSleepCalendar ? true : false);
+      const excludeKeywords =
+        calendarDef?.excludeKeywords ?? source.excludeKeywords ?? [];
+
       fetches.push({
         key: calendar.fetchKey,
         calendarId,
         accountType,
         isSleepCalendar: source.isSleepCalendar || false,
-        ignoreAllDayEvents: source.ignoreAllDayEvents || false,
+        ignoreAllDayEvents,
+        excludeKeywords,
       });
     }
   }

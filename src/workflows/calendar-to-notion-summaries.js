@@ -298,7 +298,8 @@ async function aggregateCalendarDataForWeek(
         startDate,
         endDate,
         fetchConfig.accountType,
-        fetchConfig.ignoreAllDayEvents
+        fetchConfig.ignoreAllDayEvents,
+        fetchConfig.excludeKeywords
       ),
     }));
 

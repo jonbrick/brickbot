@@ -112,6 +112,9 @@ async function main() {
     const combinedData = {
       personalDietAndExerciseBlocks:
         personalResult.monthlyRecap.personalDietAndExerciseBlocks,
+      personalFamilyBlocks: personalResult.monthlyRecap.personalFamilyBlocks,
+      personalRelationshipBlocks:
+        personalResult.monthlyRecap.personalRelationshipBlocks,
       personalInterpersonalBlocks:
         personalResult.monthlyRecap.personalInterpersonalBlocks,
       personalHobbyBlocks: personalResult.monthlyRecap.personalHobbyBlocks,
@@ -124,7 +127,10 @@ async function main() {
       workCodingAndQABlocks: workResult.monthlyRecap.workCodingAndQABlocks,
       workPersonalAndSocialBlocks:
         workResult.monthlyRecap.workPersonalAndSocialBlocks,
-      workTasksDetails: workResult.monthlyRecap.tasksDetails,
+      workDesignAndResearchTasks:
+        workResult.monthlyRecap.workDesignAndResearchTasks,
+      workCodingAndQATasks: workResult.monthlyRecap.workCodingAndQATasks,
+      workAdminAndSocialTasks: workResult.monthlyRecap.workAdminAndSocialTasks,
     };
 
     // Update existing record with all 4 columns

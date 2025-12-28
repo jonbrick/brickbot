@@ -205,9 +205,11 @@ MONTHLY_RECAP_EXCLUSIONS: {
 MONTHLY_RECAP_CATEGORIES: {
   personal: {
     dietAndExercise: ["workoutBlocks", "cookingBlocks", "physicalHealthBlocks", "drinkingBlocks"],
-    interpersonal: ["familyBlocks", "relationshipBlocks", "interpersonalBlocks", "mentalHealthBlocks"],
+    family: ["familyBlocks"],
+    relationship: ["relationshipBlocks"],
+    interpersonal: ["interpersonalBlocks"],
     hobby: ["readingBlocks", "meditationBlocks", "artBlocks", "codingBlocks", "musicBlocks", "videoGamesBlocks"],
-    life: ["personalBlocks", "homeBlocks"],
+    life: ["personalBlocks", "homeBlocks", "mentalHealthBlocks"],
   },
   work: {
     meetingsAndCollaboration: ["meetingsBlocks"],
@@ -216,9 +218,19 @@ MONTHLY_RECAP_CATEGORIES: {
     personalAndSocial: ["personalAndSocialBlocks"],
   },
 }
+}
+
+// Task categories for work (personal tasks remain in single tasksDetails field)
+MONTHLY_RECAP_TASK_CATEGORIES: {
+  work: {
+    designAndResearch: ["researchTaskDetails", "sketchTaskDetails", "designTaskDetails", "critTaskDetails"],
+    codingAndQA: ["codingTaskDetails", "qaTaskDetails"],
+    adminAndSocial: ["adminTaskDetails", "socialTaskDetails", "oooTaskDetails"],
+  },
+}
 ```
 
-**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. Fields listed in `MONTHLY_RECAP_EXCLUSIONS` are excluded from aggregation even if they exist in categories.
+**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_CATEGORIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). Fields listed in `MONTHLY_RECAP_EXCLUSIONS` are excluded from aggregation even if they exist in categories.
 
 **Helper Functions**:
 - `getBlocksFields(recapType)` - Returns all block field names (flattened categories minus exclusions)

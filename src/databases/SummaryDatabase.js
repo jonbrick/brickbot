@@ -217,6 +217,18 @@ class SummaryDatabase extends NotionDatabase {
         )
       ] = summaryData.personalDietAndExerciseBlocks || "";
     }
+    if (summaryData.personalFamilyBlocks !== undefined) {
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.personalFamilyBlocks)
+      ] = summaryData.personalFamilyBlocks || "";
+    }
+    if (summaryData.personalRelationshipBlocks !== undefined) {
+      properties[
+        config.notion.getPropertyName(
+          this.monthlyProps.personalRelationshipBlocks
+        )
+      ] = summaryData.personalRelationshipBlocks || "";
+    }
     if (summaryData.personalInterpersonalBlocks !== undefined) {
       properties[
         config.notion.getPropertyName(
@@ -267,10 +279,22 @@ class SummaryDatabase extends NotionDatabase {
         )
       ] = summaryData.workPersonalAndSocialBlocks || "";
     }
-    if (summaryData.workTasksDetails !== undefined) {
+    if (summaryData.workDesignAndResearchTasks !== undefined) {
       properties[
-        config.notion.getPropertyName(this.monthlyProps.workTasksDetails)
-      ] = summaryData.workTasksDetails || "";
+        config.notion.getPropertyName(
+          this.monthlyProps.workDesignAndResearchTasks
+        )
+      ] = summaryData.workDesignAndResearchTasks || "";
+    }
+    if (summaryData.workCodingAndQATasks !== undefined) {
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.workCodingAndQATasks)
+      ] = summaryData.workCodingAndQATasks || "";
+    }
+    if (summaryData.workAdminAndSocialTasks !== undefined) {
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.workAdminAndSocialTasks)
+      ] = summaryData.workAdminAndSocialTasks || "";
     }
 
     return await this.updatePage(pageId, properties);

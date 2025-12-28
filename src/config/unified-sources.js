@@ -1777,18 +1777,10 @@ const MONTHLY_RECAP_EXCLUSIONS = {
  */
 const MONTHLY_RECAP_CATEGORIES = {
   personal: {
-    dietAndExercise: [
-      "workoutBlocks",
-      "cookingBlocks",
-      "physicalHealthBlocks",
-      "drinkingBlocks",
-    ],
-    interpersonal: [
-      "familyBlocks",
-      "relationshipBlocks",
-      "interpersonalBlocks",
-      "mentalHealthBlocks",
-    ],
+    dietAndExercise: ["workoutBlocks", "cookingBlocks", "physicalHealthBlocks"],
+    family: ["familyBlocks"],
+    relationship: ["relationshipBlocks"],
+    interpersonal: ["interpersonalBlocks"],
     hobby: [
       "readingBlocks",
       "meditationBlocks",
@@ -1807,8 +1799,26 @@ const MONTHLY_RECAP_CATEGORIES = {
       "researchBlocks",
       "critBlocks",
     ],
-    codingAndQA: ["codingBlocks", "qaBlocks"],
+    codingAndQA: ["qaBlocks"],
     personalAndSocial: ["personalAndSocialBlocks"],
+  },
+};
+
+/**
+ * Monthly Recap Task Categories
+ * Defines how task fields are grouped into monthly recap categories (work only)
+ * Category keys must match property name patterns (e.g., "designAndResearch" -> "workDesignAndResearchTasks")
+ */
+const MONTHLY_RECAP_TASK_CATEGORIES = {
+  work: {
+    designAndResearch: [
+      "researchTaskDetails",
+      "sketchTaskDetails",
+      "designTaskDetails",
+      "critTaskDetails",
+    ],
+    codingAndQA: ["codingTaskDetails", "qaTaskDetails"],
+    adminAndSocial: ["adminTaskDetails", "socialTaskDetails", "oooTaskDetails"],
   },
 };
 
@@ -1846,7 +1856,7 @@ function getTaskCompletionFields(recapType) {
 
 /**
  * Generate Monthly Recap properties object
- * 10-field structure: 4 personal block categories + personal tasks + 4 work block categories + work tasks + title
+ * 14-field structure: 6 personal block categories + personal tasks + 4 work block categories + 3 work task categories + title
  * @returns {Object} Properties object compatible with monthly-recap.js format
  */
 function generateMonthlyRecapProperties() {
@@ -1854,6 +1864,16 @@ function generateMonthlyRecapProperties() {
     title: { name: "Month Recap", type: "title", enabled: true },
     personalDietAndExerciseBlocks: {
       name: "Diet & Exercise - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    personalFamilyBlocks: {
+      name: "Family - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    personalRelationshipBlocks: {
+      name: "Relationship - Block Details",
       type: "text",
       enabled: true,
     },
@@ -1897,8 +1917,18 @@ function generateMonthlyRecapProperties() {
       type: "text",
       enabled: true,
     },
-    workTasksDetails: {
-      name: "Work Tasks Details",
+    workDesignAndResearchTasks: {
+      name: "Design & Research - Task Details",
+      type: "text",
+      enabled: true,
+    },
+    workCodingAndQATasks: {
+      name: "Coding & QA - Task Details",
+      type: "text",
+      enabled: true,
+    },
+    workAdminAndSocialTasks: {
+      name: "Admin & Social - Task Details",
       type: "text",
       enabled: true,
     },
@@ -1920,6 +1950,7 @@ module.exports = {
   generateWorkSummaryProperties,
   MONTHLY_RECAP_EXCLUSIONS,
   MONTHLY_RECAP_CATEGORIES,
+  MONTHLY_RECAP_TASK_CATEGORIES,
   generateMonthlyRecapProperties,
   getBlocksFields,
   getTaskCompletionFields,

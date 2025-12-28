@@ -6,6 +6,7 @@
 const {
   MONTHLY_RECAP_EXCLUSIONS,
   MONTHLY_RECAP_CATEGORIES,
+  MONTHLY_RECAP_TASK_CATEGORIES,
   getBlocksFields,
 } = require("../config/unified-sources");
 const config = require("../config");
@@ -36,6 +37,22 @@ function stripDayHeaders(text) {
   // Match day headers like "Mon:", "Tue:", "Wed:", etc. at start of line
   // Also handles variations like "Mon: " with space
   return text.replace(/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun):\s*/gim, "");
+}
+
+/**
+ * Strip time ranges from text blocks
+ * Removes patterns like "(8:00-9:00pm)", "(11:30am-2:00pm)", "(all day)"
+ * @param {string} text - Text with time ranges
+ * @returns {string} Text without time ranges
+ */
+function stripTimeRanges(text) {
+  if (!text || typeof text !== "string") return "";
+  
+  // Remove time ranges like (8:00-9:00pm), (11:30am-2:00pm)
+  // Remove (all day)
+  return text
+    .replace(/\s*\(\d{1,2}:\d{2}(?:am|pm)?-\d{1,2}:\d{2}(?:am|pm)\)/gi, "")
+    .replace(/\s*\(all day\)/gi, "");
 }
 
 /**
@@ -134,8 +151,8 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
 
       const fieldValue = summaryDb.extractProperty(weekSummary, propName);
       if (fieldValue && typeof fieldValue === "string" && fieldValue.trim()) {
-        // Strip day headers from this field's content
-        const stripped = stripDayHeaders(fieldValue);
+        // Strip day headers and time ranges from this field's content
+        const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
         const formatted = filterAndFormatEvents(collapsed);
         if (formatted.trim()) {
@@ -188,8 +205,8 @@ function combineWeeklyBlocksByCategory(
 
       const fieldValue = summaryDb.extractProperty(weekSummary, propName);
       if (fieldValue && typeof fieldValue === "string" && fieldValue.trim()) {
-        // Strip day headers from this field's content
-        const stripped = stripDayHeaders(fieldValue);
+        // Strip day headers and time ranges from this field's content
+        const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
         const formatted = filterAndFormatEvents(collapsed);
         if (formatted.trim()) {
@@ -210,11 +227,65 @@ function combineWeeklyBlocksByCategory(
 }
 
 /**
+ * Extract and combine task details from weekly recap pages for a specific category
+ * Groups all tasks by week first, then combines with single week header per week
+ * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
+ * @param {string} recapType - "personal" or "work"
+ * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Array<string>} categoryFields - Array of task field keys to include
+ * @returns {string} Combined tasks text for this category
+ */
+function combineWeeklyTasksByCategory(
+  weeklySummaries,
+  recapType,
+  summaryDb,
+  categoryFields
+) {
+  const exclusions = MONTHLY_RECAP_EXCLUSIONS[recapType]?.tasks || [];
+  const weekGroups = [];
+
+  // Process each weekly recap
+  weeklySummaries.forEach((weekSummary) => {
+    const weekNumber = extractWeekNumberFromTitle(weekSummary, summaryDb);
+    if (!weekNumber) return;
+
+    // Collect all task fields for this week
+    const weekTasks = [];
+    categoryFields.forEach((fieldKey) => {
+      if (exclusions.includes(fieldKey)) return;
+
+      const propName = config.notion.getPropertyName(summaryDb.props[fieldKey]);
+      if (!propName) return;
+
+      const fieldValue = summaryDb.extractProperty(weekSummary, propName);
+      if (fieldValue && typeof fieldValue === "string" && fieldValue.trim()) {
+        // Strip day headers and time ranges from this field's content
+        const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
+        const collapsed = collapseNewlines(stripped);
+        const formatted = filterAndFormatEvents(collapsed);
+        if (formatted.trim()) {
+          weekTasks.push(formatted);
+        }
+      }
+    });
+
+    // If this week has any tasks, add with week header
+    if (weekTasks.length > 0) {
+      const weekNumberStr = String(weekNumber).padStart(2, "0");
+      const combinedWeekTasks = weekTasks.join("\n");
+      weekGroups.push(`Week ${weekNumberStr}:\n${combinedWeekTasks}`);
+    }
+  });
+
+  return weekGroups.join("\n\n");
+}
+
+/**
  * Extract and combine personal blocks by category from weekly summary pages
- * Returns an object with four category-specific block fields
+ * Returns an object with six category-specific block fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
- * @returns {Object} Object with personalDietAndExerciseBlocks, personalInterpersonalBlocks, personalHobbyBlocks, and personalLifeBlocks
+ * @returns {Object} Object with personalDietAndExerciseBlocks, personalFamilyBlocks, personalRelationshipBlocks, personalInterpersonalBlocks, personalHobbyBlocks, and personalLifeBlocks
  */
 function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.personal;
@@ -224,6 +295,18 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
     "personal",
     summaryDb,
     categories.dietAndExercise
+  );
+  const family = combineWeeklyBlocksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.family
+  );
+  const relationship = combineWeeklyBlocksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.relationship
   );
   const interpersonal = combineWeeklyBlocksByCategory(
     weeklySummaries,
@@ -246,6 +329,8 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
 
   return {
     personalDietAndExerciseBlocks: dietAndExercise || "",
+    personalFamilyBlocks: family || "",
+    personalRelationshipBlocks: relationship || "",
     personalInterpersonalBlocks: interpersonal || "",
     personalHobbyBlocks: hobby || "",
     personalLifeBlocks: life || "",
@@ -292,6 +377,42 @@ function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
     workDesignAndResearchBlocks: designAndResearch || "",
     workCodingAndQABlocks: codingAndQA || "",
     workPersonalAndSocialBlocks: personalAndSocial || "",
+  };
+}
+
+/**
+ * Extract and combine work tasks by category from weekly summary pages
+ * Returns an object with three category-specific task fields
+ * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
+ * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @returns {Object} Object with workDesignAndResearchTasks, workCodingAndQATasks, and workAdminAndSocialTasks
+ */
+function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
+  const categories = MONTHLY_RECAP_TASK_CATEGORIES.work;
+
+  const designAndResearch = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "work",
+    summaryDb,
+    categories.designAndResearch
+  );
+  const codingAndQA = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "work",
+    summaryDb,
+    categories.codingAndQA
+  );
+  const adminAndSocial = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "work",
+    summaryDb,
+    categories.adminAndSocial
+  );
+
+  return {
+    workDesignAndResearchTasks: designAndResearch || "",
+    workCodingAndQATasks: codingAndQA || "",
+    workAdminAndSocialTasks: adminAndSocial || "",
   };
 }
 
@@ -346,8 +467,8 @@ function combineWeeklyTasks(weeklySummaries, recapType, summaryDb) {
 
       const fieldValue = summaryDb.extractProperty(weekSummary, propName);
       if (fieldValue && typeof fieldValue === "string" && fieldValue.trim()) {
-        // Strip day headers from this field's content
-        const stripped = stripDayHeaders(fieldValue);
+        // Strip day headers and time ranges from this field's content
+        const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
         const formatted = filterAndFormatEvents(collapsed);
         if (formatted.trim()) {
@@ -383,12 +504,6 @@ function transformWeeklyToMonthlyRecap(
   month,
   year
 ) {
-  const tasksDetails = combineWeeklyTasks(
-    weeklySummaries,
-    recapType,
-    summaryDb
-  );
-
   // Get first day of month for date property
   const date = new Date(year, month - 1, 1);
 
@@ -396,24 +511,31 @@ function transformWeeklyToMonthlyRecap(
     month,
     year,
     date: date.toISOString().split("T")[0], // YYYY-MM-DD format
-    tasksDetails: tasksDetails || "",
   };
 
-  // For personal and work, use category-based blocks
+  // For personal and work, use category-based blocks and tasks
   if (recapType === "personal") {
     const personalBlocks = combinePersonalBlocksByCategory(
       weeklySummaries,
       summaryDb
     );
+    const tasksDetails = combineWeeklyTasks(
+      weeklySummaries,
+      "personal",
+      summaryDb
+    );
     return {
       ...baseData,
       ...personalBlocks,
+      tasksDetails: tasksDetails || "",
     };
   } else {
     const workBlocks = combineWorkBlocksByCategory(weeklySummaries, summaryDb);
+    const workTasks = combineWorkTasksByCategory(weeklySummaries, summaryDb);
     return {
       ...baseData,
       ...workBlocks,
+      ...workTasks,
     };
   }
 }
@@ -428,5 +550,6 @@ module.exports = {
   combineWeeklyBlocksByCategory,
   combinePersonalBlocksByCategory,
   combineWorkBlocksByCategory,
+  combineWorkTasksByCategory,
   combineWeeklyTasks,
 };

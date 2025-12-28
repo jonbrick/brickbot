@@ -118,10 +118,20 @@ async function generateMonthlyRecap(
       console.log(`   Weekly summaries found: ${weeklySummaries.length}`);
 
       if (recapType === "personal") {
-        // Personal has 4 category fields instead of blocksDetails
+        // Personal has 6 category fields instead of blocksDetails
         console.log(
           `   Diet & Exercise Blocks length: ${
             (monthlyRecapData.personalDietAndExerciseBlocks || "").length
+          } chars`
+        );
+        console.log(
+          `   Family Blocks length: ${
+            (monthlyRecapData.personalFamilyBlocks || "").length
+          } chars`
+        );
+        console.log(
+          `   Relationship Blocks length: ${
+            (monthlyRecapData.personalRelationshipBlocks || "").length
           } chars`
         );
         console.log(
@@ -140,7 +150,7 @@ async function generateMonthlyRecap(
           } chars`
         );
       } else {
-        // Work has 4 category fields instead of blocksDetails
+        // Work has 4 category block fields and 3 category task fields
         console.log(
           `   Meetings & Collaboration Blocks length: ${
             (monthlyRecapData.workMeetingsAndCollaborationBlocks || "").length
@@ -161,19 +171,52 @@ async function generateMonthlyRecap(
             (monthlyRecapData.workPersonalAndSocialBlocks || "").length
           } chars`
         );
+        console.log(
+          `   Design & Research Tasks length: ${
+            (monthlyRecapData.workDesignAndResearchTasks || "").length
+          } chars`
+        );
+        console.log(
+          `   Coding & QA Tasks length: ${
+            (monthlyRecapData.workCodingAndQATasks || "").length
+          } chars`
+        );
+        console.log(
+          `   Admin & Social Tasks length: ${
+            (monthlyRecapData.workAdminAndSocialTasks || "").length
+          } chars`
+        );
       }
 
-      console.log(
-        `   Tasks Details length: ${
-          (monthlyRecapData.tasksDetails || "").length
-        } chars`
-      );
+      // Tasks display (only for personal, work tasks shown above)
+      if (recapType === "personal") {
+        console.log(
+          `   Tasks Details length: ${
+            (monthlyRecapData.tasksDetails || "").length
+          } chars`
+        );
+      }
 
       if (recapType === "personal") {
         if (monthlyRecapData.personalDietAndExerciseBlocks) {
           console.log(`\n   Diet & Exercise Blocks preview (first 200 chars):`);
           console.log(
             `   ${monthlyRecapData.personalDietAndExerciseBlocks.substring(
+              0,
+              200
+            )}...`
+          );
+        }
+        if (monthlyRecapData.personalFamilyBlocks) {
+          console.log(`\n   Family Blocks preview (first 200 chars):`);
+          console.log(
+            `   ${monthlyRecapData.personalFamilyBlocks.substring(0, 200)}...`
+          );
+        }
+        if (monthlyRecapData.personalRelationshipBlocks) {
+          console.log(`\n   Relationship Blocks preview (first 200 chars):`);
+          console.log(
+            `   ${monthlyRecapData.personalRelationshipBlocks.substring(
               0,
               200
             )}...`
@@ -235,6 +278,32 @@ async function generateMonthlyRecap(
           );
           console.log(
             `   ${monthlyRecapData.workPersonalAndSocialBlocks.substring(
+              0,
+              200
+            )}...`
+          );
+        }
+        if (monthlyRecapData.workDesignAndResearchTasks) {
+          console.log(
+            `\n   Design & Research Tasks preview (first 200 chars):`
+          );
+          console.log(
+            `   ${monthlyRecapData.workDesignAndResearchTasks.substring(
+              0,
+              200
+            )}...`
+          );
+        }
+        if (monthlyRecapData.workCodingAndQATasks) {
+          console.log(`\n   Coding & QA Tasks preview (first 200 chars):`);
+          console.log(
+            `   ${monthlyRecapData.workCodingAndQATasks.substring(0, 200)}...`
+          );
+        }
+        if (monthlyRecapData.workAdminAndSocialTasks) {
+          console.log(`\n   Admin & Social Tasks preview (first 200 chars):`);
+          console.log(
+            `   ${monthlyRecapData.workAdminAndSocialTasks.substring(
               0,
               200
             )}...`

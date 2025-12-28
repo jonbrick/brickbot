@@ -1,6 +1,6 @@
 /**
  * Monthly Recap Database Configuration
- * 10-field structure: 4 personal block categories + personal tasks + 4 work block categories + work tasks + title
+ * 14-field structure: 6 personal block categories + personal tasks + 4 work block categories + 3 work task categories + title
  */
 
 const { generateMonthlyRecapProperties } = require("../unified-sources");

@@ -153,13 +153,13 @@ function parseWeekNumber(weekNumber, year = new Date().getFullYear()) {
 
 /**
  * Get current week number (Sunday-Saturday weeks)
- * Week 1 is the first week containing January 1st
+ * Week 1 is the first week containing January 1st of the context year
  * @param {Date} date - Date to get week number for (defaults to today)
- * @returns {number} Week number (1-52/53)
+ * @param {number} contextYear - Year context for week numbering (defaults to date's year)
+ * @returns {number} Week number (1-52/53) relative to contextYear
  */
-function getWeekNumber(date = new Date()) {
-  const year = date.getFullYear();
-  const jan1 = new Date(year, 0, 1);
+function getWeekNumber(date = new Date(), contextYear = date.getFullYear()) {
+  const jan1 = new Date(contextYear, 0, 1);
 
   // Find the Sunday of the week containing January 1st
   const dayOfWeek = jan1.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -169,11 +169,16 @@ function getWeekNumber(date = new Date()) {
 
   // Calculate days from week 1 Sunday to the given date
   const daysDiff = Math.floor((date - week1Sunday) / (1000 * 60 * 60 * 24));
-  const weekNumber = Math.floor(daysDiff / 7) + 1;
+  let weekNumber = Math.floor(daysDiff / 7) + 1;
 
   // Handle edge case: if date is before week 1 Sunday, it's week 52/53 of previous year
   if (weekNumber < 1) {
-    return getWeekNumber(new Date(year - 1, 11, 31));
+    return getWeekNumber(new Date(contextYear - 1, 11, 31), contextYear);
+  }
+
+  // Cap at 53 (maximum weeks in a year)
+  if (weekNumber > 53) {
+    weekNumber = 53;
   }
 
   return weekNumber;

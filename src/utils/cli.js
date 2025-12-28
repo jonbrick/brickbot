@@ -102,7 +102,7 @@ async function selectDateRange(options = {}) {
       endDate = getWeekEnd(today); // Saturday 23:59:59
 
       // Also return week metadata
-      const weekNumber = getWeekNumber(today);
+      const weekNumber = getWeekNumber(today, today.getFullYear());
       weeks = [
         {
           weekNumber,
@@ -126,7 +126,7 @@ async function selectDateRange(options = {}) {
       endDate = getWeekEnd(lastWeekDate); // Saturday 23:59:59
 
       // Also return week metadata
-      const weekNumber = getWeekNumber(lastWeekDate);
+      const weekNumber = getWeekNumber(lastWeekDate, lastWeekDate.getFullYear());
       weeks = [
         {
           weekNumber,
@@ -143,7 +143,7 @@ async function selectDateRange(options = {}) {
     case "singleWeek": {
       const currentDate = getToday();
       const currentYear = currentDate.getFullYear();
-      const currentWeek = getWeekNumber(currentDate);
+      const currentWeek = getWeekNumber(currentDate, currentYear);
 
       const { weekType } = await inquirer.prompt([
         {

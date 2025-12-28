@@ -1075,7 +1075,7 @@ const INTEGRATIONS = {
 
 /**
  * Fetch key mapping for calendars
- * Maps calendar IDs to their fetch keys used in PERSONAL_RECAP_SOURCES/WORK_RECAP_SOURCES
+ * Maps calendar IDs to their fetch keys used in PERSONAL_SUMMARY_SOURCES/WORK_SUMMARY_SOURCES
  */
 const FETCH_KEY_MAPPING = {
   normalWakeUp: "earlyWakeup",
@@ -1100,7 +1100,7 @@ const FETCH_KEY_MAPPING = {
 
 /**
  * Calendar key mapping for calendars with different keys in recap sources
- * Maps calendar IDs to their keys used in PERSONAL_RECAP_SOURCES/WORK_RECAP_SOURCES
+ * Maps calendar IDs to their keys used in PERSONAL_SUMMARY_SOURCES/WORK_SUMMARY_SOURCES
  */
 const CALENDAR_KEY_MAPPING = {
   personalCalendar: "personalMain",
@@ -1109,15 +1109,15 @@ const CALENDAR_KEY_MAPPING = {
 
 /**
  * Verify derivation function
- * Derives the equivalent of PERSONAL_RECAP_SOURCES and WORK_RECAP_SOURCES from the three registries
+ * Derives the equivalent of PERSONAL_SUMMARY_SOURCES and WORK_SUMMARY_SOURCES from the three registries
  * Optionally compares to existing sources if provided as parameters
- * @param {Object|null} personalSources - Existing PERSONAL_RECAP_SOURCES to compare against (optional)
- * @param {Object|null} workSources - Existing WORK_RECAP_SOURCES to compare against (optional)
+ * @param {Object|null} personalSources - Existing PERSONAL_SUMMARY_SOURCES to compare against (optional)
+ * @param {Object|null} workSources - Existing WORK_SUMMARY_SOURCES to compare against (optional)
  */
 function verifyDerivation(personalSources = null, workSources = null) {
   console.log("🔍 Verifying unified sources derivation...\n");
 
-  // Derive PERSONAL_RECAP_SOURCES and WORK_RECAP_SOURCES equivalent from the three registries
+  // Derive PERSONAL_SUMMARY_SOURCES and WORK_SUMMARY_SOURCES equivalent from the three registries
   const derivedPersonal = {};
   const derivedWork = {};
 
@@ -1183,9 +1183,9 @@ function verifyDerivation(personalSources = null, workSources = null) {
   // If no sources provided for comparison, just return derived structure
   if (personalSources === null && workSources === null) {
     console.log("📊 Derived Sources Structure:\n");
-    console.log("Derived PERSONAL_RECAP_SOURCES structure:");
+    console.log("Derived PERSONAL_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedPersonal, null, 2));
-    console.log("\nDerived WORK_RECAP_SOURCES structure:");
+    console.log("\nDerived WORK_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedWork, null, 2));
 
     return {
@@ -1210,7 +1210,7 @@ function verifyDerivation(personalSources = null, workSources = null) {
 
   expectedPersonalGroups.forEach((groupId) => {
     if (!existingPersonal[groupId]) {
-      errors.push(`❌ Missing group in PERSONAL_RECAP_SOURCES: ${groupId}`);
+      errors.push(`❌ Missing group in PERSONAL_SUMMARY_SOURCES: ${groupId}`);
       return;
     }
 
@@ -1227,7 +1227,7 @@ function verifyDerivation(personalSources = null, workSources = null) {
 
   expectedWorkGroups.forEach((groupId) => {
     if (!existingWork[groupId]) {
-      errors.push(`❌ Missing group in WORK_RECAP_SOURCES: ${groupId}`);
+      errors.push(`❌ Missing group in WORK_SUMMARY_SOURCES: ${groupId}`);
       return;
     }
 
@@ -1241,10 +1241,10 @@ function verifyDerivation(personalSources = null, workSources = null) {
   console.log("📊 Comparison Results:\n");
 
   if (errors.length === 0 && warnings.length === 0) {
-    console.log("✅ All derivations match existing RECAP_SOURCES!\n");
-    console.log("Derived PERSONAL_RECAP_SOURCES structure:");
+    console.log("✅ All derivations match existing SUMMARY_SOURCES!\n");
+    console.log("Derived PERSONAL_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedPersonal, null, 2));
-    console.log("\nDerived WORK_RECAP_SOURCES structure:");
+    console.log("\nDerived WORK_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedWork, null, 2));
   } else {
     if (errors.length > 0) {
@@ -1259,9 +1259,9 @@ function verifyDerivation(personalSources = null, workSources = null) {
       console.log();
     }
 
-    console.log("Derived PERSONAL_RECAP_SOURCES structure:");
+    console.log("Derived PERSONAL_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedPersonal, null, 2));
-    console.log("\nExisting PERSONAL_RECAP_SOURCES structure:");
+    console.log("\nExisting PERSONAL_SUMMARY_SOURCES structure:");
     console.log(
       JSON.stringify(
         expectedPersonalGroups.reduce((acc, key) => {
@@ -1272,9 +1272,9 @@ function verifyDerivation(personalSources = null, workSources = null) {
         2
       )
     );
-    console.log("\nDerived WORK_RECAP_SOURCES structure:");
+    console.log("\nDerived WORK_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedWork, null, 2));
-    console.log("\nExisting WORK_RECAP_SOURCES structure:");
+    console.log("\nExisting WORK_SUMMARY_SOURCES structure:");
     console.log(
       JSON.stringify(
         expectedWorkGroups.reduce((acc, key) => {

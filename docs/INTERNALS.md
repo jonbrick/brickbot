@@ -365,8 +365,16 @@ Everything else is **derived** from these three registries:
 ```javascript
 // Automatically derived
 const DATA_SOURCES = deriveDataSources();
-const PERSONAL_RECAP_SOURCES = derivePersonalRecapSources();
-const WORK_RECAP_SOURCES = deriveWorkRecapSources();
+const PERSONAL_SUMMARY_SOURCES = Object.fromEntries(
+  Object.entries(SUMMARY_GROUPS)
+    .filter(([_, g]) => g.sourceType === "personal")
+    .map(([id, g]) => [id, deriveSummarySource(id, g)])
+);
+const WORK_SUMMARY_SOURCES = Object.fromEntries(
+  Object.entries(SUMMARY_GROUPS)
+    .filter(([_, g]) => g.sourceType === "work")
+    .map(([id, g]) => [id, deriveSummarySource(id, g)])
+);
 ```
 
 **Benefits**:

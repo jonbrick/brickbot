@@ -262,7 +262,7 @@ MONTHLY_RECAP_TASK_CATEGORIES: {
 
 - **IntegrationDatabase**: Generic class for all integrations (config-driven)
 - **NotionDatabase**: Base class with CRUD operations
-- **RecapDatabase**: Handles summary-specific logic
+- **SummaryDatabase**: Handles summary-specific logic
 - Repository pattern: domain-specific queries
 
 ### Transformer Layer (`src/transformers/`)

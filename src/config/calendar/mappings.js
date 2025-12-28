@@ -191,7 +191,7 @@ const calendarMappings = {
  * @param {string} sourceId - Source identifier (e.g., 'sleep', 'workout')
  * @returns {Array<string>} Array of data keys for this source
  */
-function getRecapSourceData(sourceId) {
+function getSummarySourceData(sourceId) {
   return getSourceDataKeys(sourceId);
 }
 
@@ -278,9 +278,9 @@ function deriveSummarySource(groupId, group) {
  * Personal Summary Data Sources Configuration
  * Defines which calendars feed into Personal Summary database and their metadata
  * Derived from unified-sources.js SUMMARY_GROUPS configuration
- * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
+ * Note: Data is derived from DATA_SOURCES via getSummarySourceData() - do not hardcode here
  */
-const PERSONAL_RECAP_SOURCES = Object.fromEntries(
+const PERSONAL_SUMMARY_SOURCES = Object.fromEntries(
   Object.entries(SUMMARY_GROUPS)
     .filter(([_, g]) => g.sourceType === "personal")
     .map(([id, g]) => [id, deriveSummarySource(id, g)])
@@ -290,21 +290,33 @@ const PERSONAL_RECAP_SOURCES = Object.fromEntries(
  * Work Summary Data Sources Configuration
  * Defines which calendars feed into Work Summary database and their metadata
  * Derived from unified-sources.js SUMMARY_GROUPS configuration
- * Note: Data is derived from DATA_SOURCES via getRecapSourceData() - do not hardcode here
+ * Note: Data is derived from DATA_SOURCES via getSummarySourceData() - do not hardcode here
  */
-const WORK_RECAP_SOURCES = Object.fromEntries(
+const WORK_SUMMARY_SOURCES = Object.fromEntries(
   Object.entries(SUMMARY_GROUPS)
     .filter(([_, g]) => g.sourceType === "work")
     .map(([id, g]) => [id, deriveSummarySource(id, g)])
 );
 
 /**
- * Get all available Personal Summary sources
+ * Get all available Summary sources
  * Filters sources to only include those with configured environment variables
+ * @param {string} sourceType - "personal" or "work" (default: "personal")
  * @returns {Array<Object>} Array of available sources with metadata
  */
-function getAvailableRecapSources() {
-  return Object.entries(PERSONAL_RECAP_SOURCES)
+function getAvailableSummarySources(sourceType = "personal") {
+  // Validate sourceType
+  if (sourceType !== "personal" && sourceType !== "work") {
+    throw new Error(
+      `sourceType must be "personal" or "work", got "${sourceType}"`
+    );
+  }
+
+  // Select the appropriate sources constant
+  const sourcesConfig =
+    sourceType === "personal" ? PERSONAL_SUMMARY_SOURCES : WORK_SUMMARY_SOURCES;
+
+  return Object.entries(sourcesConfig)
     .filter(([_, config]) => {
       // Tasks is a special case (Notion database, not calendar)
       if (config.isNotionSource) {
@@ -322,47 +334,19 @@ function getAvailableRecapSources() {
       displayName: config.displayName,
       description: config.description,
       isNotionSource: config.isNotionSource || false,
-      sourceType: config.sourceType || "personal",
-    }));
-}
-
-/**
- * Get all available Work Summary sources
- * Filters sources to only include those with configured environment variables
- * @returns {Array<Object>} Array of available sources with metadata
- */
-function getAvailableWorkRecapSources() {
-  return Object.entries(WORK_RECAP_SOURCES)
-    .filter(([_, config]) => {
-      // Tasks is a special case (Notion database, not calendar)
-      if (config.isNotionSource) {
-        return !!config.databaseId;
-      }
-
-      // Check if all required calendars have env vars set
-      return config.calendars.every((cal) => {
-        const envValue = process.env[cal.envVar];
-        return cal.required ? !!envValue : true;
-      });
-    })
-    .map(([id, config]) => ({
-      id,
-      displayName: config.displayName,
-      description: config.description,
-      isNotionSource: config.isNotionSource || false,
-      sourceType: config.sourceType || "work",
+      sourceType: config.sourceType || sourceType,
     }));
 }
 
 /**
  * Get calendar configuration for a specific source
  * @param {string} sourceId - Source identifier (e.g., 'sleep', 'workout')
- * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
+ * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_SUMMARY_SOURCES)
  * @returns {Object|null} Source configuration or null if not found
  */
-function getRecapSourceConfig(
+function getSummarySourceConfig(
   sourceId,
-  sourcesConfig = PERSONAL_RECAP_SOURCES
+  sourcesConfig = PERSONAL_SUMMARY_SOURCES
 ) {
   return sourcesConfig[sourceId] || null;
 }
@@ -370,12 +354,12 @@ function getRecapSourceConfig(
 /**
  * Get calendar IDs for a specific source
  * @param {string} sourceId - Source identifier
- * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
+ * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_SUMMARY_SOURCES)
  * @returns {Object|null} Object mapping calendar keys to IDs, or null if not found
  */
 function getCalendarIdsForSource(
   sourceId,
-  sourcesConfig = PERSONAL_RECAP_SOURCES
+  sourcesConfig = PERSONAL_SUMMARY_SOURCES
 ) {
   const source = sourcesConfig[sourceId];
   if (!source || source.isNotionSource) return null;
@@ -393,13 +377,13 @@ function getCalendarIdsForSource(
  * Build calendar fetch configuration for selected sources
  * @param {Array<string>} selectedSources - Array of source IDs to fetch
  * @param {string} accountType - "personal" or "work"
- * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_RECAP_SOURCES)
+ * @param {Object} sourcesConfig - Sources configuration object (default: PERSONAL_SUMMARY_SOURCES)
  * @returns {Array<Object>} Array of fetch configurations
  */
 function buildCalendarFetches(
   selectedSources,
   accountType = "personal",
-  sourcesConfig = PERSONAL_RECAP_SOURCES
+  sourcesConfig = PERSONAL_SUMMARY_SOURCES
 ) {
   const fetches = [];
 
@@ -458,7 +442,7 @@ function buildCalendarFetches(
 /**
  * Get display name for a fetchKey by looking it up in sources config
  * @param {string} fetchKey - The fetchKey from calendar events (e.g., "personalPRs", "earlyWakeup")
- * @param {Object} sourcesConfig - Sources configuration object (PERSONAL_RECAP_SOURCES or WORK_RECAP_SOURCES)
+ * @param {Object} sourcesConfig - Sources configuration object (PERSONAL_SUMMARY_SOURCES or WORK_SUMMARY_SOURCES)
  * @returns {string} Display name from config, or fallback to DATA_SOURCES name, or fetchKey itself
  */
 function getDisplayNameForFetchKey(fetchKey, sourcesConfig) {
@@ -486,13 +470,12 @@ function getDisplayNameForFetchKey(fetchKey, sourcesConfig) {
 
 module.exports = {
   ...calendarMappings,
-  PERSONAL_RECAP_SOURCES,
-  WORK_RECAP_SOURCES,
-  getAvailableRecapSources,
-  getAvailableWorkRecapSources,
-  getRecapSourceConfig,
+  PERSONAL_SUMMARY_SOURCES,
+  WORK_SUMMARY_SOURCES,
+  getAvailableSummarySources,
+  getSummarySourceConfig,
   getCalendarIdsForSource,
   buildCalendarFetches,
-  getRecapSourceData,
+  getSummarySourceData,
   getDisplayNameForFetchKey,
 };

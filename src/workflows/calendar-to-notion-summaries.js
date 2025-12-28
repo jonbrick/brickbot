@@ -240,13 +240,8 @@ async function aggregateCalendarDataForWeek(
 
   const sourcesConfig =
     recapType === "personal"
-      ? mappings.PERSONAL_RECAP_SOURCES
-      : mappings.WORK_RECAP_SOURCES;
-
-  const getAvailableSources =
-    recapType === "personal"
-      ? mappings.getAvailableRecapSources
-      : mappings.getAvailableWorkRecapSources;
+      ? mappings.PERSONAL_SUMMARY_SOURCES
+      : mappings.WORK_SUMMARY_SOURCES;
 
   const defaultAccountType = recapType === "personal" ? "personal" : "work";
   const databaseName =
@@ -268,7 +263,7 @@ async function aggregateCalendarDataForWeek(
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
 
     // Get available sources
-    const availableSources = getAvailableSources();
+    const availableSources = mappings.getAvailableSummarySources(recapType);
 
     // Determine which calendars to fetch
     // If no calendars specified, default to all available (backward compatible)

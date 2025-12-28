@@ -78,13 +78,22 @@ class NotionService extends NotionDatabase {
    * Get Personal Summary database
    * @returns {SummaryDatabase}
    */
-  getPersonalRecapRepository() {
+  getPersonalSummaryRepository() {
     return this.personalSummaryRepo;
   }
 
   /**
-   * Get Recap database (deprecated - use getPersonalRecapRepository)
-   * @deprecated Use getPersonalRecapRepository() instead
+   * Get Personal Recap database (deprecated)
+   * @deprecated Use getPersonalSummaryRepository() instead
+   * @returns {SummaryDatabase}
+   */
+  getPersonalRecapRepository() {
+    return this.getPersonalSummaryRepository();
+  }
+
+  /**
+   * Get Recap database (deprecated - use getPersonalSummaryRepository)
+   * @deprecated Use getPersonalSummaryRepository() instead
    * @returns {SummaryDatabase}
    */
   getRecapRepository() {
@@ -233,7 +242,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Find week summary record
-   * @deprecated Use getPersonalRecapRepository().findWeekRecap() instead
+   * @deprecated Use getPersonalSummaryRepository().findWeekSummary() instead
    */
   async findWeekRecap(weekNumber, year, startDate = null, endDate = null) {
     return await this.personalSummaryRepo.findWeekSummary(
@@ -246,7 +255,7 @@ class NotionService extends NotionDatabase {
 
   /**
    * Update week summary with summary data
-   * @deprecated Use getPersonalRecapRepository().updateWeekRecap() instead
+   * @deprecated Use getPersonalSummaryRepository().updateWeekSummary() instead
    */
   async updateWeekRecap(pageId, summaryData) {
     return await this.personalSummaryRepo.updateWeekSummary(pageId, summaryData);
@@ -254,3 +263,4 @@ class NotionService extends NotionDatabase {
 }
 
 module.exports = NotionService;
+

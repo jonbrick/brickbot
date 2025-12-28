@@ -138,7 +138,7 @@ Examples: `OuraService.js`, `StravaService.js`, `GitHubService.js`
 ```
 {Purpose}Database.js
 ```
-Examples: `IntegrationDatabase.js`, `NotionDatabase.js`, `RecapDatabase.js` (internal class name - keep as-is)
+Examples: `IntegrationDatabase.js`, `NotionDatabase.js`, `SummaryDatabase.js`
 
 ### Variable Naming
 
@@ -232,7 +232,7 @@ src/
 ├── databases/           # Repository pattern
 │   ├── NotionDatabase.js         # Base class
 │   ├── IntegrationDatabase.js    # Layer 1 (config-driven)
-│   └── RecapDatabase.js          # Layer 3
+│   └── SummaryDatabase.js         # Layer 3
 │
 ├── services/            # External API clients
 │   ├── OuraService.js
@@ -345,7 +345,7 @@ personalRecap: {
   name: "Personal Summary",
   emoji: "📊",
   calendars: ["sleep", "workouts", "bodyWeight", "videoGames"],
-  notionDatabase: process.env.NOTION_PERSONAL_RECAP_DATABASE_ID,
+  notionDatabase: process.env.PERSONAL_WEEK_SUMMARY_ID,
   aggregations: {
     totalWorkoutTime: {
       calendar: "workouts",
@@ -507,8 +507,8 @@ NOTION_STRAVA_DATABASE_ID=xxxxx
 NOTION_GITHUB_DATABASE_ID=xxxxx
 NOTION_STEAM_DATABASE_ID=xxxxx
 NOTION_WITHINGS_DATABASE_ID=xxxxx
-NOTION_PERSONAL_RECAP_DATABASE_ID=xxxxx
-NOTION_WORK_RECAP_DATABASE_ID=xxxxx
+PERSONAL_WEEK_SUMMARY_ID=xxxxx
+WORK_WEEK_SUMMARY_ID=xxxxx
 
 # Google Calendar
 GOOGLE_CALENDAR_SLEEP_ID=xxxxx@group.calendar.google.com

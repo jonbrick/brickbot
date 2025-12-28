@@ -1,6 +1,6 @@
 // Converts raw Google Calendar events into aggregated weekly data for Personal Summary database
 
-const { PERSONAL_RECAP_SOURCES } = require("../config/calendar/mappings");
+const { PERSONAL_SUMMARY_SOURCES } = require("../config/calendar/mappings");
 const {
   CALENDARS,
   SUMMARY_GROUPS,
@@ -240,7 +240,7 @@ function transformCalendarEventsToRecapData(
     // Check if this source ID is part of any selected source's calendars
     // (for cases where a source might be referenced by its calendar fetchKey)
     return selectedCalendars.some((selectedSourceId) => {
-      const source = PERSONAL_RECAP_SOURCES[selectedSourceId];
+      const source = PERSONAL_SUMMARY_SOURCES[selectedSourceId];
       if (!source) return false;
 
       // Check if any of the source's calendars match this source ID

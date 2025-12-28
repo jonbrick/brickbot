@@ -445,6 +445,10 @@ function buildCalendarFetches(
         (source.isSleepCalendar ? true : false);
       const excludeKeywords =
         calendarDef?.excludeKeywords ?? source.excludeKeywords ?? [];
+      const ignoreDeclinedEvents =
+        calendarDef?.ignoreDeclinedEvents ??
+        source.ignoreDeclinedEvents ??
+        false;
 
       fetches.push({
         key: calendar.fetchKey,
@@ -453,6 +457,7 @@ function buildCalendarFetches(
         isSleepCalendar: source.isSleepCalendar || false,
         ignoreAllDayEvents,
         excludeKeywords,
+        ignoreDeclinedEvents,
       });
     }
   }

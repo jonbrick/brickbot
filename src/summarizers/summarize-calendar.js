@@ -13,6 +13,7 @@ const config = require("../config");
  * @param {string} accountType - "personal" or "work" (default: "personal")
  * @param {boolean} ignoreAllDayEvents - Whether to filter out all-day events (default: false)
  * @param {Array<string>} excludeKeywords - Keywords to filter out events whose summary contains any keyword (case-insensitive, default: [])
+ * @param {boolean} ignoreDeclinedEvents - Whether to filter out events where the user has declined (default: false)
  * @returns {Promise<Array>} Array of events with { date, durationHours }
  */
 async function fetchCalendarSummary(
@@ -21,7 +22,8 @@ async function fetchCalendarSummary(
   endDate,
   accountType = "personal",
   ignoreAllDayEvents = false,
-  excludeKeywords = []
+  excludeKeywords = [],
+  ignoreDeclinedEvents = false
 ) {
   if (!calendarId) {
     throw new Error("Calendar ID is required");
@@ -74,6 +76,14 @@ async function fetchCalendarSummary(
         } else {
           // Skip events without valid start time
           return null;
+        }
+
+        // Skip declined events if ignoreDeclinedEvents is true
+        if (ignoreDeclinedEvents) {
+          const selfAttendee = event.attendees?.find((a) => a.self);
+          if (selfAttendee?.responseStatus === "declined") {
+            return null;
+          }
         }
 
         // Filter events by excludeKeywords (case-insensitive)

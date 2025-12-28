@@ -274,6 +274,7 @@ const CALENDARS = {
     ],
   },
   personalCalendar: {
+    ignoreDeclinedEvents: true,
     ignoreAllDayEvents: true,
     excludeKeywords: ["sleep", "nap"],
     id: "personalCalendar",
@@ -338,6 +339,9 @@ const CALENDARS = {
     },
   },
   workCalendar: {
+    ignoreDeclinedEvents: true,
+    ignoreDeclinedEvents: true,
+    ignoreAllDayEvents: true,
     id: "workCalendar",
     envVar: "WORK_MAIN_CALENDAR_ID",
     name: "Work Calendar",
@@ -632,6 +636,7 @@ const SUMMARY_GROUPS = {
     processingPattern: "sessionsDetails",
   },
   personalCalendar: {
+    ignoreDeclinedEvents: true,
     id: "personalCalendar",
     name: "Personal Calendar",
     emoji: "📅",
@@ -642,6 +647,8 @@ const SUMMARY_GROUPS = {
     processingPattern: "categoryBased",
   },
   workCalendar: {
+    ignoreDeclinedEvents: true,
+    ignoreDeclinedEvents: true,
     id: "workCalendar",
     name: "Work Calendar",
     emoji: "📅",
@@ -1769,7 +1776,11 @@ function getAvailableSources() {
 const MONTHLY_RECAP_EXCLUSIONS = {
   personal: {
     blocks: ["ignoreBlocks"],
-    tasks: [], // No task exclusions for personal
+    tasks: [
+      "familyTaskDetails",
+      "relationshipTaskDetails",
+      "interpersonalTaskDetails",
+    ],
   },
   work: {
     blocks: ["personalAndSocialBlocks", "ritualsBlocks"],
@@ -1785,8 +1796,18 @@ const MONTHLY_RECAP_EXCLUSIONS = {
 function generateMonthlyRecapProperties() {
   return {
     title: { name: "Month Recap", type: "title", enabled: true },
-    personalBlocksDetails: {
-      name: "Personal Blocks Details",
+    personalDietAndExerciseBlocks: {
+      name: "Diet & Exercise - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    personalInterpersonalBlocks: {
+      name: "Interpersonal - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    personalHobbyBlocks: {
+      name: "Hobbies - Block Details",
       type: "text",
       enabled: true,
     },
@@ -1795,8 +1816,23 @@ function generateMonthlyRecapProperties() {
       type: "text",
       enabled: true,
     },
-    workBlocksDetails: {
-      name: "Work Blocks Details",
+    workMeetingsAndCollaborationBlocks: {
+      name: "Meetings & Collaboration - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    workDesignAndResearchBlocks: {
+      name: "Design & Research - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    workCodingAndQABlocks: {
+      name: "Coding & QA - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    workPersonalAndSocialBlocks: {
+      name: "Personal & Social - Block Details",
       type: "text",
       enabled: true,
     },

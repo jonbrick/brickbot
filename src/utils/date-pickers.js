@@ -51,24 +51,34 @@ function getWeeksForMonth(year, month) {
     weekEnd.setDate(weekEnd.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
-    // Get week number for this week
-    let weekNumber = getWeekNumber(weekStart);
+    // Calculate week number based on the viewed year context
+    // For December, calculate week number relative to the viewed year, not the next year
+    let weekNumber;
+    let weekYear;
 
-    // Determine which year this week belongs to
-    let weekYear = weekStart.getFullYear();
+    if (month === 12) {
+      // For December, always use the viewed year for week numbering
+      const jan1 = new Date(year, 0, 1);
+      const dayOfWeek = jan1.getDay();
+      const daysToSunday = dayOfWeek === 0 ? 0 : -dayOfWeek;
+      const week1Sunday = new Date(jan1);
+      week1Sunday.setDate(jan1.getDate() + daysToSunday);
 
-    // Handle December weeks that contain January 1st of next year
-    // These should be Week 1 of the next year
-    if (weekStart.getMonth() === 11 && weekEnd.getMonth() === 0) {
-      const nextYearJan1 = new Date(weekYear + 1, 0, 1);
-      if (weekStart <= nextYearJan1 && nextYearJan1 <= weekEnd) {
-        weekYear = weekYear + 1;
-        weekNumber = 1;
+      const daysDiff = Math.floor(
+        (weekStart - week1Sunday) / (1000 * 60 * 60 * 24)
+      );
+      weekNumber = Math.floor(daysDiff / 7) + 1;
+      weekYear = year;
+    } else {
+      // For other months, use standard logic but respect the viewed year context
+      weekNumber = getWeekNumber(weekStart);
+      weekYear = weekStart.getFullYear();
+
+      // Handle January weeks with high week numbers (belong to previous year)
+      // But only if we're viewing January
+      if (month === 1 && weekStart.getMonth() === 0 && weekNumber > 50) {
+        weekYear = year - 1;
       }
-    }
-    // Handle January weeks with high week numbers (belong to previous year)
-    else if (weekStart.getMonth() === 0 && weekNumber > 50) {
-      weekYear = year - 1;
     }
 
     weeks.push({
@@ -267,4 +277,3 @@ module.exports = {
   formatWeekDisplay,
   formatMonthWeeksDisplay,
 };
-

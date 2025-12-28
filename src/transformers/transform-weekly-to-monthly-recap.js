@@ -3,7 +3,11 @@
  * Aggregates text fields from weekly summaries into monthly format
  */
 
-const { MONTHLY_RECAP_EXCLUSIONS } = require("../config/unified-sources");
+const {
+  MONTHLY_RECAP_EXCLUSIONS,
+  MONTHLY_RECAP_CATEGORIES,
+  getBlocksFields,
+} = require("../config/unified-sources");
 const config = require("../config");
 
 /**
@@ -101,42 +105,6 @@ function transformWeeklyText(weeklyText, weekNumber) {
 }
 
 /**
- * Personal block field categories for monthly recap grouping
- */
-const PERSONAL_BLOCK_CATEGORIES = {
-  dietAndExercise: [
-    "workoutBlocks",
-    "cookingBlocks",
-    "physicalHealthBlocks",
-    "drinkingBlocks",
-  ],
-  interpersonal: [
-    "familyBlocks",
-    "relationshipBlocks",
-    "interpersonalBlocks",
-    "mentalHealthBlocks",
-  ],
-  hobby: [
-    "readingBlocks",
-    "meditationBlocks",
-    "artBlocks",
-    "codingBlocks",
-    "musicBlocks",
-    "videoGamesBlocks",
-  ],
-};
-
-/**
- * Work block field categories for monthly recap grouping
- */
-const WORK_BLOCK_CATEGORIES = {
-  meetingsAndCollaboration: ["meetingsBlocks"],
-  designAndResearch: ["designBlocks", "sketchBlocks", "researchBlocks", "critBlocks"],
-  codingAndQA: ["codingBlocks", "qaBlocks"],
-  personalAndSocial: ["personalAndSocialBlocks"]
-};
-
-/**
  * Extract and combine blocks from weekly summary pages
  * Groups all blocks by week first, then combines with single week header per week
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
@@ -149,35 +117,7 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
   const weekGroups = [];
 
   // Define which blocks fields to include based on recapType
-  const blocksFields =
-    recapType === "personal"
-      ? [
-          "drinkingBlocks",
-          "workoutBlocks",
-          "readingBlocks",
-          "meditationBlocks",
-          "cookingBlocks",
-          "artBlocks",
-          "codingBlocks",
-          "musicBlocks",
-          "videoGamesBlocks",
-          "personalBlocks",
-          "familyBlocks",
-          "relationshipBlocks",
-          "interpersonalBlocks",
-          "homeBlocks",
-          "physicalHealthBlocks",
-          "mentalHealthBlocks",
-        ]
-      : [
-          "meetingsBlocks",
-          "designBlocks",
-          "codingBlocks",
-          "critBlocks",
-          "sketchBlocks",
-          "researchBlocks",
-          "qaBlocks",
-        ];
+  const blocksFields = getBlocksFields(recapType);
 
   // Process each weekly recap
   weeklySummaries.forEach((weekSummary) => {
@@ -271,35 +211,44 @@ function combineWeeklyBlocksByCategory(
 
 /**
  * Extract and combine personal blocks by category from weekly summary pages
- * Returns an object with three category-specific block fields
+ * Returns an object with four category-specific block fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
- * @returns {Object} Object with personalDietAndExerciseBlocks, personalInterpersonalBlocks, and personalHobbyBlocks
+ * @returns {Object} Object with personalDietAndExerciseBlocks, personalInterpersonalBlocks, personalHobbyBlocks, and personalLifeBlocks
  */
 function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
+  const categories = MONTHLY_RECAP_CATEGORIES.personal;
+
   const dietAndExercise = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
-    PERSONAL_BLOCK_CATEGORIES.dietAndExercise
+    categories.dietAndExercise
   );
   const interpersonal = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
-    PERSONAL_BLOCK_CATEGORIES.interpersonal
+    categories.interpersonal
   );
   const hobby = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
-    PERSONAL_BLOCK_CATEGORIES.hobby
+    categories.hobby
+  );
+  const life = combineWeeklyBlocksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.life
   );
 
   return {
     personalDietAndExerciseBlocks: dietAndExercise || "",
     personalInterpersonalBlocks: interpersonal || "",
     personalHobbyBlocks: hobby || "",
+    personalLifeBlocks: life || "",
   };
 }
 
@@ -311,29 +260,31 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
  * @returns {Object} Object with workMeetingsAndCollaborationBlocks, workDesignAndResearchBlocks, workCodingAndQABlocks, and workPersonalAndSocialBlocks
  */
 function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
+  const categories = MONTHLY_RECAP_CATEGORIES.work;
+
   const meetingsAndCollaboration = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    WORK_BLOCK_CATEGORIES.meetingsAndCollaboration
+    categories.meetingsAndCollaboration
   );
   const designAndResearch = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    WORK_BLOCK_CATEGORIES.designAndResearch
+    categories.designAndResearch
   );
   const codingAndQA = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    WORK_BLOCK_CATEGORIES.codingAndQA
+    categories.codingAndQA
   );
   const personalAndSocial = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    WORK_BLOCK_CATEGORIES.personalAndSocial
+    categories.personalAndSocial
   );
 
   return {
@@ -459,10 +410,7 @@ function transformWeeklyToMonthlyRecap(
       ...personalBlocks,
     };
   } else {
-    const workBlocks = combineWorkBlocksByCategory(
-      weeklySummaries,
-      summaryDb
-    );
+    const workBlocks = combineWorkBlocksByCategory(weeklySummaries, summaryDb);
     return {
       ...baseData,
       ...workBlocks,

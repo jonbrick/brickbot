@@ -118,6 +118,7 @@ const CALENDARS = {
     envVar: "NORMAL_WAKE_UP_CALENDAR_ID",
     name: "Normal Wake Up",
     emoji: "☀️",
+    ignoreAllDayEvents: true,
     dataFields: FIELD_TEMPLATES.simpleCounter("earlyWakeup", "Early Wakeup"),
   },
   sleepIn: {
@@ -125,6 +126,7 @@ const CALENDARS = {
     envVar: "SLEEP_IN_CALENDAR_ID",
     name: "Sleep In",
     emoji: "🌙",
+    ignoreAllDayEvents: true,
     // Special case: sleepHoursTotal is aggregated across both normalWakeUp + sleepIn
     // That's why it uses "sleepHoursTotal" instead of "sleepInHoursTotal"
     dataFields: [
@@ -1171,12 +1173,6 @@ function verifyDerivation(personalSources = null, workSources = null) {
       calendars: calendarConfigs,
     };
 
-    // Add special properties for sleep
-    if (groupId === "sleep") {
-      derivedGroup.isSleepCalendar = true;
-      derivedGroup.ignoreAllDayEvents = true;
-    }
-
     if (group.sourceType === "personal") {
       derivedPersonal[groupId] = derivedGroup;
     } else {
@@ -1382,20 +1378,6 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
         );
       }
     });
-  }
-
-  // Check for special properties (isSleepCalendar, ignoreAllDayEvents)
-  if (groupId === "sleep") {
-    if (derivedGroup.isSleepCalendar !== existingGroup.isSleepCalendar) {
-      warnings.push(
-        `⚠️  isSleepCalendar property differs for ${groupId}: derived=${derivedGroup.isSleepCalendar}, existing=${existingGroup.isSleepCalendar}`
-      );
-    }
-    if (derivedGroup.ignoreAllDayEvents !== existingGroup.ignoreAllDayEvents) {
-      warnings.push(
-        `⚠️  ignoreAllDayEvents property differs for ${groupId}: derived=${derivedGroup.ignoreAllDayEvents}, existing=${existingGroup.ignoreAllDayEvents}`
-      );
-    }
   }
 }
 
@@ -1789,8 +1771,82 @@ const MONTHLY_RECAP_EXCLUSIONS = {
 };
 
 /**
+ * Monthly Recap Categories
+ * Defines how block fields are grouped into monthly recap categories
+ * Category keys must match property name patterns (e.g., "interpersonal" -> "personalInterpersonalBlocks")
+ */
+const MONTHLY_RECAP_CATEGORIES = {
+  personal: {
+    dietAndExercise: [
+      "workoutBlocks",
+      "cookingBlocks",
+      "physicalHealthBlocks",
+      "drinkingBlocks",
+    ],
+    interpersonal: [
+      "familyBlocks",
+      "relationshipBlocks",
+      "interpersonalBlocks",
+      "mentalHealthBlocks",
+    ],
+    hobby: [
+      "readingBlocks",
+      "meditationBlocks",
+      "artBlocks",
+      "codingBlocks",
+      "musicBlocks",
+      "videoGamesBlocks",
+    ],
+    life: ["personalBlocks", "homeBlocks"],
+  },
+  work: {
+    meetingsAndCollaboration: ["meetingsBlocks"],
+    designAndResearch: [
+      "designBlocks",
+      "sketchBlocks",
+      "researchBlocks",
+      "critBlocks",
+    ],
+    codingAndQA: ["codingBlocks", "qaBlocks"],
+    personalAndSocial: ["personalAndSocialBlocks"],
+  },
+};
+
+/**
+ * Get all block field names for a recap type
+ * Flattens MONTHLY_RECAP_CATEGORIES and excludes fields from MONTHLY_RECAP_EXCLUSIONS
+ * @param {string} recapType - "personal" or "work"
+ * @returns {Array<string>} Array of block field names
+ */
+function getBlocksFields(recapType) {
+  const categories = MONTHLY_RECAP_CATEGORIES[recapType];
+  if (!categories) return [];
+
+  const exclusions = MONTHLY_RECAP_EXCLUSIONS[recapType]?.blocks || [];
+  return Object.values(categories)
+    .flat()
+    .filter((f) => !exclusions.includes(f));
+}
+
+/**
+ * Get task completion field names for success messages
+ * Derives from CALENDARS.tasks.categories or CALENDARS.workTasks.categories
+ * @param {string} recapType - "personal" or "work"
+ * @returns {Array<string>} Array of task completion field names (e.g., ["personalTasksComplete", ...])
+ */
+function getTaskCompletionFields(recapType) {
+  const calendarKey = recapType === "personal" ? "tasks" : "workTasks";
+  const calendar = CALENDARS[calendarKey];
+  if (!calendar || !calendar.categories) return [];
+
+  return Object.keys(calendar.categories).map(
+    (catId) => `${catId}TasksComplete`
+  );
+}
+
+/**
  * Generate Monthly Recap properties object
- * Simple 4-field structure: blocksDetails and tasksDetails for both personal and work
+ * 10-field structure: 4 personal block categories + personal tasks + 4 work block categories + work tasks + title
  * @returns {Object} Properties object compatible with monthly-recap.js format
  */
 function generateMonthlyRecapProperties() {
@@ -1808,6 +1864,11 @@ function generateMonthlyRecapProperties() {
     },
     personalHobbyBlocks: {
       name: "Hobbies - Block Details",
+      type: "text",
+      enabled: true,
+    },
+    personalLifeBlocks: {
+      name: "Life - Block Details",
       type: "text",
       enabled: true,
     },
@@ -1858,7 +1919,10 @@ module.exports = {
   generatePersonalSummaryProperties,
   generateWorkSummaryProperties,
   MONTHLY_RECAP_EXCLUSIONS,
+  MONTHLY_RECAP_CATEGORIES,
   generateMonthlyRecapProperties,
+  getBlocksFields,
+  getTaskCompletionFields,
   DATA_SOURCES,
   getSourceDataKeys,
   getSourceData,

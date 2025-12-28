@@ -138,6 +138,12 @@ CALENDARS: {
 }
 ```
 
+Calendar definitions can include filter properties:
+- `ignoreAllDayEvents`: Filter out all-day events when fetching (used by sleep calendars)
+- `ignoreDeclinedEvents`: Filter out declined events (used by personal/work calendars)
+- `excludeKeywords`: Array of keywords to filter events by summary text
+```
+
 ### 2. SUMMARY_GROUPS Registry
 
 Defines how calendars combine for reporting:
@@ -177,6 +183,46 @@ INTEGRATIONS: {
 ```
 
 **Adding a new feature?** Edit the config. No code changes needed in most cases.
+
+### 4. Monthly Recap Configuration
+
+Defines how weekly summaries are aggregated into monthly recap categories:
+
+```javascript
+// Fields to exclude from monthly recap aggregation
+MONTHLY_RECAP_EXCLUSIONS: {
+  personal: {
+    blocks: ["ignoreBlocks"],
+    tasks: ["familyTaskDetails", "relationshipTaskDetails", "interpersonalTaskDetails"],
+  },
+  work: {
+    blocks: ["personalAndSocialBlocks", "ritualsBlocks"],
+    tasks: [],
+  },
+}
+
+// How block fields are grouped into monthly recap categories
+MONTHLY_RECAP_CATEGORIES: {
+  personal: {
+    dietAndExercise: ["workoutBlocks", "cookingBlocks", "physicalHealthBlocks", "drinkingBlocks"],
+    interpersonal: ["familyBlocks", "relationshipBlocks", "interpersonalBlocks", "mentalHealthBlocks"],
+    hobby: ["readingBlocks", "meditationBlocks", "artBlocks", "codingBlocks", "musicBlocks", "videoGamesBlocks"],
+    life: ["personalBlocks", "homeBlocks"],
+  },
+  work: {
+    meetingsAndCollaboration: ["meetingsBlocks"],
+    designAndResearch: ["designBlocks", "sketchBlocks", "researchBlocks", "critBlocks"],
+    codingAndQA: ["codingBlocks", "qaBlocks"],
+    personalAndSocial: ["personalAndSocialBlocks"],
+  },
+}
+```
+
+**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. Fields listed in `MONTHLY_RECAP_EXCLUSIONS` are excluded from aggregation even if they exist in categories.
+
+**Helper Functions**:
+- `getBlocksFields(recapType)` - Returns all block field names (flattened categories minus exclusions)
+- `getTaskCompletionFields(recapType)` - Returns task completion field names derived from CALENDARS config
 
 ## Module Responsibilities
 

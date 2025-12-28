@@ -21,6 +21,8 @@
 - [Adding a New Integration](#adding-a-new-integration)
 - [Adding a New Calendar](#adding-a-new-calendar)
 - [Adding a New Summary Group](#adding-a-new-summary-group)
+- [Adding a Calendar to Monthly Recaps](#adding-a-calendar-to-monthly-recaps)
+- [Adding a New Monthly Recap Category](#adding-a-new-monthly-recap-category)
 - [Modifying Transformers](#modifying-transformers)
 - [Testing Your Changes](#testing-your-changes)
 
@@ -519,6 +521,155 @@ SUMMARY_GROUPS: {
 ```
 
 **That's it!** The `deriveDataSources()` function automatically generates everything else.
+
+---
+
+## Adding a Calendar to Monthly Recaps
+
+**Goal**: Include a new calendar's block data in monthly recap aggregation.
+
+**Time estimate**: 5-10 minutes
+
+### Step 1: Verify Calendar is in Weekly Summaries
+
+Ensure your calendar is already included in `SUMMARY_GROUPS` and generates weekly summary block fields (e.g., `newCalendarBlocks`).
+
+### Step 2: Add to MONTHLY_RECAP_CATEGORIES
+
+**File**: `src/config/unified-sources.js`
+
+Add your calendar's block field to the appropriate category in `MONTHLY_RECAP_CATEGORIES`:
+
+```javascript
+MONTHLY_RECAP_CATEGORIES: {
+  personal: {
+    // ... existing categories
+    hobby: [
+      // ... existing fields
+      "newCalendarBlocks",  // ADD YOUR FIELD HERE
+    ],
+  },
+}
+```
+
+**Category Guidelines**:
+- `dietAndExercise`: Physical health, food, and exercise-related activities
+- `interpersonal`: Social, family, relationships, mental health
+- `hobby`: Creative, intellectual, and entertainment activities
+- `life`: Personal organization and home management
+
+### Step 3: Test Monthly Recap
+
+```bash
+# Generate weekly summaries first
+yarn summarize
+# Select your calendar and date range
+
+# Generate monthly recap
+yarn recap-month
+# Verify new calendar blocks appear in the correct category
+```
+
+**Done!** Your calendar's blocks are now included in monthly recap aggregation.
+
+---
+
+## Adding a New Monthly Recap Category
+
+**Goal**: Create a new category grouping for monthly recap aggregation (e.g., adding "life" category for personal/home blocks).
+
+**Time estimate**: 15-20 minutes
+
+### Step 1: Add Category to MONTHLY_RECAP_CATEGORIES
+
+**File**: `src/config/unified-sources.js`
+
+Add your new category to the appropriate recap type:
+
+```javascript
+MONTHLY_RECAP_CATEGORIES: {
+  personal: {
+    // ... existing categories
+    newCategory: ["field1Blocks", "field2Blocks"],  // ADD YOUR CATEGORY
+  },
+}
+```
+
+**Important**: Category key must follow the naming pattern `{categoryName}` which maps to property name `personal{CategoryName}Blocks` or `work{CategoryName}Blocks`.
+
+### Step 2: Add Property to Monthly Recap Schema
+
+**File**: `src/config/unified-sources.js`
+
+Add property definition in `generateMonthlyRecapProperties()`:
+
+```javascript
+function generateMonthlyRecapProperties() {
+  return {
+    // ... existing properties
+    personalNewCategoryBlocks: {  // ADD THIS (camelCase from category key)
+      name: "New Category - Block Details",  // Display name in Notion
+      type: "text",
+      enabled: true,
+    },
+  };
+}
+```
+
+**Note**: You must also add this property to your Notion monthly recap database manually.
+
+### Step 3: Update Transformer Function
+
+**File**: `src/transformers/transform-weekly-to-monthly-recap.js`
+
+Update `combinePersonalBlocksByCategory()` or `combineWorkBlocksByCategory()` to include your new category:
+
+```javascript
+function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
+  const categories = MONTHLY_RECAP_CATEGORIES.personal;
+  
+  // ... existing categories
+  const newCategory = combineWeeklyBlocksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.newCategory
+  );
+
+  return {
+    // ... existing fields
+    personalNewCategoryBlocks: newCategory || "",  // ADD THIS
+  };
+}
+```
+
+### Step 4: Update Database Handler
+
+**File**: `src/databases/SummaryDatabase.js`
+
+Add property handling in `upsertMonthRecap()`:
+
+```javascript
+if (summaryData.personalNewCategoryBlocks !== undefined) {
+  properties[
+    config.notion.getPropertyName(this.monthlyProps.personalNewCategoryBlocks)
+  ] = summaryData.personalNewCategoryBlocks || "";
+}
+```
+
+### Step 5: Test
+
+```bash
+# Generate weekly summaries
+yarn summarize
+
+# Generate monthly recap
+yarn recap-month
+
+# Verify new category appears with correct data
+```
+
+**Done!** Your new monthly recap category is now functional.
 
 ---
 

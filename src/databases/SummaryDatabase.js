@@ -229,6 +229,11 @@ class SummaryDatabase extends NotionDatabase {
         config.notion.getPropertyName(this.monthlyProps.personalHobbyBlocks)
       ] = summaryData.personalHobbyBlocks || "";
     }
+    if (summaryData.personalLifeBlocks !== undefined) {
+      properties[
+        config.notion.getPropertyName(this.monthlyProps.personalLifeBlocks)
+      ] = summaryData.personalLifeBlocks || "";
+    }
     if (summaryData.personalTasksDetails !== undefined) {
       properties[
         config.notion.getPropertyName(this.monthlyProps.personalTasksDetails)

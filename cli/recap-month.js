@@ -110,14 +110,20 @@ async function main() {
 
     // Combine personal and work data into single record
     const combinedData = {
-      personalDietAndExerciseBlocks: personalResult.monthlyRecap.personalDietAndExerciseBlocks,
-      personalInterpersonalBlocks: personalResult.monthlyRecap.personalInterpersonalBlocks,
+      personalDietAndExerciseBlocks:
+        personalResult.monthlyRecap.personalDietAndExerciseBlocks,
+      personalInterpersonalBlocks:
+        personalResult.monthlyRecap.personalInterpersonalBlocks,
       personalHobbyBlocks: personalResult.monthlyRecap.personalHobbyBlocks,
+      personalLifeBlocks: personalResult.monthlyRecap.personalLifeBlocks,
       personalTasksDetails: personalResult.monthlyRecap.tasksDetails,
-      workMeetingsAndCollaborationBlocks: workResult.monthlyRecap.workMeetingsAndCollaborationBlocks,
-      workDesignAndResearchBlocks: workResult.monthlyRecap.workDesignAndResearchBlocks,
+      workMeetingsAndCollaborationBlocks:
+        workResult.monthlyRecap.workMeetingsAndCollaborationBlocks,
+      workDesignAndResearchBlocks:
+        workResult.monthlyRecap.workDesignAndResearchBlocks,
       workCodingAndQABlocks: workResult.monthlyRecap.workCodingAndQABlocks,
-      workPersonalAndSocialBlocks: workResult.monthlyRecap.workPersonalAndSocialBlocks,
+      workPersonalAndSocialBlocks:
+        workResult.monthlyRecap.workPersonalAndSocialBlocks,
       workTasksDetails: workResult.monthlyRecap.tasksDetails,
     };
 

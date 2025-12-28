@@ -6,7 +6,7 @@ const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { showProgress, showSuccess, showError } = require("../utils/cli");
-const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
+const { SUMMARY_GROUPS, CALENDARS, getTaskCompletionFields } = require("../config/unified-sources");
 const { getCategoryShortName } = require("../utils/display-names");
 
 /**
@@ -42,29 +42,8 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
   const databaseName =
     recapType === "personal" ? "Personal Summary" : "Work Summary";
 
-  // Define success message fields based on recapType
-  const successMessageFields =
-    recapType === "personal"
-      ? [
-          "personalTasksComplete",
-          "familyTasksComplete",
-          "relationshipTasksComplete",
-          "interpersonalTasksComplete",
-          "homeTasksComplete",
-          "physicalHealthTasksComplete",
-          "mentalHealthTasksComplete",
-        ]
-      : [
-          "researchTasksComplete",
-          "sketchTasksComplete",
-          "designTasksComplete",
-          "codingTasksComplete",
-          "critTasksComplete",
-          "qaTasksComplete",
-          "adminTasksComplete",
-          "socialTasksComplete",
-          "oooTasksComplete",
-        ];
+  // Get task completion fields from config
+  const successMessageFields = getTaskCompletionFields(recapType);
 
   const displayOnly = options.displayOnly || false;
   const selectedSources = options.sources || [];

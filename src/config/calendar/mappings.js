@@ -271,11 +271,6 @@ function deriveSummarySource(groupId, group) {
     calendars: calendarConfigs,
   };
 
-  // Add special properties for sleep
-  if (groupId === "sleep") {
-    source.isSleepCalendar = true;
-  }
-
   return source;
 }
 
@@ -438,11 +433,7 @@ function buildCalendarFetches(
 
       // Look up calendar definition to get filter properties from CALENDARS
       const calendarDef = CALENDARS[calendar.id];
-      // Fallback chain: CALENDARS -> source (for backward compatibility) -> defaults
-      const ignoreAllDayEvents =
-        calendarDef?.ignoreAllDayEvents ??
-        source.ignoreAllDayEvents ??
-        (source.isSleepCalendar ? true : false);
+      const ignoreAllDayEvents = calendarDef?.ignoreAllDayEvents ?? false;
       const excludeKeywords =
         calendarDef?.excludeKeywords ?? source.excludeKeywords ?? [];
       const ignoreDeclinedEvents =
@@ -454,7 +445,6 @@ function buildCalendarFetches(
         key: calendar.fetchKey,
         calendarId,
         accountType,
-        isSleepCalendar: source.isSleepCalendar || false,
         ignoreAllDayEvents,
         excludeKeywords,
         ignoreDeclinedEvents,

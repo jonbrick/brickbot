@@ -18,13 +18,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const {
-  selectDateRange,
-  showSuccess,
-  showError,
-  showSummary,
-  showInfo,
-} = require("../src/utils/cli");
+const { selectDateRange } = require("../src/utils/cli");
 const {
   displaySourceData,
   collectSourceData,
@@ -35,6 +29,7 @@ const {
   getAllSummarizersByBucket,
 } = require("../src/summarizers");
 const { SUMMARY_GROUPS } = require("../src/config/unified-sources");
+const output = require("../src/utils/output");
 
 /**
  * Select action type (display only or update)
@@ -127,11 +122,169 @@ async function selectCalendarsAndDatabases() {
 }
 
 /**
+ * Process a single week - returns data only, no output
+ * @param {number} weekNumber - Week number
+ * @param {number} year - Year
+ * @param {Object} buckets - Source buckets
+ * @param {string[]} buckets.workCalendars - Work calendar source IDs
+ * @param {string[]} buckets.workNotionSources - Work Notion source IDs
+ * @param {string[]} buckets.personalCalendars - Personal calendar source IDs
+ * @param {string[]} buckets.personalNotionSources - Personal Notion source IDs
+ * @param {boolean} displayOnly - If true, don't write to Notion
+ * @returns {Promise<Object>} Week result with { weekNumber, year, work, personal, success }
+ */
+async function processWeek(weekNumber, year, buckets, displayOnly) {
+  const {
+    workCalendars,
+    workNotionSources,
+    personalCalendars,
+    personalNotionSources,
+  } = buckets;
+
+  const weekResult = {
+    weekNumber,
+    year,
+    work: null,
+    personal: null,
+    success: false,
+  };
+
+  // Run work workflows
+  if (workCalendars.length > 0 || workNotionSources.length > 0) {
+    try {
+      const workPromises = [];
+
+      if (workCalendars.length > 0) {
+        const workflow = getSummarizer(workCalendars[0]).workflow;
+        workPromises.push(
+          workflow(weekNumber, year, {
+            accountType: "work",
+            displayOnly,
+            calendars: workCalendars,
+          })
+        );
+      }
+
+      if (workNotionSources.length > 0) {
+        const workflow = getSummarizer(workNotionSources[0]).workflow;
+        workPromises.push(
+          workflow(weekNumber, year, {
+            displayOnly,
+            sources: workNotionSources,
+          })
+        );
+      }
+
+      const workResults = await Promise.all(workPromises);
+
+      // Merge work results
+      if (workResults.length === 1) {
+        weekResult.work = workResults[0];
+      } else if (workResults.length > 1) {
+        const errors = [workResults[0].error, workResults[1].error].filter(
+          Boolean
+        );
+        weekResult.work = {
+          weekNumber,
+          year,
+          summary: {
+            ...workResults[0].summary,
+            ...workResults[1].summary,
+          },
+          updated: workResults[0].updated || workResults[1].updated,
+          error: errors.length > 0 ? errors.join("; ") : null,
+        };
+      }
+    } catch (error) {
+      weekResult.work = {
+        weekNumber,
+        year,
+        summary: null,
+        updated: false,
+        error: error.message || "Unknown error",
+      };
+    }
+  }
+
+  // Run personal workflows
+  if (personalCalendars.length > 0 || personalNotionSources.length > 0) {
+    try {
+      const personalPromises = [];
+
+      if (personalCalendars.length > 0) {
+        const workflow = getSummarizer(personalCalendars[0]).workflow;
+        personalPromises.push(
+          workflow(weekNumber, year, {
+            accountType: "personal",
+            displayOnly,
+            calendars: personalCalendars,
+          })
+        );
+      }
+
+      if (personalNotionSources.length > 0) {
+        const workflow = getSummarizer(personalNotionSources[0]).workflow;
+        personalPromises.push(
+          workflow(weekNumber, year, {
+            displayOnly,
+            sources: personalNotionSources,
+          })
+        );
+      }
+
+      const personalResults = await Promise.all(personalPromises);
+
+      // Merge personal results
+      if (personalResults.length === 1) {
+        weekResult.personal = personalResults[0];
+      } else if (personalResults.length > 1) {
+        const errors = [
+          personalResults[0].error,
+          personalResults[1].error,
+        ].filter(Boolean);
+        weekResult.personal = {
+          weekNumber,
+          year,
+          summary: {
+            ...personalResults[0].summary,
+            ...personalResults[1].summary,
+          },
+          updated: personalResults[0].updated || personalResults[1].updated,
+          error: errors.length > 0 ? errors.join("; ") : null,
+        };
+      }
+    } catch (error) {
+      weekResult.personal = {
+        weekNumber,
+        year,
+        summary: null,
+        updated: false,
+        error: error.message || "Unknown error",
+      };
+    }
+  }
+
+  // Determine overall success for this week
+  const hasWorkSuccess = weekResult.work && !weekResult.work.error;
+  const hasPersonalSuccess = weekResult.personal && !weekResult.personal.error;
+  const hasAnySuccess = hasWorkSuccess || hasPersonalSuccess;
+  const hasAnySource =
+    workCalendars.length > 0 ||
+    workNotionSources.length > 0 ||
+    personalCalendars.length > 0 ||
+    personalNotionSources.length > 0;
+
+  weekResult.success = hasAnySource && hasAnySuccess;
+
+  return weekResult;
+}
+
+/**
  * Main CLI function
  */
 async function main() {
   try {
-    console.log("\n📊 Summary Generation\n");
+    output.header("Summary Generation");
     console.log(
       "Summarizes data from Google Calendar events and Notion database records\n"
     );
@@ -199,294 +352,122 @@ async function main() {
     const { weeks } = await selectDateRange({ minGranularity: "week" });
 
     if (displayOnly) {
-      showInfo("Display mode: Results will not be saved to Notion\n");
+      console.log("ℹ️ Display mode: Results will not be saved to Notion\n");
     }
 
     // Process each week
-    const results = [];
+    const weekResults = [];
     let workSuccessCount = 0;
     let workFailureCount = 0;
     let personalSuccessCount = 0;
     let personalFailureCount = 0;
 
     for (let i = 0; i < weeks.length; i++) {
-      const { weekNumber, year, startDate, endDate } = weeks[i];
+      const { weekNumber, year } = weeks[i];
 
-      console.log(
-        `\n${"=".repeat(60)}\nProcessing week ${i + 1}/${
-          weeks.length
-        }: Week ${weekNumber}, ${year}\n${"=".repeat(60)}\n`
-      );
+      // Phase indicator
+      output.phase(i + 1, weeks.length, `Week ${weekNumber}, ${year}`);
 
-      // Initialize result structure for this week
-      const weekResult = {
-        weekNumber,
-        year,
-        work: null,
-        personal: null,
-        success: false,
+      const buckets = {
+        workCalendars,
+        workNotionSources,
+        personalCalendars,
+        personalNotionSources,
       };
 
-      // Run work workflows (if work sources selected)
-      if (workCalendars.length > 0 || workNotionSources.length > 0) {
-        try {
-          const workPromises = [];
+      const weekResult = await processWeek(
+        weekNumber,
+        year,
+        buckets,
+        displayOnly
+      );
+      weekResults.push(weekResult);
 
-          // Work calendar sources
-          if (workCalendars.length > 0) {
-            const workflow = getSummarizer(workCalendars[0]).workflow;
-            workPromises.push(
-              workflow(weekNumber, year, {
-                accountType: "work",
-                displayOnly,
-                calendars: workCalendars,
-              })
-            );
-          }
-
-          // Work Notion sources
-          if (workNotionSources.length > 0) {
-            const workflow = getSummarizer(workNotionSources[0]).workflow;
-            workPromises.push(
-              workflow(weekNumber, year, {
-                displayOnly,
-                sources: workNotionSources,
-              })
-            );
-          }
-
-          // Execute work workflows in parallel
-          const workResults = await Promise.all(workPromises);
-
-          // Merge work results
-          let workResult = null;
-          if (workResults.length === 1) {
-            workResult = workResults[0];
-          } else if (workResults.length > 1) {
-            // Merge both calendar and notion results
-            // Combine multiple errors if both workflows have errors
-            const errors = [workResults[0].error, workResults[1].error].filter(
-              Boolean
-            );
-            workResult = {
-              weekNumber,
-              year,
-              summary: {
-                ...workResults[0].summary,
-                ...workResults[1].summary,
-              },
-              updated: workResults[0].updated || workResults[1].updated,
-              error: errors.length > 0 ? errors.join("; ") : null,
-            };
-          }
-
-          weekResult.work = workResult;
-          if (workResult && !workResult.error) {
-            workSuccessCount++;
-          } else if (workResult && workResult.error) {
-            workFailureCount++;
-          }
-        } catch (error) {
-          const errorMessage = error.message || "Unknown error";
-          weekResult.work = {
-            weekNumber,
-            year,
-            summary: null,
-            updated: false,
-            error: errorMessage,
-          };
+      // Update counts
+      if (weekResult.work) {
+        if (weekResult.work.error) {
           workFailureCount++;
-          showError(
-            `Failed to process Work Summary for Week ${weekNumber}, ${year}: ${errorMessage}`
-          );
+        } else {
+          workSuccessCount++;
         }
       }
-
-      // Run personal workflows (if personal sources selected)
-      if (personalCalendars.length > 0 || personalNotionSources.length > 0) {
-        try {
-          const personalPromises = [];
-
-          // Personal calendar sources
-          if (personalCalendars.length > 0) {
-            const workflow = getSummarizer(personalCalendars[0]).workflow;
-            personalPromises.push(
-              workflow(weekNumber, year, {
-                accountType: "personal",
-                displayOnly,
-                calendars: personalCalendars,
-              })
-            );
-          }
-
-          // Personal Notion sources
-          if (personalNotionSources.length > 0) {
-            const workflow = getSummarizer(personalNotionSources[0]).workflow;
-            personalPromises.push(
-              workflow(weekNumber, year, {
-                displayOnly,
-                sources: personalNotionSources,
-              })
-            );
-          }
-
-          // Execute personal workflows in parallel
-          const personalResults = await Promise.all(personalPromises);
-
-          // Merge personal results
-          let personalResult = null;
-          if (personalResults.length === 1) {
-            personalResult = personalResults[0];
-          } else if (personalResults.length > 1) {
-            // Merge both calendar and notion results
-            // Combine multiple errors if both workflows have errors
-            const errors = [
-              personalResults[0].error,
-              personalResults[1].error,
-            ].filter(Boolean);
-            personalResult = {
-              weekNumber,
-              year,
-              summary: {
-                ...personalResults[0].summary,
-                ...personalResults[1].summary,
-              },
-              updated: personalResults[0].updated || personalResults[1].updated,
-              error: errors.length > 0 ? errors.join("; ") : null,
-            };
-          }
-
-          weekResult.personal = personalResult;
-          if (personalResult && !personalResult.error) {
-            personalSuccessCount++;
-          } else if (personalResult && personalResult.error) {
-            personalFailureCount++;
-          }
-        } catch (error) {
-          const errorMessage = error.message || "Unknown error";
-          weekResult.personal = {
-            weekNumber,
-            year,
-            summary: null,
-            updated: false,
-            error: errorMessage,
-          };
+      if (weekResult.personal) {
+        if (weekResult.personal.error) {
           personalFailureCount++;
-          showError(
-            `Failed to process Personal Summary for Week ${weekNumber}, ${year}: ${errorMessage}`
-          );
+        } else {
+          personalSuccessCount++;
         }
       }
 
-      // Determine overall success for this week
-      const hasWorkSuccess = weekResult.work && !weekResult.work.error;
-      const hasPersonalSuccess =
-        weekResult.personal && !weekResult.personal.error;
-      const hasAnySuccess = hasWorkSuccess || hasPersonalSuccess;
-      const hasAnySource =
-        workCalendars.length > 0 ||
-        workNotionSources.length > 0 ||
-        personalCalendars.length > 0 ||
-        personalNotionSources.length > 0;
-
-      if (!hasAnySource) {
-        showError("No sources selected");
-        weekResult.success = false;
-      } else {
-        weekResult.success = hasAnySuccess;
+      // Show inline result (only errors, success is shown by workflows)
+      const statuses = [];
+      if (weekResult.work) {
+        if (weekResult.work.error) {
+          statuses.push(`❌ Work: ${weekResult.work.error}`);
+        } else if (!displayOnly) {
+          // Workflows print success in update mode, so show inline status too
+          statuses.push("✅ Work");
+        }
       }
-
-      results.push(weekResult);
+      if (weekResult.personal) {
+        if (weekResult.personal.error) {
+          statuses.push(`❌ Personal: ${weekResult.personal.error}`);
+        } else if (!displayOnly) {
+          statuses.push("✅ Personal");
+        }
+      }
+      if (statuses.length > 0) {
+        console.log(statuses.join(" | ") + "\n");
+      }
     }
 
-    // Display results
+    // Display mode: Show detailed results
     if (displayOnly) {
-      // Display each week's results separately for work and personal
-      results.forEach((weekResult) => {
+      output.header("DETAILED RESULTS");
+
+      for (const weekResult of weekResults) {
         const { weekNumber, year } = weekResult;
 
         // Display work results
         if (weekResult.work) {
-          console.log(`\n${"=".repeat(60)}`);
-          console.log(`Work Summary - Week ${weekNumber}, ${year}`);
-          console.log("=".repeat(60));
           if (weekResult.work.summary) {
+            output.sectionHeader(`Work Summary - Week ${weekNumber}, ${year}`);
             displaySourceData(weekResult.work, "all");
             if (weekResult.work.error) {
-              showError(`Warning: ${weekResult.work.error}`);
+              console.log(`⚠️ Warning: ${weekResult.work.error}\n`);
             }
           } else if (weekResult.work.error) {
-            showError(`Work Summary error: ${weekResult.work.error}`);
+            console.log(`❌ Work Summary error: ${weekResult.work.error}\n`);
           }
         }
 
         // Display personal results
         if (weekResult.personal) {
-          console.log(`\n${"=".repeat(60)}`);
-          console.log(`Personal Summary - Week ${weekNumber}, ${year}`);
-          console.log("=".repeat(60));
           if (weekResult.personal.summary) {
+            output.sectionHeader(
+              `Personal Summary - Week ${weekNumber}, ${year}`
+            );
             displaySourceData(weekResult.personal, "all");
             if (weekResult.personal.error) {
-              showError(`Warning: ${weekResult.personal.error}`);
+              console.log(`⚠️ Warning: ${weekResult.personal.error}\n`);
             }
           } else if (weekResult.personal.error) {
-            showError(`Personal Summary error: ${weekResult.personal.error}`);
+            console.log(
+              `❌ Personal Summary error: ${weekResult.personal.error}\n`
+            );
           }
         }
 
         // Show error if no results at all
         if (!weekResult.work && !weekResult.personal) {
-          showError(`Week ${weekNumber}, ${year}: No sources processed`);
+          console.log(`❌ Week ${weekNumber}, ${year}: No sources processed\n`);
         }
-      });
-
-      // Display success/failure counts
-      const totalWorkSuccess = workSuccessCount;
-      const totalWorkFailure = workFailureCount;
-      const totalPersonalSuccess = personalSuccessCount;
-      const totalPersonalFailure = personalFailureCount;
-
-      if (totalWorkSuccess > 0 || totalPersonalSuccess > 0) {
-        const messages = [];
-        if (totalWorkSuccess > 0) {
-          messages.push(
-            `${totalWorkSuccess} work week${
-              totalWorkSuccess !== 1 ? "s" : ""
-            } calculated successfully`
-          );
-        }
-        if (totalPersonalSuccess > 0) {
-          messages.push(
-            `${totalPersonalSuccess} personal week${
-              totalPersonalSuccess !== 1 ? "s" : ""
-            } calculated successfully`
-          );
-        }
-        showSuccess(messages.join(", ") + "!");
       }
+    }
 
-      if (totalWorkFailure > 0 || totalPersonalFailure > 0) {
-        const messages = [];
-        if (totalWorkFailure > 0) {
-          messages.push(
-            `${totalWorkFailure} work week${
-              totalWorkFailure !== 1 ? "s" : ""
-            } failed`
-          );
-        }
-        if (totalPersonalFailure > 0) {
-          messages.push(
-            `${totalPersonalFailure} personal week${
-              totalPersonalFailure !== 1 ? "s" : ""
-            } failed`
-          );
-        }
-        showError(messages.join(", ") + ".");
-      }
-    } else {
-      // Update mode - workflow already prints success messages, just show errors
-      results.forEach((weekResult) => {
+    // Update mode: Only show errors (workflows print success messages)
+    if (!displayOnly) {
+      for (const weekResult of weekResults) {
         const { weekNumber, year } = weekResult;
 
         // Only show output for errors (success messages already printed by workflow)
@@ -495,8 +476,8 @@ async function main() {
           weekResult.work.error &&
           !weekResult.work.updated
         ) {
-          showError(
-            `Work Summary Week ${weekNumber}, ${year}: ${weekResult.work.error}`
+          console.log(
+            `❌ Work Summary Week ${weekNumber}, ${year}: ${weekResult.work.error}`
           );
         }
 
@@ -505,75 +486,77 @@ async function main() {
           weekResult.personal.error &&
           !weekResult.personal.updated
         ) {
-          showError(
-            `Personal Summary Week ${weekNumber}, ${year}: ${weekResult.personal.error}`
+          console.log(
+            `❌ Personal Summary Week ${weekNumber}, ${year}: ${weekResult.personal.error}`
           );
         }
-      });
-
-      // Final summary
-      const totalWorkSuccess = workSuccessCount;
-      const totalWorkFailure = workFailureCount;
-      const totalPersonalSuccess = personalSuccessCount;
-      const totalPersonalFailure = personalFailureCount;
-      const totalSuccess = totalWorkSuccess + totalPersonalSuccess;
-      const totalFailure = totalWorkFailure + totalPersonalFailure;
-
-      if (totalSuccess > 0 && totalFailure === 0) {
-        const messages = [];
-        if (totalWorkSuccess > 0) {
-          messages.push(
-            `${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""}`
-          );
-        }
-        if (totalPersonalSuccess > 0) {
-          messages.push(
-            `${totalPersonalSuccess} personal week${
-              totalPersonalSuccess !== 1 ? "s" : ""
-            }`
-          );
-        }
-        showSuccess(`All ${messages.join(" and ")} completed successfully!`);
-      } else if (totalSuccess > 0 && totalFailure > 0) {
-        const successMessages = [];
-        const failureMessages = [];
-        if (totalWorkSuccess > 0) {
-          successMessages.push(
-            `${totalWorkSuccess} work week${totalWorkSuccess !== 1 ? "s" : ""}`
-          );
-        }
-        if (totalPersonalSuccess > 0) {
-          successMessages.push(
-            `${totalPersonalSuccess} personal week${
-              totalPersonalSuccess !== 1 ? "s" : ""
-            }`
-          );
-        }
-        if (totalWorkFailure > 0) {
-          failureMessages.push(
-            `${totalWorkFailure} work week${totalWorkFailure !== 1 ? "s" : ""}`
-          );
-        }
-        if (totalPersonalFailure > 0) {
-          failureMessages.push(
-            `${totalPersonalFailure} personal week${
-              totalPersonalFailure !== 1 ? "s" : ""
-            }`
-          );
-        }
-        showSuccess(
-          `${successMessages.join(
-            " and "
-          )} completed successfully, ${failureMessages.join(" and ")} failed.`
-        );
-        process.exit(1);
-      } else {
-        showError("All weeks failed to process.");
-        process.exit(1);
       }
     }
+
+    // Final summary
+    console.log(output.divider());
+
+    const totalSuccess = workSuccessCount + personalSuccessCount;
+    const totalFailure = workFailureCount + personalFailureCount;
+
+    if (totalFailure === 0 && totalSuccess > 0) {
+      const parts = [];
+      if (workSuccessCount > 0) {
+        parts.push(
+          `${workSuccessCount} work week${workSuccessCount !== 1 ? "s" : ""}`
+        );
+      }
+      if (personalSuccessCount > 0) {
+        parts.push(
+          `${personalSuccessCount} personal week${
+            personalSuccessCount !== 1 ? "s" : ""
+          }`
+        );
+      }
+      output.done(`${parts.join(" and ")} completed successfully`);
+    } else if (totalSuccess > 0 && totalFailure > 0) {
+      const successParts = [];
+      const failureParts = [];
+      if (workSuccessCount > 0) {
+        successParts.push(
+          `${workSuccessCount} work week${workSuccessCount !== 1 ? "s" : ""}`
+        );
+      }
+      if (personalSuccessCount > 0) {
+        successParts.push(
+          `${personalSuccessCount} personal week${
+            personalSuccessCount !== 1 ? "s" : ""
+          }`
+        );
+      }
+      if (workFailureCount > 0) {
+        failureParts.push(
+          `${workFailureCount} work week${workFailureCount !== 1 ? "s" : ""}`
+        );
+      }
+      if (personalFailureCount > 0) {
+        failureParts.push(
+          `${personalFailureCount} personal week${
+            personalFailureCount !== 1 ? "s" : ""
+          }`
+        );
+      }
+      console.log(
+        `⚠️ ${successParts.join(
+          " and "
+        )} completed successfully, ${failureParts.join(" and ")} failed.`
+      );
+      process.exit(1);
+    } else if (totalFailure > 0 && totalSuccess === 0) {
+      console.log(
+        `❌ All ${totalFailure} week${totalFailure !== 1 ? "s" : ""} failed.`
+      );
+      process.exit(1);
+    } else {
+      console.log("ℹ️ No sources were processed");
+    }
   } catch (error) {
-    showError(`Error: ${error.message}`);
+    console.error(`❌ Error: ${error.message}`);
     if (process.env.DEBUG) {
       console.error(error);
     }

@@ -20,9 +20,8 @@ Object.keys(properties).forEach((key) => {
 module.exports = {
   // Note: database ID is set per recapType in SummaryDatabase constructor
   // This is just a template - actual database ID comes from env var:
-  // MONTHLY_RECAP_ID (shared for both personal and work)
+  // MONTHLY_RECAP_DATABASE_ID (shared for both personal and work)
   database: null,
   properties,
   fieldMappings,
 };
-

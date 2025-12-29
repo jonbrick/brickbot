@@ -18,7 +18,7 @@ Object.keys(properties).forEach((key) => {
 });
 
 module.exports = {
-  database: process.env.WORK_WEEK_SUMMARY_ID,
+  database: process.env.WORK_WEEK_SUMMARY__DATABASE_ID,
   properties,
   fieldMappings,
 };

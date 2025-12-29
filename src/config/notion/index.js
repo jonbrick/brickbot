@@ -30,8 +30,8 @@ const databases = {
   trips: trips.database,
   personalSummary: personalSummary.database,
   workSummary: workSummary.database,
-  personalMonthlyRecap: process.env.MONTHLY_RECAP_ID,
-  workMonthlyRecap: process.env.MONTHLY_RECAP_ID,
+  personalMonthlyRecap: process.env.MONTHLY_RECAP_DATABASE_ID,
+  workMonthlyRecap: process.env.MONTHLY_RECAP_DATABASE_ID,
   relationships: relationships.database,
 };
 

@@ -3,6 +3,10 @@
 const NotionDatabase = require("./NotionDatabase");
 const config = require("../config");
 const { buildDataProperties } = require("../utils/data-properties");
+const {
+  MONTHLY_RECAP_BLOCK_PROPERTIES,
+  MONTHLY_RECAP_TASK_PROPERTIES,
+} = require("../config/unified-sources");
 
 /**
  * Generic summary database for both Personal and Work summaries
@@ -209,93 +213,22 @@ class SummaryDatabase extends NotionDatabase {
 
     const properties = {};
 
-    // Add personal data if present
-    if (summaryData.personalDietAndExerciseBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.personalDietAndExerciseBlocks
-        )
-      ] = summaryData.personalDietAndExerciseBlocks || "";
-    }
-    if (summaryData.personalFamilyBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.personalFamilyBlocks)
-      ] = summaryData.personalFamilyBlocks || "";
-    }
-    if (summaryData.personalRelationshipBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.personalRelationshipBlocks
-        )
-      ] = summaryData.personalRelationshipBlocks || "";
-    }
-    if (summaryData.personalInterpersonalBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.personalInterpersonalBlocks
-        )
-      ] = summaryData.personalInterpersonalBlocks || "";
-    }
-    if (summaryData.personalHobbyBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.personalHobbyBlocks)
-      ] = summaryData.personalHobbyBlocks || "";
-    }
-    if (summaryData.personalLifeBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.personalLifeBlocks)
-      ] = summaryData.personalLifeBlocks || "";
-    }
-    if (summaryData.personalTasksDetails !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.personalTasksDetails)
-      ] = summaryData.personalTasksDetails || "";
-    }
+    // Map all block and task properties dynamically
+    const allProps = {
+      ...MONTHLY_RECAP_BLOCK_PROPERTIES.personal,
+      ...MONTHLY_RECAP_TASK_PROPERTIES.personal,
+      ...MONTHLY_RECAP_BLOCK_PROPERTIES.work,
+      ...MONTHLY_RECAP_TASK_PROPERTIES.work,
+    };
 
-    // Add work data if present
-    if (summaryData.workMeetingsAndCollaborationBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.workMeetingsAndCollaborationBlocks
-        )
-      ] = summaryData.workMeetingsAndCollaborationBlocks || "";
-    }
-    if (summaryData.workDesignAndResearchBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.workDesignAndResearchBlocks
-        )
-      ] = summaryData.workDesignAndResearchBlocks || "";
-    }
-    if (summaryData.workCodingAndQABlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.workCodingAndQABlocks)
-      ] = summaryData.workCodingAndQABlocks || "";
-    }
-    if (summaryData.workPersonalAndSocialBlocks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.workPersonalAndSocialBlocks
-        )
-      ] = summaryData.workPersonalAndSocialBlocks || "";
-    }
-    if (summaryData.workDesignAndResearchTasks !== undefined) {
-      properties[
-        config.notion.getPropertyName(
-          this.monthlyProps.workDesignAndResearchTasks
-        )
-      ] = summaryData.workDesignAndResearchTasks || "";
-    }
-    if (summaryData.workCodingAndQATasks !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.workCodingAndQATasks)
-      ] = summaryData.workCodingAndQATasks || "";
-    }
-    if (summaryData.workAdminAndSocialTasks !== undefined) {
-      properties[
-        config.notion.getPropertyName(this.monthlyProps.workAdminAndSocialTasks)
-      ] = summaryData.workAdminAndSocialTasks || "";
-    }
+    Object.entries(allProps).forEach(([categoryKey, propConfig]) => {
+      const dataKey = propConfig.key;
+      if (summaryData[dataKey] !== undefined) {
+        properties[
+          config.notion.getPropertyName(this.monthlyProps[dataKey])
+        ] = summaryData[dataKey] || "";
+      }
+    });
 
     return await this.updatePage(pageId, properties);
   }

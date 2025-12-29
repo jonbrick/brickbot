@@ -9,6 +9,7 @@
 **You are here:** `docs/REFERENCE.md` - Quick reference and lookups
 
 **Other docs:**
+
 - **[../QUICKSTART.md](../QUICKSTART.md)** - 5-minute overview
 - **[../README.md](../README.md)** - Installation and setup
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Core architecture and design principles
@@ -34,24 +35,26 @@
 Use **integration names** that match the external API:
 
 **✅ CORRECT**:
+
 ```javascript
 // Files
-collect-oura.js
-oura-to-notion-oura.js
-IntegrationDatabase("oura")
+collect - oura.js;
+oura - to - notion - oura.js;
+IntegrationDatabase("oura");
 
 // Variables
 const ouraData = await fetchOuraData();
 const ouraDb = new IntegrationDatabase("oura");
-config.notion.databases.oura
-config.notion.properties.oura
+config.notion.databases.oura;
+config.notion.properties.oura;
 ```
 
 **❌ WRONG**:
+
 ```javascript
 // Don't use domain names in Layer 1
-collect-sleep.js  // Wrong! Should be: collect-oura.js
-config.notion.databases.sleep  // Wrong! Should be: config.notion.databases.oura
+collect - sleep.js; // Wrong! Should be: collect-oura.js
+config.notion.databases.sleep; // Wrong! Should be: config.notion.databases.oura
 ```
 
 #### Layer 2: Domain Names (Notion → Calendar)
@@ -59,22 +62,24 @@ config.notion.databases.sleep  // Wrong! Should be: config.notion.databases.oura
 Use **domain names** that abstract away the source:
 
 **✅ CORRECT**:
+
 ```javascript
 // Files
-notion-oura-to-calendar-sleep.js  // Integration → domain
-notion-strava-to-calendar-workouts.js
+notion - oura - to - calendar - sleep.js; // Integration → domain
+notion - strava - to - calendar - workouts.js;
 
 // Variables
 const sleepCalendar = CALENDARS.sleep;
 const sleepEvents = await createSleepEvents();
-config.calendar.calendars.sleep
+config.calendar.calendars.sleep;
 ```
 
 **❌ WRONG**:
+
 ```javascript
 // Don't use integration names in Layer 2
-notion-oura-to-calendar-oura.js  // Wrong! Should use domain name: sleep
-config.calendar.calendars.oura  // Wrong! Should be: config.calendar.calendars.sleep
+notion - oura - to - calendar - oura.js; // Wrong! Should use domain name: sleep
+config.calendar.calendars.oura; // Wrong! Should be: config.calendar.calendars.sleep
 ```
 
 #### Layer 3: Aggregation (Calendar → Summary)
@@ -83,8 +88,8 @@ Use **summary group names**:
 
 ```javascript
 // Files
-calendar-to-notion-personal-summary.js
-notion-tasks-to-notion-summaries.js
+calendar - to - notion - personal - summary.js;
+notion - tasks - to - notion - summaries.js;
 
 // Variables (internal identifiers - keep as-is)
 const personalRecapData = aggregatePersonalData();
@@ -94,55 +99,71 @@ const workRecapData = aggregateWorkData();
 ### File Naming Patterns
 
 #### Collectors
+
 ```
 collect-{integration}.js
 ```
+
 Examples: `collect-oura.js`, `collect-strava.js`
 
 #### Transformers
 
 **Layer 1** (API → Notion):
+
 ```
 {integration}-to-notion-{integration}.js
 ```
+
 Examples: `oura-to-notion-oura.js`, `strava-to-notion-strava.js`
 
 **Layer 2** (Notion → Calendar):
+
 ```
 notion-{integration}-to-calendar-{domain}.js
 ```
+
 Examples: `notion-oura-to-calendar-sleep.js`, `notion-strava-to-calendar-workouts.js`
 
 **Layer 3** (Calendar → Summary):
+
 ```
 transform-calendar-to-notion-{summary-type}.js
 ```
+
 Examples: `transform-calendar-to-notion-personal-summary.js`
 
 #### Workflows
+
 ```
 {source}-to-{destination}.js
 ```
+
 Examples:
+
 - `oura-to-notion-oura.js` (Layer 1)
 - `notion-databases-to-calendar.js` (Layer 2)
 - `calendar-to-notion-summaries.js` (Layer 3)
 
 #### Services
+
 ```
 {IntegrationName}Service.js
 ```
+
 Examples: `OuraService.js`, `StravaService.js`, `GitHubService.js`
 
 #### Databases
+
 ```
 {Purpose}Database.js
 ```
+
 Examples: `IntegrationDatabase.js`, `NotionDatabase.js`, `SummaryDatabase.js`
 
 ### Variable Naming
 
 #### camelCase for Variables and Functions
+
 ```javascript
 const sleepData = [];
 const workoutRecords = [];
@@ -151,6 +172,7 @@ function transformToCalendarEvent() {}
 ```
 
 #### PascalCase for Classes
+
 ```javascript
 class IntegrationDatabase {}
 class OuraService {}
@@ -158,6 +180,7 @@ class BaseWorkflow {}
 ```
 
 #### UPPER_SNAKE_CASE for Constants
+
 ```javascript
 const API_BASE_URL = "https://api.example.com";
 const MAX_RETRIES = 3;
@@ -165,6 +188,7 @@ const DEFAULT_BATCH_SIZE = 10;
 ```
 
 #### Integration IDs (in config)
+
 ```javascript
 // Use exact integration names as IDs
 INTEGRATIONS: {
@@ -175,6 +199,7 @@ INTEGRATIONS: {
 ```
 
 #### Calendar IDs (in config)
+
 ```javascript
 // Use domain names as IDs
 CALENDARS: {
@@ -187,6 +212,7 @@ CALENDARS: {
 ### Property Naming (Notion)
 
 #### Standard Properties
+
 All Notion databases should have these properties:
 
 - **Title** (title): Main identifier
@@ -196,6 +222,7 @@ All Notion databases should have these properties:
 - **Calendar Created** (checkbox): Sync status flag (if syncing)
 
 #### Custom Properties
+
 Use descriptive, human-readable names:
 
 ```javascript
@@ -301,6 +328,7 @@ CALENDARS: {
 ```
 
 **Example**:
+
 ```javascript
 sleep: {
   id: "sleep",
@@ -339,13 +367,14 @@ SUMMARY_GROUPS: {
 ```
 
 **Example**:
+
 ```javascript
 personalRecap: {
   id: "personalRecap",
   name: "Personal Summary",
   emoji: "📊",
   calendars: ["sleep", "workouts", "bodyWeight", "videoGames"],
-  notionDatabase: process.env.PERSONAL_WEEK_SUMMARY_ID,
+  notionDatabase: process.env.PERSONAL_WEEK_SUMMARY_DATABASE_ID,
   aggregations: {
     totalWorkoutTime: {
       calendar: "workouts",
@@ -388,6 +417,7 @@ INTEGRATIONS: {
 ```
 
 **Example**:
+
 ```javascript
 oura: {
   id: "oura",
@@ -416,82 +446,82 @@ oura: {
 
 **API Response** → **Notion Properties**:
 
-| Oura Field | Notion Property | Type | Description |
-|------------|----------------|------|-------------|
-| `id` | Sleep ID | text | Unique identifier |
-| `day` | Date | date | Night of sleep |
-| `score` | Sleep Score | number | Overall score (0-100) |
-| `total_sleep_duration` | Total Sleep | number | Total sleep in seconds |
-| `deep_sleep_duration` | Deep Sleep | number | Deep sleep in seconds |
-| `rem_sleep_duration` | REM Sleep | number | REM sleep in seconds |
-| `light_sleep_duration` | Light Sleep | number | Light sleep in seconds |
-| `efficiency` | Efficiency | number | Sleep efficiency % |
-| `restless_periods` | Restless Periods | number | Number of restless periods |
-| `average_heart_rate` | Avg Heart Rate | number | Average HR during sleep |
-| `lowest_heart_rate` | Lowest Heart Rate | number | Lowest HR during sleep |
+| Oura Field             | Notion Property   | Type   | Description                |
+| ---------------------- | ----------------- | ------ | -------------------------- |
+| `id`                   | Sleep ID          | text   | Unique identifier          |
+| `day`                  | Date              | date   | Night of sleep             |
+| `score`                | Sleep Score       | number | Overall score (0-100)      |
+| `total_sleep_duration` | Total Sleep       | number | Total sleep in seconds     |
+| `deep_sleep_duration`  | Deep Sleep        | number | Deep sleep in seconds      |
+| `rem_sleep_duration`   | REM Sleep         | number | REM sleep in seconds       |
+| `light_sleep_duration` | Light Sleep       | number | Light sleep in seconds     |
+| `efficiency`           | Efficiency        | number | Sleep efficiency %         |
+| `restless_periods`     | Restless Periods  | number | Number of restless periods |
+| `average_heart_rate`   | Avg Heart Rate    | number | Average HR during sleep    |
+| `lowest_heart_rate`    | Lowest Heart Rate | number | Lowest HR during sleep     |
 
 ### Strava API
 
 **API Response** → **Notion Properties**:
 
-| Strava Field | Notion Property | Type | Description |
-|--------------|----------------|------|-------------|
-| `id` | Activity ID | text | Unique identifier |
-| `name` | Title | title | Activity name |
-| `start_date` | Date | date | Activity start date |
-| `type` | Activity Type | select | Run, Ride, Swim, etc. |
-| `distance` | Distance | number | Distance in meters |
-| `moving_time` | Moving Time | number | Moving time in seconds |
-| `elapsed_time` | Elapsed Time | number | Total time in seconds |
-| `total_elevation_gain` | Elevation Gain | number | Elevation in meters |
-| `average_speed` | Avg Speed | number | Speed in m/s |
-| `max_speed` | Max Speed | number | Max speed in m/s |
-| `average_heartrate` | Avg Heart Rate | number | Average HR |
-| `max_heartrate` | Max Heart Rate | number | Max HR |
-| `calories` | Calories | number | Estimated calories |
+| Strava Field           | Notion Property | Type   | Description            |
+| ---------------------- | --------------- | ------ | ---------------------- |
+| `id`                   | Activity ID     | text   | Unique identifier      |
+| `name`                 | Title           | title  | Activity name          |
+| `start_date`           | Date            | date   | Activity start date    |
+| `type`                 | Activity Type   | select | Run, Ride, Swim, etc.  |
+| `distance`             | Distance        | number | Distance in meters     |
+| `moving_time`          | Moving Time     | number | Moving time in seconds |
+| `elapsed_time`         | Elapsed Time    | number | Total time in seconds  |
+| `total_elevation_gain` | Elevation Gain  | number | Elevation in meters    |
+| `average_speed`        | Avg Speed       | number | Speed in m/s           |
+| `max_speed`            | Max Speed       | number | Max speed in m/s       |
+| `average_heartrate`    | Avg Heart Rate  | number | Average HR             |
+| `max_heartrate`        | Max Heart Rate  | number | Max HR                 |
+| `calories`             | Calories        | number | Estimated calories     |
 
 ### GitHub API
 
 **API Response** → **Notion Properties**:
 
-| GitHub Field | Notion Property | Type | Description |
-|--------------|----------------|------|-------------|
-| `number` | PR Number | number | Pull request number |
-| `title` | Title | title | PR title |
-| `created_at` | Date | date | Creation date |
-| `state` | State | select | open, closed, merged |
-| `merged` | Merged | checkbox | Whether merged |
-| `merged_at` | Merged At | date | Merge date |
-| `additions` | Lines Added | number | Lines added |
-| `deletions` | Lines Deleted | number | Lines deleted |
-| `changed_files` | Files Changed | number | Number of files |
-| `comments` | Comments | number | Number of comments |
-| `review_comments` | Review Comments | number | Review comments |
-| `html_url` | URL | url | PR URL |
+| GitHub Field      | Notion Property | Type     | Description          |
+| ----------------- | --------------- | -------- | -------------------- |
+| `number`          | PR Number       | number   | Pull request number  |
+| `title`           | Title           | title    | PR title             |
+| `created_at`      | Date            | date     | Creation date        |
+| `state`           | State           | select   | open, closed, merged |
+| `merged`          | Merged          | checkbox | Whether merged       |
+| `merged_at`       | Merged At       | date     | Merge date           |
+| `additions`       | Lines Added     | number   | Lines added          |
+| `deletions`       | Lines Deleted   | number   | Lines deleted        |
+| `changed_files`   | Files Changed   | number   | Number of files      |
+| `comments`        | Comments        | number   | Number of comments   |
+| `review_comments` | Review Comments | number   | Review comments      |
+| `html_url`        | URL             | url      | PR URL               |
 
 ### Withings API
 
 **API Response** → **Notion Properties**:
 
-| Withings Field | Notion Property | Type | Description |
-|----------------|----------------|------|-------------|
-| `date` | Date | date | Measurement date |
-| `weight` | Weight | number | Weight in kg |
-| `fat_mass_weight` | Fat Mass | number | Fat mass in kg |
-| `muscle_mass` | Muscle Mass | number | Muscle mass in kg |
-| `bone_mass` | Bone Mass | number | Bone mass in kg |
-| `hydration` | Hydration | number | Hydration % |
+| Withings Field    | Notion Property | Type   | Description       |
+| ----------------- | --------------- | ------ | ----------------- |
+| `date`            | Date            | date   | Measurement date  |
+| `weight`          | Weight          | number | Weight in kg      |
+| `fat_mass_weight` | Fat Mass        | number | Fat mass in kg    |
+| `muscle_mass`     | Muscle Mass     | number | Muscle mass in kg |
+| `bone_mass`       | Bone Mass       | number | Bone mass in kg   |
+| `hydration`       | Hydration       | number | Hydration %       |
 
 ### Steam API
 
 **API Response** → **Notion Properties**:
 
-| Steam Field | Notion Property | Type | Description |
-|-------------|----------------|------|-------------|
-| `appid` | Game ID | text | Unique game identifier |
-| `name` | Title | title | Game name |
-| `playtime_forever` | Total Playtime | number | All-time playtime (minutes) |
-| `playtime_recent` | Recent Playtime | number | Last 2 weeks (minutes) |
+| Steam Field        | Notion Property | Type   | Description                 |
+| ------------------ | --------------- | ------ | --------------------------- |
+| `appid`            | Game ID         | text   | Unique game identifier      |
+| `name`             | Title           | title  | Game name                   |
+| `playtime_forever` | Total Playtime  | number | All-time playtime (minutes) |
+| `playtime_recent`  | Recent Playtime | number | Last 2 weeks (minutes)      |
 
 ---
 
@@ -507,8 +537,8 @@ NOTION_STRAVA_DATABASE_ID=xxxxx
 NOTION_GITHUB_DATABASE_ID=xxxxx
 NOTION_STEAM_DATABASE_ID=xxxxx
 NOTION_WITHINGS_DATABASE_ID=xxxxx
-PERSONAL_WEEK_SUMMARY_ID=xxxxx
-WORK_WEEK_SUMMARY_ID=xxxxx
+PERSONAL_WEEK_SUMMARY_DATABASE_ID=xxxxx
+WORK_WEEK_SUMMARY__DATABASE_ID=xxxxx
 
 # Google Calendar
 GOOGLE_CALENDAR_SLEEP_ID=xxxxx@group.calendar.google.com
@@ -565,4 +595,3 @@ DRY_RUN=false  # Set to true for testing without creating records
 - **Need implementation help?** See [GUIDES.md](GUIDES.md)
 - **Want to understand patterns?** See [INTERNALS.md](INTERNALS.md)
 - **Architecture questions?** See [ARCHITECTURE.md](ARCHITECTURE.md)
-

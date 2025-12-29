@@ -6,8 +6,10 @@
 const {
   MONTHLY_RECAP_EXCLUSIONS,
   MONTHLY_RECAP_CATEGORIES,
-  MONTHLY_RECAP_TASK_CATEGORIES,
+  MONTHLY_RECAP_BLOCK_PROPERTIES,
+  MONTHLY_RECAP_TASK_PROPERTIES,
   getBlocksFields,
+  getTaskFields,
 } = require("../config/unified-sources");
 const config = require("../config");
 
@@ -282,20 +284,14 @@ function combineWeeklyTasksByCategory(
 
 /**
  * Extract and combine personal blocks by category from weekly summary pages
- * Returns an object with six category-specific block fields
+ * Returns an object with four category-specific block fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
- * @returns {Object} Object with personalDietAndExerciseBlocks, personalFamilyBlocks, personalRelationshipBlocks, personalInterpersonalBlocks, personalHobbyBlocks, and personalLifeBlocks
+ * @returns {Object} Object with personalFamilyBlocks, personalRelationshipBlocks, personalInterpersonalBlocks, and personalHobbiesBlocks
  */
 function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
-  const categories = MONTHLY_RECAP_CATEGORIES.personal;
+  const categories = MONTHLY_RECAP_CATEGORIES.personal.blocks;
 
-  const dietAndExercise = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.dietAndExercise
-  );
   const family = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
@@ -314,105 +310,140 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
     summaryDb,
     categories.interpersonal
   );
-  const hobby = combineWeeklyBlocksByCategory(
+  const hobbies = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
-    categories.hobby
-  );
-  const life = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.life
+    categories.hobbies
   );
 
   return {
-    personalDietAndExerciseBlocks: dietAndExercise || "",
     personalFamilyBlocks: family || "",
     personalRelationshipBlocks: relationship || "",
     personalInterpersonalBlocks: interpersonal || "",
-    personalHobbyBlocks: hobby || "",
-    personalLifeBlocks: life || "",
+    personalHobbiesBlocks: hobbies || "",
   };
 }
 
 /**
  * Extract and combine work blocks by category from weekly summary pages
- * Returns an object with four category-specific block fields
+ * Returns an object with two category-specific block fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
- * @returns {Object} Object with workMeetingsAndCollaborationBlocks, workDesignAndResearchBlocks, workCodingAndQABlocks, and workPersonalAndSocialBlocks
+ * @returns {Object} Object with workMeetingsBlocks and workSocialBlocks
  */
 function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
-  const categories = MONTHLY_RECAP_CATEGORIES.work;
+  const categories = MONTHLY_RECAP_CATEGORIES.work.blocks;
 
-  const meetingsAndCollaboration = combineWeeklyBlocksByCategory(
+  const meetings = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    categories.meetingsAndCollaboration
+    categories.meetings
   );
-  const designAndResearch = combineWeeklyBlocksByCategory(
+  const social = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    categories.designAndResearch
-  );
-  const codingAndQA = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.codingAndQA
-  );
-  const personalAndSocial = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.personalAndSocial
+    categories.social
   );
 
   return {
-    workMeetingsAndCollaborationBlocks: meetingsAndCollaboration || "",
-    workDesignAndResearchBlocks: designAndResearch || "",
-    workCodingAndQABlocks: codingAndQA || "",
-    workPersonalAndSocialBlocks: personalAndSocial || "",
+    workMeetingsBlocks: meetings || "",
+    workSocialBlocks: social || "",
+  };
+}
+
+/**
+ * Extract and combine personal tasks by category from weekly summary pages
+ * Returns an object with four category-specific task fields
+ * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
+ * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @returns {Object} Object with personalPersonalTasks, personalHomeTasks, personalPhysicalHealthTasks, and personalMentalHealthTasks
+ */
+function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
+  const categories = MONTHLY_RECAP_CATEGORIES.personal.tasks;
+
+  const personal = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.personal
+  );
+  const home = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.home
+  );
+  const physicalHealth = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.physicalHealth
+  );
+  const mentalHealth = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.mentalHealth
+  );
+
+  return {
+    personalPersonalTasks: personal || "",
+    personalHomeTasks: home || "",
+    personalPhysicalHealthTasks: physicalHealth || "",
+    personalMentalHealthTasks: mentalHealth || "",
   };
 }
 
 /**
  * Extract and combine work tasks by category from weekly summary pages
- * Returns an object with three category-specific task fields
+ * Returns an object with five category-specific task fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
- * @returns {Object} Object with workDesignAndResearchTasks, workCodingAndQATasks, and workAdminAndSocialTasks
+ * @returns {Object} Object with workDesignTasks, workResearchTasks, workAdminTasks, workCodingTasks, and workQATasks
  */
 function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
-  const categories = MONTHLY_RECAP_TASK_CATEGORIES.work;
+  const categories = MONTHLY_RECAP_CATEGORIES.work.tasks;
 
-  const designAndResearch = combineWeeklyTasksByCategory(
+  const design = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    categories.designAndResearch
+    categories.design
   );
-  const codingAndQA = combineWeeklyTasksByCategory(
+  const research = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    categories.codingAndQA
+    categories.research
   );
-  const adminAndSocial = combineWeeklyTasksByCategory(
+  const admin = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
-    categories.adminAndSocial
+    categories.admin
+  );
+  const coding = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "work",
+    summaryDb,
+    categories.coding
+  );
+  const qa = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "work",
+    summaryDb,
+    categories.qa
   );
 
   return {
-    workDesignAndResearchTasks: designAndResearch || "",
-    workCodingAndQATasks: codingAndQA || "",
-    workAdminAndSocialTasks: adminAndSocial || "",
+    workDesignTasks: design || "",
+    workResearchTasks: research || "",
+    workAdminTasks: admin || "",
+    workCodingTasks: coding || "",
+    workQATasks: qa || "",
   };
 }
 
@@ -519,15 +550,14 @@ function transformWeeklyToMonthlyRecap(
       weeklySummaries,
       summaryDb
     );
-    const tasksDetails = combineWeeklyTasks(
+    const personalTasks = combinePersonalTasksByCategory(
       weeklySummaries,
-      "personal",
       summaryDb
     );
     return {
       ...baseData,
       ...personalBlocks,
-      tasksDetails: tasksDetails || "",
+      ...personalTasks,
     };
   } else {
     const workBlocks = combineWorkBlocksByCategory(weeklySummaries, summaryDb);
@@ -549,6 +579,7 @@ module.exports = {
   combineWeeklyBlocks,
   combineWeeklyBlocksByCategory,
   combinePersonalBlocksByCategory,
+  combinePersonalTasksByCategory,
   combineWorkBlocksByCategory,
   combineWorkTasksByCategory,
   combineWeeklyTasks,

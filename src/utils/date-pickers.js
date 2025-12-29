@@ -7,6 +7,7 @@ const inquirer = require("inquirer");
 const {
   getToday,
   getWeekNumber,
+  parseWeekNumber,
   formatDate,
   formatDateLong,
 } = require("./date");
@@ -14,12 +15,14 @@ const {
 /**
  * Get all weeks (Sun-Sat) that have ANY day within a given month
  * Matches how Google Calendar displays weeks within months
+ * NOTE: This function has DST bugs causing duplicate week numbers.
+ * Use getWeeksForMonthFromNotion() instead when possible.
  *
  * @param {number} year - Year (e.g., 2025)
  * @param {number} month - Month (1-12, where 1=January)
  * @returns {Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>}
  */
-function getWeeksForMonth(year, month) {
+function getWeeksForMonthLocal(year, month) {
   // First day of month
   const monthStart = new Date(year, month - 1, 1);
   monthStart.setHours(0, 0, 0, 0);
@@ -68,6 +71,40 @@ function getWeeksForMonth(year, month) {
   }
 
   return weeks;
+}
+
+/**
+ * Get weeks for a month from Notion relation property
+ * Uses Notion as source of truth to avoid DST bugs in local calculation
+ *
+ * @param {number} year - Year (e.g., 2025)
+ * @param {number} month - Month (1-12, where 1=January)
+ * @returns {Promise<Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>>}
+ */
+async function getWeeksForMonthFromNotion(year, month) {
+  const MonthsDatabase = require("../databases/MonthsDatabase");
+  const monthsDb = new MonthsDatabase();
+
+  try {
+    const weeks = await monthsDb.getWeeksForMonth(month, year);
+
+    // Add date ranges using parseWeekNumber helper
+    return weeks.map((w) => {
+      const { startDate, endDate } = parseWeekNumber(w.weekNumber, w.year);
+      return {
+        weekNumber: w.weekNumber,
+        year: w.year,
+        startDate,
+        endDate,
+      };
+    });
+  } catch (error) {
+    // Fallback to local calculation if Notion query fails
+    console.warn(
+      `Warning: Could not fetch weeks from Notion: ${error.message}. Falling back to local calculation.`
+    );
+    return getWeeksForMonthLocal(year, month);
+  }
 }
 
 /**
@@ -184,8 +221,8 @@ async function selectMonthForWeeks() {
     month = monthSelection.month;
   }
 
-  // Get all weeks for this month
-  const weeks = getWeeksForMonth(year, month);
+  // Get all weeks for this month from Notion (with fallback to local calculation)
+  const weeks = await getWeeksForMonthFromNotion(year, month);
 
   const monthName = new Date(year, month - 1, 1).toLocaleString("default", {
     month: "long",
@@ -246,7 +283,9 @@ function deriveWeeksFromDateRange(startDate, endDate) {
 }
 
 module.exports = {
-  getWeeksForMonth,
+  getWeeksForMonth: getWeeksForMonthLocal, // Backward compatibility alias
+  getWeeksForMonthLocal,
+  getWeeksForMonthFromNotion,
   selectMonthForWeeks,
   deriveWeeksFromDateRange,
   formatWeekDisplay,

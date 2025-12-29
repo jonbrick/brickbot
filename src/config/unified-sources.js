@@ -1758,82 +1758,121 @@ function getAvailableSources() {
 const MONTHLY_RECAP_EXCLUSIONS = {
   personal: {
     blocks: ["ignoreBlocks"],
-    tasks: [
-      "familyTaskDetails",
-      "relationshipTaskDetails",
-      "interpersonalTaskDetails",
-    ],
+    tasks: [],
   },
   work: {
-    blocks: ["personalAndSocialBlocks", "ritualsBlocks"],
-    tasks: [], // No task exclusions for work
+    blocks: ["oooBlocks", "ritualsBlocks"],
+    tasks: ["oooTaskDetails", "socialTaskDetails"],
   },
 };
 
 /**
  * Monthly Recap Categories
- * Defines how block fields are grouped into monthly recap categories
- * Category keys must match property name patterns (e.g., "interpersonal" -> "personalInterpersonalBlocks")
+ * Defines how block and task fields are grouped into monthly recap categories
+ * Structure: { recapType: { blocks: {...}, tasks: {...} } }
  */
 const MONTHLY_RECAP_CATEGORIES = {
   personal: {
-    dietAndExercise: ["workoutBlocks", "cookingBlocks", "physicalHealthBlocks"],
-    family: ["familyBlocks"],
-    relationship: ["relationshipBlocks"],
-    interpersonal: ["interpersonalBlocks"],
-    hobby: [
-      "readingBlocks",
-      "meditationBlocks",
-      "artBlocks",
-      "codingBlocks",
-      "musicBlocks",
-      "videoGamesBlocks",
-    ],
-    life: ["personalBlocks", "homeBlocks"],
+    blocks: {
+      family: ["familyBlocks"],
+      relationship: ["relationshipBlocks"],
+      interpersonal: ["interpersonalBlocks"],
+      hobbies: [
+        "readingBlocks",
+        "meditationBlocks",
+        "artBlocks",
+        "codingBlocks",
+        "musicBlocks",
+        "videoGamesBlocks",
+      ],
+    },
+    tasks: {
+      personal: ["personalTaskDetails"],
+      home: ["homeTaskDetails"],
+      physicalHealth: ["physicalHealthTaskDetails"],
+      mentalHealth: ["mentalHealthTaskDetails"],
+    },
   },
   work: {
-    meetingsAndCollaboration: ["meetingsBlocks"],
-    designAndResearch: [
-      "designBlocks",
-      "sketchBlocks",
-      "researchBlocks",
-      "critBlocks",
-    ],
-    codingAndQA: ["qaBlocks"],
-    personalAndSocial: ["personalAndSocialBlocks"],
+    blocks: {
+      meetings: ["meetingsBlocks"],
+      social: ["personalAndSocialBlocks"],
+    },
+    tasks: {
+      design: ["designTaskDetails"],
+      research: ["researchTaskDetails"],
+      admin: ["adminTaskDetails"],
+      coding: ["codingTaskDetails"],
+      qa: ["qaTaskDetails"],
+    },
   },
 };
 
 /**
- * Monthly Recap Task Categories
- * Defines how task fields are grouped into monthly recap categories (work only)
- * Category keys must match property name patterns (e.g., "designAndResearch" -> "workDesignAndResearchTasks")
+ * Monthly Recap Block Properties
+ * Maps category keys to property keys and display names for block fields
  */
-const MONTHLY_RECAP_TASK_CATEGORIES = {
+const MONTHLY_RECAP_BLOCK_PROPERTIES = {
+  personal: {
+    family: { key: "personalFamilyBlocks", name: "Family - Block Details" },
+    relationship: { key: "personalRelationshipBlocks", name: "Relationship - Block Details" },
+    interpersonal: { key: "personalInterpersonalBlocks", name: "Interpersonal - Block Details" },
+    hobbies: { key: "personalHobbiesBlocks", name: "Hobbies - Block Details" },
+  },
   work: {
-    designAndResearch: [
-      "researchTaskDetails",
-      "sketchTaskDetails",
-      "designTaskDetails",
-      "critTaskDetails",
-    ],
-    codingAndQA: ["codingTaskDetails", "qaTaskDetails"],
-    adminAndSocial: ["adminTaskDetails", "socialTaskDetails", "oooTaskDetails"],
+    meetings: { key: "workMeetingsBlocks", name: "Meetings - Block Details" },
+    social: { key: "workSocialBlocks", name: "Social - Block Details" },
+  },
+};
+
+/**
+ * Monthly Recap Task Properties
+ * Maps category keys to property keys and display names for task fields
+ */
+const MONTHLY_RECAP_TASK_PROPERTIES = {
+  personal: {
+    personal: { key: "personalPersonalTasks", name: "Personal - Task Details" },
+    home: { key: "personalHomeTasks", name: "Home - Task Details" },
+    physicalHealth: { key: "personalPhysicalHealthTasks", name: "Physical Health - Task Details" },
+    mentalHealth: { key: "personalMentalHealthTasks", name: "Mental Health - Task Details" },
+  },
+  work: {
+    design: { key: "workDesignTasks", name: "Design - Task Details" },
+    research: { key: "workResearchTasks", name: "Research - Task Details" },
+    admin: { key: "workAdminTasks", name: "Admin - Task Details" },
+    coding: { key: "workCodingTasks", name: "Coding - Task Details" },
+    qa: { key: "workQATasks", name: "QA - Task Details" },
   },
 };
 
 /**
  * Get all block field names for a recap type
- * Flattens MONTHLY_RECAP_CATEGORIES and excludes fields from MONTHLY_RECAP_EXCLUSIONS
+ * Flattens MONTHLY_RECAP_CATEGORIES.blocks and excludes fields from MONTHLY_RECAP_EXCLUSIONS
  * @param {string} recapType - "personal" or "work"
  * @returns {Array<string>} Array of block field names
  */
 function getBlocksFields(recapType) {
   const categories = MONTHLY_RECAP_CATEGORIES[recapType];
-  if (!categories) return [];
+  if (!categories || !categories.blocks) return [];
 
   const exclusions = MONTHLY_RECAP_EXCLUSIONS[recapType]?.blocks || [];
-  return Object.values(categories)
+  return Object.values(categories.blocks)
+    .flat()
+    .filter((f) => !exclusions.includes(f));
+}
+
+/**
+ * Get all task field names for a recap type
+ * Flattens MONTHLY_RECAP_CATEGORIES.tasks and excludes fields from MONTHLY_RECAP_EXCLUSIONS
+ * @param {string} recapType - "personal" or "work"
+ * @returns {Array<string>} Array of task field names
+ */
+function getTaskFields(recapType) {
+  const categories = MONTHLY_RECAP_CATEGORIES[recapType];
+  if (!categories || !categories.tasks) return [];
+
+  const exclusions = MONTHLY_RECAP_EXCLUSIONS[recapType]?.tasks || [];
+  return Object.values(categories.tasks)
     .flat()
     .filter((f) => !exclusions.includes(f));
 }
@@ -1856,83 +1895,35 @@ function getTaskCompletionFields(recapType) {
 
 /**
  * Generate Monthly Recap properties object
- * 14-field structure: 6 personal block categories + personal tasks + 4 work block categories + 3 work task categories + title
+ * Dynamic structure: 4 personal block categories + 4 personal task categories + 2 work block categories + 5 work task categories + title
  * @returns {Object} Properties object compatible with monthly-recap.js format
  */
 function generateMonthlyRecapProperties() {
-  return {
+  const props = {
     title: { name: "Month Recap", type: "title", enabled: true },
-    personalDietAndExerciseBlocks: {
-      name: "Diet & Exercise - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    personalFamilyBlocks: {
-      name: "Family - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    personalRelationshipBlocks: {
-      name: "Relationship - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    personalInterpersonalBlocks: {
-      name: "Interpersonal - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    personalHobbyBlocks: {
-      name: "Hobbies - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    personalLifeBlocks: {
-      name: "Life - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    personalTasksDetails: {
-      name: "Personal Tasks Details",
-      type: "text",
-      enabled: true,
-    },
-    workMeetingsAndCollaborationBlocks: {
-      name: "Meetings & Collaboration - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    workDesignAndResearchBlocks: {
-      name: "Design & Research - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    workCodingAndQABlocks: {
-      name: "Coding & QA - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    workPersonalAndSocialBlocks: {
-      name: "Personal & Social - Block Details",
-      type: "text",
-      enabled: true,
-    },
-    workDesignAndResearchTasks: {
-      name: "Design & Research - Task Details",
-      type: "text",
-      enabled: true,
-    },
-    workCodingAndQATasks: {
-      name: "Coding & QA - Task Details",
-      type: "text",
-      enabled: true,
-    },
-    workAdminAndSocialTasks: {
-      name: "Admin & Social - Task Details",
-      type: "text",
-      enabled: true,
-    },
   };
+
+  // Personal block properties
+  Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.personal).forEach(([_, prop]) => {
+    props[prop.key] = { name: prop.name, type: "text", enabled: true };
+  });
+
+  // Personal task properties
+  Object.entries(MONTHLY_RECAP_TASK_PROPERTIES.personal).forEach(([_, prop]) => {
+    props[prop.key] = { name: prop.name, type: "text", enabled: true };
+  });
+
+  // Work block properties
+  Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.work).forEach(([_, prop]) => {
+    props[prop.key] = { name: prop.name, type: "text", enabled: true };
+  });
+
+  // Work task properties
+  Object.entries(MONTHLY_RECAP_TASK_PROPERTIES.work).forEach(([_, prop]) => {
+    props[prop.key] = { name: prop.name, type: "text", enabled: true };
+  });
+
+  return props;
 }
 
 module.exports = {
@@ -1950,9 +1941,11 @@ module.exports = {
   generateWorkSummaryProperties,
   MONTHLY_RECAP_EXCLUSIONS,
   MONTHLY_RECAP_CATEGORIES,
-  MONTHLY_RECAP_TASK_CATEGORIES,
+  MONTHLY_RECAP_BLOCK_PROPERTIES,
+  MONTHLY_RECAP_TASK_PROPERTIES,
   generateMonthlyRecapProperties,
   getBlocksFields,
+  getTaskFields,
   getTaskCompletionFields,
   DATA_SOURCES,
   getSourceDataKeys,

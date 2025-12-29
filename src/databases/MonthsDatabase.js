@@ -141,9 +141,11 @@ class MonthsDatabase extends NotionDatabase {
         }
       } catch (error) {
         // Skip invalid week pages, but log warning
-        console.warn(
-          `Warning: Could not fetch week page ${rel.id}: ${error.message}`
-        );
+        if (process.env.DEBUG) {
+          console.warn(
+            `Warning: Could not fetch week page ${rel.id}: ${error.message}`
+          );
+        }
       }
     }
 

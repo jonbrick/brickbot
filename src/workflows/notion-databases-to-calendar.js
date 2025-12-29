@@ -100,9 +100,16 @@ async function cleanupOrphanedEvents(
   results
 ) {
   try {
+    if (process.env.DEBUG) {
     console.log(
       `\n🧹 Cleaning up orphaned ${integrationId} calendar events...`
     );
+    }
+
+    // Initialize cleanup stats if not exists
+    if (!results.cleanup) {
+      results.cleanup = {};
+    }
 
     // Get ALL Notion records in date range (including synced ones)
     const allRecords = await repo.getAllInDateRange(startDate, endDate);
@@ -116,9 +123,7 @@ async function cleanupOrphanedEvents(
       }
     }
 
-    console.log(
-      `   Found ${validEventIds.size} valid event IDs in Notion records`
-    );
+    results.cleanup.validEventIds = validEventIds.size;
 
     // List Calendar events in the same date range
     const calendarEvents = await calendarService.listEvents(
@@ -127,7 +132,7 @@ async function cleanupOrphanedEvents(
       endDate
     );
 
-    console.log(`   Found ${calendarEvents.length} events in Google Calendar`);
+    results.cleanup.calendarEventsFound = calendarEvents.length;
 
     // Delete orphaned events (events not in Notion)
     let deletedCount = 0;
@@ -147,9 +152,6 @@ async function cleanupOrphanedEvents(
           await delay(config.sources.rateLimits.googleCalendar.backoffMs);
         } catch (error) {
           // Log error but continue with other deletions
-          console.error(
-            `   ⚠️  Failed to delete event ${calEvent.id}: ${error.message}`
-          );
           results.errors.push({
             eventId: calEvent.id,
             error: `Failed to delete: ${error.message}`,
@@ -157,11 +159,8 @@ async function cleanupOrphanedEvents(
         }
       }
     }
-
-    console.log(`   🗑️  Deleted ${deletedCount} orphaned events\n`);
   } catch (error) {
     // Log error but don't fail the entire sync
-    console.error(`⚠️  Cleanup failed: ${error.message}\n`);
     results.errors.push({
       error: `Cleanup failed: ${error.message}`,
     });
@@ -410,7 +409,9 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
       }
     } catch (error) {
       // Log error but don't fail the entire sync
-      console.error(`⚠️  Cleanup failed: ${error.message}`);
+      results.errors.push({
+        error: `Cleanup failed: ${error.message}`,
+      });
     }
   }
 

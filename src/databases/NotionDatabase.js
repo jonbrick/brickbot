@@ -190,7 +190,6 @@ class NotionDatabase {
         // Rate limiting
         await delay(config.sources.rateLimits.notion.backoffMs);
       } catch (error) {
-        console.error(`Failed to create page: ${error.message}`);
         results.push({ error: error.message });
       }
     }
@@ -215,9 +214,6 @@ class NotionDatabase {
         // Rate limiting
         await delay(config.sources.rateLimits.notion.backoffMs);
       } catch (error) {
-        console.error(
-          `Failed to update page ${update.pageId}: ${error.message}`
-        );
         results.push({ pageId: update.pageId, error: error.message });
       }
     }

@@ -351,7 +351,9 @@ function transformCalendarEventsToRecapData(
           break;
 
         default:
-          console.warn(`Unknown processing pattern: ${pattern} for ${groupId}`);
+          if (process.env.DEBUG) {
+            console.warn(`Unknown processing pattern: ${pattern} for ${groupId}`);
+          }
       }
     });
 

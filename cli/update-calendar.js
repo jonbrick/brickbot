@@ -9,6 +9,8 @@ const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
 const IntegrationDatabase = require("../src/databases/IntegrationDatabase");
 const { selectDateRange } = require("../src/utils/cli");
+const { formatDate } = require("../src/utils/date");
+const output = require("../src/utils/output");
 const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
   formatRecordsForDisplay,
@@ -70,88 +72,21 @@ async function selectSourceAndAction() {
 }
 
 /**
- * Print sync results summary
- */
-function printSyncResults(results, sourceType = null) {
-  console.log("\n" + "=".repeat(80));
-  console.log("📅 CALENDAR SYNC RESULTS");
-  console.log("=".repeat(80) + "\n");
-
-  console.log(`📊 Total records processed: ${results.total}`);
-  console.log(`✅ Created: ${results.created.length}`);
-  console.log(`⏭️  Skipped: ${results.skipped.length}`);
-  console.log(`🗑️  Deleted: ${results.deleted?.length || 0}`);
-  console.log(`❌ Errors: ${results.errors.length}\n`);
-
-  if (results.created.length > 0) {
-    console.log("Created events:");
-    results.created.forEach((r) => {
-      // Use displayName if available, otherwise use summary
-      if (r.displayName && sourceType) {
-        console.log(`  ✅ ${formatRecordForLogging(r, sourceType)}`);
-      } else {
-        // Fallback to summary for backward compatibility
-        console.log(`  ✅ ${r.summary || "Unknown"}`);
-      }
-    });
-    console.log();
-  }
-
-  if (results.skipped.length > 0) {
-    console.log("Skipped records:");
-    results.skipped.forEach((r) => {
-      // Use displayName if available
-      if (r.displayName && sourceType) {
-        console.log(
-          `  ⏭️  ${formatRecordForLogging(r, sourceType)} - ${r.reason}`
-        );
-      } else {
-        // Fallback to pageId for backward compatibility
-        console.log(`  ⏭️  Page ID: ${r.pageId} - ${r.reason}`);
-      }
-    });
-    console.log();
-  }
-
-  if (results.deleted && results.deleted.length > 0) {
-    console.log("Deleted orphaned events:");
-    results.deleted.forEach((d) => {
-      console.log(`  🗑️  ${d.summary} (Event ID: ${d.eventId})`);
-    });
-    console.log();
-  }
-
-  if (results.errors.length > 0) {
-    console.log("Errors:");
-    results.errors.forEach((e) => {
-      console.log(`  ❌ Page ID: ${e.pageId} - ${e.error}`);
-    });
-    console.log();
-  }
-
-  console.log("=".repeat(80) + "\n");
-}
-
-/**
  * Handle all calendar syncs sequentially
  */
 async function handleAllCalendarSyncs(startDate, endDate, action) {
-  console.log("\n" + "=".repeat(80));
-  console.log("🌟 SYNCING ALL SOURCES TO CALENDAR");
-  console.log("=".repeat(80));
-  console.log(`Date range: ${startDate} to ${endDate}`);
-  console.log(
-    `Action: ${action === "sync" ? "Sync to Calendar" : "Display only"}`
-  );
-  console.log("=".repeat(80) + "\n");
+  output.header("SYNCING ALL SOURCES TO CALENDAR");
+  console.log(`Date range: ${formatDate(startDate)} to ${formatDate(endDate)}`);
+  console.log(`Action: ${action === "sync" ? "Sync to Calendar" : "Display only"}\n`);
 
+  const startTime = Date.now();
   const updaterIds = getUpdaterIds();
 
   // Build sources list with names from INTEGRATIONS
   const sources = updaterIds
     .map((id) => ({
       id,
-      name: INTEGRATIONS[id].name.split(" ")[0], // Extract "Oura" from "Oura (Sleep)"
+      name: INTEGRATIONS[id].name.split(" ")[0],
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -162,63 +97,54 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
 
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
-    console.log(`\n[${i + 1}/${sources.length}] Processing ${source.name}...`);
-    console.log("-".repeat(80) + "\n");
+    
+    // Phase indicator
+    output.phase(i + 1, sources.length, source.name);
 
     try {
-      await handleCalendarSync(source.id, startDate, endDate, action);
+      const result = await handleCalendarSync(source.id, startDate, endDate, action);
       aggregatedResults.successful.push(source.name);
+
+      // Handle all output cases
+      if (result.fetchedCount === 0) {
+        console.log(`${result.metadata.emptyMessage}\n`);
+      } else if (action === "sync" && result.results) {
+        const { created, skipped, deleted, errors } = result.results;
+        const recordLabel = result.fetchedCount === 1 ? "record" : "records";
+        const deletedCount = deleted?.length || 0;
+        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} synced | ${skipped.length} skipped | ${deletedCount} deleted\n`);
+      } else if (action === "display" && result.displayData) {
+        displayRecordsTable(result.displayData, result.metadata.sourceId);
+        console.log(); // Blank line after table
+      }
     } catch (error) {
-      console.error(`\n❌ ${source.name} failed:`, error.message);
+      console.log(`❌ ${source.name} failed: ${error.message}\n`);
       aggregatedResults.failed.push({
         source: source.name,
         error: error.message,
       });
     }
 
-    // Add a small delay between sources
+    // Rate limit delay between sources
     if (i < sources.length - 1) {
-      console.log("\n" + "-".repeat(80));
-      console.log("⏳ Waiting before next source...\n");
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
-  // Print aggregated summary
-  printAggregatedCalendarResults(aggregatedResults);
-}
-
-/**
- * Print aggregated calendar sync results
- */
-function printAggregatedCalendarResults(aggregatedResults) {
-  console.log("\n" + "=".repeat(80));
-  console.log("🌟 AGGREGATED CALENDAR SYNC RESULTS");
-  console.log("=".repeat(80) + "\n");
-
-  console.log(`✅ Successful sources: ${aggregatedResults.successful.length}`);
-  if (aggregatedResults.successful.length > 0) {
-    aggregatedResults.successful.forEach((source) => {
-      console.log(`   ✓ ${source}`);
-    });
-  }
-
-  console.log(`\n❌ Failed sources: ${aggregatedResults.failed.length}`);
-  if (aggregatedResults.failed.length > 0) {
-    aggregatedResults.failed.forEach((item) => {
-      console.log(`   ✗ ${item.source}: ${item.error}`);
-    });
-  }
-
-  console.log("\n" + "=".repeat(80) + "\n");
+  // Final summary
+  console.log(output.divider());
+  const duration = Math.round((Date.now() - startTime) / 1000);
+  output.done(`${aggregatedResults.successful.length} sources completed`, `${duration}s`);
 }
 
 /**
  * Generic handler for syncing Notion records to calendar
+ * Returns data only - caller handles all output
  * @param {string} sourceId - Source identifier (e.g., 'oura', 'strava')
  * @param {string} startDate - Start date string for query range
  * @param {string} endDate - End date string for query range
  * @param {string} action - Action to perform ('display' or 'sync')
+ * @returns {Promise<Object>} Result object with { fetchedCount, results, displayData, metadata }
  */
 async function handleCalendarSync(sourceId, startDate, endDate, action) {
   const updater = getUpdater(sourceId);
@@ -228,8 +154,6 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
 
   const { syncFn, calendarSyncMetadata } = updater;
   const { queryMethod, emptyMessage, sourceType } = calendarSyncMetadata;
-
-  console.log(`📊 Querying Notion for unsynced ${sourceId} records...\n`);
 
   // Create IntegrationDatabase instance to check pattern
   const repo = new IntegrationDatabase(sourceId);
@@ -245,7 +169,7 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     repo.databaseConfig.calendarCreatedProperty !== undefined &&
     repo.databaseConfig.calendarCreatedProperty !== null;
 
-  // Get unsynced records based on pattern
+  // Get unsynced records based on pattern (no output)
   let records;
   if (useHybridPattern) {
     // Use hybrid pattern: query by checkbox (includes records with/without event ID)
@@ -262,27 +186,46 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     records = await repo.getUnsynced(startDate, endDate);
   }
 
+  // Early return for empty data
   if (records.length === 0) {
-    console.log(emptyMessage);
-    return;
+    return {
+      fetchedCount: 0,
+      results: null,
+      displayData: null,
+      metadata: { emptyMessage, sourceType, sourceId }
+    };
   }
 
-  // Format and display records using config-driven utilities
-  // Use repo for new pattern, notionService for old pattern
-  const serviceForDisplay = useEventIdPattern ? repo : new NotionService();
-  const formattedRecords = formatRecordsForDisplay(
-    records,
-    sourceId,
-    serviceForDisplay
-  );
-  displayRecordsTable(formattedRecords, sourceId);
+  // Format for display (only needed for display mode)
+  let displayData = null;
+  if (action === "display") {
+    // Use repo for new pattern, notionService for old pattern
+    const serviceForDisplay = useEventIdPattern ? repo : new NotionService();
+    displayData = formatRecordsForDisplay(
+      records,
+      sourceId,
+      serviceForDisplay
+    );
+  }
 
   // Sync to calendar if requested
   if (action === "sync") {
-    console.log("\n📤 Syncing to Calendar...\n");
     const results = await syncFn(startDate, endDate);
-    printSyncResults(results, sourceType);
+    return {
+      fetchedCount: records.length,
+      results,
+      displayData: null,
+      metadata: { emptyMessage, sourceType, sourceId }
+    };
   }
+
+  // Display mode: return display data
+  return {
+    fetchedCount: records.length,
+    results: null,
+    displayData,
+    metadata: { emptyMessage, sourceType, sourceId }
+  };
 }
 
 async function main() {
@@ -311,7 +254,21 @@ async function main() {
     if (source === "all") {
       await handleAllCalendarSyncs(startDate, endDate, action);
     } else {
-      await handleCalendarSync(source, startDate, endDate, action);
+      const result = await handleCalendarSync(source, startDate, endDate, action);
+      
+      // Handle output based on result
+      if (result.fetchedCount === 0) {
+        console.log(`\n${result.metadata.emptyMessage}`);
+      } else if (action === "sync" && result.results) {
+        output.syncResults(result.results, {
+          showDetails: true,
+          title: "CALENDAR SYNC RESULTS",
+          formatItem: formatRecordForLogging,
+          sourceType: result.metadata.sourceType
+        });
+      } else if (action === "display" && result.displayData) {
+        displayRecordsTable(result.displayData, result.metadata.sourceId);
+      }
     }
 
     console.log("✅ Done!\n");

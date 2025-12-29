@@ -1,7 +1,6 @@
 // Fetches gaming session data from Steam API for a specific date range
 
 const SteamService = require("../services/SteamService");
-const { createSpinner } = require("../utils/cli");
 const { formatDate } = require("../utils/date");
 const { extractSourceDate } = require("../utils/date-handler");
 
@@ -40,26 +39,21 @@ function getEasternOffset(dateStr) {
  * @returns {Promise<Array>} Processed gaming activities
  */
 async function fetchSteamData(startDate, endDate) {
-  const spinner = createSpinner("Fetching Steam gaming data...");
-  spinner.start();
+  const service = new SteamService();
 
-  try {
-    const service = new SteamService();
+  // Debug: Log the date range being queried
+  if (process.env.DEBUG) {
+    console.log(
+      `Querying Steam gaming data from ${startDate.toISOString()} to ${endDate.toISOString()}`
+    );
+  }
 
-    // Debug: Log the date range being queried
-    if (process.env.DEBUG) {
-      console.log(
-        `Querying Steam gaming data from ${startDate.toISOString()} to ${endDate.toISOString()}`
-      );
-    }
+  // Fetch gaming sessions
+  const sessions = await service.fetchGamingSessions(startDate, endDate);
 
-    // Fetch gaming sessions
-    const sessions = await service.fetchGamingSessions(startDate, endDate);
-
-    if (sessions.length === 0) {
-      spinner.info("No Steam gaming data found for this date range");
-      return [];
-    }
+  if (sessions.length === 0) {
+    return [];
+  }
 
     // Transform sessions into activities format (one per game per day)
     const activities = [];
@@ -174,12 +168,7 @@ async function fetchSteamData(startDate, endDate) {
       }
     }
 
-    spinner.succeed(`Fetched ${activities.length} Steam gaming activities`);
     return activities;
-  } catch (error) {
-    spinner.fail(`Failed to fetch Steam data: ${error.message}`);
-    throw error;
-  }
 }
 
 module.exports = { fetchSteamData };

@@ -1,7 +1,6 @@
 // Fetches pull request data from GitHub API for a specific user and date range
 
 const GitHubService = require("../services/GitHubService");
-const { createSpinner } = require("../utils/cli");
 const { formatDate } = require("../utils/date");
 const { extractSourceDate } = require("../utils/date-handler");
 
@@ -275,41 +274,26 @@ function convertGroupToActivity(repoGroup) {
  * @returns {Promise<Array>} Processed GitHub activities
  */
 async function fetchGitHubData(startDate, endDate) {
-  const spinner = createSpinner("Fetching GitHub activities...");
-  spinner.start();
+  const service = new GitHubService();
 
-  try {
-    const service = new GitHubService();
-
-    // Debug: Log the date range being queried
-    if (process.env.DEBUG) {
-      console.log(
-        `Querying GitHub commits from ${startDate.toISOString()} to ${endDate.toISOString()}`
-      );
-    }
-
-    // Fetch commits from GitHub
-    const commits = await service.getUserEvents(startDate, endDate);
-
-    if (commits.length === 0) {
-      spinner.info("No GitHub commits found for this date range");
-      return [];
-    }
-
-    // Process commits into activities
-    const activities = await processCommitsIntoActivities(commits, service);
-
-    if (activities.length === 0) {
-      spinner.info("No GitHub activities found for this date range");
-      return [];
-    }
-
-    spinner.succeed(`Fetched ${activities.length} GitHub activities`);
-    return activities;
-  } catch (error) {
-    spinner.fail(`Failed to fetch GitHub data: ${error.message}`);
-    throw error;
+  // Debug: Log the date range being queried
+  if (process.env.DEBUG) {
+    console.log(
+      `Querying GitHub commits from ${startDate.toISOString()} to ${endDate.toISOString()}`
+    );
   }
+
+  // Fetch commits from GitHub
+  const commits = await service.getUserEvents(startDate, endDate);
+
+  if (commits.length === 0) {
+    return [];
+  }
+
+  // Process commits into activities
+  const activities = await processCommitsIntoActivities(commits, service);
+
+  return activities;
 }
 
 module.exports = { fetchGitHubData };

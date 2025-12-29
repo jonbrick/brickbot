@@ -6,11 +6,32 @@
  */
 
 require("dotenv").config();
+const inquirer = require("inquirer");
 const { selectMonthForWeeks } = require("../src/utils/date-pickers");
 const {
   generateMonthlyRecap,
 } = require("../src/workflows/weekly-summary-to-monthly-recap");
 const { showSuccess, showError, showInfo } = require("../src/utils/cli");
+
+/**
+ * Select action type (generate or display only)
+ * @returns {Promise<string>} Selected action ("sync" or "display")
+ */
+async function selectAction() {
+  const { action } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "action",
+      message: "What would you like to do?",
+      choices: [
+        { name: "Generate Monthly Recap", value: "sync" },
+        { name: "Display only (debug)", value: "display" },
+      ],
+    },
+  ]);
+
+  return action;
+}
 
 async function main() {
   try {
@@ -18,6 +39,10 @@ async function main() {
     console.log(
       "Generates monthly recaps by aggregating weekly recap text data\n"
     );
+
+    // Select action
+    const action = await selectAction();
+    const displayOnly = action === "display";
 
     // Select month - returns { month, year, weeks }
     const { month, year, weeks } = await selectMonthForWeeks();
@@ -42,7 +67,7 @@ async function main() {
       weeks,
       {
         showProgress: (message) => console.log(`   ⏳ ${message}`),
-        displayOnly: true,
+        displayOnly: displayOnly,
       }
     );
 
@@ -61,7 +86,7 @@ async function main() {
     showInfo("Processing Work Monthly Recap...");
     const workResult = await generateMonthlyRecap("work", month, year, weeks, {
       showProgress: (message) => console.log(`   ⏳ ${message}`),
-      displayOnly: true,
+      displayOnly: displayOnly,
     });
 
     if (!workResult.success) {
@@ -75,74 +100,81 @@ async function main() {
 
     console.log();
 
-    // Merge and update single record
-    showInfo("Merging and updating monthly recap record...");
+    // Merge and update single record (only if not in display mode)
+    if (!displayOnly) {
+      showInfo("Merging and updating monthly recap record...");
 
-    const SummaryDatabase = require("../src/databases/SummaryDatabase");
-    const summaryDb = new SummaryDatabase("personal"); // Can use either type
+      const SummaryDatabase = require("../src/databases/SummaryDatabase");
+      const summaryDb = new SummaryDatabase("personal"); // Can use either type
 
-    // Find existing record with format "12. Dec Recap"
-    const existingRecord = await summaryDb.findMonthRecap(month, year);
+      // Find existing record with format "12. Dec Recap"
+      const existingRecord = await summaryDb.findMonthRecap(month, year);
 
-    if (!existingRecord) {
-      const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
-      const monthStr = String(month).padStart(2, "0");
-      const monthAbbr = monthNames[month - 1];
-      const expectedTitle = `${monthStr}. ${monthAbbr} Recap`;
-      showError(
-        `Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`
+      if (!existingRecord) {
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const monthStr = String(month).padStart(2, "0");
+        const monthAbbr = monthNames[month - 1];
+        const expectedTitle = `${monthStr}. ${monthAbbr} Recap`;
+        showError(
+          `Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`
+        );
+        process.exit(1);
+      }
+
+      // Combine personal and work data into single record
+      const combinedData = {
+        personalDietAndExerciseBlocks:
+          personalResult.monthlyRecap.personalDietAndExerciseBlocks,
+        personalFamilyBlocks: personalResult.monthlyRecap.personalFamilyBlocks,
+        personalRelationshipBlocks:
+          personalResult.monthlyRecap.personalRelationshipBlocks,
+        personalInterpersonalBlocks:
+          personalResult.monthlyRecap.personalInterpersonalBlocks,
+        personalHobbyBlocks: personalResult.monthlyRecap.personalHobbyBlocks,
+        personalLifeBlocks: personalResult.monthlyRecap.personalLifeBlocks,
+        personalTasksDetails: personalResult.monthlyRecap.tasksDetails,
+        workMeetingsAndCollaborationBlocks:
+          workResult.monthlyRecap.workMeetingsAndCollaborationBlocks,
+        workDesignAndResearchBlocks:
+          workResult.monthlyRecap.workDesignAndResearchBlocks,
+        workCodingAndQABlocks: workResult.monthlyRecap.workCodingAndQABlocks,
+        workPersonalAndSocialBlocks:
+          workResult.monthlyRecap.workPersonalAndSocialBlocks,
+        workDesignAndResearchTasks:
+          workResult.monthlyRecap.workDesignAndResearchTasks,
+        workCodingAndQATasks: workResult.monthlyRecap.workCodingAndQATasks,
+        workAdminAndSocialTasks:
+          workResult.monthlyRecap.workAdminAndSocialTasks,
+      };
+
+      // Update existing record with all 4 columns
+      await summaryDb.upsertMonthRecap(existingRecord.id, combinedData);
+
+      showSuccess("✅ Monthly recap updated successfully!");
+      console.log(
+        `   Updated record: ${
+          existingRecord.properties[summaryDb.monthlyProps.title.name]?.title[0]
+            ?.plain_text || "Unknown"
+        }`
       );
-      process.exit(1);
+    } else {
+      showInfo(
+        "Display mode: Monthly recap data generated but not saved to Notion"
+      );
     }
-
-    // Combine personal and work data into single record
-    const combinedData = {
-      personalDietAndExerciseBlocks:
-        personalResult.monthlyRecap.personalDietAndExerciseBlocks,
-      personalFamilyBlocks: personalResult.monthlyRecap.personalFamilyBlocks,
-      personalRelationshipBlocks:
-        personalResult.monthlyRecap.personalRelationshipBlocks,
-      personalInterpersonalBlocks:
-        personalResult.monthlyRecap.personalInterpersonalBlocks,
-      personalHobbyBlocks: personalResult.monthlyRecap.personalHobbyBlocks,
-      personalLifeBlocks: personalResult.monthlyRecap.personalLifeBlocks,
-      personalTasksDetails: personalResult.monthlyRecap.tasksDetails,
-      workMeetingsAndCollaborationBlocks:
-        workResult.monthlyRecap.workMeetingsAndCollaborationBlocks,
-      workDesignAndResearchBlocks:
-        workResult.monthlyRecap.workDesignAndResearchBlocks,
-      workCodingAndQABlocks: workResult.monthlyRecap.workCodingAndQABlocks,
-      workPersonalAndSocialBlocks:
-        workResult.monthlyRecap.workPersonalAndSocialBlocks,
-      workDesignAndResearchTasks:
-        workResult.monthlyRecap.workDesignAndResearchTasks,
-      workCodingAndQATasks: workResult.monthlyRecap.workCodingAndQATasks,
-      workAdminAndSocialTasks: workResult.monthlyRecap.workAdminAndSocialTasks,
-    };
-
-    // Update existing record with all 4 columns
-    await summaryDb.upsertMonthRecap(existingRecord.id, combinedData);
-
-    showSuccess("✅ Monthly recap updated successfully!");
-    console.log(
-      `   Updated record: ${
-        existingRecord.properties[summaryDb.monthlyProps.title.name]?.title[0]
-          ?.plain_text || "Unknown"
-      }`
-    );
   } catch (error) {
     showError(`Fatal error: ${error.message}`);
     console.error(error);

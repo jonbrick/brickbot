@@ -10,8 +10,8 @@ const inquirer = require("inquirer");
 const { formatDate } = require("../src/utils/date");
 const { selectDateRange } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
+const output = require("../src/utils/output");
 const config = require("../src/config");
-const { formatRecordForLogging } = require("../src/utils/display-names");
 const {
   getCollector,
   getCollectorIds,
@@ -59,8 +59,8 @@ async function selectAction() {
       name: "action",
       message: "What would you like to do?",
       choices: [
-        { name: "Display data only (debug)", value: "display" },
         { name: "Sync to Notion", value: "sync" },
+        { name: "Display only (debug)", value: "display" },
       ],
     },
   ]);
@@ -68,84 +68,23 @@ async function selectAction() {
   return `${source}-${action}`;
 }
 
-/**
- * Determine source type from a record
- * @param {Object} record - Record object
- * @returns {string} Source type
- */
-function getSourceTypeFromRecord(record) {
-  if (record.measurementId) return "withings";
-  if (record.sleepId || record.nightOf) return "oura";
-  if (record.gameName) return "steam";
-  if (record.repository) return "github";
-  if (record.activityId && record.name) return "strava";
-  return "unknown";
-}
 
-/**
- * Print sync results summary
- */
-function printSyncResults(results) {
-  console.log("\n" + "=".repeat(80));
-  console.log("NOTION SYNC RESULTS");
-  console.log("=".repeat(80) + "\n");
-
-  console.log(`📊 Total records processed: ${results.total}`);
-  console.log(`✅ Created: ${results.created.length}`);
-  console.log(`⏭️  Skipped (duplicates): ${results.skipped.length}`);
-  console.log(`❌ Errors: ${results.errors.length}\n`);
-
-  if (results.created.length > 0) {
-    console.log("Created records:");
-    results.created.forEach((r) => {
-      const sourceType = getSourceTypeFromRecord(r);
-      console.log(`  ✅ ${formatRecordForLogging(r, sourceType)}`);
-    });
-    console.log();
-  }
-
-  if (results.skipped.length > 0) {
-    console.log("Skipped records (already exist):");
-    results.skipped.forEach((r) => {
-      const sourceType = getSourceTypeFromRecord(r);
-      console.log(`  ⏭️  ${formatRecordForLogging(r, sourceType)}`);
-    });
-    console.log();
-  }
-
-  if (results.errors.length > 0) {
-    console.log("Errors:");
-    results.errors.forEach((e) => {
-      const identifier =
-        e.session || e.activity || e.measurementId || "Unknown";
-      console.log(`  ❌ ${identifier}: ${e.error}`);
-    });
-    console.log();
-  }
-
-  console.log("=".repeat(80));
-}
 
 /**
  * Handle all sources sequentially
  */
 async function handleAllSources(startDate, endDate, action) {
-  console.log("\n" + "=".repeat(80));
-  console.log("🌟 RUNNING ALL SOURCES");
-  console.log("=".repeat(80));
+  output.header("RUNNING ALL SOURCES");
   console.log(`Date range: ${formatDate(startDate)} to ${formatDate(endDate)}`);
-  console.log(
-    `Action: ${action === "sync" ? "Sync to Notion" : "Display only"}`
-  );
-  console.log("=".repeat(80) + "\n");
+  console.log(`Action: ${action === "sync" ? "Sync to Notion" : "Display only"}\n`);
 
+  const startTime = Date.now();
   const collectorIds = getCollectorIds();
 
-  // Build sources list with names from INTEGRATIONS
   const sources = collectorIds
     .map((id) => ({
       id,
-      name: INTEGRATIONS[id].name.split(" ")[0], // Extract "Oura" from "Oura (Sleep)"
+      name: INTEGRATIONS[id].name.split(" ")[0],
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -156,63 +95,57 @@ async function handleAllSources(startDate, endDate, action) {
 
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
-    console.log(`\n[${i + 1}/${sources.length}] Processing ${source.name}...`);
-    console.log("-".repeat(80) + "\n");
+    
+    // Phase indicator
+    output.phase(i + 1, sources.length, source.name);
 
     try {
-      await handleSourceData(source.id, startDate, endDate, action);
+      const result = await handleSourceData(source.id, startDate, endDate, action);
       aggregatedResults.successful.push(source.name);
+
+      // Handle all output cases
+      if (result.fetchedCount === 0) {
+        console.log(`ℹ️ No records found\n`);
+      } else if (action === "sync" && result.results) {
+        const { created, skipped } = result.results;
+        const recordLabel = result.fetchedCount === 1 ? "record" : "records";
+        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped\n`);
+      } else if (action === "display" && result.displayData) {
+        printDataTable(
+          result.displayData, 
+          result.displayMetadata.displayType, 
+          result.displayMetadata.tableTitle
+        );
+        console.log(); // Blank line after table
+      }
     } catch (error) {
-      console.error(`\n❌ ${source.name} failed:`, error.message);
+      console.log(`❌ ${source.name} failed: ${error.message}\n`);
       aggregatedResults.failed.push({
         source: source.name,
         error: error.message,
       });
     }
 
-    // Add a small delay between sources to be respectful of rate limits
+    // Rate limit delay between sources
     if (i < sources.length - 1) {
-      console.log("\n" + "-".repeat(80));
-      console.log("⏳ Waiting before next source...\n");
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
 
-  // Print aggregated summary
-  printAggregatedResults(aggregatedResults);
-}
-
-/**
- * Print aggregated results from all sources
- */
-function printAggregatedResults(aggregatedResults) {
-  console.log("\n" + "=".repeat(80));
-  console.log("🌟 AGGREGATED RESULTS - ALL SOURCES");
-  console.log("=".repeat(80) + "\n");
-
-  console.log(`✅ Successful sources: ${aggregatedResults.successful.length}`);
-  if (aggregatedResults.successful.length > 0) {
-    aggregatedResults.successful.forEach((source) => {
-      console.log(`   ✓ ${source}`);
-    });
-  }
-
-  console.log(`\n❌ Failed sources: ${aggregatedResults.failed.length}`);
-  if (aggregatedResults.failed.length > 0) {
-    aggregatedResults.failed.forEach((item) => {
-      console.log(`   ✗ ${item.source}: ${item.error}`);
-    });
-  }
-
-  console.log("\n" + "=".repeat(80) + "\n");
+  // Final summary
+  console.log(output.divider());
+  const duration = Math.round((Date.now() - startTime) / 1000);
+  output.done(`${aggregatedResults.successful.length} sources completed`, `${duration}s`);
 }
 
 /**
  * Generic handler for fetching and processing source data
+ * Returns data only - caller handles all output
  * @param {string} sourceId - Source identifier (e.g., 'oura', 'strava')
  * @param {Date} startDate - Start date for data range
  * @param {Date} endDate - End date for data range
  * @param {string} action - Action to perform ('display' or 'sync')
+ * @returns {Promise<Object>} Result object with { fetchedCount, results, displayData, displayMetadata }
  */
 async function handleSourceData(sourceId, startDate, endDate, action) {
   const collector = getCollector(sourceId);
@@ -221,35 +154,51 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
   }
 
   const { fetchFn, syncFn, transformFn, displayMetadata } = collector;
-
-  console.log(`📊 Fetching ${sourceId} data...\n`);
-
-  // Fetch data using the configured fetch function
+  
+  // Fetch data (no spinner, no output)
   const fetchedData = await fetchFn(startDate, endDate);
-
+  
+  // Early return for empty data
   if (fetchedData.length === 0) {
-    console.log(displayMetadata.emptyMessage);
-    return;
+    return { 
+      fetchedCount: 0, 
+      results: null, 
+      displayData: null,
+      displayMetadata 
+    };
   }
 
-  // Apply transformation if configured (only Oura needs this)
+  // Transform for display (only Oura needs this)
   const displayData = transformFn ? transformFn(fetchedData) : fetchedData;
 
-  // Always display the table
-  printDataTable(
-    displayData,
-    displayMetadata.displayType,
-    displayMetadata.tableTitle
-  );
-
-  // Sync to Notion if requested
-  if (action === "sync") {
-    console.log("\n📤 Syncing to Notion...\n");
-
-    // Use fetched data (not transformed) for sync
-    const results = await syncFn(fetchedData);
-    printSyncResults(results);
+  // Display mode: return display data
+  if (action === "display") {
+    return { 
+      fetchedCount: fetchedData.length, 
+      results: null, 
+      displayData,
+      displayMetadata 
+    };
   }
+
+  // Sync mode: sync to Notion and return results
+  if (action === "sync") {
+    const results = await syncFn(fetchedData);
+    return { 
+      fetchedCount: fetchedData.length, 
+      results, 
+      displayData: null,
+      displayMetadata 
+    };
+  }
+
+  // Fallback (shouldn't happen)
+  return { 
+    fetchedCount: fetchedData.length, 
+    results: null, 
+    displayData: null,
+    displayMetadata 
+  };
 }
 
 async function main() {
@@ -269,10 +218,23 @@ async function main() {
     if (source === "all") {
       await handleAllSources(startDate, endDate, action);
     } else {
-      await handleSourceData(source, startDate, endDate, action);
+      const result = await handleSourceData(source, startDate, endDate, action);
+      
+      // Handle output based on result
+      if (result.fetchedCount === 0) {
+        console.log(`\nℹ️ No records found`);
+      } else if (action === "sync" && result.results) {
+        const { created, skipped } = result.results;
+        const recordLabel = result.fetchedCount === 1 ? "record" : "records";
+        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped`);
+      } else if (action === "display" && result.displayData) {
+        printDataTable(
+          result.displayData,
+          result.displayMetadata.displayType,
+          result.displayMetadata.tableTitle
+        );
+      }
     }
-
-    console.log("✅ Done!\n");
   } catch (error) {
     console.error("\n❌ Error:", error.message);
     if (error.stack) {

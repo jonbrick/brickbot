@@ -66,8 +66,8 @@ async function selectAction(
       name: "action",
       message: "What would you like to do?",
       choices: [
-        { name: "Display values only (debug)", value: "display" },
         { name: updateMessage, value: "update" },
+        { name: "Display only (debug)", value: "display" },
       ],
     },
   ]);

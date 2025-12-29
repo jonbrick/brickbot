@@ -38,7 +38,7 @@ class OuraService {
       const today = new Date();
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
+
       const startStr = this._formatDateForAPI(today);
       const endStr = this._formatDateForAPI(tomorrow);
 
@@ -84,7 +84,9 @@ class OuraService {
       const startStr = this._formatDateForAPI(startDate);
       const endStr = this._formatDateForAPI(apiEndDate);
 
-      console.log(`📊 Querying Oura API: ${startStr} to ${endStr}\n`);
+      if (process.env.DEBUG) {
+        console.log(`📊 Querying Oura API: ${startStr} to ${endStr}\n`);
+      }
 
       const response = await this.client.get("/usercollection/sleep", {
         params: {

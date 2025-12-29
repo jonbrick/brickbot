@@ -61,8 +61,8 @@ async function selectSourceAndAction() {
       name: "action",
       message: "What would you like to do?",
       choices: [
-        { name: "Display only (debug)", value: "display" },
         { name: "Sync to Calendar", value: "sync" },
+        { name: "Display only (debug)", value: "display" },
       ],
     },
   ]);

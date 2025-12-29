@@ -8,7 +8,7 @@
 require("dotenv").config();
 const inquirer = require("inquirer");
 const { formatDate } = require("../src/utils/date");
-const { selectDateRange } = require("../src/utils/cli");
+const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const { printDataTable } = require("../src/utils/logger");
 const output = require("../src/utils/output");
 const config = require("../src/config");
@@ -68,15 +68,15 @@ async function selectAction() {
   return `${source}-${action}`;
 }
 
-
-
 /**
  * Handle all sources sequentially
  */
 async function handleAllSources(startDate, endDate, action) {
   output.header("RUNNING ALL SOURCES");
   console.log(`Date range: ${formatDate(startDate)} to ${formatDate(endDate)}`);
-  console.log(`Action: ${action === "sync" ? "Sync to Notion" : "Display only"}\n`);
+  console.log(
+    `Action: ${action === "sync" ? "Sync to Notion" : "Display only"}\n`
+  );
 
   const startTime = Date.now();
   const collectorIds = getCollectorIds();
@@ -95,12 +95,17 @@ async function handleAllSources(startDate, endDate, action) {
 
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
-    
+
     // Phase indicator
     output.phase(i + 1, sources.length, source.name);
 
     try {
-      const result = await handleSourceData(source.id, startDate, endDate, action);
+      const result = await handleSourceData(
+        source.id,
+        startDate,
+        endDate,
+        action
+      );
       aggregatedResults.successful.push(source.name);
 
       // Handle all output cases
@@ -109,11 +114,13 @@ async function handleAllSources(startDate, endDate, action) {
       } else if (action === "sync" && result.results) {
         const { created, skipped } = result.results;
         const recordLabel = result.fetchedCount === 1 ? "record" : "records";
-        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped\n`);
+        console.log(
+          `✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped\n`
+        );
       } else if (action === "display" && result.displayData) {
         printDataTable(
-          result.displayData, 
-          result.displayMetadata.displayType, 
+          result.displayData,
+          result.displayMetadata.displayType,
           result.displayMetadata.tableTitle
         );
         console.log(); // Blank line after table
@@ -135,7 +142,10 @@ async function handleAllSources(startDate, endDate, action) {
   // Final summary
   console.log(output.divider());
   const duration = Math.round((Date.now() - startTime) / 1000);
-  output.done(`${aggregatedResults.successful.length} sources completed`, `${duration}s`);
+  output.done(
+    `${aggregatedResults.successful.length} sources completed`,
+    `${duration}s`
+  );
 }
 
 /**
@@ -154,17 +164,21 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
   }
 
   const { fetchFn, syncFn, transformFn, displayMetadata } = collector;
-  
-  // Fetch data (no spinner, no output)
+  const sourceName = INTEGRATIONS[sourceId].name;
+
+  // Fetch data
+  let spinner = createSpinner(`Fetching ${sourceName} data...`);
+  spinner.start();
   const fetchedData = await fetchFn(startDate, endDate);
-  
+  spinner.stop();
+
   // Early return for empty data
   if (fetchedData.length === 0) {
-    return { 
-      fetchedCount: 0, 
-      results: null, 
+    return {
+      fetchedCount: 0,
+      results: null,
       displayData: null,
-      displayMetadata 
+      displayMetadata,
     };
   }
 
@@ -173,31 +187,34 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
 
   // Display mode: return display data
   if (action === "display") {
-    return { 
-      fetchedCount: fetchedData.length, 
-      results: null, 
+    return {
+      fetchedCount: fetchedData.length,
+      results: null,
       displayData,
-      displayMetadata 
+      displayMetadata,
     };
   }
 
   // Sync mode: sync to Notion and return results
   if (action === "sync") {
+    spinner = createSpinner(`Syncing ${sourceName} to Notion...`);
+    spinner.start();
     const results = await syncFn(fetchedData);
-    return { 
-      fetchedCount: fetchedData.length, 
-      results, 
+    spinner.stop();
+    return {
+      fetchedCount: fetchedData.length,
+      results,
       displayData: null,
-      displayMetadata 
+      displayMetadata,
     };
   }
 
   // Fallback (shouldn't happen)
-  return { 
-    fetchedCount: fetchedData.length, 
-    results: null, 
+  return {
+    fetchedCount: fetchedData.length,
+    results: null,
     displayData: null,
-    displayMetadata 
+    displayMetadata,
   };
 }
 
@@ -220,14 +237,16 @@ async function main() {
       await handleAllSources(startDate, endDate, action);
     } else {
       const result = await handleSourceData(source, startDate, endDate, action);
-      
+
       // Handle output based on result
       if (result.fetchedCount === 0) {
         console.log(`\nℹ️ No records found`);
       } else if (action === "sync" && result.results) {
         const { created, skipped } = result.results;
         const recordLabel = result.fetchedCount === 1 ? "record" : "records";
-        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped`);
+        console.log(
+          `✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped`
+        );
       } else if (action === "display" && result.displayData) {
         printDataTable(
           result.displayData,

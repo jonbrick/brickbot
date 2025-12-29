@@ -8,7 +8,7 @@ require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionService = require("../src/services/NotionService");
 const IntegrationDatabase = require("../src/databases/IntegrationDatabase");
-const { selectDateRange } = require("../src/utils/cli");
+const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const { formatDate } = require("../src/utils/date");
 const output = require("../src/utils/output");
 const { formatRecordForLogging } = require("../src/utils/display-names");
@@ -154,6 +154,7 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
 
   const { syncFn, calendarSyncMetadata } = updater;
   const { queryMethod, emptyMessage, sourceType } = calendarSyncMetadata;
+  const sourceName = INTEGRATIONS[sourceId].name;
 
   // Create IntegrationDatabase instance to check pattern
   const repo = new IntegrationDatabase(sourceId);
@@ -169,7 +170,9 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     repo.databaseConfig.calendarCreatedProperty !== undefined &&
     repo.databaseConfig.calendarCreatedProperty !== null;
 
-  // Get unsynced records based on pattern (no output)
+  // Get unsynced records based on pattern
+  let spinner = createSpinner(`Querying ${sourceName} records...`);
+  spinner.start();
   let records;
   if (useHybridPattern) {
     // Use hybrid pattern: query by checkbox (includes records with/without event ID)
@@ -185,6 +188,7 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     // Fallback to IntegrationDatabase.getUnsynced() if no queryMethod
     records = await repo.getUnsynced(startDate, endDate);
   }
+  spinner.stop();
 
   // Early return for empty data
   if (records.length === 0) {
@@ -210,7 +214,10 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
 
   // Sync to calendar if requested
   if (action === "sync") {
+    spinner = createSpinner(`Syncing ${sourceName} to Calendar...`);
+    spinner.start();
     const results = await syncFn(startDate, endDate);
+    spinner.stop();
     return {
       fetchedCount: records.length,
       results,

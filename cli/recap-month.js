@@ -7,7 +7,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { selectDateRange } = require("../src/utils/cli");
+const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const {
   generateMonthlyRecap,
 } = require("../src/workflows/weekly-summary-to-monthly-recap");
@@ -101,7 +101,10 @@ async function main() {
       output.sectionHeader(`Generating monthly recaps for ${month}/${year}`);
 
       // Process both recaps
+      let spinner = createSpinner(`Processing ${month}/${year}...`);
+      spinner.start();
       const results = await processRecaps(month, year, weeks, displayOnly, showProgress);
+      spinner.stop();
 
       // Display results
       const personalFormatted = formatMonthlyRecapResult(results.personal);
@@ -146,7 +149,10 @@ async function main() {
         const SummaryDatabase = require("../src/databases/SummaryDatabase");
         const summaryDb = new SummaryDatabase("personal"); // Can use either type
 
+        spinner = createSpinner("Finding recap record...");
+        spinner.start();
         const existingRecord = await summaryDb.findMonthRecap(month, year);
+        spinner.stop();
 
         if (!existingRecord) {
           const monthNames = [
@@ -186,7 +192,10 @@ async function main() {
         };
 
         // Update existing record
+        spinner = createSpinner("Updating Notion...");
+        spinner.start();
         await summaryDb.upsertMonthRecap(existingRecord.id, combinedData);
+        spinner.stop();
 
         console.log(output.divider());
         output.done(`Monthly recap updated successfully for ${month}/${year}`);

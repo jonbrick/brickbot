@@ -18,7 +18,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { selectDateRange } = require("../src/utils/cli");
+const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const {
   displaySourceData,
   collectSourceData,
@@ -154,6 +154,8 @@ async function processWeek(weekNumber, year, buckets, displayOnly) {
     success: false,
   };
 
+  let spinner; // Declare at function scope for reuse
+
   // Run work workflows
   if (workCalendars.length > 0 || workNotionSources.length > 0) {
     try {
@@ -180,7 +182,10 @@ async function processWeek(weekNumber, year, buckets, displayOnly) {
         );
       }
 
+      spinner = createSpinner("Processing work calendars and tasks...");
+      spinner.start();
       const workResults = await Promise.all(workPromises);
+      spinner.stop();
 
       // Merge work results
       if (workResults.length === 1) {
@@ -271,7 +276,10 @@ async function processWeek(weekNumber, year, buckets, displayOnly) {
         );
       }
 
+      spinner = createSpinner("Processing personal calendars and tasks...");
+      spinner.start();
       const personalResults = await Promise.all(personalPromises);
+      spinner.stop();
 
       // Merge personal results
       if (personalResults.length === 1) {

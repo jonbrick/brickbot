@@ -7,7 +7,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { selectMonthForWeeks } = require("../src/utils/cli");
+const { selectDateRange } = require("../src/utils/cli");
 const {
   generateMonthlyRecap,
 } = require("../src/workflows/weekly-summary-to-monthly-recap");
@@ -75,15 +75,12 @@ async function main() {
     const action = await selectAction();
     const displayOnly = action === "display";
 
-    // Select month - returns { month, year, weeks, warning, displayText }
-    const { month, year, weeks, warning, displayText } = await selectMonthForWeeks();
-    if (!weeks || weeks.length === 0) {
-      throw new Error("No weeks selected");
+    // Select month(s) - returns { months, displayText }
+    const { months, displayText } = await selectDateRange({ minGranularity: "month" });
+    if (!months || months.length === 0) {
+      throw new Error("No months selected");
     }
     if (displayText) console.log(displayText);
-    if (warning) console.warn(`⚠️  ${warning}`);
-
-    output.sectionHeader(`Generating monthly recaps for ${month}/${year}`);
 
     // Progress callback for workflows (suppresses workflow's default console.log)
     const showProgress = (message) => {
@@ -94,100 +91,110 @@ async function main() {
       }
     };
 
-    // Process both recaps
-    const results = await processRecaps(month, year, weeks, displayOnly, showProgress);
-
-    // Display results
-    const personalFormatted = formatMonthlyRecapResult(results.personal);
-    if (results.personal.success) {
-      console.log(`✅ Personal: ${personalFormatted.successMessage}`);
-      if (personalFormatted.warnings.length > 0) {
-        personalFormatted.warnings.forEach((w) => console.log(w));
+    // Process each month
+    for (const { month, year, weeks } of months) {
+      if (!weeks || weeks.length === 0) {
+        console.warn(`⚠️  No weeks found for ${month}/${year}, skipping...`);
+        continue;
       }
-    } else {
-      console.log(`❌ Personal Monthly Recap failed: ${results.personal.error}`);
+
+      output.sectionHeader(`Generating monthly recaps for ${month}/${year}`);
+
+      // Process both recaps
+      const results = await processRecaps(month, year, weeks, displayOnly, showProgress);
+
+      // Display results
+      const personalFormatted = formatMonthlyRecapResult(results.personal);
+      if (results.personal.success) {
+        console.log(`✅ Personal: ${personalFormatted.successMessage}`);
+        if (personalFormatted.warnings.length > 0) {
+          personalFormatted.warnings.forEach((w) => console.log(w));
+        }
+      } else {
+        console.log(`❌ Personal Monthly Recap failed: ${results.personal.error}`);
+        if (!displayOnly) {
+          process.exit(1);
+        }
+      }
+
+      const workFormatted = formatMonthlyRecapResult(results.work);
+      if (results.work.success) {
+        console.log(`✅ Work: ${workFormatted.successMessage}`);
+        if (workFormatted.warnings.length > 0) {
+          workFormatted.warnings.forEach((w) => console.log(w));
+        }
+      } else {
+        console.log(`❌ Work Monthly Recap failed: ${results.work.error}`);
+        if (!displayOnly) {
+          process.exit(1);
+        }
+      }
+
+      console.log();
+
+      // Update Notion if not display mode
       if (!displayOnly) {
-        process.exit(1);
+        console.log(`ℹ️ Merging and updating monthly recap record for ${month}/${year}...`);
+
+        // Check if we have any successful data to update
+        if (!results.personal.success || !results.work.success) {
+          console.log(`❌ Cannot update ${month}/${year}: one or both recaps failed`);
+          process.exit(1);
+        }
+
+        // Find existing monthly recap record
+        const SummaryDatabase = require("../src/databases/SummaryDatabase");
+        const summaryDb = new SummaryDatabase("personal"); // Can use either type
+
+        const existingRecord = await summaryDb.findMonthRecap(month, year);
+
+        if (!existingRecord) {
+          const monthNames = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+          ];
+          const monthStr = String(month).padStart(2, "0");
+          const monthAbbr = monthNames[month - 1];
+          const expectedTitle = `${monthStr}. ${monthAbbr} Recap`;
+          console.log(`❌ Monthly recap record not found for ${month}/${year}. Please create a record in Notion with title: "${expectedTitle}"`);
+          process.exit(1);
+        }
+
+        // Combine personal and work data (match existing structure from lines 138-161)
+        const combinedData = {
+          personalDietAndExerciseBlocks:
+            results.personal.monthlyRecap?.personalDietAndExerciseBlocks,
+          personalFamilyBlocks: results.personal.monthlyRecap?.personalFamilyBlocks,
+          personalRelationshipBlocks:
+            results.personal.monthlyRecap?.personalRelationshipBlocks,
+          personalInterpersonalBlocks:
+            results.personal.monthlyRecap?.personalInterpersonalBlocks,
+          personalHobbyBlocks: results.personal.monthlyRecap?.personalHobbyBlocks,
+          personalLifeBlocks: results.personal.monthlyRecap?.personalLifeBlocks,
+          personalTasksDetails: results.personal.monthlyRecap?.tasksDetails,
+          workMeetingsAndCollaborationBlocks:
+            results.work.monthlyRecap?.workMeetingsAndCollaborationBlocks,
+          workDesignAndResearchBlocks:
+            results.work.monthlyRecap?.workDesignAndResearchBlocks,
+          workCodingAndQABlocks: results.work.monthlyRecap?.workCodingAndQABlocks,
+          workPersonalAndSocialBlocks:
+            results.work.monthlyRecap?.workPersonalAndSocialBlocks,
+          workDesignAndResearchTasks:
+            results.work.monthlyRecap?.workDesignAndResearchTasks,
+          workCodingAndQATasks: results.work.monthlyRecap?.workCodingAndQATasks,
+          workAdminAndSocialTasks: results.work.monthlyRecap?.workAdminAndSocialTasks,
+        };
+
+        // Update existing record
+        await summaryDb.upsertMonthRecap(existingRecord.id, combinedData);
+
+        console.log(output.divider());
+        output.done(`Monthly recap updated successfully for ${month}/${year}`);
+        const recordTitle = existingRecord.properties[summaryDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
+        console.log(`   Updated record: ${recordTitle}`);
+      } else {
+        console.log("ℹ️ Display mode: Monthly recap data generated but not saved to Notion");
       }
-    }
-
-    const workFormatted = formatMonthlyRecapResult(results.work);
-    if (results.work.success) {
-      console.log(`✅ Work: ${workFormatted.successMessage}`);
-      if (workFormatted.warnings.length > 0) {
-        workFormatted.warnings.forEach((w) => console.log(w));
-      }
-    } else {
-      console.log(`❌ Work Monthly Recap failed: ${results.work.error}`);
-      if (!displayOnly) {
-        process.exit(1);
-      }
-    }
-
-    console.log();
-
-    // Update Notion if not display mode
-    if (!displayOnly) {
-      console.log("ℹ️ Merging and updating monthly recap record...");
-
-      // Check if we have any successful data to update
-      if (!results.personal.success || !results.work.success) {
-        console.log("❌ Cannot update: one or both recaps failed");
-        process.exit(1);
-      }
-
-      // Find existing monthly recap record
-      const SummaryDatabase = require("../src/databases/SummaryDatabase");
-      const summaryDb = new SummaryDatabase("personal"); // Can use either type
-
-      const existingRecord = await summaryDb.findMonthRecap(month, year);
-
-      if (!existingRecord) {
-        const monthNames = [
-          "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-          "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-        ];
-        const monthStr = String(month).padStart(2, "0");
-        const monthAbbr = monthNames[month - 1];
-        const expectedTitle = `${monthStr}. ${monthAbbr} Recap`;
-        console.log(`❌ Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`);
-        process.exit(1);
-      }
-
-      // Combine personal and work data (match existing structure from lines 138-161)
-      const combinedData = {
-        personalDietAndExerciseBlocks:
-          results.personal.monthlyRecap?.personalDietAndExerciseBlocks,
-        personalFamilyBlocks: results.personal.monthlyRecap?.personalFamilyBlocks,
-        personalRelationshipBlocks:
-          results.personal.monthlyRecap?.personalRelationshipBlocks,
-        personalInterpersonalBlocks:
-          results.personal.monthlyRecap?.personalInterpersonalBlocks,
-        personalHobbyBlocks: results.personal.monthlyRecap?.personalHobbyBlocks,
-        personalLifeBlocks: results.personal.monthlyRecap?.personalLifeBlocks,
-        personalTasksDetails: results.personal.monthlyRecap?.tasksDetails,
-        workMeetingsAndCollaborationBlocks:
-          results.work.monthlyRecap?.workMeetingsAndCollaborationBlocks,
-        workDesignAndResearchBlocks:
-          results.work.monthlyRecap?.workDesignAndResearchBlocks,
-        workCodingAndQABlocks: results.work.monthlyRecap?.workCodingAndQABlocks,
-        workPersonalAndSocialBlocks:
-          results.work.monthlyRecap?.workPersonalAndSocialBlocks,
-        workDesignAndResearchTasks:
-          results.work.monthlyRecap?.workDesignAndResearchTasks,
-        workCodingAndQATasks: results.work.monthlyRecap?.workCodingAndQATasks,
-        workAdminAndSocialTasks: results.work.monthlyRecap?.workAdminAndSocialTasks,
-      };
-
-      // Update existing record
-      await summaryDb.upsertMonthRecap(existingRecord.id, combinedData);
-
-      console.log(output.divider());
-      output.done("Monthly recap updated successfully");
-      const recordTitle = existingRecord.properties[summaryDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
-      console.log(`   Updated record: ${recordTitle}`);
-    } else {
-      console.log("ℹ️ Display mode: Monthly recap data generated but not saved to Notion");
     }
   } catch (error) {
     console.log(`\n❌ Fatal error: ${error.message}`);

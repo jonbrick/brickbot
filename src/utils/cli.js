@@ -14,6 +14,8 @@ const {
   getWeekNumber,
   getWeekStart,
   getWeekEnd,
+  getMonthStart,
+  getMonthEnd,
 } = require("./date");
 const {
   deriveWeeksFromDateRange,
@@ -26,39 +28,59 @@ const {
  * Subtractive design: all options by default, filtered by minGranularity
  *
  * @param {Object} options - Configuration options
- * @param {string} options.minGranularity - "day" (default) | "week" - minimum selection unit
+ * @param {string} options.minGranularity - "day" (default) | "week" | "month" - minimum selection unit
  * @param {boolean} options.allowFuture - Allow future dates (default: true)
- * @returns {Promise<{startDate: Date, endDate: Date, weeks?: Array, displayText?: string}>} Selected date range with optional weeks metadata and display text
+ * @returns {Promise<{startDate: Date, endDate: Date, weeks?: Array, months?: Array, displayText?: string}>} Selected date range with optional weeks/months metadata and display text
  */
 async function selectDateRange(options = {}) {
   const { minGranularity = "day", allowFuture = true } = options;
 
   // Build choices based on granularity
-  const allChoices = [
-    // Day-level options (only if minGranularity allows)
-    ...(minGranularity === "day"
-      ? [
-          { name: "Today", value: "today" },
-          { name: "Yesterday", value: "yesterday" },
-          { name: "Last 30 days", value: "last30" },
-          new inquirer.Separator(),
-        ]
-      : []),
+  const allChoices = [];
 
-    // Week-level options (always available)
-    { name: "This week (Sun-Sat)", value: "week" },
-    { name: "Last week (Sun-Sat)", value: "lastWeek" },
-    { name: "Single Week Picker", value: "singleWeek" },
-    { name: "Week Range (start to end)", value: "weekRange" },
-    { name: "Month Picker (all weeks in month)", value: "monthPicker" },
+  if (minGranularity === "day") {
+    // Day-level options
+    allChoices.push(
+      { name: "Today", value: "today" },
+      { name: "Yesterday", value: "yesterday" },
+      { name: "Last 30 days", value: "last30" },
+      new inquirer.Separator()
+    );
+  }
 
-    new inquirer.Separator(),
+  if (minGranularity === "day" || minGranularity === "week") {
+    // Week-level options
+    allChoices.push(
+      { name: "This week (Sun-Sat)", value: "week" },
+      { name: "Last week (Sun-Sat)", value: "lastWeek" },
+      { name: "Single Week Picker", value: "singleWeek" },
+      { name: "Week Range (start to end)", value: "weekRange" }
+    );
+    
+    // Add separator after week options if there are month options following
+    allChoices.push(new inquirer.Separator());
+  }
 
-    // Custom range (only if minGranularity === "day")
-    ...(minGranularity === "day"
-      ? [{ name: "Custom Range", value: "custom" }]
-      : []),
-  ];
+  if (minGranularity === "day" || minGranularity === "week" || minGranularity === "month") {
+    // Month-level options
+    if (minGranularity === "month") {
+      allChoices.push(
+        { name: "This Month", value: "thisMonth" },
+        { name: "Last Month", value: "lastMonth" }
+      );
+    }
+    allChoices.push(
+      { name: "Month Picker (all weeks in month)", value: "monthPicker" },
+      { name: "Month Range (start to end)", value: "monthRange" }
+    );
+  }
+
+  if (minGranularity === "day") {
+    allChoices.push(
+      new inquirer.Separator(),
+      { name: "Custom Range", value: "custom" }
+    );
+  }
 
   const { rangeType } = await inquirer.prompt([
     {
@@ -70,7 +92,7 @@ async function selectDateRange(options = {}) {
     },
   ]);
 
-  let startDate, endDate, weeks, displayText;
+  let startDate, endDate, weeks, months, displayText;
 
   // Handle each selection type
   switch (rangeType) {
@@ -91,6 +113,48 @@ async function selectDateRange(options = {}) {
       startDate.setDate(startDate.getDate() - 29); // 29 days ago
       endDate = getToday();
       endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+
+    case "thisMonth": {
+      const currentDate = getToday();
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1; // 1-12
+      
+      const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(year, month);
+      
+      const monthName = new Date(year, month - 1, 1).toLocaleString("default", { month: "long" });
+      startDate = getMonthStart(new Date(year, month - 1, 1));
+      endDate = getMonthEnd(new Date(year, month - 1, 1));
+      
+      months = [{ month, year, weeks: notionWeeks, startDate, endDate }];
+      displayText = warning 
+        ? `⚠️  ${warning}\n${buildMonthDisplayText(monthName, year, notionWeeks)}`
+        : buildMonthDisplayText(monthName, year, notionWeeks);
+      break;
+    }
+
+    case "lastMonth": {
+      const currentDate = getToday();
+      let year = currentDate.getFullYear();
+      let month = currentDate.getMonth(); // 0-11, so current month
+      
+      // Handle January → December year rollback
+      if (month === 0) {
+        month = 12;
+        year -= 1;
+      }
+      
+      const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(year, month);
+      
+      const monthName = new Date(year, month - 1, 1).toLocaleString("default", { month: "long" });
+      startDate = getMonthStart(new Date(year, month - 1, 1));
+      endDate = getMonthEnd(new Date(year, month - 1, 1));
+      
+      months = [{ month, year, weeks: notionWeeks, startDate, endDate }];
+      displayText = warning 
+        ? `⚠️  ${warning}\n${buildMonthDisplayText(monthName, year, notionWeeks)}`
+        : buildMonthDisplayText(monthName, year, notionWeeks);
       break;
     }
 
@@ -288,17 +352,155 @@ async function selectDateRange(options = {}) {
     }
 
     case "monthPicker": {
-      const { weeks: selectedWeeks, warning, displayText: monthDisplayText } = await selectMonthForWeeks();
-      weeks = selectedWeeks;
-
+      const { month, year, weeks: selectedWeeks, warning, displayText: monthDisplayText } = await selectMonthForWeeks();
+      
+      // Calculate month boundaries
+      const monthStart = getMonthStart(new Date(year, month - 1, 1));
+      const monthEnd = getMonthEnd(new Date(year, month - 1, 1));
+      
+      // Return as months array for consistency
+      months = [{ month, year, weeks: selectedWeeks, startDate: monthStart, endDate: monthEnd }];
+      
       // Calculate combined date range
-      const allStartDates = weeks.map((w) => w.startDate);
-      const allEndDates = weeks.map((w) => w.endDate);
-      startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
-      endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
-
+      startDate = monthStart;
+      endDate = monthEnd;
+      
       // Use displayText from selectMonthForWeeks, prepend warning if present
       displayText = warning ? `⚠️  ${warning}\n${monthDisplayText}` : monthDisplayText;
+      break;
+    }
+
+    case "monthRange": {
+      const currentDate = getToday();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1; // 1-12
+      
+      const answers = await inquirer.prompt([
+        {
+          type: "input",
+          name: "startYear",
+          message: "Start year:",
+          default: currentYear.toString(),
+          validate: (input) => {
+            const yearNum = parseInt(input);
+            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+              return "Please enter a valid year (2000-2100)";
+            }
+            return true;
+          },
+        },
+        {
+          type: "list",
+          name: "startMonth",
+          message: "Start month:",
+          choices: [
+            { name: "January", value: 1 },
+            { name: "February", value: 2 },
+            { name: "March", value: 3 },
+            { name: "April", value: 4 },
+            { name: "May", value: 5 },
+            { name: "June", value: 6 },
+            { name: "July", value: 7 },
+            { name: "August", value: 8 },
+            { name: "September", value: 9 },
+            { name: "October", value: 10 },
+            { name: "November", value: 11 },
+            { name: "December", value: 12 },
+          ],
+          pageSize: 12,
+        },
+        {
+          type: "input",
+          name: "endYear",
+          message: "End year:",
+          default: currentYear.toString(),
+          validate: (input) => {
+            const yearNum = parseInt(input);
+            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+              return "Please enter a valid year (2000-2100)";
+            }
+            return true;
+          },
+        },
+        {
+          type: "list",
+          name: "endMonth",
+          message: "End month:",
+          choices: [
+            { name: "January", value: 1 },
+            { name: "February", value: 2 },
+            { name: "March", value: 3 },
+            { name: "April", value: 4 },
+            { name: "May", value: 5 },
+            { name: "June", value: 6 },
+            { name: "July", value: 7 },
+            { name: "August", value: 8 },
+            { name: "September", value: 9 },
+            { name: "October", value: 10 },
+            { name: "November", value: 11 },
+            { name: "December", value: 12 },
+          ],
+          pageSize: 12,
+        },
+      ]);
+      
+      let startYear = parseInt(answers.startYear);
+      let startMonth = answers.startMonth;
+      let endYear = parseInt(answers.endYear);
+      let endMonth = answers.endMonth;
+      
+      // Swap if end is before start (compare year/month)
+      let warningText = "";
+      const startDateNum = startYear * 12 + startMonth;
+      const endDateNum = endYear * 12 + endMonth;
+      if (startDateNum > endDateNum) {
+        warningText = "⚠️  Start month is after end month, swapping...\n";
+        [startYear, endYear] = [endYear, startYear];
+        [startMonth, endMonth] = [endMonth, startMonth];
+      }
+      
+      // Build months array
+      months = [];
+      let loopYear = startYear;
+      let loopMonth = startMonth;
+      
+      while (loopYear < endYear || (loopYear === endYear && loopMonth <= endMonth)) {
+        const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(loopYear, loopMonth);
+        
+        const monthStart = getMonthStart(new Date(loopYear, loopMonth - 1, 1));
+        const monthEnd = getMonthEnd(new Date(loopYear, loopMonth - 1, 1));
+        
+        months.push({
+          month: loopMonth,
+          year: loopYear,
+          weeks: notionWeeks,
+          startDate: monthStart,
+          endDate: monthEnd,
+        });
+        
+        // Move to next month
+        loopMonth += 1;
+        if (loopMonth > 12) {
+          loopMonth = 1;
+          loopYear += 1;
+        }
+      }
+      
+      // Calculate overall date range
+      const allStartDates = months.map((m) => m.startDate);
+      const allEndDates = months.map((m) => m.endDate);
+      startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
+      endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
+      
+      // Build display text
+      const firstMonthName = new Date(startYear, startMonth - 1, 1).toLocaleString("default", { month: "long" });
+      const lastMonthName = new Date(endYear, endMonth - 1, 1).toLocaleString("default", { month: "long" });
+      const monthLines = months.map((m) => {
+        const monthName = new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long" });
+        return `   ${monthName} ${m.year} (${m.weeks.length} weeks)`;
+      }).join("\n");
+      
+      displayText = `${warningText}\n✅ Selected: ${firstMonthName} ${startYear} - ${lastMonthName} ${endYear} (${months.length} months)\n\n${monthLines}\n`;
       break;
     }
 
@@ -352,7 +554,13 @@ async function selectDateRange(options = {}) {
     weeks = deriveWeeksFromDateRange(startDate, endDate);
   }
 
-  return { startDate, endDate, weeks, displayText };
+  // If month granularity and no months array yet, create from date range
+  if (minGranularity === "month" && !months) {
+    // This shouldn't happen if all month cases are handled, but add as safety
+    months = [];
+  }
+
+  return { startDate, endDate, weeks, months, displayText };
 }
 
 /**

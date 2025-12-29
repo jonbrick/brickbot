@@ -242,7 +242,18 @@ MONTHLY_RECAP_TASK_CATEGORIES: {
 
 - User interaction and prompts
 - Display formatted results
-- Entry points: `collect-data.js`, `update-calendar.js`, `summarize-week.js`
+- **Spinners for async feedback** (Output at Edges principle)
+- Entry points: `collect-data.js`, `update-calendar.js`, `summarize-week.js`, `recap-month.js`
+
+**Pattern:** CLI files own all console output. Data layer returns structured results.
+```javascript
+// CLI file pattern
+const spinner = createSpinner("Processing...");
+spinner.start();
+const result = await workflow();  // Workflow returns data, no output
+spinner.stop();
+console.log(`✅ ${result.count} items processed`);
+```
 
 ### Workflow Layer (`src/workflows/`)
 

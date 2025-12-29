@@ -19,6 +19,7 @@
 ## Table of Contents
 
 - [Design Patterns](#design-patterns)
+- [Output at Edges](#output-at-edges)
 - [Code Quality & DRY Principles](#code-quality--dry-principles)
 - [API Rate Limiting](#api-rate-limiting)
 - [Error Handling](#error-handling)
@@ -246,6 +247,59 @@ function autoDiscoverCollectors() {
   defaultCalendar: process.env.GOOGLE_CALENDAR_DEFAULT_ID,
 }
 ```
+
+---
+
+## Output at Edges
+
+**Principle:** Data layer functions return structured data. CLI layer handles all output.
+
+### What This Means
+
+| Layer | Responsibility | Console Output? |
+|-------|---------------|-----------------|
+| CLI (`cli/`) | User interaction, display results | ✅ Yes |
+| Workflows (`src/workflows/`) | Orchestration, return results | ❌ No (DEBUG only) |
+| Databases (`src/databases/`) | Data access, return data | ❌ No (DEBUG only) |
+| Transformers (`src/transformers/`) | Format conversion, return data | ❌ No (DEBUG only) |
+| Services (`src/services/`) | API calls, return data | ❌ No (DEBUG only) |
+
+### Pattern
+```javascript
+// WRONG - output in data layer
+async function fetchData() {
+  console.log("Fetching...");  // ❌ No console in data layer
+  const data = await api.fetch();
+  console.log("Done!");  // ❌ 
+  return data;
+}
+
+// RIGHT - output at edges (CLI)
+async function fetchData() {
+  return await api.fetch();  // ✅ Just return data
+}
+
+// In CLI file:
+const spinner = createSpinner("Fetching...");
+spinner.start();
+const data = await fetchData();
+spinner.stop();
+console.log("✅ Done!");  // ✅ Output in CLI
+```
+
+### Spinners
+
+CLI files use `createSpinner()` for async operation feedback:
+```javascript
+const { createSpinner } = require("../src/utils/cli");
+
+let spinner = createSpinner("Fetching data...");
+spinner.start();
+const result = await fetchData();
+spinner.stop();
+```
+
+Spinner clears line with ANSI escape code `\r\x1b[2K` for clean output.
 
 ---
 

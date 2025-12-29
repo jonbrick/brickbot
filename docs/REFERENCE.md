@@ -438,6 +438,54 @@ oura: {
 }
 ```
 
+### selectDateRange() API
+
+Universal date range selector with context-aware options.
+
+#### Parameters
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `minGranularity` | `"day"` \| `"week"` \| `"month"` | `"day"` | Minimum selection unit |
+| `allowFuture` | `boolean` | `true` | Allow future dates |
+
+#### Return Value
+```javascript
+{
+  startDate: Date,      // Start of selected range
+  endDate: Date,        // End of selected range
+  weeks?: Array,        // Week objects (when week/month granularity)
+  months?: Array,       // Month objects (when month options selected)
+  displayText?: string  // Formatted selection text for display
+}
+```
+
+#### Month Object Structure
+```javascript
+{
+  month: number,      // 1-12
+  year: number,       // e.g., 2025
+  weeks: Array,       // Weeks in this month
+  startDate: Date,    // First day of month
+  endDate: Date       // Last day of month
+}
+```
+
+#### Usage by Command
+
+| Command | Granularity | Returns |
+|---------|-------------|---------|
+| `yarn collect` | `"day"` | `{ startDate, endDate }` |
+| `yarn update` | `"day"` | `{ startDate, endDate }` |
+| `yarn summarize` | `"week"` | `{ weeks, displayText }` |
+| `yarn recap` | `"month"` | `{ months, displayText }` |
+
+#### Menu Options by Granularity
+
+**day**: Today, Yesterday, Last 30 days, week options, month options, Custom Range
+**week**: Week options, month options (no day options)
+**month**: This Month, Last Month, Month Picker, Month Range (no day/week options)
+
 ---
 
 ## API Field Mappings

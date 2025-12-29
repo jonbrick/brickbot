@@ -245,10 +245,11 @@ async function main() {
     const { source, action } = await selectSourceAndAction();
 
     // Select date range (day granularity, no future dates for calendar sync)
-    const { startDate, endDate } = await selectDateRange({ 
+    const { startDate, endDate, displayText } = await selectDateRange({ 
       minGranularity: "day",
       allowFuture: false 
     });
+    if (displayText) console.log(displayText);
 
     // Route to appropriate handler
     if (source === "all") {

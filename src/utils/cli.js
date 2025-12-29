@@ -15,6 +15,11 @@ const {
   getWeekStart,
   getWeekEnd,
 } = require("./date");
+const {
+  deriveWeeksFromDateRange,
+  formatWeekDisplay,
+  getWeeksForMonthFromNotion,
+} = require("./date-pickers");
 
 /**
  * Universal date range selector with context-aware options
@@ -23,17 +28,10 @@ const {
  * @param {Object} options - Configuration options
  * @param {string} options.minGranularity - "day" (default) | "week" - minimum selection unit
  * @param {boolean} options.allowFuture - Allow future dates (default: true)
- * @returns {Promise<{startDate: Date, endDate: Date, weeks?: Array}>} Selected date range with optional weeks metadata
+ * @returns {Promise<{startDate: Date, endDate: Date, weeks?: Array, displayText?: string}>} Selected date range with optional weeks metadata and display text
  */
 async function selectDateRange(options = {}) {
   const { minGranularity = "day", allowFuture = true } = options;
-
-  // Import month picker helpers
-  const {
-    selectMonthForWeeks,
-    deriveWeeksFromDateRange,
-    formatWeekDisplay,
-  } = require("./date-pickers");
 
   // Build choices based on granularity
   const allChoices = [
@@ -72,7 +70,7 @@ async function selectDateRange(options = {}) {
     },
   ]);
 
-  let startDate, endDate, weeks;
+  let startDate, endDate, weeks, displayText;
 
   // Handle each selection type
   switch (rangeType) {
@@ -112,7 +110,7 @@ async function selectDateRange(options = {}) {
         },
       ];
 
-      console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
+      displayText = `\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`;
       break;
     }
 
@@ -136,7 +134,7 @@ async function selectDateRange(options = {}) {
         },
       ];
 
-      console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
+      displayText = `\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`;
       break;
     }
 
@@ -208,7 +206,7 @@ async function selectDateRange(options = {}) {
 
       weeks = [{ weekNumber, year, startDate, endDate }];
 
-      console.log(`\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`);
+      displayText = `\n✅ Selected: ${formatWeekDisplay(weeks[0])}\n`;
       break;
     }
 
@@ -260,8 +258,9 @@ async function selectDateRange(options = {}) {
       let startWeek = parseInt(answers.startWeek);
       let endWeek = parseInt(answers.endWeek);
 
+      let warningText = "";
       if (startWeek > endWeek) {
-        console.log("⚠️  Start week is after end week, swapping...");
+        warningText = "⚠️  Start week is after end week, swapping...\n";
         [startWeek, endWeek] = [endWeek, startWeek];
       }
 
@@ -283,20 +282,13 @@ async function selectDateRange(options = {}) {
       startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
       endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
 
-      console.log(
-        `\n✅ Selected: Weeks ${weekNumbers[0]}-${
-          weekNumbers[weekNumbers.length - 1]
-        }, ${year} (${weekNumbers.length} weeks)\n`
-      );
-      weeks.forEach((week) => {
-        console.log(`   ${formatWeekDisplay(week)}`);
-      });
-      console.log();
+      const weekLines = weeks.map((week) => `   ${formatWeekDisplay(week)}`).join("\n");
+      displayText = `${warningText}\n✅ Selected: Weeks ${weekNumbers[0]}-${weekNumbers[weekNumbers.length - 1]}, ${year} (${weekNumbers.length} weeks)\n\n${weekLines}\n`;
       break;
     }
 
     case "monthPicker": {
-      const { weeks: selectedWeeks } = await selectMonthForWeeks();
+      const { weeks: selectedWeeks, warning, displayText: monthDisplayText } = await selectMonthForWeeks();
       weeks = selectedWeeks;
 
       // Calculate combined date range
@@ -304,6 +296,9 @@ async function selectDateRange(options = {}) {
       const allEndDates = weeks.map((w) => w.endDate);
       startDate = new Date(Math.min(...allStartDates.map((d) => d.getTime())));
       endDate = new Date(Math.max(...allEndDates.map((d) => d.getTime())));
+
+      // Use displayText from selectMonthForWeeks, prepend warning if present
+      displayText = warning ? `⚠️  ${warning}\n${monthDisplayText}` : monthDisplayText;
       break;
     }
 
@@ -340,17 +335,14 @@ async function selectDateRange(options = {}) {
       startDate = parseDate(answers.startDate);
       endDate = parseDate(answers.endDate);
 
+      let warningText = "";
       if (startDate > endDate) {
-        console.log("⚠️  Start date is after end date, swapping...");
+        warningText = "⚠️  Start date is after end date, swapping...\n";
         [startDate, endDate] = [endDate, startDate];
       }
       endDate.setHours(23, 59, 59, 999);
 
-      console.log(
-        `\n📅 Selected: ${formatDateLong(startDate)} to ${formatDateLong(
-          endDate
-        )}\n`
-      );
+      displayText = `${warningText}\n📅 Selected: ${formatDateLong(startDate)} to ${formatDateLong(endDate)}\n`;
       break;
     }
   }
@@ -360,7 +352,116 @@ async function selectDateRange(options = {}) {
     weeks = deriveWeeksFromDateRange(startDate, endDate);
   }
 
-  return { startDate, endDate, weeks };
+  return { startDate, endDate, weeks, displayText };
+}
+
+/**
+ * Build formatted month display text
+ * Helper function to format month selection display
+ *
+ * @param {string} monthName - Month name (e.g., "March")
+ * @param {number} year - Year
+ * @param {Array} weeks - Array of week objects
+ * @returns {string} Formatted display text
+ */
+function buildMonthDisplayText(monthName, year, weeks) {
+  const weekLines = weeks.map((week) => `   ${formatWeekDisplay(week)}`).join("\n");
+  return `\n✅ Selected: ${monthName} ${year}\n   Includes ${weeks.length} weeks:\n\n${weekLines}\n`;
+}
+
+/**
+ * Month picker - select all weeks within a calendar month
+ *
+ * @returns {Promise<{month: number, year: number, weeks: Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>, warning: string|null, displayText: string}>}
+ */
+async function selectMonthForWeeks() {
+  const currentDate = getToday();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // 1-12
+
+  const { monthSelection } = await inquirer.prompt([
+    {
+      type: "list",
+      name: "monthSelection",
+      message: "Select month:",
+      choices: [
+        {
+          name: "This Month",
+          value: { year: currentYear, month: currentMonth },
+        },
+        {
+          name: "Last Month",
+          value: {
+            year: currentMonth === 1 ? currentYear - 1 : currentYear,
+            month: currentMonth === 1 ? 12 : currentMonth - 1,
+          },
+        },
+        { name: "Custom Month", value: "custom" },
+      ],
+      pageSize: 10, // Show all options without scrolling
+    },
+  ]);
+
+  let year, month;
+
+  if (monthSelection === "custom") {
+    const answers = await inquirer.prompt([
+      {
+        type: "input",
+        name: "year",
+        message: "Year:",
+        default: currentYear.toString(),
+        validate: (input) => {
+          const yearNum = parseInt(input);
+          if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+            return "Please enter a valid year (2000-2100)";
+          }
+          return true;
+        },
+      },
+      {
+        type: "list",
+        name: "month",
+        message: "Month:",
+        choices: [
+          { name: "January", value: 1 },
+          { name: "February", value: 2 },
+          { name: "March", value: 3 },
+          { name: "April", value: 4 },
+          { name: "May", value: 5 },
+          { name: "June", value: 6 },
+          { name: "July", value: 7 },
+          { name: "August", value: 8 },
+          { name: "September", value: 9 },
+          { name: "October", value: 10 },
+          { name: "November", value: 11 },
+          { name: "December", value: 12 },
+        ],
+        pageSize: 12, // Show all 12 months without scrolling
+      },
+    ]);
+
+    year = parseInt(answers.year);
+    month = answers.month;
+  } else {
+    year = monthSelection.year;
+    month = monthSelection.month;
+  }
+
+  // Get all weeks for this month from Notion (with fallback to local calculation)
+  const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(year, month);
+
+  const monthName = new Date(year, month - 1, 1).toLocaleString("default", {
+    month: "long",
+  });
+
+  return {
+    month,
+    year,
+    weeks: notionWeeks,
+    warning,
+    displayText: buildMonthDisplayText(monthName, year, notionWeeks),
+  };
 }
 
 /**
@@ -661,6 +762,7 @@ async function promptMultiSelect(message, choices) {
 
 module.exports = {
   selectDateRange,
+  selectMonthForWeeks,
   selectSources,
   confirmOperation,
   showProgress,

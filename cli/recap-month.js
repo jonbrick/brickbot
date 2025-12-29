@@ -7,7 +7,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { selectMonthForWeeks } = require("../src/utils/date-pickers");
+const { selectMonthForWeeks } = require("../src/utils/cli");
 const {
   generateMonthlyRecap,
 } = require("../src/workflows/weekly-summary-to-monthly-recap");
@@ -75,11 +75,13 @@ async function main() {
     const action = await selectAction();
     const displayOnly = action === "display";
 
-    // Select month - returns { month, year, weeks }
-    const { month, year, weeks } = await selectMonthForWeeks();
+    // Select month - returns { month, year, weeks, warning, displayText }
+    const { month, year, weeks, warning, displayText } = await selectMonthForWeeks();
     if (!weeks || weeks.length === 0) {
       throw new Error("No weeks selected");
     }
+    if (displayText) console.log(displayText);
+    if (warning) console.warn(`⚠️  ${warning}`);
 
     output.sectionHeader(`Generating monthly recaps for ${month}/${year}`);
 

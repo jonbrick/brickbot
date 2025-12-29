@@ -421,7 +421,8 @@ async function main() {
     const displayOnly = action === "display";
 
     // Select week(s) - week granularity mode always returns weeks array
-    const { weeks } = await selectDateRange({ minGranularity: "week" });
+    const { weeks, displayText } = await selectDateRange({ minGranularity: "week" });
+    if (displayText) console.log(displayText);
 
     if (displayOnly) {
       console.log("ℹ️ Display mode: Results will not be saved to Notion\n");

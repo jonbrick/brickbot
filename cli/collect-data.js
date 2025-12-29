@@ -210,9 +210,10 @@ async function main() {
     const [source, action] = actionString.split("-");
 
     // Select date range (day granularity - default)
-    const { startDate, endDate } = await selectDateRange({
+    const { startDate, endDate, displayText } = await selectDateRange({
       minGranularity: "day",
     });
+    if (displayText) console.log(displayText);
 
     // Route to appropriate handler based on source
     if (source === "all") {

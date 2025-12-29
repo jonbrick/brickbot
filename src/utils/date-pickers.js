@@ -3,7 +3,6 @@
  * Month picker and week derivation utilities for weekly summaries
  */
 
-const inquirer = require("inquirer");
 const {
   getToday,
   getWeekNumber,
@@ -79,7 +78,7 @@ function getWeeksForMonthLocal(year, month) {
  *
  * @param {number} year - Year (e.g., 2025)
  * @param {number} month - Month (1-12, where 1=January)
- * @returns {Promise<Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>>}
+ * @returns {Promise<{weeks: Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>, warning: string|null}>}
  */
 async function getWeeksForMonthFromNotion(year, month) {
   const MonthsDatabase = require("../databases/MonthsDatabase");
@@ -89,7 +88,7 @@ async function getWeeksForMonthFromNotion(year, month) {
     const weeks = await monthsDb.getWeeksForMonth(month, year);
 
     // Add date ranges using parseWeekNumber helper
-    return weeks.map((w) => {
+    const notionWeeks = weeks.map((w) => {
       const { startDate, endDate } = parseWeekNumber(w.weekNumber, w.year);
       return {
         weekNumber: w.weekNumber,
@@ -98,12 +97,13 @@ async function getWeeksForMonthFromNotion(year, month) {
         endDate,
       };
     });
+    return { weeks: notionWeeks, warning: null };
   } catch (error) {
     // Fallback to local calculation if Notion query fails
-    console.warn(
-      `Warning: Could not fetch weeks from Notion: ${error.message}. Falling back to local calculation.`
-    );
-    return getWeeksForMonthLocal(year, month);
+    return {
+      weeks: getWeeksForMonthLocal(year, month),
+      warning: `Could not fetch weeks from Notion: ${error.message}. Using local calculation.`,
+    };
   }
 }
 
@@ -125,114 +125,6 @@ function formatWeekDisplay(week) {
   return `Week ${week.weekNumber}: ${startDay}, ${startStr} → ${endDay}, ${endStr}`;
 }
 
-/**
- * Display formatted month selection with all weeks listed
- *
- * @param {string} monthName - Month name (e.g., "March")
- * @param {number} year - Year
- * @param {Array} weeks - Array of week objects
- */
-function formatMonthWeeksDisplay(monthName, year, weeks) {
-  console.log(`\n✅ Selected: ${monthName} ${year}`);
-  console.log(`   Includes ${weeks.length} weeks:\n`);
-
-  weeks.forEach((week) => {
-    console.log(`   ${formatWeekDisplay(week)}`);
-  });
-  console.log();
-}
-
-/**
- * Month picker - select all weeks within a calendar month
- *
- * @returns {Promise<{month: number, year: number, weeks: Array<{weekNumber: number, year: number, startDate: Date, endDate: Date}>}>}
- */
-async function selectMonthForWeeks() {
-  const currentDate = getToday();
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1; // 1-12
-
-  const { monthSelection } = await inquirer.prompt([
-    {
-      type: "list",
-      name: "monthSelection",
-      message: "Select month:",
-      choices: [
-        {
-          name: "This Month",
-          value: { year: currentYear, month: currentMonth },
-        },
-        {
-          name: "Last Month",
-          value: {
-            year: currentMonth === 1 ? currentYear - 1 : currentYear,
-            month: currentMonth === 1 ? 12 : currentMonth - 1,
-          },
-        },
-        { name: "Custom Month", value: "custom" },
-      ],
-      pageSize: 10, // Show all options without scrolling
-    },
-  ]);
-
-  let year, month;
-
-  if (monthSelection === "custom") {
-    const answers = await inquirer.prompt([
-      {
-        type: "input",
-        name: "year",
-        message: "Year:",
-        default: currentYear.toString(),
-        validate: (input) => {
-          const yearNum = parseInt(input);
-          if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-            return "Please enter a valid year (2000-2100)";
-          }
-          return true;
-        },
-      },
-      {
-        type: "list",
-        name: "month",
-        message: "Month:",
-        choices: [
-          { name: "January", value: 1 },
-          { name: "February", value: 2 },
-          { name: "March", value: 3 },
-          { name: "April", value: 4 },
-          { name: "May", value: 5 },
-          { name: "June", value: 6 },
-          { name: "July", value: 7 },
-          { name: "August", value: 8 },
-          { name: "September", value: 9 },
-          { name: "October", value: 10 },
-          { name: "November", value: 11 },
-          { name: "December", value: 12 },
-        ],
-        pageSize: 12, // Show all 12 months without scrolling
-      },
-    ]);
-
-    year = parseInt(answers.year);
-    month = answers.month;
-  } else {
-    year = monthSelection.year;
-    month = monthSelection.month;
-  }
-
-  // Get all weeks for this month from Notion (with fallback to local calculation)
-  const weeks = await getWeeksForMonthFromNotion(year, month);
-
-  const monthName = new Date(year, month - 1, 1).toLocaleString("default", {
-    month: "long",
-  });
-
-  // Display formatted output
-  formatMonthWeeksDisplay(monthName, year, weeks);
-
-  return { month, year, weeks };
-}
 
 /**
  * Derive complete weeks (Sun-Sat) from a custom date range
@@ -286,8 +178,6 @@ module.exports = {
   getWeeksForMonth: getWeeksForMonthLocal, // Backward compatibility alias
   getWeeksForMonthLocal,
   getWeeksForMonthFromNotion,
-  selectMonthForWeeks,
   deriveWeeksFromDateRange,
   formatWeekDisplay,
-  formatMonthWeeksDisplay,
 };

@@ -830,7 +830,7 @@ function createSpinner(message) {
         clearInterval(interval);
         interval = null;
       }
-      process.stdout.write("\r" + " ".repeat(100) + "\r");
+      process.stdout.write("\r\x1b[2K");
       if (finalMessage) {
         console.log(finalMessage);
       }

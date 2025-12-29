@@ -337,6 +337,48 @@ sleep: {
 // No code needed to wire this up!
 ```
 
+### Workflow Output Architecture
+
+**Principle: "Output at the Edges"** - Formatting happens at CLI boundaries, not in workflows.
+
+Workflows return structured result objects that contain data, not formatted strings:
+
+```javascript
+// Workflow returns structured data
+{
+  weekNumber: 42,
+  year: 2024,
+  data: {
+    summary: { workoutDays: 5, sleepHours: 56.5, ... },
+    relationshipsLoaded: 12,
+    ...
+  },
+  errors: ["Warning: Missing calendar data"],
+  selectedCalendars: ["sleep", "workouts"],
+  ...
+}
+```
+
+**CLI layer owns all output formatting** via `src/utils/workflow-output.js`:
+
+- `formatCalendarSummaryResult()` - Formats calendar workflow results
+- `formatTaskSummaryResult()` - Formats task workflow results  
+- `formatMonthlyRecapResult()` - Formats monthly recap results
+- `buildSuccessData()` - Builds success message lines from summary data
+- `formatErrors()` - Formats error/warning arrays
+
+Each formatter converts workflow result objects into display-ready data structures with:
+- `header` - Display header text
+- `successLines` - Array of formatted success message lines
+- `warnings` - Array of formatted warning messages
+- `stats` - Statistics object for display
+
+**Benefits**:
+- Workflows are testable (return data, not side effects)
+- Output formatting is centralized and reusable
+- CLI can format the same workflow results differently for different contexts
+- Workflows remain pure and don't depend on CLI utilities
+
 ## Architecture Status
 
 ### ✅ All Layer Violations Fixed

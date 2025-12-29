@@ -842,6 +842,72 @@ async function myFunction() {
 }
 ```
 
+### Workflow Output Pattern
+
+**Principle: "Output at the Edges"** - Workflows return structured data, not formatted strings. CLI layer handles all formatting.
+
+When creating a new workflow, return a structured result object:
+
+```javascript
+async function myWorkflow(weekNumber, year, options = {}) {
+  const results = {
+    weekNumber,
+    year,
+    data: {
+      summary: { /* calculated metrics */ },
+      relationshipsLoaded: 0,
+      // ... other data
+    },
+    errors: [], // Non-fatal warnings/errors
+    selectedSources: ["source1", "source2"],
+    // ... other metadata
+  };
+
+  // Do your processing...
+  results.data.summary = calculateSummary(data);
+  results.errors.push("Warning: Some data missing");
+
+  return results; // Return structured object, don't print
+}
+```
+
+**For CLI display**, use formatters from `src/utils/workflow-output.js`:
+
+```javascript
+// In CLI file (e.g., cli/summarize-week.js)
+const { formatCalendarSummaryResult } = require("../src/utils/workflow-output");
+
+const result = await myWorkflow(weekNumber, year, options);
+const displayData = formatCalendarSummaryResult(result, "personal");
+
+// displayData contains:
+// - header: "Week 42, 2024"
+// - successLines: ["   😴 Sleep (7.5h)", "   💪 Workouts (5 days)"]
+// - warnings: ["⚠️ Warning: Some data missing"]
+// - stats: { relationshipsLoaded: 12 }
+```
+
+**Creating a new formatter** in `workflow-output.js`:
+
+```javascript
+function formatMyWorkflowResult(result, recapType) {
+  const header = `Week ${result.weekNumber}, ${result.year}`;
+  const successLines = buildSuccessData(
+    result.selectedSources || [],
+    result.data?.summary || result.summary || {},
+    SUMMARY_GROUPS
+  );
+  const warnings = formatErrors(result.errors);
+  const stats = {
+    itemsProcessed: result.data?.itemsProcessed || 0,
+  };
+
+  return { header, successLines, warnings, stats };
+}
+```
+
+See [ARCHITECTURE.md](ARCHITECTURE.md#workflow-output-architecture) for more details on the workflow output architecture.
+
 ---
 
 ## Need Help?

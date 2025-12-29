@@ -5,7 +5,6 @@ const { fetchCompletedTasks } = require("../summarizers/summarize-tasks");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
-const { showProgress, showSuccess, showError } = require("../utils/cli");
 const { SUMMARY_GROUPS, CALENDARS, getTaskCompletionFields } = require("../config/unified-sources");
 const { getCategoryShortName } = require("../utils/display-names");
 
@@ -47,6 +46,8 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
 
   const displayOnly = options.displayOnly || false;
   const selectedSources = options.sources || [];
+  const errors = []; // Collect non-fatal warnings/errors
+  let relationshipsLoaded = 0;
   const results = {
     weekNumber,
     year,
@@ -72,37 +73,10 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       if (!process.env.TASKS_DATABASE_ID) {
         throw new Error("TASKS_DATABASE_ID is not configured.");
       }
-      if (typeof showProgress === "function") {
-        showProgress(
-          `Fetching ${recapType === "work" ? "Work" : "Personal"} tasks...`
-        );
-      } else {
-        console.log(
-          `⏳ Fetching ${recapType === "work" ? "Work" : "Personal"} tasks...`
-        );
-      }
       tasks = await fetchCompletedTasks(startDate, endDate);
       await delay(config.sources.rateLimits.notion.backoffMs);
     }
 
-    // Debug: Log task details if in display mode
-    if (displayOnly && tasks.length > 0) {
-      console.log("\n📋 Task Details (within week range):");
-      console.log(`\n  Tasks (${tasks.length} total):`);
-      tasks.forEach((task, idx) => {
-        // Include workCategory for work recapType
-        const categoryDisplay =
-          recapType === "work" && task.workCategory
-            ? ` [${task.workCategory}]`
-            : "";
-        console.log(
-          `    ${idx + 1}. ${task.dueDate} - ${task.title} [${
-            task.category
-          }]${categoryDisplay}`
-        );
-      });
-      console.log();
-    }
 
     // Fetch relationships context for personal recap (needed for task categorization)
     let relationshipsContext = null;
@@ -163,9 +137,7 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
                     }
                   } catch (error) {
                     // Skip if we can't fetch the page
-                    console.warn(
-                      `   ⚠️ Could not fetch week page ${weekPageId}`
-                    );
+                    errors.push(`Could not fetch week page ${weekPageId}`);
                   }
                 }
 
@@ -184,14 +156,12 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
             };
 
             if (relationships.length > 0) {
-              console.log(
-                `   📋 Loaded ${relationships.length} relationship(s) for matching`
-              );
+              relationshipsLoaded = relationships.length;
             }
           }
         }
       } catch (error) {
-        console.warn(`   ⚠️ Could not fetch relationships: ${error.message}`);
+        errors.push(`Could not fetch relationships: ${error.message}`);
         // Continue without relationships context
       }
     }
@@ -210,6 +180,20 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
 
     // If display only, return early without updating Notion
     if (displayOnly) {
+      const counts = {};
+      Object.keys(summary).forEach((key) => {
+        const value = summary[key];
+        if (typeof value === "number" && value > 0) {
+          counts[key] = value;
+        }
+      });
+      results.data = {
+        tasks,
+        summary,
+        relationshipsLoaded,
+      };
+      results.counts = counts;
+      results.errors = errors;
       return results;
     }
 
@@ -223,12 +207,6 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     );
 
     if (!weekSummary) {
-      const errorMessage = `Week summary record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
-      if (typeof showError === "function") {
-        showError(errorMessage);
-      } else {
-        console.error(errorMessage);
-      }
       results.error = "Week summary record not found";
       return results;
     }
@@ -242,58 +220,26 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     results.updated = true;
     results.selectedSources = sourcesToFetch;
 
-    // Build success message with available data for selected sources
-    const data = [];
-
-    if (sourcesToFetch.includes(taskSourceKey)) {
-      const taskData = [];
-      successMessageFields.forEach((field) => {
-        if (summary[field] !== undefined) {
-          // Extract category and format as "Category (count)"
-          let category = field.replace("TasksComplete", "");
-
-          const categoryConfig =
-            CALENDARS[taskSourceKey]?.categories?.[category];
-          const label = categoryConfig?.dataFields?.[0]?.label;
-          const displayName = getCategoryShortName(category, label);
-          const categoryEmoji = categoryConfig?.emoji || "";
-          taskData.push({
-            emoji: categoryEmoji,
-            text: `${displayName} (${summary[field]})`,
-          });
-        }
-      });
-      if (taskData.length > 0) {
-        data.push(...taskData);
+    // Build counts from summary data
+    const counts = {};
+    Object.keys(summary).forEach((key) => {
+      const value = summary[key];
+      if (typeof value === "number" && value > 0) {
+        counts[key] = value;
       }
-    }
+    });
 
-    const taskGroupKey = recapType === "work" ? "workTasks" : "tasks";
-    const taskEmoji = SUMMARY_GROUPS[taskGroupKey]?.emoji || "";
-
-    const taskLines = data
-      .map((item) =>
-        item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
-      )
-      .join("\n");
-    const message = `${
-      recapType === "work" ? "Work" : "Personal"
-    } Tasks:\n   ${taskEmoji} Tasks:\n${taskLines}`;
-
-    if (typeof showSuccess === "function") {
-      showSuccess(message);
-    } else {
-      console.log(`✅ ${message}`);
-    }
+    results.data = {
+      tasks,
+      summary,
+      relationshipsLoaded,
+    };
+    results.counts = counts;
+    results.errors = errors;
 
     return results;
   } catch (error) {
     results.error = error.message;
-    if (typeof showError === "function") {
-      showError(`Failed to summarize week: ${error.message}`);
-    } else {
-      console.error(`Failed to summarize week: ${error.message}`);
-    }
     throw error;
   }
 }

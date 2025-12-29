@@ -12,6 +12,7 @@ const {
   generateMonthlyRecap,
 } = require("../src/workflows/weekly-summary-to-monthly-recap");
 const output = require("../src/utils/output");
+const { formatMonthlyRecapResult } = require("../src/utils/workflow-output");
 
 /**
  * Select action type (generate or display only)
@@ -95,8 +96,12 @@ async function main() {
     const results = await processRecaps(month, year, weeks, displayOnly, showProgress);
 
     // Display results
+    const personalFormatted = formatMonthlyRecapResult(results.personal);
     if (results.personal.success) {
-      console.log(`✅ Personal: ${results.personal.weeklySummariesFound} weekly summaries aggregated`);
+      console.log(`✅ Personal: ${personalFormatted.successMessage}`);
+      if (personalFormatted.warnings.length > 0) {
+        personalFormatted.warnings.forEach((w) => console.log(w));
+      }
     } else {
       console.log(`❌ Personal Monthly Recap failed: ${results.personal.error}`);
       if (!displayOnly) {
@@ -104,8 +109,12 @@ async function main() {
       }
     }
 
+    const workFormatted = formatMonthlyRecapResult(results.work);
     if (results.work.success) {
-      console.log(`✅ Work: ${results.work.weeklySummariesFound} weekly summaries aggregated`);
+      console.log(`✅ Work: ${workFormatted.successMessage}`);
+      if (workFormatted.warnings.length > 0) {
+        workFormatted.warnings.forEach((w) => console.log(w));
+      }
     } else {
       console.log(`❌ Work Monthly Recap failed: ${results.work.error}`);
       if (!displayOnly) {

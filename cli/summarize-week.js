@@ -30,6 +30,11 @@ const {
 } = require("../src/summarizers");
 const { SUMMARY_GROUPS } = require("../src/config/unified-sources");
 const output = require("../src/utils/output");
+const {
+  formatCalendarSummaryResult,
+  formatTaskSummaryResult,
+  formatErrors,
+} = require("../src/utils/workflow-output");
 
 /**
  * Select action type (display only or update)
@@ -179,20 +184,54 @@ async function processWeek(weekNumber, year, buckets, displayOnly) {
 
       // Merge work results
       if (workResults.length === 1) {
-        weekResult.work = workResults[0];
+        // Single result - tag with source type for formatter detection
+        const result = workResults[0];
+        if (workCalendars.length > 0) {
+          result.sourceType = "calendar";
+        } else if (workNotionSources.length > 0) {
+          result.sourceType = "tasks";
+        }
+        weekResult.work = result;
       } else if (workResults.length > 1) {
-        const errors = [workResults[0].error, workResults[1].error].filter(
-          Boolean
+        // Two results: calendar + task - identify which is which
+        const calendarResult = workResults.find(
+          (r) => r.selectedCalendars !== undefined
         );
+        const taskResult = workResults.find(
+          (r) => r.selectedSources !== undefined
+        );
+
+        // Tag results with source type
+        if (calendarResult) calendarResult.sourceType = "calendar";
+        if (taskResult) taskResult.sourceType = "tasks";
+
+        // Combine errors arrays
+        const errors = [
+          ...(calendarResult?.errors || []),
+          ...(taskResult?.errors || []),
+        ];
+        const fatalErrors = [
+          calendarResult?.error,
+          taskResult?.error,
+        ].filter(Boolean);
+
+        // Merge into combined result (use calendar result as base)
         weekResult.work = {
+          ...(calendarResult || taskResult),
           weekNumber,
           year,
           summary: {
-            ...workResults[0].summary,
-            ...workResults[1].summary,
+            ...(calendarResult?.summary || {}),
+            ...(taskResult?.summary || {}),
           },
-          updated: workResults[0].updated || workResults[1].updated,
-          error: errors.length > 0 ? errors.join("; ") : null,
+          updated: (calendarResult?.updated || false) || (taskResult?.updated || false),
+          error: fatalErrors.length > 0 ? fatalErrors.join("; ") : null,
+          // Preserve task data separately for formatter
+          taskData: taskResult?.data,
+          taskCounts: taskResult?.counts,
+          taskSelectedSources: taskResult?.selectedSources,
+          // Combine errors arrays
+          errors: errors,
         };
       }
     } catch (error) {
@@ -236,21 +275,54 @@ async function processWeek(weekNumber, year, buckets, displayOnly) {
 
       // Merge personal results
       if (personalResults.length === 1) {
-        weekResult.personal = personalResults[0];
+        // Single result - tag with source type for formatter detection
+        const result = personalResults[0];
+        if (personalCalendars.length > 0) {
+          result.sourceType = "calendar";
+        } else if (personalNotionSources.length > 0) {
+          result.sourceType = "tasks";
+        }
+        weekResult.personal = result;
       } else if (personalResults.length > 1) {
+        // Two results: calendar + task - identify which is which
+        const calendarResult = personalResults.find(
+          (r) => r.selectedCalendars !== undefined
+        );
+        const taskResult = personalResults.find(
+          (r) => r.selectedSources !== undefined
+        );
+
+        // Tag results with source type
+        if (calendarResult) calendarResult.sourceType = "calendar";
+        if (taskResult) taskResult.sourceType = "tasks";
+
+        // Combine errors arrays
         const errors = [
-          personalResults[0].error,
-          personalResults[1].error,
+          ...(calendarResult?.errors || []),
+          ...(taskResult?.errors || []),
+        ];
+        const fatalErrors = [
+          calendarResult?.error,
+          taskResult?.error,
         ].filter(Boolean);
+
+        // Merge into combined result (use calendar result as base)
         weekResult.personal = {
+          ...(calendarResult || taskResult),
           weekNumber,
           year,
           summary: {
-            ...personalResults[0].summary,
-            ...personalResults[1].summary,
+            ...(calendarResult?.summary || {}),
+            ...(taskResult?.summary || {}),
           },
-          updated: personalResults[0].updated || personalResults[1].updated,
-          error: errors.length > 0 ? errors.join("; ") : null,
+          updated: (calendarResult?.updated || false) || (taskResult?.updated || false),
+          error: fatalErrors.length > 0 ? fatalErrors.join("; ") : null,
+          // Preserve task data separately for formatter
+          taskData: taskResult?.data,
+          taskCounts: taskResult?.counts,
+          taskSelectedSources: taskResult?.selectedSources,
+          // Combine errors arrays
+          errors: errors,
         };
       }
     } catch (error) {
@@ -399,25 +471,99 @@ async function main() {
         }
       }
 
-      // Show inline result (only errors, success is shown by workflows)
-      const statuses = [];
-      if (weekResult.work) {
-        if (weekResult.work.error) {
-          statuses.push(`❌ Work: ${weekResult.work.error}`);
-        } else if (!displayOnly) {
-          // Workflows print success in update mode, so show inline status too
-          statuses.push("✅ Work");
+      // Show inline result - format and display using formatters
+      if (!displayOnly) {
+        // Update mode: Show formatted success output
+        if (weekResult.work && !weekResult.work.error) {
+          // Format calendar result if present
+          if (weekResult.work.sourceType === "calendar" || weekResult.work.selectedCalendars) {
+            const calendarFormatted = formatCalendarSummaryResult(weekResult.work, "work");
+            console.log(`✅ Work Calendar:`);
+            calendarFormatted.successLines.forEach((line) => console.log(line));
+            if (calendarFormatted.warnings.length > 0) {
+              calendarFormatted.warnings.forEach((w) => console.log(w));
+            }
+          }
+          // Format task result if present
+          if (weekResult.work.taskData || weekResult.work.sourceType === "tasks") {
+            const taskResult = weekResult.work.taskData
+              ? {
+                  weekNumber: weekResult.work.weekNumber,
+                  year: weekResult.work.year,
+                  data: weekResult.work.taskData,
+                  counts: weekResult.work.taskCounts,
+                  selectedSources: weekResult.work.taskSelectedSources,
+                  errors: [],
+                }
+              : weekResult.work;
+            const taskFormatted = formatTaskSummaryResult(taskResult, "work");
+            console.log(`✅ Work Tasks:`);
+            taskFormatted.successLines.forEach((line) => console.log(line));
+            if (taskFormatted.warnings.length > 0) {
+              taskFormatted.warnings.forEach((w) => console.log(w));
+            }
+          }
+          // Show combined warnings if any
+          if (weekResult.work.errors?.length > 0) {
+            formatErrors(weekResult.work.errors).forEach((w) => console.log(w));
+          }
+        } else if (weekResult.work && weekResult.work.error) {
+          console.log(`❌ Work: ${weekResult.work.error}`);
         }
-      }
-      if (weekResult.personal) {
-        if (weekResult.personal.error) {
-          statuses.push(`❌ Personal: ${weekResult.personal.error}`);
-        } else if (!displayOnly) {
-          statuses.push("✅ Personal");
+
+        if (weekResult.personal && !weekResult.personal.error) {
+          // Format calendar result if present
+          if (weekResult.personal.sourceType === "calendar" || weekResult.personal.selectedCalendars) {
+            const calendarFormatted = formatCalendarSummaryResult(weekResult.personal, "personal");
+            console.log(`✅ Personal Calendar:`);
+            calendarFormatted.successLines.forEach((line) => console.log(line));
+            if (calendarFormatted.warnings.length > 0) {
+              calendarFormatted.warnings.forEach((w) => console.log(w));
+            }
+          }
+          // Format task result if present
+          if (weekResult.personal.taskData || weekResult.personal.sourceType === "tasks") {
+            const taskResult = weekResult.personal.taskData
+              ? {
+                  weekNumber: weekResult.personal.weekNumber,
+                  year: weekResult.personal.year,
+                  data: weekResult.personal.taskData,
+                  counts: weekResult.personal.taskCounts,
+                  selectedSources: weekResult.personal.taskSelectedSources,
+                  errors: [],
+                }
+              : weekResult.personal;
+            const taskFormatted = formatTaskSummaryResult(taskResult, "personal");
+            console.log(`✅ Personal Tasks:`);
+            taskFormatted.successLines.forEach((line) => console.log(line));
+            if (taskFormatted.warnings.length > 0) {
+              taskFormatted.warnings.forEach((w) => console.log(w));
+            }
+          }
+          // Show combined warnings if any
+          if (weekResult.personal.errors?.length > 0) {
+            formatErrors(weekResult.personal.errors).forEach((w) => console.log(w));
+          }
+        } else if (weekResult.personal && weekResult.personal.error) {
+          console.log(`❌ Personal: ${weekResult.personal.error}`);
         }
-      }
-      if (statuses.length > 0) {
-        console.log(statuses.join(" | ") + "\n");
+        console.log(); // Add spacing
+      } else {
+        // Display mode: Show simple status (detailed output shown later)
+        const statuses = [];
+        if (weekResult.work) {
+          if (weekResult.work.error) {
+            statuses.push(`❌ Work: ${weekResult.work.error}`);
+          }
+        }
+        if (weekResult.personal) {
+          if (weekResult.personal.error) {
+            statuses.push(`❌ Personal: ${weekResult.personal.error}`);
+          }
+        }
+        if (statuses.length > 0) {
+          console.log(statuses.join(" | ") + "\n");
+        }
       }
     }
 
@@ -436,6 +582,11 @@ async function main() {
             if (weekResult.work.error) {
               console.log(`⚠️ Warning: ${weekResult.work.error}\n`);
             }
+            // Display warnings from errors array
+            if (weekResult.work.errors?.length > 0) {
+              formatErrors(weekResult.work.errors).forEach((w) => console.log(w));
+              console.log(); // Add spacing
+            }
           } else if (weekResult.work.error) {
             console.log(`❌ Work Summary error: ${weekResult.work.error}\n`);
           }
@@ -451,6 +602,11 @@ async function main() {
             if (weekResult.personal.error) {
               console.log(`⚠️ Warning: ${weekResult.personal.error}\n`);
             }
+            // Display warnings from errors array
+            if (weekResult.personal.errors?.length > 0) {
+              formatErrors(weekResult.personal.errors).forEach((w) => console.log(w));
+              console.log(); // Add spacing
+            }
           } else if (weekResult.personal.error) {
             console.log(
               `❌ Personal Summary error: ${weekResult.personal.error}\n`
@@ -465,12 +621,12 @@ async function main() {
       }
     }
 
-    // Update mode: Only show errors (workflows print success messages)
+    // Update mode: Show any remaining errors that weren't displayed inline
     if (!displayOnly) {
       for (const weekResult of weekResults) {
         const { weekNumber, year } = weekResult;
 
-        // Only show output for errors (success messages already printed by workflow)
+        // Show fatal errors that prevented updates
         if (
           weekResult.work &&
           weekResult.work.error &&

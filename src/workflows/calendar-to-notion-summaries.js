@@ -6,7 +6,6 @@ const config = require("../config");
 // Import entire date module instead of destructuring to avoid module loading timing issues
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
-const { showProgress, showSuccess, showError } = require("../utils/cli");
 // Import entire mappings module to avoid destructuring timing issues
 const mappings = require("../config/calendar/mappings");
 const { SUMMARY_GROUPS, CALENDARS } = require("../config/unified-sources");
@@ -14,6 +13,7 @@ const {
   getGroupShortName,
   getCategoryShortName,
 } = require("../utils/display-names");
+const { buildSuccessData } = require("../utils/workflow-output");
 
 /**
  * Format a data key and value into human-readable display text
@@ -82,126 +82,6 @@ function formatDataForDisplay(dataKey, value) {
   return `${value} ${displayName} ${dataType}`;
 }
 
-/**
- * Build success message data grouped by SUMMARY_GROUPS with emojis
- * @param {Array<string>} calendarsToFetch - Calendar group IDs to include
- * @param {Object} summary - Summary object with calculated values
- * @param {Object} sourcesConfig - Sources configuration
- * @returns {Array<string>} Formatted lines for display
- */
-function buildSuccessData(calendarsToFetch, summary, sourcesConfig) {
-  const lines = [];
-
-  calendarsToFetch.forEach((groupId) => {
-    const group = SUMMARY_GROUPS[groupId];
-    if (!group) return;
-
-    const emoji = group.emoji || "";
-    const groupName = getGroupShortName(groupId, group.name);
-    const calendarIds = group.calendars || [];
-
-    const counts = [];
-    const addedCategories = new Set();
-
-    calendarIds.forEach((calId) => {
-      const calendar = CALENDARS[calId];
-      if (!calendar) return;
-
-      // Handle calendars with categories (personalCalendar, workCalendar)
-      if (calendar.categories) {
-        Object.entries(calendar.categories).forEach(
-          ([categoryKey, category]) => {
-            if (!category.dataFields || categoryKey === "ignore") return;
-
-            category.dataFields.forEach((field) => {
-              const dataKey = field.notionProperty;
-              const value = summary[dataKey];
-              if (value === undefined || value === null) return;
-
-              const isSessionsField = dataKey.endsWith("Sessions");
-              const isDaysField = dataKey.endsWith("Days");
-              if (!isSessionsField && !isDaysField) return;
-
-              const cat = dataKey.replace(/Sessions$/, "").replace(/Days$/, "");
-              if (addedCategories.has(cat)) return;
-              addedCategories.add(cat);
-
-              const name = getCategoryShortName(cat, field.label);
-              const categoryEmoji = category.emoji || "";
-              counts.push({ emoji: categoryEmoji, text: `${name} (${value})` });
-            });
-          }
-        );
-      }
-      // Handle simple calendars with dataFields
-      else if (calendar.dataFields && calendar.dataFields.length > 0) {
-        calendar.dataFields.forEach((field) => {
-          const dataKey = field.notionProperty;
-          const value = summary[dataKey];
-          if (value === undefined || value === null) return;
-
-          const isSessionsField = dataKey.endsWith("Sessions");
-          const isDaysField = dataKey.endsWith("Days");
-          const isHealthMetric =
-            field.type === "decimal" && !dataKey.endsWith("HoursTotal");
-
-          if (!isSessionsField && !isDaysField && !isHealthMetric) return;
-
-          // Extract category key for deduplication
-          let category = dataKey
-            .replace(/Sessions$/, "")
-            .replace(/Days$/, "")
-            .replace(/Average$/, "");
-
-          // Use dataKey directly for decimal fields (avgSystolic, avgDiastolic)
-          if (isHealthMetric && !dataKey.endsWith("Average")) {
-            category = dataKey;
-          }
-
-          if (addedCategories.has(category)) return;
-          addedCategories.add(category);
-
-          const name = getCategoryShortName(category, field.label);
-          const formattedValue =
-            typeof value === "number" && !Number.isInteger(value)
-              ? value.toFixed(1)
-              : value;
-
-          const calendarEmoji = calendar.emoji || "";
-          counts.push({
-            emoji: calendarEmoji,
-            text: `${name} (${formattedValue})`,
-          });
-        });
-      }
-    });
-
-    if (counts.length === 0) return;
-
-    const isMultiCalendarGroup = calendarIds.length > 1;
-
-    if (isMultiCalendarGroup) {
-      // Multi-calendar group: individual items, no header
-      counts.forEach((item) => {
-        lines.push(`   ${item.emoji} ${item.text}`);
-      });
-    } else if (counts.length > 1) {
-      // Category-based calendar: header with line breaks
-      const itemLines = counts
-        .map((item) =>
-          item.emoji ? `      ${item.emoji} ${item.text}` : `      ${item.text}`
-        )
-        .join("\n");
-      lines.push(`   ${emoji} ${groupName}:\n${itemLines}`);
-    } else {
-      // Single item: inline format - use group emoji only
-      const item = counts[0];
-      lines.push(`   ${emoji} ${item.text}`);
-    }
-  });
-
-  return lines;
-}
 
 /**
  * Aggregate calendar data for a week and update Summary database
@@ -250,6 +130,8 @@ async function aggregateCalendarDataForWeek(
   const accountType = options.accountType || defaultAccountType;
   const displayOnly = options.displayOnly || false;
   const selectedCalendars = options.calendars || [];
+  const errors = []; // Collect non-fatal warnings/errors
+  let relationshipsLoaded = 0;
   const results = {
     weekNumber,
     year,
@@ -299,19 +181,6 @@ async function aggregateCalendarDataForWeek(
       ),
     }));
 
-    if (typeof showProgress === "function") {
-      showProgress(
-        `Fetching ${recapType === "work" ? "Work" : "Personal"} calendars (${
-          calendarFetches.length
-        })...`
-      );
-    } else {
-      console.log(
-        `⏳ Fetching ${recapType === "work" ? "Work" : "Personal"} calendars (${
-          calendarFetches.length
-        })...`
-      );
-    }
     const fetchResults = await Promise.all(
       calendarFetches.map((f) =>
         f.promise.catch((err) => ({ error: err.message }))
@@ -323,7 +192,7 @@ async function aggregateCalendarDataForWeek(
     fetchResults.forEach((result, index) => {
       const key = calendarFetches[index].key;
       if (result.error) {
-        console.error(`Error fetching ${key}:`, result.error);
+        errors.push(`Error fetching ${key}: ${result.error}`);
         calendarEvents[key] = [];
       } else {
         calendarEvents[key] = result;
@@ -334,69 +203,13 @@ async function aggregateCalendarDataForWeek(
     const allFailed =
       fetchResults.length > 0 && fetchResults.every((r) => r.error);
     if (allFailed) {
-      if (typeof showError === "function") {
-        showError(
-          "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
-        );
-      } else {
-        console.error(
-          "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
-        );
-      }
+      errors.push(
+        "Warning: All calendar fetches failed. Please check your calendar IDs and permissions."
+      );
     }
 
     // Rate limiting between API calls
     await delay(config.sources.rateLimits.googleCalendar.backoffMs);
-
-    // Debug: Log event details if in display mode
-    if (displayOnly) {
-      // Helper to check if a date string is within the week range
-      const isDateInWeek = (dateStr) => {
-        const eventDate = new Date(dateStr + "T00:00:00");
-        return eventDate >= startDate && eventDate <= endDate;
-      };
-
-      console.log("\n📋 Block Details (within week range):");
-
-      Object.entries(calendarEvents).forEach(([key, events]) => {
-        const filteredEvents = events.filter((event) =>
-          isDateInWeek(event.date)
-        );
-        if (filteredEvents.length > 0) {
-          const displayName = mappings.getDisplayNameForFetchKey(
-            key,
-            sourcesConfig
-          );
-          const eventLabel = recapType === "personal" ? "Blocks" : "Events";
-          console.log(
-            `\n  ${displayName} ${eventLabel} (${filteredEvents.length} of ${events.length} total):`
-          );
-          filteredEvents.forEach((event, idx) => {
-            console.log(
-              `    ${idx + 1}. ${event.date} - ${event.summary}${
-                event.durationHours
-                  ? ` (${event.durationHours.toFixed(2)}h)`
-                  : ""
-              }`
-            );
-            if (event.startDateTime) {
-              console.log(
-                `       Start: ${new Date(
-                  event.startDateTime
-                ).toLocaleString()}`
-              );
-            }
-          });
-          if (events.length > filteredEvents.length) {
-            const filteredOut = events.length - filteredEvents.length;
-            console.log(
-              `    (${filteredOut} event(s) outside week range excluded)`
-            );
-          }
-        }
-      });
-      console.log();
-    }
 
     // Fetch relationships context for interpersonal matching (personal recap only)
     let relationshipsContext = null;
@@ -457,9 +270,7 @@ async function aggregateCalendarDataForWeek(
                     }
                   } catch (error) {
                     // Skip if we can't fetch the page
-                    console.warn(
-                      `   ⚠️ Could not fetch week page ${weekPageId}`
-                    );
+                    errors.push(`Could not fetch week page ${weekPageId}`);
                   }
                 }
 
@@ -478,14 +289,12 @@ async function aggregateCalendarDataForWeek(
             };
 
             if (relationships.length > 0) {
-              console.log(
-                `   📋 Loaded ${relationships.length} relationship(s) for matching`
-              );
+              relationshipsLoaded = relationships.length;
             }
           }
         }
       } catch (error) {
-        console.warn(`   ⚠️ Could not fetch relationships: ${error.message}`);
+        errors.push(`Could not fetch relationships: ${error.message}`);
         // Continue without relationships context
       }
     }
@@ -504,6 +313,20 @@ async function aggregateCalendarDataForWeek(
 
     // If display only, return early without updating Notion
     if (displayOnly) {
+      const counts = {};
+      Object.keys(summary).forEach((key) => {
+        const value = summary[key];
+        if (typeof value === "number" && value > 0) {
+          counts[key] = value;
+        }
+      });
+      results.data = {
+        calendarEvents,
+        summary,
+        relationshipsLoaded,
+      };
+      results.counts = counts;
+      results.errors = errors;
       return results;
     }
 
@@ -517,12 +340,6 @@ async function aggregateCalendarDataForWeek(
     );
 
     if (!weekSummary) {
-      const errorMessage = `Week summary record not found for week ${weekNumber} of ${year}. Please create it in Notion first.`;
-      if (typeof showError === "function") {
-        showError(errorMessage);
-      } else {
-        console.error(errorMessage);
-      }
       results.error = "Week summary record not found";
       return results;
     }
@@ -536,31 +353,26 @@ async function aggregateCalendarDataForWeek(
     results.updated = true;
     results.selectedCalendars = calendarsToFetch;
 
-    // Build success message with available data for selected calendars (config-driven)
-    const data = buildSuccessData(calendarsToFetch, summary, sourcesConfig);
+    // Build counts from summary data
+    const counts = {};
+    Object.keys(summary).forEach((key) => {
+      const value = summary[key];
+      if (typeof value === "number" && value > 0) {
+        counts[key] = value;
+      }
+    });
 
-    if (typeof showSuccess === "function") {
-      showSuccess(
-        `${recapType === "work" ? "Work" : "Personal"} Calendar:\n${data.join(
-          "\n"
-        )}`
-      );
-    } else {
-      console.log(
-        `✅ ${
-          recapType === "work" ? "Work" : "Personal"
-        } Calendar:\n${data.join("\n")}`
-      );
-    }
+    results.data = {
+      calendarEvents,
+      summary,
+      relationshipsLoaded,
+    };
+    results.counts = counts;
+    results.errors = errors;
 
     return results;
   } catch (error) {
     results.error = error.message;
-    if (typeof showError === "function") {
-      showError(`Failed to summarize week: ${error.message}`);
-    } else {
-      console.error(`Failed to summarize week: ${error.message}`);
-    }
     throw error;
   }
 }

@@ -342,7 +342,6 @@ const CALENDARS = {
   },
   workCalendar: {
     ignoreDeclinedEvents: true,
-    ignoreDeclinedEvents: true,
     ignoreAllDayEvents: true,
     id: "workCalendar",
     envVar: "WORK_MAIN_CALENDAR_ID",
@@ -649,7 +648,6 @@ const SUMMARY_GROUPS = {
     processingPattern: "categoryBased",
   },
   workCalendar: {
-    ignoreDeclinedEvents: true,
     ignoreDeclinedEvents: true,
     id: "workCalendar",
     name: "Work Calendar",
@@ -1895,8 +1893,14 @@ const CONTENT_FILTERS = {
 const MONTHLY_RECAP_BLOCK_PROPERTIES = {
   personal: {
     family: { key: "personalFamilyBlocks", name: "Family - Block Details" },
-    relationship: { key: "personalRelationshipBlocks", name: "Relationship - Block Details" },
-    interpersonal: { key: "personalInterpersonalBlocks", name: "Interpersonal - Block Details" },
+    relationship: {
+      key: "personalRelationshipBlocks",
+      name: "Relationship - Block Details",
+    },
+    interpersonal: {
+      key: "personalInterpersonalBlocks",
+      name: "Interpersonal - Block Details",
+    },
     hobbies: { key: "personalHobbiesBlocks", name: "Hobbies - Block Details" },
   },
   work: {
@@ -1913,8 +1917,14 @@ const MONTHLY_RECAP_TASK_PROPERTIES = {
   personal: {
     personal: { key: "personalPersonalTasks", name: "Personal - Task Details" },
     home: { key: "personalHomeTasks", name: "Home - Task Details" },
-    physicalHealth: { key: "personalPhysicalHealthTasks", name: "Physical Health - Task Details" },
-    mentalHealth: { key: "personalMentalHealthTasks", name: "Mental Health - Task Details" },
+    physicalHealth: {
+      key: "personalPhysicalHealthTasks",
+      name: "Physical Health - Task Details",
+    },
+    mentalHealth: {
+      key: "personalMentalHealthTasks",
+      name: "Mental Health - Task Details",
+    },
   },
   work: {
     design: { key: "workDesignTasks", name: "Design - Task Details" },
@@ -1978,14 +1988,18 @@ function generateMonthlyRecapProperties() {
   };
 
   // Personal block properties
-  Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.personal).forEach(([_, prop]) => {
-    props[prop.key] = { name: prop.name, type: "text", enabled: true };
-  });
+  Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.personal).forEach(
+    ([_, prop]) => {
+      props[prop.key] = { name: prop.name, type: "text", enabled: true };
+    }
+  );
 
   // Personal task properties
-  Object.entries(MONTHLY_RECAP_TASK_PROPERTIES.personal).forEach(([_, prop]) => {
-    props[prop.key] = { name: prop.name, type: "text", enabled: true };
-  });
+  Object.entries(MONTHLY_RECAP_TASK_PROPERTIES.personal).forEach(
+    ([_, prop]) => {
+      props[prop.key] = { name: prop.name, type: "text", enabled: true };
+    }
+  );
 
   // Work block properties
   Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.work).forEach(([_, prop]) => {

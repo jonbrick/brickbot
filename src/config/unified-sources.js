@@ -1752,21 +1752,6 @@ function getAvailableSources() {
 }
 
 /**
- * Monthly Recap Exclusions
- * Fields to exclude when aggregating weekly recaps into monthly recaps
- */
-const MONTHLY_RECAP_EXCLUSIONS = {
-  personal: {
-    blocks: ["ignoreBlocks"],
-    tasks: [],
-  },
-  work: {
-    blocks: ["oooBlocks", "ritualsBlocks"],
-    tasks: ["oooTaskDetails", "socialTaskDetails"],
-  },
-};
-
-/**
  * Monthly Recap Categories
  * Defines how block and task fields are grouped into monthly recap categories
  * Structure: { recapType: { blocks: {...}, tasks: {...} } }
@@ -1804,6 +1789,74 @@ const MONTHLY_RECAP_CATEGORIES = {
       admin: ["adminTaskDetails"],
       coding: ["codingTaskDetails"],
       qa: ["qaTaskDetails"],
+    },
+  },
+};
+
+/**
+ * Content Filters
+ * Words to filter out from specific output columns (word boundary match, case-insensitive)
+ * Structure: { command: { recapType: { fieldType: { categoryKey: [words] } } } }
+ */
+const CONTENT_FILTERS = {
+  /**
+   * yarn summarize: calendar events → weekly summary
+   * Keys match SUMMARY_GROUPS ids
+   */
+  summarize: {
+    personal: {
+      // sleep: [],
+      // drinkingDays: [],
+      // workout: [],
+      // reading: [],
+      // meditation: [],
+      // cooking: [],
+      // art: [],
+      // coding: [],
+      // music: [],
+      // videoGames: [],
+      // interpersonal: [],
+      // family: [],
+      // relationship: [],
+      // tasks: [],
+    },
+    work: {
+      // workPRs: [],
+      // workCalendar: [],
+      // workTasks: [],
+    },
+  },
+  /**
+   * yarn recap: weekly summaries → monthly recap
+   * Keys match MONTHLY_RECAP_CATEGORIES
+   */
+  recap: {
+    personal: {
+      blocks: {
+        // family: [],
+        // relationship: [],
+        // interpersonal: [],
+        // hobbies: [],
+      },
+      tasks: {
+        // personal: [],
+        // home: [],
+        // physicalHealth: [],
+        // mentalHealth: [],
+      },
+    },
+    work: {
+      blocks: {
+        // meetings: [],
+        // social: [],
+      },
+      tasks: {
+        // design: [],
+        // research: [],
+        // admin: [],
+        // coding: [],
+        // qa: [],
+      },
     },
   },
 };
@@ -1847,7 +1900,7 @@ const MONTHLY_RECAP_TASK_PROPERTIES = {
 
 /**
  * Get all block field names for a recap type
- * Flattens MONTHLY_RECAP_CATEGORIES.blocks and excludes fields from MONTHLY_RECAP_EXCLUSIONS
+ * Flattens MONTHLY_RECAP_CATEGORIES.blocks
  * @param {string} recapType - "personal" or "work"
  * @returns {Array<string>} Array of block field names
  */
@@ -1855,15 +1908,12 @@ function getBlocksFields(recapType) {
   const categories = MONTHLY_RECAP_CATEGORIES[recapType];
   if (!categories || !categories.blocks) return [];
 
-  const exclusions = MONTHLY_RECAP_EXCLUSIONS[recapType]?.blocks || [];
-  return Object.values(categories.blocks)
-    .flat()
-    .filter((f) => !exclusions.includes(f));
+  return Object.values(categories.blocks).flat();
 }
 
 /**
  * Get all task field names for a recap type
- * Flattens MONTHLY_RECAP_CATEGORIES.tasks and excludes fields from MONTHLY_RECAP_EXCLUSIONS
+ * Flattens MONTHLY_RECAP_CATEGORIES.tasks
  * @param {string} recapType - "personal" or "work"
  * @returns {Array<string>} Array of task field names
  */
@@ -1871,10 +1921,7 @@ function getTaskFields(recapType) {
   const categories = MONTHLY_RECAP_CATEGORIES[recapType];
   if (!categories || !categories.tasks) return [];
 
-  const exclusions = MONTHLY_RECAP_EXCLUSIONS[recapType]?.tasks || [];
-  return Object.values(categories.tasks)
-    .flat()
-    .filter((f) => !exclusions.includes(f));
+  return Object.values(categories.tasks).flat();
 }
 
 /**
@@ -1939,7 +1986,7 @@ module.exports = {
   derivePropertiesFromUnified,
   generatePersonalSummaryProperties,
   generateWorkSummaryProperties,
-  MONTHLY_RECAP_EXCLUSIONS,
+  CONTENT_FILTERS,
   MONTHLY_RECAP_CATEGORIES,
   MONTHLY_RECAP_BLOCK_PROPERTIES,
   MONTHLY_RECAP_TASK_PROPERTIES,

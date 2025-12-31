@@ -9,6 +9,7 @@
 **You are here:** `docs/ARCHITECTURE.md` - Core architecture and design principles
 
 **Other docs:**
+
 - **[../QUICKSTART.md](../QUICKSTART.md)** - 5-minute overview (start here if new)
 - **[../README.md](../README.md)** - Installation and setup
 - **[GUIDES.md](GUIDES.md)** - How to extend the system
@@ -139,10 +140,12 @@ CALENDARS: {
 ```
 
 Calendar definitions can include filter properties:
+
 - `ignoreAllDayEvents`: Filter out all-day events when fetching (used by sleep calendars)
 - `ignoreDeclinedEvents`: Filter out declined events (used by personal/work calendars)
 - `excludeKeywords`: Array of keywords to filter events by summary text
-```
+
+````
 
 ### 2. SUMMARY_GROUPS Registry
 
@@ -158,7 +161,7 @@ SUMMARY_GROUPS: {
   },
   // ... more groups
 }
-```
+````
 
 ### 3. INTEGRATIONS Registry
 
@@ -189,18 +192,6 @@ INTEGRATIONS: {
 Defines how weekly summaries are aggregated into monthly recap categories:
 
 ```javascript
-// Fields to exclude from monthly recap aggregation
-MONTHLY_RECAP_EXCLUSIONS: {
-  personal: {
-    blocks: ["ignoreBlocks"],
-    tasks: ["familyTaskDetails", "relationshipTaskDetails", "interpersonalTaskDetails"],
-  },
-  work: {
-    blocks: ["personalAndSocialBlocks", "ritualsBlocks"],
-    tasks: [],
-  },
-}
-
 // How block fields are grouped into monthly recap categories
 MONTHLY_RECAP_CATEGORIES: {
   personal: {
@@ -230,9 +221,29 @@ MONTHLY_RECAP_TASK_CATEGORIES: {
 }
 ```
 
-**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_CATEGORIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). Fields listed in `MONTHLY_RECAP_EXCLUSIONS` are excluded from aggregation even if they exist in categories.
+### CONTENT_FILTERS
+
+Filters specific words from output columns using word-boundary matching (case-insensitive).
+
+```javascript
+CONTENT_FILTERS: {
+  summarize: {  // yarn summarize: calendar events → weekly summary
+    personal: { columnName: ["word1", "word2"] },
+    work: { columnName: ["word1"] },
+  },
+  recap: {  // yarn recap: weekly summaries → monthly recap
+    personal: { columnName: ["word1"] },
+    work: { columnName: ["word1"] },
+  },
+}
+```
+
+Keys are column names (e.g., `workoutBlocks`, `personalFamilyBlocks`, `workCodingTasks`).
+
+**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_CATEGORIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). `CONTENT_FILTERS` defines words to filter out from specific output columns using word-boundary matching (case-insensitive) for both `yarn summarize` and `yarn recap` commands.
 
 **Helper Functions**:
+
 - `getBlocksFields(recapType)` - Returns all block field names (flattened categories minus exclusions)
 - `getTaskCompletionFields(recapType)` - Returns task completion field names derived from CALENDARS config
 
@@ -246,11 +257,12 @@ MONTHLY_RECAP_TASK_CATEGORIES: {
 - Entry points: `collect-data.js`, `update-calendar.js`, `summarize-week.js`, `recap-month.js`
 
 **Pattern:** CLI files own all console output. Data layer returns structured results.
+
 ```javascript
 // CLI file pattern
 const spinner = createSpinner("Processing...");
 spinner.start();
-const result = await workflow();  // Workflow returns data, no output
+const result = await workflow(); // Workflow returns data, no output
 spinner.stop();
 console.log(`✅ ${result.count} items processed`);
 ```
@@ -373,18 +385,20 @@ Workflows return structured result objects that contain data, not formatted stri
 **CLI layer owns all output formatting** via `src/utils/workflow-output.js`:
 
 - `formatCalendarSummaryResult()` - Formats calendar workflow results
-- `formatTaskSummaryResult()` - Formats task workflow results  
+- `formatTaskSummaryResult()` - Formats task workflow results
 - `formatMonthlyRecapResult()` - Formats monthly recap results
 - `buildSuccessData()` - Builds success message lines from summary data
 - `formatErrors()` - Formats error/warning arrays
 
 Each formatter converts workflow result objects into display-ready data structures with:
+
 - `header` - Display header text
 - `successLines` - Array of formatted success message lines
 - `warnings` - Array of formatted warning messages
 - `stats` - Statistics object for display
 
 **Benefits**:
+
 - Workflows are testable (return data, not side effects)
 - Output formatting is centralized and reusable
 - CLI can format the same workflow results differently for different contexts
@@ -408,6 +422,7 @@ Each formatter converts workflow result objects into display-ready data structur
 **User Action**: `yarn collect` → Select "Yesterday" → Select "Oura"
 
 **Flow**:
+
 1. CLI prompts for date range and source
 2. Collector (`collect-oura.js`) fetches from Oura API
 3. Transformer (`oura-to-notion-oura.js`) maps to Notion format
@@ -419,6 +434,7 @@ Each formatter converts workflow result objects into display-ready data structur
 **User Action**: `yarn update` → Select date range → Select "Sleep"
 
 **Flow**:
+
 1. CLI prompts for parameters
 2. Workflow queries Notion Oura database for unsynced records
 3. Transformer (`notion-oura-to-calendar-sleep.js`) converts to calendar events
@@ -430,6 +446,7 @@ Each formatter converts workflow result objects into display-ready data structur
 **User Action**: `yarn summarize`
 
 **Flow**:
+
 1. Fetch all calendar events for the week
 2. Group by domain (sleep, workouts, etc.)
 3. Calculate aggregated metrics

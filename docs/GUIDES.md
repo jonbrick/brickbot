@@ -572,6 +572,8 @@ yarn recap-month
 
 **Done!** Your calendar's blocks are now included in monthly recap aggregation.
 
+**Tip**: To filter specific words from output, add them to `CONTENT_FILTERS` in `unified-sources.js`.
+
 ---
 
 ## Adding a New Monthly Recap Category

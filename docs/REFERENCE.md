@@ -438,6 +438,28 @@ oura: {
 }
 ```
 
+### CONTENT_FILTERS
+
+**Location**: `src/config/unified-sources.js`
+
+**Purpose**: Filter words from output columns in `yarn summarize` and `yarn recap`.
+
+**Structure**: `CONTENT_FILTERS[command][recapType][columnName] = ["word1", "word2"]`
+
+**Example**:
+```javascript
+recap: {
+  personal: {
+    personalPersonalTasks: ["Plan"],  // Filters "Plan" from personal tasks column
+  },
+}
+```
+
+**Behavior**:
+- Word-boundary match (e.g., "Plan" won't match "Planning")
+- Case-insensitive
+- Day headers preserved
+
 ### selectDateRange() API
 
 Universal date range selector with context-aware options.

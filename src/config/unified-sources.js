@@ -1828,35 +1828,31 @@ const CONTENT_FILTERS = {
   },
   /**
    * yarn recap: weekly summaries → monthly recap
-   * Keys match MONTHLY_RECAP_CATEGORIES
+   * Keys are column names (from MONTHLY_RECAP_BLOCK_PROPERTIES and MONTHLY_RECAP_TASK_PROPERTIES)
    */
   recap: {
     personal: {
-      blocks: {
-        // family: [],
-        // relationship: [],
-        // interpersonal: [],
-        // hobbies: [],
-      },
-      tasks: {
-        // personal: [],
-        // home: [],
-        // physicalHealth: [],
-        // mentalHealth: [],
-      },
+      // Block columns
+      // personalFamilyBlocks: [],
+      // personalRelationshipBlocks: [],
+      // personalInterpersonalBlocks: [],
+      // personalHobbiesBlocks: [],
+      // Task columns
+      // personalPersonalTasks: [],
+      // personalHomeTasks: [],
+      // personalPhysicalHealthTasks: [],
+      // personalMentalHealthTasks: [],
     },
     work: {
-      blocks: {
-        // meetings: [],
-        // social: [],
-      },
-      tasks: {
-        // design: [],
-        // research: [],
-        // admin: [],
-        // coding: [],
-        // qa: [],
-      },
+      // Block columns
+      // workMeetingsBlocks: [],
+      // workSocialBlocks: [],
+      // Task columns
+      // workDesignTasks: [],
+      // workResearchTasks: [],
+      // workAdminTasks: [],
+      // workCodingTasks: [],
+      // workQATasks: [],
     },
   },
 };

@@ -75,17 +75,16 @@ function collapseNewlines(text) {
  * - Strips time patterns like "(12:39-1:27pm)"
  * - Converts newlines to comma separation
  * @param {string} text - Text with newline-separated events
- * @param {string|null} categoryKey - Category key for filtering (e.g., "family", "meetings")
+ * @param {string|null} columnName - Column name for filtering (e.g., "personalFamilyBlocks", "workDesignTasks")
  * @param {string|null} recapType - Recap type ("personal" or "work")
- * @param {string|null} fieldType - Field type ("blocks" or "tasks")
  * @returns {string} Comma-separated filtered events
  */
-function filterAndFormatEvents(text, categoryKey = null, recapType = null, fieldType = null) {
+function filterAndFormatEvents(text, columnName = null, recapType = null) {
   if (!text || typeof text !== "string") return "";
 
   // Get filter words from CONTENT_FILTERS.recap
-  const filterWords = recapType && categoryKey && fieldType 
-    ? CONTENT_FILTERS.recap?.[recapType]?.[fieldType]?.[categoryKey] || [] 
+  const filterWords = recapType && columnName 
+    ? CONTENT_FILTERS.recap?.[recapType]?.[columnName] || [] 
     : [];
 
   // Split into individual lines (events/tasks)
@@ -166,7 +165,7 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
         // Strip day headers and time ranges from this field's content
         const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
-        const formatted = filterAndFormatEvents(collapsed, null, recapType, "blocks");
+        const formatted = filterAndFormatEvents(collapsed, null, recapType);
         if (formatted.trim()) {
           weekBlocks.push(formatted);
         }
@@ -191,7 +190,7 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
  * @param {string} recapType - "personal" or "work"
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
  * @param {Array<string>} categoryFields - Array of block field keys to include
- * @param {string} categoryKey - Category key for filtering (e.g., "family", "meetings")
+ * @param {string} columnName - Column name for filtering (e.g., "personalFamilyBlocks", "workMeetingsBlocks")
  * @returns {string} Combined blocks text for this category
  */
 function combineWeeklyBlocksByCategory(
@@ -199,7 +198,7 @@ function combineWeeklyBlocksByCategory(
   recapType,
   summaryDb,
   categoryFields,
-  categoryKey
+  columnName
 ) {
   const weekGroups = [];
 
@@ -219,7 +218,7 @@ function combineWeeklyBlocksByCategory(
         // Strip day headers and time ranges from this field's content
         const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
-        const formatted = filterAndFormatEvents(collapsed, categoryKey, recapType, "blocks");
+        const formatted = filterAndFormatEvents(collapsed, columnName, recapType);
         if (formatted.trim()) {
           weekBlocks.push(formatted);
         }
@@ -244,7 +243,7 @@ function combineWeeklyBlocksByCategory(
  * @param {string} recapType - "personal" or "work"
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
  * @param {Array<string>} categoryFields - Array of task field keys to include
- * @param {string} categoryKey - Category key for filtering (e.g., "personal", "design")
+ * @param {string} columnName - Column name for filtering (e.g., "personalPersonalTasks", "workDesignTasks")
  * @returns {string} Combined tasks text for this category
  */
 function combineWeeklyTasksByCategory(
@@ -252,7 +251,7 @@ function combineWeeklyTasksByCategory(
   recapType,
   summaryDb,
   categoryFields,
-  categoryKey
+  columnName
 ) {
   const weekGroups = [];
 
@@ -272,7 +271,7 @@ function combineWeeklyTasksByCategory(
         // Strip day headers and time ranges from this field's content
         const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
-        const formatted = filterAndFormatEvents(collapsed, categoryKey, recapType, "tasks");
+        const formatted = filterAndFormatEvents(collapsed, columnName, recapType);
         if (formatted.trim()) {
           weekTasks.push(formatted);
         }
@@ -305,28 +304,28 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
     "personal",
     summaryDb,
     categories.family,
-    "family"
+    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.family.key
   );
   const relationship = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
     categories.relationship,
-    "relationship"
+    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.relationship.key
   );
   const interpersonal = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
     categories.interpersonal,
-    "interpersonal"
+    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.interpersonal.key
   );
   const hobbies = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
     categories.hobbies,
-    "hobbies"
+    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.hobbies.key
   );
 
   return {
@@ -352,14 +351,14 @@ function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
     "work",
     summaryDb,
     categories.meetings,
-    "meetings"
+    MONTHLY_RECAP_BLOCK_PROPERTIES.work.meetings.key
   );
   const social = combineWeeklyBlocksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
     categories.social,
-    "social"
+    MONTHLY_RECAP_BLOCK_PROPERTIES.work.social.key
   );
 
   return {
@@ -383,28 +382,28 @@ function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
     "personal",
     summaryDb,
     categories.personal,
-    "personal"
+    MONTHLY_RECAP_TASK_PROPERTIES.personal.personal.key
   );
   const home = combineWeeklyTasksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
     categories.home,
-    "home"
+    MONTHLY_RECAP_TASK_PROPERTIES.personal.home.key
   );
   const physicalHealth = combineWeeklyTasksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
     categories.physicalHealth,
-    "physicalHealth"
+    MONTHLY_RECAP_TASK_PROPERTIES.personal.physicalHealth.key
   );
   const mentalHealth = combineWeeklyTasksByCategory(
     weeklySummaries,
     "personal",
     summaryDb,
     categories.mentalHealth,
-    "mentalHealth"
+    MONTHLY_RECAP_TASK_PROPERTIES.personal.mentalHealth.key
   );
 
   return {
@@ -430,35 +429,35 @@ function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
     "work",
     summaryDb,
     categories.design,
-    "design"
+    MONTHLY_RECAP_TASK_PROPERTIES.work.design.key
   );
   const research = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
     categories.research,
-    "research"
+    MONTHLY_RECAP_TASK_PROPERTIES.work.research.key
   );
   const admin = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
     categories.admin,
-    "admin"
+    MONTHLY_RECAP_TASK_PROPERTIES.work.admin.key
   );
   const coding = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
     categories.coding,
-    "coding"
+    MONTHLY_RECAP_TASK_PROPERTIES.work.coding.key
   );
   const qa = combineWeeklyTasksByCategory(
     weeklySummaries,
     "work",
     summaryDb,
     categories.qa,
-    "qa"
+    MONTHLY_RECAP_TASK_PROPERTIES.work.qa.key
   );
 
   return {

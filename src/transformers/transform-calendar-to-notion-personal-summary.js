@@ -13,6 +13,7 @@ const {
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
+  applySummarizeFilters,
 } = require("../utils/calendar-data-helpers");
 const { matchInterpersonalCategory } = require("../parsers/interpersonal-matcher");
 
@@ -80,7 +81,7 @@ function transformCalendarEventsToRecapData(
     const filteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
-    summary[`${calendarId}Blocks`] = formatBlocksWithTimeRanges(filteredEvents);
+    summary[`${calendarId}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(filteredEvents), `${calendarId}Blocks`, "personal");
   }
 
   /**
@@ -134,7 +135,7 @@ function transformCalendarEventsToRecapData(
     const filteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
     );
-    summary[`${calendarId}Blocks`] = formatBlocksWithTimeRanges(filteredEvents);
+    summary[`${calendarId}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(filteredEvents), `${calendarId}Blocks`, "personal");
   }
 
   /**
@@ -398,7 +399,7 @@ function transformCalendarEventsToRecapData(
       // For "ignore" category, only calculate blocks
       if (category === "ignore") {
         // Calculate blocks
-        summary[`${category}Blocks`] = formatBlocksWithTimeRanges(categoryEvents);
+        summary[`${category}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(categoryEvents), `${category}Blocks`, "personal");
       } else {
         // Always include all fields for selected calendar (clean slate)
         // Calculate sessions (count of events)
@@ -412,7 +413,7 @@ function transformCalendarEventsToRecapData(
         summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
         // Calculate blocks
-        summary[`${category}Blocks`] = formatBlocksWithTimeRanges(categoryEvents);
+        summary[`${category}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(categoryEvents), `${category}Blocks`, "personal");
       }
     });
   }
@@ -459,7 +460,7 @@ function transformCalendarEventsToRecapData(
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
       // Build task details string (format: day-grouped with newlines)
-      summary[`${category}TaskDetails`] = formatTasksByDay(categoryTasks);
+      summary[`${category}TaskDetails`] = applySummarizeFilters(formatTasksByDay(categoryTasks), `${category}TaskDetails`, "personal");
     });
   }
 

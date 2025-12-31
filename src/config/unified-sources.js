@@ -1801,29 +1801,60 @@ const MONTHLY_RECAP_CATEGORIES = {
 const CONTENT_FILTERS = {
   /**
    * yarn summarize: calendar events → weekly summary
-   * Keys match SUMMARY_GROUPS ids
+   * Keys are column names (from summary output fields)
    */
   summarize: {
     personal: {
-      // sleep: [],
-      // drinkingDays: [],
-      // workout: [],
-      // reading: [],
-      // meditation: [],
-      // cooking: [],
-      // art: [],
-      // coding: [],
-      // music: [],
-      // videoGames: [],
-      // interpersonal: [],
-      // family: [],
-      // relationship: [],
-      // tasks: [],
+      // Standard activity blocks
+      // workoutBlocks: [],
+      // readingBlocks: [],
+      // meditationBlocks: [],
+      // cookingBlocks: [],
+      // artBlocks: [],
+      // codingBlocks: [],
+      // musicBlocks: [],
+      // videoGamesBlocks: [],
+      // drinkingBlocks: [],
+      // Personal calendar category blocks
+      // personalBlocks: [],
+      // familyBlocks: [],
+      // relationshipBlocks: [],
+      // interpersonalBlocks: [],
+      // homeBlocks: [],
+      // physicalHealthBlocks: [],
+      // mentalHealthBlocks: [],
+      // ignoreBlocks: [],
+      // Personal task category details
+      // personalTaskDetails: [],
+      // familyTaskDetails: [],
+      // relationshipTaskDetails: [],
+      // interpersonalTaskDetails: [],
+      // homeTaskDetails: [],
+      // physicalHealthTaskDetails: [],
+      // mentalHealthTaskDetails: [],
     },
     work: {
-      // workPRs: [],
-      // workCalendar: [],
-      // workTasks: [],
+      // Work calendar category blocks
+      // meetingsBlocks: [],
+      // designBlocks: [],
+      // codingBlocks: [],
+      // critBlocks: [],
+      // sketchBlocks: [],
+      // researchBlocks: [],
+      // personalAndSocialBlocks: [],
+      // ritualsBlocks: [],
+      // qaBlocks: [],
+      // adminBlocks: [],
+      // Work task category details
+      // researchTaskDetails: [],
+      // sketchTaskDetails: [],
+      // designTaskDetails: [],
+      // codingTaskDetails: [],
+      // critTaskDetails: [],
+      // qaTaskDetails: [],
+      // adminTaskDetails: [],
+      // socialTaskDetails: [],
+      // oooTaskDetails: [],
     },
   },
   /**

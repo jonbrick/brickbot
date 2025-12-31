@@ -5,6 +5,8 @@
  * All functions are PURE (no closures) for testability
  */
 
+const { CONTENT_FILTERS } = require("../config/unified-sources");
+
 /**
  * Get 3-letter day abbreviation from a date string
  * @param {string} dateStr - Date string (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
@@ -232,11 +234,38 @@ function formatTasksByDay(tasks) {
   return truncateForNotion(formatted);
 }
 
+/**
+ * Apply content filters to formatted text for summarize command
+ * Filters out lines containing words from CONTENT_FILTERS.summarize (word boundary match, case-insensitive)
+ * Preserves day headers (lines ending with ':')
+ * @param {string} formattedText - Formatted text with day headers and event/task lines
+ * @param {string} columnName - Column name for filtering (e.g., "workoutBlocks", "personalTaskDetails")
+ * @param {string} recapType - Recap type ("personal" or "work")
+ * @returns {string} Filtered text
+ */
+function applySummarizeFilters(formattedText, columnName, recapType) {
+  if (!formattedText || !columnName || !recapType) return formattedText;
+  
+  const filterWords = CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
+  if (filterWords.length === 0) return formattedText;
+  
+  const lines = formattedText.split('\n');
+  const filtered = lines.filter((line) => {
+    // Keep day headers (lines ending with ':')
+    if (line.trim().endsWith(':')) return true;
+    // Filter lines containing filter words (word boundary match)
+    return !filterWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(line));
+  });
+  
+  return filtered.join('\n');
+}
+
 module.exports = {
   getDayAbbreviation,
   isDateInWeek,
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
+  applySummarizeFilters,
 };
 

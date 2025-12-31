@@ -100,12 +100,15 @@ async function handleAllSources(startDate, endDate, action) {
     output.phase(i + 1, sources.length, source.name);
 
     try {
+      const spinner = createSpinner(`Processing ${source.name}...`);
+      spinner.start();
       const result = await handleSourceData(
         source.id,
         startDate,
         endDate,
         action
       );
+      spinner.stop();
       aggregatedResults.successful.push(source.name);
 
       // Handle all output cases
@@ -167,10 +170,7 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
   const sourceName = INTEGRATIONS[sourceId].name;
 
   // Fetch data
-  let spinner = createSpinner(`Fetching ${sourceName} data...`);
-  spinner.start();
   const fetchedData = await fetchFn(startDate, endDate);
-  spinner.stop();
 
   // Early return for empty data
   if (fetchedData.length === 0) {
@@ -197,10 +197,7 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
 
   // Sync mode: sync to Notion and return results
   if (action === "sync") {
-    spinner = createSpinner(`Syncing ${sourceName} to Notion...`);
-    spinner.start();
     const results = await syncFn(fetchedData);
-    spinner.stop();
     return {
       fetchedCount: fetchedData.length,
       results,
@@ -236,7 +233,10 @@ async function main() {
     if (source === "all") {
       await handleAllSources(startDate, endDate, action);
     } else {
+      const spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
+      spinner.start();
       const result = await handleSourceData(source, startDate, endDate, action);
+      spinner.stop();
 
       // Handle output based on result
       if (result.fetchedCount === 0) {

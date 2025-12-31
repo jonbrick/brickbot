@@ -102,7 +102,10 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
     output.phase(i + 1, sources.length, source.name);
 
     try {
+      const spinner = createSpinner(`Processing ${source.name}...`);
+      spinner.start();
       const result = await handleCalendarSync(source.id, startDate, endDate, action);
+      spinner.stop();
       aggregatedResults.successful.push(source.name);
 
       // Handle all output cases
@@ -171,8 +174,6 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     repo.databaseConfig.calendarCreatedProperty !== null;
 
   // Get unsynced records based on pattern
-  let spinner = createSpinner(`Querying ${sourceName} records...`);
-  spinner.start();
   let records;
   if (useHybridPattern) {
     // Use hybrid pattern: query by checkbox (includes records with/without event ID)
@@ -188,7 +189,6 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     // Fallback to IntegrationDatabase.getUnsynced() if no queryMethod
     records = await repo.getUnsynced(startDate, endDate);
   }
-  spinner.stop();
 
   // Early return for empty data
   if (records.length === 0) {
@@ -214,10 +214,7 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
 
   // Sync to calendar if requested
   if (action === "sync") {
-    spinner = createSpinner(`Syncing ${sourceName} to Calendar...`);
-    spinner.start();
     const results = await syncFn(startDate, endDate);
-    spinner.stop();
     return {
       fetchedCount: records.length,
       results,
@@ -262,7 +259,10 @@ async function main() {
     if (source === "all") {
       await handleAllCalendarSyncs(startDate, endDate, action);
     } else {
+      const spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
+      spinner.start();
       const result = await handleCalendarSync(source, startDate, endDate, action);
+      spinner.stop();
       
       // Handle output based on result
       if (result.fetchedCount === 0) {

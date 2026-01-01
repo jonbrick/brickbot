@@ -7,16 +7,6 @@ const { INTEGRATIONS } = require("../config/unified-sources");
 const config = require("../config");
 
 /**
- * @deprecated buildSourceChoices - No longer used. CLI files now use registry-based source selection.
- * Removed: This function is no longer used in any CLI files.
- */
-
-/**
- * @deprecated buildAllSourcesHandlers - No longer used. CLI files now use registry-based handlers.
- * Removed: This function is no longer used anywhere.
- */
-
-/**
  * Format records for display using config-driven field mappings
  * @param {Array} records - Array of Notion record objects
  * @param {string} sourceId - Integration ID (e.g., 'oura', 'strava')

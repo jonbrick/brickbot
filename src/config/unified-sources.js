@@ -698,7 +698,6 @@ const INTEGRATIONS = {
     },
     updateCalendar: true,
     calendarSyncMetadata: {
-      queryMethod: "getUnsyncedSleep",
       emptyMessage: "✅ No sleep records found without calendar events\n",
       sourceType: "sleep",
       eventType: "dateTime",
@@ -740,7 +739,6 @@ const INTEGRATIONS = {
     },
     updateCalendar: true,
     calendarSyncMetadata: {
-      queryMethod: "getUnsyncedWorkouts",
       emptyMessage: "✅ No workout records found without calendar events\n",
       sourceType: "strava",
       eventType: "dateTime",
@@ -785,7 +783,6 @@ const INTEGRATIONS = {
     },
     updateCalendar: true,
     calendarSyncMetadata: {
-      queryMethod: "getUnsyncedPRs",
       emptyMessage: "✅ No PR records found without calendar events\n",
       sourceType: "github",
       eventType: "allDay",
@@ -856,7 +853,6 @@ const INTEGRATIONS = {
     },
     updateCalendar: true,
     calendarSyncMetadata: {
-      queryMethod: "getUnsyncedSteam",
       emptyMessage: "✅ No gaming records found without calendar events\n",
       sourceType: "steam",
       eventType: "dateTime",
@@ -911,7 +907,6 @@ const INTEGRATIONS = {
     },
     updateCalendar: true,
     calendarSyncMetadata: {
-      queryMethod: "getUnsyncedBodyWeight",
       emptyMessage: "✅ No body weight records found without calendar events\n",
       sourceType: "withings",
       eventType: "allDay",
@@ -948,7 +943,6 @@ const INTEGRATIONS = {
     collect: false,
     updateCalendar: true,
     calendarSyncMetadata: {
-      queryMethod: "getUnsyncedBloodPressure",
       emptyMessage:
         "✅ No blood pressure records found without calendar events\n",
       sourceType: "bloodPressure",
@@ -2024,7 +2018,7 @@ module.exports = {
   verifyDerivation,
   FIELD_TYPES,
   mapToNotionType,
-  derivePropertiesFromUnified,
+  // derivePropertiesFromUnified removed - only used internally
   generatePersonalSummaryProperties,
   generateWorkSummaryProperties,
   CONTENT_FILTERS,

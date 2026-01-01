@@ -40,7 +40,7 @@ async function selectSourceAndAction() {
   const choices = [
     {
       name: `All Sources (${sortedUpdaters
-        .map((s) => s.name.split(" ")[0])
+        .map((s) => s.name)
         .join(", ")})`,
       value: "all",
     },
@@ -86,7 +86,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   const sources = updaterIds
     .map((id) => ({
       id,
-      name: INTEGRATIONS[id].name.split(" ")[0],
+      name: INTEGRATIONS[id].name,
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -110,7 +110,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
 
       // Handle all output cases
       if (result.fetchedCount === 0) {
-        console.log(`${result.metadata.emptyMessage}\n`);
+        console.log(result.metadata.emptyMessage);
       } else if (action === "sync" && result.results) {
         const { created, skipped, deleted, errors } = result.results;
         const recordLabel = result.fetchedCount === 1 ? "record" : "records";
@@ -118,7 +118,6 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
         console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} synced | ${skipped.length} skipped | ${deletedCount} deleted\n`);
       } else if (action === "display" && result.displayData) {
         displayRecordsTable(result.displayData, result.metadata.sourceId);
-        console.log(); // Blank line after table
       }
     } catch (error) {
       console.log(`❌ ${source.name} failed: ${error.message}\n`);
@@ -156,7 +155,7 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
   }
 
   const { syncFn, calendarSyncMetadata } = updater;
-  const { queryMethod, emptyMessage, sourceType } = calendarSyncMetadata;
+  const { emptyMessage, sourceType } = calendarSyncMetadata;
   const sourceName = INTEGRATIONS[sourceId].name;
 
   // Create IntegrationDatabase instance to check pattern
@@ -181,12 +180,8 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
   } else if (useEventIdPattern) {
     // Use new event ID pattern
     records = await repo.getUnsyncedByEventId(startDate, endDate);
-  } else if (queryMethod) {
-    // Use old pattern with NotionService queryMethod
-    const notionService = new NotionService();
-    records = await notionService[queryMethod](startDate, endDate);
   } else {
-    // Fallback to IntegrationDatabase.getUnsynced() if no queryMethod
+    // Fallback to IntegrationDatabase.getUnsynced() for checkbox pattern
     records = await repo.getUnsynced(startDate, endDate);
   }
 

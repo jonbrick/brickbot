@@ -125,7 +125,6 @@ function formatWeekDisplay(week) {
   return `Week ${week.weekNumber}: ${startDay}, ${startStr} → ${endDay}, ${endStr}`;
 }
 
-
 /**
  * Derive complete weeks (Sun-Sat) from a custom date range
  * Used when user picks custom dates but we need week granularity
@@ -175,7 +174,6 @@ function deriveWeeksFromDateRange(startDate, endDate) {
 }
 
 module.exports = {
-  getWeeksForMonth: getWeeksForMonthLocal, // Backward compatibility alias
   getWeeksForMonthLocal,
   getWeeksForMonthFromNotion,
   deriveWeeksFromDateRange,

@@ -6,24 +6,6 @@
 
 const config = require("../config");
 
-// Map old keys to new integration names
-const KEY_MAPPING = {
-  sleep: "oura",
-  workouts: "strava",
-  prs: "github",
-  bodyWeight: "withings",
-  // steam and personalRecap stay the same
-};
-
-/**
- * Normalize data type key from old format to new format
- * @param {string} key - Data type key (may be old or new format)
- * @returns {string} Normalized key (new format)
- */
-function normalizeKey(key) {
-  return KEY_MAPPING[key] || key;
-}
-
 /**
  * Get the actual value from a record using field mapping
  * Field mapping maps config property keys to actual data field names
@@ -48,18 +30,15 @@ function getFieldValue(record, fieldMapping, propertyKey) {
  * @param {string} title - Optional title for the table
  */
 function printDataTable(data, dataType, title = null) {
-  // Normalize key to new format
-  const normalizedKey = normalizeKey(dataType);
-  
   // Get property config for this data type
-  const dataProperties = config.notion.properties[normalizedKey];
+  const dataProperties = config.notion.properties[dataType];
   if (!dataProperties) {
-    console.error(`Unknown data type: ${dataType} (normalized: ${normalizedKey})`);
+    console.error(`Unknown data type: ${dataType}`);
     return;
   }
 
   // Get field mappings for this data type
-  const fieldMapping = config.notion.fieldMappings[normalizedKey] || {};
+  const fieldMapping = config.notion.fieldMappings[dataType] || {};
 
   // Get title from data type if not provided
   const displayTitle = title || dataType.toUpperCase();

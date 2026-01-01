@@ -1781,6 +1781,7 @@ const MONTHLY_RECAP_CATEGORIES = {
       admin: ["adminTaskDetails"],
       coding: ["codingTaskDetails"],
       qa: ["qaTaskDetails"],
+      sketch: ["sketchTaskDetails"],
     },
   },
 };
@@ -1833,7 +1834,7 @@ const CONTENT_FILTERS = {
       // critBlocks: [],
       // sketchBlocks: [],
       // researchBlocks: [],
-      // personalAndSocialBlocks: [],
+      personalAndSocialBlocks: ["lunch"],
       // ritualsBlocks: [],
       // qaBlocks: [],
       // adminBlocks: [],
@@ -1869,7 +1870,7 @@ const CONTENT_FILTERS = {
     work: {
       // Block columns
       // workMeetingsBlocks: [],
-      // workSocialBlocks: [],
+      workSocialBlocks: ["lunch"],
       // Task columns
       // workDesignTasks: [],
       // workResearchTasks: [],
@@ -1899,7 +1900,10 @@ const MONTHLY_RECAP_BLOCK_PROPERTIES = {
   },
   work: {
     meetings: { key: "workMeetingsBlocks", name: "Meetings - Block Details" },
-    social: { key: "workSocialBlocks", name: "Social - Block Details" },
+    social: {
+      key: "workSocialBlocks",
+      name: "Social & Personal - Block Details",
+    },
   },
 };
 
@@ -1926,6 +1930,7 @@ const MONTHLY_RECAP_TASK_PROPERTIES = {
     admin: { key: "workAdminTasks", name: "Admin - Task Details" },
     coding: { key: "workCodingTasks", name: "Coding - Task Details" },
     qa: { key: "workQATasks", name: "QA - Task Details" },
+    sketch: { key: "workSketchTasks", name: "Sketch - Task Details" },
   },
 };
 

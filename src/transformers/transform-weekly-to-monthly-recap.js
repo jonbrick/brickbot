@@ -459,6 +459,13 @@ function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
     categories.qa,
     MONTHLY_RECAP_TASK_PROPERTIES.work.qa.key
   );
+  const sketch = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "work",
+    summaryDb,
+    categories.sketch,
+    MONTHLY_RECAP_TASK_PROPERTIES.work.sketch.key
+  );
 
   return {
     workDesignTasks: design || "",
@@ -466,6 +473,7 @@ function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
     workAdminTasks: admin || "",
     workCodingTasks: coding || "",
     workQATasks: qa || "",
+    workSketchTasks: sketch || "",
   };
 }
 

@@ -1972,11 +1972,10 @@ function getTaskCompletionFields(recapType) {
 }
 
 /**
- * Generate Monthly Recap properties object
- * Dynamic structure: 4 personal block categories + 4 personal task categories + 2 work block categories + 5 work task categories + title
- * @returns {Object} Properties object compatible with monthly-recap.js format
+ * Generate Personal Monthly Recap properties object
+ * @returns {Object} Properties object with title + personal fields only
  */
-function generateMonthlyRecapProperties() {
+function generatePersonalMonthlyRecapProperties() {
   const props = {
     title: { name: "Month Recap", type: "title", enabled: true },
   };
@@ -1995,6 +1994,18 @@ function generateMonthlyRecapProperties() {
     }
   );
 
+  return props;
+}
+
+/**
+ * Generate Work Monthly Recap properties object
+ * @returns {Object} Properties object with title + work fields only
+ */
+function generateWorkMonthlyRecapProperties() {
+  const props = {
+    title: { name: "Month Recap", type: "title", enabled: true },
+  };
+
   // Work block properties
   Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.work).forEach(([_, prop]) => {
     props[prop.key] = { name: prop.name, type: "text", enabled: true };
@@ -2006,6 +2017,18 @@ function generateMonthlyRecapProperties() {
   });
 
   return props;
+}
+
+/**
+ * Generate Monthly Recap properties object (DEPRECATED - use type-specific generators)
+ * @deprecated Use generatePersonalMonthlyRecapProperties() or generateWorkMonthlyRecapProperties()
+ * @returns {Object} Properties object with all fields (for backward compatibility)
+ */
+function generateMonthlyRecapProperties() {
+  return {
+    ...generatePersonalMonthlyRecapProperties(),
+    ...generateWorkMonthlyRecapProperties(),
+  };
 }
 
 module.exports = {
@@ -2025,7 +2048,9 @@ module.exports = {
   MONTHLY_RECAP_CATEGORIES,
   MONTHLY_RECAP_BLOCK_PROPERTIES,
   MONTHLY_RECAP_TASK_PROPERTIES,
-  generateMonthlyRecapProperties,
+  generatePersonalMonthlyRecapProperties,
+  generateWorkMonthlyRecapProperties,
+  generateMonthlyRecapProperties, // Keep for backward compatibility
   getBlocksFields,
   getTaskFields,
   getTaskCompletionFields,

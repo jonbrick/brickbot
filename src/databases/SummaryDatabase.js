@@ -213,13 +213,16 @@ class SummaryDatabase extends NotionDatabase {
 
     const properties = {};
 
-    // Map all block and task properties dynamically
-    const allProps = {
-      ...MONTHLY_RECAP_BLOCK_PROPERTIES.personal,
-      ...MONTHLY_RECAP_TASK_PROPERTIES.personal,
-      ...MONTHLY_RECAP_BLOCK_PROPERTIES.work,
-      ...MONTHLY_RECAP_TASK_PROPERTIES.work,
-    };
+    // Map only the properties relevant to this summaryType
+    const allProps = this.summaryType === "personal"
+      ? {
+          ...MONTHLY_RECAP_BLOCK_PROPERTIES.personal,
+          ...MONTHLY_RECAP_TASK_PROPERTIES.personal,
+        }
+      : {
+          ...MONTHLY_RECAP_BLOCK_PROPERTIES.work,
+          ...MONTHLY_RECAP_TASK_PROPERTIES.work,
+        };
 
     Object.entries(allProps).forEach(([categoryKey, propConfig]) => {
       const dataKey = propConfig.key;

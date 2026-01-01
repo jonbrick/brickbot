@@ -230,37 +230,73 @@ databaseConfig: {
 
 ### 4. Monthly Recap Configuration
 
-Defines how weekly summaries are aggregated into monthly recap categories:
+Defines how weekly summaries are aggregated into monthly recap categories. Monthly recaps are split into separate Personal and Work databases, each with their own property schemas.
+
+**Property Generators**:
+
+```javascript
+// Personal monthly recap properties (title + personal fields only)
+function generatePersonalMonthlyRecapProperties() {
+  const props = {
+    title: { name: "Month Recap", type: "title", enabled: true },
+  };
+  // Personal block and task properties...
+  return props;
+}
+
+// Work monthly recap properties (title + work fields only)
+function generateWorkMonthlyRecapProperties() {
+  const props = {
+    title: { name: "Month Recap", type: "title", enabled: true },
+  };
+  // Work block and task properties...
+  return props;
+}
+```
+
+**Category Configuration**:
 
 ```javascript
 // How block fields are grouped into monthly recap categories
 MONTHLY_RECAP_CATEGORIES: {
   personal: {
-    dietAndExercise: ["workoutBlocks", "cookingBlocks", "physicalHealthBlocks", "drinkingBlocks"],
-    family: ["familyBlocks"],
-    relationship: ["relationshipBlocks"],
-    interpersonal: ["interpersonalBlocks"],
-    hobby: ["readingBlocks", "meditationBlocks", "artBlocks", "codingBlocks", "musicBlocks", "videoGamesBlocks"],
-    life: ["personalBlocks", "homeBlocks", "mentalHealthBlocks"],
+    blocks: {
+      family: ["familyBlocks"],
+      relationship: ["relationshipBlocks"],
+      interpersonal: ["interpersonalBlocks"],
+      hobbies: ["readingBlocks", "meditationBlocks", "artBlocks", "codingBlocks", "musicBlocks", "videoGamesBlocks"],
+    },
+    tasks: {
+      personal: ["personalTaskDetails"],
+      home: ["homeTaskDetails"],
+      physicalHealth: ["physicalHealthTaskDetails"],
+      mentalHealth: ["mentalHealthTaskDetails"],
+    },
   },
   work: {
-    meetingsAndCollaboration: ["meetingsBlocks"],
-    designAndResearch: ["designBlocks", "sketchBlocks", "researchBlocks", "critBlocks"],
-    codingAndQA: ["codingBlocks", "qaBlocks"],
-    personalAndSocial: ["personalAndSocialBlocks"],
-  },
-}
-}
-
-// Task categories for work (personal tasks remain in single tasksDetails field)
-MONTHLY_RECAP_TASK_CATEGORIES: {
-  work: {
-    designAndResearch: ["researchTaskDetails", "sketchTaskDetails", "designTaskDetails", "critTaskDetails"],
-    codingAndQA: ["codingTaskDetails", "qaTaskDetails"],
-    adminAndSocial: ["adminTaskDetails", "socialTaskDetails", "oooTaskDetails"],
+    blocks: {
+      meetings: ["meetingsBlocks"],
+      social: ["personalAndSocialBlocks"],
+    },
+    tasks: {
+      design: ["designTaskDetails"],
+      research: ["researchTaskDetails"],
+      admin: ["adminTaskDetails"],
+      coding: ["codingTaskDetails"],
+      qa: ["qaTaskDetails"],
+    },
   },
 }
 ```
+
+**CLI Usage**:
+
+The `yarn recap` command now includes type selection:
+- "All (Personal + Work)" - Processes both recap types
+- "Personal only" - Processes only personal recap
+- "Work only" - Processes only work recap
+
+Each recap type updates its own Notion database independently.
 
 ### CONTENT_FILTERS
 
@@ -281,7 +317,7 @@ CONTENT_FILTERS: {
 
 Keys are column names (e.g., `workoutBlocks`, `personalFamilyBlocks`, `workCodingTasks`).
 
-**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_CATEGORIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). `CONTENT_FILTERS` defines words to filter out from specific output columns using word-boundary matching (case-insensitive) for both `yarn summarize` and `yarn recap` commands.
+**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_PROPERTIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). `CONTENT_FILTERS` defines words to filter out from specific output columns using word-boundary matching (case-insensitive) for both `yarn summarize` and `yarn recap` commands.
 
 **Helper Functions**:
 

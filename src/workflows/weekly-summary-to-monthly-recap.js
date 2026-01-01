@@ -59,7 +59,7 @@ async function generateMonthlyRecap(
 
     if (!summaryDb.monthlyDatabaseId) {
       throw new Error(
-        `Monthly recap database ID is not configured. Set MONTHLY_RECAP_DATABASE_ID in .env`
+        `${recapType} monthly recap database ID is not configured. Set ${recapType.toUpperCase()}_MONTHLY_RECAP_DATABASE_ID in .env`
       );
     }
 

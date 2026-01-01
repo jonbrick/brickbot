@@ -434,8 +434,8 @@ TASKS_DATABASE_ID=xxxxxxxxxxxxx
 
 # Optional: Week/Month tracking
 WEEKS_DATABASE_ID=xxxxxxxxxxxxx
-RECAP_DATABASE_ID=xxxxxxxxxxxxx
-RECAP_MONTHS_DATABASE_ID=xxxxxxxxxxxxx
+PERSONAL_MONTHLY_RECAP_DATABASE_ID=xxxxxxxxxxxxx
+WORK_MONTHLY_RECAP_DATABASE_ID=xxxxxxxxxxxxx
 ROCKS_DATABASE_ID=xxxxxxxxxxxxx
 EVENTS_DATABASE_ID=xxxxxxxxxxxxx
 

@@ -573,7 +573,8 @@ yarn summarize
 # Select your calendar and date range
 
 # Generate monthly recap
-yarn recap-month
+yarn recap
+# Select recap type (All, Personal only, or Work only)
 # Verify new calendar blocks appear in the correct category
 ```
 
@@ -610,11 +611,14 @@ MONTHLY_RECAP_CATEGORIES: {
 
 **File**: `src/config/unified-sources.js`
 
-Add property definition in `generateMonthlyRecapProperties()`:
+Add property definition to the appropriate property generator function:
+
+**For personal categories**, add to `generatePersonalMonthlyRecapProperties()`:
 
 ```javascript
-function generateMonthlyRecapProperties() {
-  return {
+function generatePersonalMonthlyRecapProperties() {
+  const props = {
+    title: { name: "Month Recap", type: "title", enabled: true },
     // ... existing properties
     personalNewCategoryBlocks: {  // ADD THIS (camelCase from category key)
       name: "New Category - Block Details",  // Display name in Notion
@@ -622,10 +626,28 @@ function generateMonthlyRecapProperties() {
       enabled: true,
     },
   };
+  return props;
 }
 ```
 
-**Note**: You must also add this property to your Notion monthly recap database manually.
+**For work categories**, add to `generateWorkMonthlyRecapProperties()`:
+
+```javascript
+function generateWorkMonthlyRecapProperties() {
+  const props = {
+    title: { name: "Month Recap", type: "title", enabled: true },
+    // ... existing properties
+    workNewCategoryBlocks: {  // ADD THIS
+      name: "New Category - Block Details",
+      type: "text",
+      enabled: true,
+    },
+  };
+  return props;
+}
+```
+
+**Note**: You must also add this property to your Notion monthly recap database manually. If you're using separate Personal and Work databases, add the property to the appropriate database.
 
 ### Step 3: Update Transformer Function
 

@@ -14,7 +14,8 @@ const events = require("./events");
 const trips = require("./trips");
 const personalSummary = require("./personal-summary");
 const workSummary = require("./work-summary");
-const monthlyRecap = require("./monthly-recap");
+const personalMonthlyRecap = require("./personal-monthly-recap");
+const workMonthlyRecap = require("./work-monthly-recap");
 const relationships = require("./relationships");
 
 // Aggregate database IDs
@@ -30,8 +31,8 @@ const databases = {
   trips: trips.database,
   personalSummary: personalSummary.database,
   workSummary: workSummary.database,
-  personalMonthlyRecap: process.env.MONTHLY_RECAP_DATABASE_ID,
-  workMonthlyRecap: process.env.MONTHLY_RECAP_DATABASE_ID,
+  personalMonthlyRecap: personalMonthlyRecap.database,
+  workMonthlyRecap: workMonthlyRecap.database,
   relationships: relationships.database,
 };
 
@@ -48,8 +49,8 @@ const properties = {
   trips: trips.properties,
   personalSummary: personalSummary.properties,
   workSummary: workSummary.properties,
-  personalMonthlyRecap: monthlyRecap.properties,
-  workMonthlyRecap: monthlyRecap.properties,
+  personalMonthlyRecap: personalMonthlyRecap.properties,
+  workMonthlyRecap: workMonthlyRecap.properties,
   relationships: relationships.properties,
 };
 

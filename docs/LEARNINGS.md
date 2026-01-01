@@ -15,7 +15,7 @@ Each command has a **verb** and a **noun** - this mental model keeps the system 
 | `yarn collect`   | **Collect**   | API data  | Fetch from external APIs → Store in Notion |
 | `yarn update`    | **Update**    | Calendars | Notion records → Google Calendar events    |
 | `yarn summarize` | **Summarize** | Weeks     | Calendar events → Weekly summary in Notion |
-| `yarn recap`     | **Recap**     | Months    | Weekly summaries → Monthly recap in Notion |
+| `yarn recap`     | **Recap**     | Months    | Weekly summaries → Monthly recap in Notion (with type selection: All/Personal/Work) |
 
 **Key insight:** Each layer's output becomes the next layer's input. Calendar + Notion tasks become the "source of truth" for summarization.
 

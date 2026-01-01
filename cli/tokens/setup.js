@@ -247,11 +247,12 @@ async function setupStrava(tokenService) {
   console.log("2. Authorize the application");
   console.log("3. Copy the authorization code from the redirect URL\n");
 
-  const code = await askQuestion("Enter the authorization code: ");
+  const codeInput = await askQuestion("Enter the authorization code: ");
+  const code = extractCodeFromInput(codeInput.trim());
 
   // Exchange code for tokens
   showInfo("Exchanging code for tokens...");
-  const tokens = await tokenService.exchangeStravaCode(code.trim());
+  const tokens = await tokenService.exchangeStravaCode(code);
 
   // Update .env file
   updateEnvFile({
@@ -302,11 +303,12 @@ async function setupWithings(tokenService) {
   console.log("2. Authorize the application");
   console.log("3. Copy the authorization code from the redirect URL\n");
 
-  const code = await askQuestion("Enter the authorization code: ");
+  const codeInput = await askQuestion("Enter the authorization code: ");
+  const code = extractCodeFromInput(codeInput.trim());
 
   // Exchange code for tokens
   showInfo("Exchanging code for tokens...");
-  const tokens = await tokenService.exchangeWithingsCode(code.trim());
+  const tokens = await tokenService.exchangeWithingsCode(code);
 
   // Update .env file
   updateEnvFile({
@@ -331,6 +333,18 @@ function askQuestion(query) {
       resolve(answer);
     });
   });
+}
+
+function extractCodeFromInput(input) {
+  if (input.startsWith("http")) {
+    try {
+      const url = new URL(input);
+      return url.searchParams.get("code") || input;
+    } catch (error) {
+      return input;
+    }
+  }
+  return input;
 }
 
 async function askYesNo(query) {

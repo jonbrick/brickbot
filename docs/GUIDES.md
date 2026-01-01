@@ -54,6 +54,13 @@ INTEGRATIONS: {
       calendarEventIdProperty: "Calendar Event ID",  // For calendar sync
       calendarCreatedProperty: "Calendar Created",    // Checkbox for sync status
     },
+```
+
+**Note**: Choose the appropriate calendar sync pattern based on your data:
+- **Checkbox pattern** (one-way sync): Use only `calendarCreatedProperty` for API-sourced data that doesn't change after creation
+- **Hybrid pattern** (bidirectional sync): Use both `calendarEventIdProperty` and `calendarCreatedProperty` for user-managed data that may be edited or deleted
+
+See [Calendar Sync Patterns](ARCHITECTURE.md#calendar-sync-patterns) in ARCHITECTURE.md for details.
 
     apiConfig: {
       baseUrl: "https://api.mynewapi.com",

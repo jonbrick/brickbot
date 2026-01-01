@@ -187,6 +187,47 @@ INTEGRATIONS: {
 
 **Adding a new feature?** Edit the config. No code changes needed in most cases.
 
+### Calendar Sync Patterns
+
+Brickbot supports different sync patterns based on data characteristics:
+
+| Pattern | Properties | Behavior | Use For |
+|---------|------------|----------|---------|
+| **Checkbox** | `calendarCreatedProperty` only | One-way, create-only | API-sourced data (append-only) |
+| **Hybrid** | Both `calendarEventIdProperty` + `calendarCreatedProperty` | Bidirectional, update/delete | User-managed data |
+
+#### Checkbox Pattern (One-Way Sync)
+
+Used by: oura, strava, github, steam, withings, bloodPressure, medications
+
+- Tracks sync status with boolean checkbox
+- Creates calendar events, never updates or deletes
+- Appropriate for API data that doesn't change after creation
+```javascript
+databaseConfig: {
+  dateProperty: "date",
+  calendarCreatedProperty: "calendarCreated",
+}
+```
+
+#### Hybrid Pattern (Bidirectional Sync)
+
+Used by: events, trips
+
+- Stores Google Calendar event ID + tracks sync status
+- Can update existing calendar events when Notion records change  
+- Can delete orphaned calendar events when Notion records are deleted
+- Appropriate for manually managed data that users edit/delete
+```javascript
+databaseConfig: {
+  dateProperty: "Date",
+  calendarEventIdProperty: "Calendar Event ID",
+  calendarCreatedProperty: "calendarCreated",
+}
+```
+
+**Principle**: Use the simplest pattern that meets requirements. Don't add event ID tracking unless you need update/delete sync.
+
 ### 4. Monthly Recap Configuration
 
 Defines how weekly summaries are aggregated into monthly recap categories:

@@ -19,10 +19,12 @@ const { formatDateForNotion } = require("../utils/date-handler");
 function transformOuraToNotion(session) {
   const props = config.notion.properties.oura;
 
-  // Determine wake up type
-  const wakeTime = session.bedtimeEnd ? new Date(session.bedtimeEnd) : null;
+  // Determine wake up type (extract hour from ISO string to preserve timezone)
   const sleepInType =
-    wakeTime && isSleepIn(wakeTime)
+    session.bedtimeEnd && isSleepIn(
+      session.bedtimeEnd,
+      config.notion.sleepCategorization.wakeTimeThreshold
+    )
       ? config.notion.sleepCategorization.sleepInLabel
       : config.notion.sleepCategorization.normalWakeUpLabel;
 

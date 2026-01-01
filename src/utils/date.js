@@ -479,16 +479,27 @@ function formatDateOnly(date) {
 
 /**
  * Determine if wake time should be categorized as "Sleep In"
- * Based on wake time threshold (default 7 AM)
+ * Extracts hour from ISO timestamp string to preserve original timezone
  *
- * @param {Date} wakeTime - Wake time
- * @param {number} threshold - Hour threshold (default 7)
+ * @param {string} wakeTimeIso - ISO timestamp string (e.g., "2025-01-05T06:30:00-05:00")
+ * @param {number} threshold - Hour threshold (required, must come from config)
  * @returns {boolean} True if sleep in
+ * @throws {Error} If threshold is not provided or is not a number
  */
-function isSleepIn(wakeTime, threshold = 7) {
-  if (!wakeTime) return false;
-  const hours = wakeTime.getHours();
-  const minutes = wakeTime.getMinutes();
+function isSleepIn(wakeTimeIso, threshold) {
+  if (!wakeTimeIso || typeof wakeTimeIso !== 'string') return false;
+  
+  if (typeof threshold !== 'number') {
+    throw new Error('isSleepIn requires threshold from config');
+  }
+  
+  // Extract hour and minute from ISO string (preserves original timezone)
+  // Matches format: "2025-01-05T06:30:00-05:00" or "2025-01-05T06:30:00Z"
+  const timeMatch = wakeTimeIso.match(/T(\d{2}):(\d{2})/);
+  if (!timeMatch) return false;
+  
+  const hours = parseInt(timeMatch[1], 10);
+  const minutes = parseInt(timeMatch[2], 10);
   const totalMinutes = hours * 60 + minutes;
   const thresholdMinutes = threshold * 60;
   return totalMinutes > thresholdMinutes;

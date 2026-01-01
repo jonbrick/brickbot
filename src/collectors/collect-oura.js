@@ -132,6 +132,7 @@ async function fetchOuraReadiness(startDate, endDate) {
 function extractSleepFields(processedData) {
   return processedData.map((record) => {
     // Calculate wake time from bedtimeEnd (processed format uses camelCase)
+    // Note: Date conversion only for display formatting (toLocaleString), not for categorization
     const bedtimeEnd = record.bedtimeEnd ? new Date(record.bedtimeEnd) : null;
     const bedtimeStart = record.bedtimeStart
       ? new Date(record.bedtimeStart)
@@ -147,9 +148,12 @@ function extractSleepFields(processedData) {
     // Night of date is already calculated in processed format (nightOf is a Date object)
     const nightOfDateStr = record.nightOf ? formatDate(record.nightOf) : "N/A";
 
-    // Determine wake time category
+    // Determine wake time category (use fixed isSleepIn with string + config threshold)
     const googleCalendar =
-      bedtimeEnd && isSleepIn(bedtimeEnd)
+      record.bedtimeEnd && isSleepIn(
+        record.bedtimeEnd,
+        config.notion.sleepCategorization.wakeTimeThreshold
+      )
         ? config.notion.sleepCategorization.sleepInLabel
         : config.notion.sleepCategorization.normalWakeUpLabel;
 

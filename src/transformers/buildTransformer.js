@@ -305,7 +305,4 @@ function buildTransformer(calendarKey, transformerConfig) {
 
 module.exports = {
   buildTransformer,
-  interpolateTemplate,
-  buildEventDates,
-  calculateEndTime,
 };

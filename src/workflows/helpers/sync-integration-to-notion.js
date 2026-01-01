@@ -4,18 +4,7 @@
 const IntegrationDatabase = require("../../databases/IntegrationDatabase");
 const BaseWorkflow = require("../BaseWorkflow");
 const config = require("../../config");
-
-/**
- * Helper function to convert integration ID to function name
- * Handles special cases like "github" -> "GitHub"
- *
- * @param {string} id - Integration ID
- * @returns {string} Capitalized function name
- */
-function idToFunctionName(id) {
-  const specialCases = { github: "GitHub" };
-  return specialCases[id] || id.charAt(0).toUpperCase() + id.slice(1);
-}
+const { idToFunctionName } = require("../../utils/helpers");
 
 /**
  * Sync integration items to Notion using BaseWorkflow

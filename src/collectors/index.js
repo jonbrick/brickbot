@@ -4,16 +4,7 @@
  */
 
 const { INTEGRATIONS } = require("../config/unified-sources");
-
-// Helper to convert integration ID to function name
-// Handles special cases like "github" -> "GitHub"
-function idToFunctionName(id) {
-  const specialCases = {
-    github: "GitHub",
-  };
-  const name = specialCases[id] || id.charAt(0).toUpperCase() + id.slice(1);
-  return name;
-}
+const { idToFunctionName } = require("../utils/helpers");
 
 // Build collector registry from INTEGRATIONS
 const collectorRegistry = {};

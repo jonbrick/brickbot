@@ -25,16 +25,6 @@ function normalizeKey(key) {
 }
 
 /**
- * Format duration in seconds to readable format
- */
-function formatDuration(seconds) {
-  if (!seconds && seconds !== 0) return "N/A";
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
-}
-
-/**
  * Get the actual value from a record using field mapping
  * Field mapping maps config property keys to actual data field names
  */
@@ -122,5 +112,4 @@ function printDataTable(data, dataType, title = null) {
 
 module.exports = {
   printDataTable,
-  formatDuration,
 };

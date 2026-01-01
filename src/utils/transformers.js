@@ -23,9 +23,6 @@ function filterEnabledProperties(allProperties, propertyConfig) {
 
     if (propKey && config.notion.isPropertyEnabled(propertyConfig[propKey])) {
       enabledProperties[key] = value;
-    } else if (!propKey) {
-      // Backward compatibility - include if not in config
-      enabledProperties[key] = value;
     }
   });
 

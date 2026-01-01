@@ -11,8 +11,6 @@ const sources = require("./integrations/credentials");
 const tokens = require("./tokens");
 const calendar = require("./calendar/credentials");
 const unifiedSources = require("./unified-sources");
-const main = unifiedSources; // Backward compat alias
-const dataSources = unifiedSources; // Backward compat alias
 
 /**
  * Validate that all required environment variables are present
@@ -147,8 +145,6 @@ module.exports = {
   sources,
   tokens,
   calendar,
-  main,
-  dataSources, // Backward compat alias
   env: {
     isDevelopment: process.env.NODE_ENV === "development",
     isProduction: process.env.NODE_ENV === "production",

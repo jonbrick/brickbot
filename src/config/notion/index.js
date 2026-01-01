@@ -75,11 +75,8 @@ const colors = {};
 // Sleep-specific configurations (from oura.js)
 const sleepCategorization = oura.categorization;
 
-// Helper function to get property name (handles both string and object formats)
+// Helper function to get property name
 function getPropertyName(property) {
-  if (typeof property === "string") {
-    return property; // Backward compatibility
-  }
   if (property && typeof property === "object" && property.name) {
     return property.name;
   }
@@ -88,9 +85,6 @@ function getPropertyName(property) {
 
 // Helper function to check if property is enabled
 function isPropertyEnabled(property) {
-  if (typeof property === "string") {
-    return true; // Backward compatibility - strings are enabled by default
-  }
   if (property && typeof property === "object") {
     return property.enabled !== false; // Default to enabled if not specified
   }

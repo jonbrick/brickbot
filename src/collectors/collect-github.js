@@ -217,21 +217,6 @@ function convertGroupToActivity(repoGroup) {
     uniqueId = `${repoGroup.repository}-unknown`;
   }
 
-  // Generate activity ID for backward compatibility
-  let activityId;
-  if (repoGroup.isPrRecord && repoGroup.pr) {
-    activityId =
-      `${repoGroup.repository}-${repoGroup.date}-PR${repoGroup.pr.number}`.replace(
-        /[^a-zA-Z0-9-]/g,
-        "-"
-      );
-  } else {
-    activityId = `${repoGroup.repository}-${repoGroup.date}`.replace(
-      /[^a-zA-Z0-9-]/g,
-      "-"
-    );
-  }
-
   // Convert to activity format
   const activity = {
     repository: repoGroup.repository,
@@ -250,7 +235,6 @@ function convertGroupToActivity(repoGroup) {
     endTime: endTime.toISOString(),
     duration: Math.max(1, Math.round((endTime - startTime) / (1000 * 60))), // minutes, minimum 1
     uniqueId: uniqueId,
-    activityId: activityId,
     name: activityName,
   };
 

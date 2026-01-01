@@ -535,18 +535,9 @@ class NotionDatabase {
       if (foundInConfig && isTitleType) break;
     }
 
-    // If found in config, use the config type (not the fallback)
+    // If found in config, use the config type
     if (foundInConfig) {
       return isTitleType;
-    }
-
-    // Fallback: check if key contains "name" or "title"
-    // (for backwards compatibility - only if NOT found in config)
-    if (
-      key.toLowerCase().includes("name") ||
-      key.toLowerCase().includes("title")
-    ) {
-      return true;
     }
 
     return false;

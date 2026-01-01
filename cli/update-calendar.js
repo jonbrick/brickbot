@@ -6,7 +6,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const NotionService = require("../src/services/NotionService");
+const NotionDatabase = require("../src/databases/NotionDatabase");
 const IntegrationDatabase = require("../src/databases/IntegrationDatabase");
 const { selectDateRange, createSpinner } = require("../src/utils/cli");
 const { formatDate } = require("../src/utils/date");
@@ -198,8 +198,8 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
   // Format for display (only needed for display mode)
   let displayData = null;
   if (action === "display") {
-    // Use repo for new pattern, notionService for old pattern
-    const serviceForDisplay = useEventIdPattern ? repo : new NotionService();
+    // Use repo for new pattern, NotionDatabase for legacy pattern
+    const serviceForDisplay = useEventIdPattern ? repo : new NotionDatabase();
     displayData = formatRecordsForDisplay(
       records,
       sourceId,

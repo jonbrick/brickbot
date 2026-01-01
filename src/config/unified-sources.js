@@ -1814,7 +1814,7 @@ const CONTENT_FILTERS = {
       // interpersonalBlocks: [],
       // homeBlocks: [],
       // physicalHealthBlocks: [],
-      // mentalHealthBlocks: [],
+      mentalHealthBlocks: ["rot", "wasted"],
       // ignoreBlocks: [],
       // Personal task category details
       // personalTaskDetails: [],
@@ -1861,7 +1861,7 @@ const CONTENT_FILTERS = {
       // personalInterpersonalBlocks: [],
       // personalHobbiesBlocks: [],
       // Task columns
-      // personalPersonalTasks: [],
+      personalPersonalTasks: ["recap"],
       // personalHomeTasks: [],
       // personalPhysicalHealthTasks: [],
       // personalMentalHealthTasks: [],

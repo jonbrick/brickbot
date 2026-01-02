@@ -128,6 +128,7 @@ async function selectDateRange(options = {}) {
       endDate = getMonthEnd(new Date(year, month - 1, 1));
       
       months = [{ month, year, weeks: notionWeeks, startDate, endDate }];
+      weeks = notionWeeks;
       displayText = warning 
         ? `⚠️  ${warning}\n${buildMonthDisplayText(monthName, year, notionWeeks)}`
         : buildMonthDisplayText(monthName, year, notionWeeks);
@@ -152,6 +153,7 @@ async function selectDateRange(options = {}) {
       endDate = getMonthEnd(new Date(year, month - 1, 1));
       
       months = [{ month, year, weeks: notionWeeks, startDate, endDate }];
+      weeks = notionWeeks;
       displayText = warning 
         ? `⚠️  ${warning}\n${buildMonthDisplayText(monthName, year, notionWeeks)}`
         : buildMonthDisplayText(monthName, year, notionWeeks);
@@ -361,6 +363,9 @@ async function selectDateRange(options = {}) {
       // Return as months array for consistency
       months = [{ month, year, weeks: selectedWeeks, startDate: monthStart, endDate: monthEnd }];
       
+      // Set weeks for week granularity mode
+      weeks = selectedWeeks;
+      
       // Calculate combined date range
       startDate = monthStart;
       endDate = monthEnd;
@@ -485,6 +490,9 @@ async function selectDateRange(options = {}) {
           loopYear += 1;
         }
       }
+      
+      // Flatten all weeks from all months into single array
+      weeks = months.flatMap(m => m.weeks);
       
       // Calculate overall date range
       const allStartDates = months.map((m) => m.startDate);

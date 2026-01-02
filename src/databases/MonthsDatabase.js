@@ -9,14 +9,49 @@ class MonthsDatabase extends NotionDatabase {
   constructor() {
     super();
     this.databaseId = process.env.MONTHS_DATABASE_ID;
+    this.yearsDatabaseId = process.env.NOTION_YEARS_DATABASE_ID;
   }
 
   /**
-   * Find a month page by formatted title
+   * Get Year page ID from Years database
+   * @param {number} year - Year number (e.g., 2025)
+   * @returns {Promise<string|null>} Year page ID or null if not found
+   */
+  async getYearPageId(year) {
+    if (!this.yearsDatabaseId) {
+      throw new Error("NOTION_YEARS_DATABASE_ID is not configured");
+    }
+
+    try {
+      const filter = {
+        property: "Year", // Title property name in Years DB
+        title: {
+          equals: year.toString(),
+        },
+      };
+
+      const results = await this.queryDatabase(this.yearsDatabaseId, filter);
+
+      if (results.length === 0) {
+        if (process.env.DEBUG) {
+          console.warn(`Year ${year} not found in Years database`);
+        }
+        return null;
+      }
+
+      return results[0].id;
+    } catch (error) {
+      throw new Error(`Failed to get Year page ID: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find a month page by formatted title and year
    * @param {number} month - Month number (1-12)
+   * @param {number} year - Year
    * @returns {Promise<Object|null>} Notion page or null
    */
-  async findMonthPage(month) {
+  async findMonthPage(month, year) {
     if (!this.databaseId) {
       throw new Error("MONTHS_DATABASE_ID is not configured");
     }
@@ -42,12 +77,27 @@ class MonthsDatabase extends NotionDatabase {
 
     const title = `${String(month).padStart(2, "0")}. ${monthAbbr}`;
 
-    try {
-      const results = await this.queryDatabase(this.databaseId, {
-        property: "Month",
-        title: { equals: title },
-      });
+    // Get Year page ID
+    const yearPageId = await this.getYearPageId(year);
+    if (!yearPageId) {
+      return null;
+    }
 
+    try {
+      const filter = {
+        and: [
+          {
+            property: "Month",
+            title: { equals: title },
+          },
+          {
+            property: "Year",
+            relation: { contains: yearPageId },
+          },
+        ],
+      };
+
+      const results = await this.queryDatabase(this.databaseId, filter);
       return results.length > 0 ? results[0] : null;
     } catch (error) {
       throw new Error(`Failed to find month page: ${error.message}`);
@@ -99,27 +149,40 @@ class MonthsDatabase extends NotionDatabase {
     }
 
     // Find the month page
-    const monthPage = await this.findMonthPage(month);
+    const monthPage = await this.findMonthPage(month, year);
     if (!monthPage) {
       return [];
     }
 
-    // Get relation property (year-specific format: "⏰ 2025 Weeks")
-    const relationPropName = `⏰ ${year} Weeks`;
+    // Get generic "Weeks" relation property
+    const relationPropName = "Weeks";
     const relationProperty = monthPage.properties[relationPropName];
 
-    let weekRelations = [];
-
-    if (relationProperty && relationProperty.type === "relation") {
-      weekRelations = relationProperty.relation || [];
-    } else {
-      // Try fallback: just "Weeks" if year-specific doesn't exist
-      const fallbackProp = monthPage.properties["Weeks"];
-      if (fallbackProp && fallbackProp.type === "relation") {
-        weekRelations = fallbackProp.relation || [];
+    if (!relationProperty || relationProperty.type !== "relation") {
+      if (process.env.DEBUG) {
+        const monthNames = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
+        const monthName = monthNames[month - 1];
+        console.warn(
+          `No "Weeks" relation column found on ${monthName} ${year} page.`
+        );
       }
+      return [];
     }
 
+    const weekRelations = relationProperty.relation || [];
     if (weekRelations.length === 0) {
       return [];
     }

@@ -49,7 +49,7 @@ function stripDayHeaders(text) {
  */
 function stripTimeRanges(text) {
   if (!text || typeof text !== "string") return "";
-  
+
   // Remove time ranges like (8:00-9:00pm), (11:30am-2:00pm)
   // Remove (all day)
   return text
@@ -83,9 +83,10 @@ function filterAndFormatEvents(text, columnName = null, recapType = null) {
   if (!text || typeof text !== "string") return "";
 
   // Get filter words from CONTENT_FILTERS.recap
-  const filterWords = recapType && columnName 
-    ? CONTENT_FILTERS.recap?.[recapType]?.[columnName] || [] 
-    : [];
+  const filterWords =
+    recapType && columnName
+      ? CONTENT_FILTERS.recap?.[recapType]?.[columnName] || []
+      : [];
 
   // Split into individual lines (events/tasks)
   const lines = text
@@ -94,7 +95,9 @@ function filterAndFormatEvents(text, columnName = null, recapType = null) {
     .filter(Boolean)
     .filter((line) => {
       if (filterWords.length === 0) return true;
-      return !filterWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(line));
+      return !filterWords.some((word) =>
+        new RegExp(`\\b${word}\\b`, "i").test(line)
+      );
     });
 
   // Transform each line
@@ -218,7 +221,11 @@ function combineWeeklyBlocksByCategory(
         // Strip day headers and time ranges from this field's content
         const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
-        const formatted = filterAndFormatEvents(collapsed, columnName, recapType);
+        const formatted = filterAndFormatEvents(
+          collapsed,
+          columnName,
+          recapType
+        );
         if (formatted.trim()) {
           weekBlocks.push(formatted);
         }
@@ -271,7 +278,11 @@ function combineWeeklyTasksByCategory(
         // Strip day headers and time ranges from this field's content
         const stripped = stripTimeRanges(stripDayHeaders(fieldValue));
         const collapsed = collapseNewlines(stripped);
-        const formatted = filterAndFormatEvents(collapsed, columnName, recapType);
+        const formatted = filterAndFormatEvents(
+          collapsed,
+          columnName,
+          recapType
+        );
         if (formatted.trim()) {
           weekTasks.push(formatted);
         }
@@ -327,12 +338,20 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
     categories.hobbies,
     MONTHLY_RECAP_BLOCK_PROPERTIES.personal.hobbies.key
   );
+  const mentalHealth = combineWeeklyBlocksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.mentalHealth,
+    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.mentalHealth.key
+  );
 
   return {
     personalFamilyBlocks: family || "",
     personalRelationshipBlocks: relationship || "",
     personalInterpersonalBlocks: interpersonal || "",
     personalHobbiesBlocks: hobbies || "",
+    personalMentalHealthBlocks: mentalHealth || "",
   };
 }
 

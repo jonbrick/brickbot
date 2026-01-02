@@ -1762,6 +1762,7 @@ const MONTHLY_RECAP_CATEGORIES = {
         "musicBlocks",
         "videoGamesBlocks",
       ],
+      mentalHealth: ["mentalHealthBlocks"],
     },
     tasks: {
       personal: ["personalTaskDetails"],
@@ -1897,6 +1898,10 @@ const MONTHLY_RECAP_BLOCK_PROPERTIES = {
       name: "Interpersonal - Block Details",
     },
     hobbies: { key: "personalHobbiesBlocks", name: "Hobbies - Block Details" },
+    mentalHealth: {
+      key: "personalMentalHealthBlocks",
+      name: "Mental Health - Blocks",
+    },
   },
   work: {
     meetings: { key: "workMeetingsBlocks", name: "Meetings - Block Details" },

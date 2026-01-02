@@ -89,16 +89,26 @@ function filterAndFormatEvents(text, columnName = null, recapType = null) {
       : [];
 
   // Split into individual lines (events/tasks)
-  const lines = text
+  let lines = text
     .split("\n")
     .map((line) => line.trim())
-    .filter(Boolean)
-    .filter((line) => {
-      if (filterWords.length === 0) return true;
+    .filter(Boolean);
+
+  // FIRST: Filter out lines containing filter words
+  if (filterWords.length > 0) {
+    lines = lines.filter((line) => {
       return !filterWords.some((word) =>
         new RegExp(`\\b${word}\\b`, "i").test(line)
       );
     });
+  }
+
+  // THEN: Remove day header lines that are now empty (standalone day headers)
+  // This handles cases where all content for a day was filtered out
+  lines = lines.filter((line) => {
+    // Remove lines that are just day headers (e.g., "Tue:", "Wed:")
+    return !/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun):\s*$/.test(line);
+  });
 
   // Transform each line
   const formatted = lines

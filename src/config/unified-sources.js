@@ -1824,7 +1824,7 @@ const CONTENT_FILTERS = {
       // relationshipTaskDetails: [],
       // interpersonalTaskDetails: [],
       // homeTaskDetails: [],
-      // physicalHealthTaskDetails: [],
+      physicalHealthTaskDetails: ["workout", "run"],
       // mentalHealthTaskDetails: [],
     },
     work: {

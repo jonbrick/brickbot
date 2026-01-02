@@ -1863,8 +1863,15 @@ const CONTENT_FILTERS = {
       // personalInterpersonalBlocks: [],
       // personalHobbiesBlocks: [],
       // Task columns
-      personalPersonalTasks: ["recap"],
-      // personalHomeTasks: [],
+      personalPersonalTasks: [
+        "shave",
+        "laundry",
+        "grocery",
+        "groceries",
+        "cvs",
+        "recycles",
+      ],
+      personalHomeTasks: ["laundry", "grocery", "groceries", "cvs", "recycles"],
       // personalPhysicalHealthTasks: [],
       // personalMentalHealthTasks: [],
     },

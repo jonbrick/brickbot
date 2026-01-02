@@ -136,6 +136,10 @@ function formatWeekDisplay(week) {
 function deriveWeeksFromDateRange(startDate, endDate) {
   const weeks = [];
 
+  // Use end date's year as context - for year boundary weeks,
+  // the later year's numbering system applies
+  const contextYear = endDate.getFullYear();
+
   // Find the Sunday on or before startDate
   let currentSunday = new Date(startDate);
   currentSunday.setDate(startDate.getDate() - startDate.getDay());
@@ -156,8 +160,8 @@ function deriveWeeksFromDateRange(startDate, endDate) {
     weekEnd.setDate(weekEnd.getDate() + 6);
     weekEnd.setHours(23, 59, 59, 999);
 
-    const weekNumber = getWeekNumber(weekStart, weekStart.getFullYear());
-    const year = weekStart.getFullYear();
+    const weekNumber = getWeekNumber(weekStart, contextYear);
+    const year = contextYear;
 
     weeks.push({
       weekNumber,

@@ -1819,11 +1819,11 @@ const CONTENT_FILTERS = {
       mentalHealthBlocks: ["rot", "wasted"],
       // ignoreBlocks: [],
       // Personal task category details
-      // personalTaskDetails: [],
+      personalTaskDetails: ["shave", "laundry", "grocery", "cvs", "groceries"],
       // familyTaskDetails: [],
       // relationshipTaskDetails: [],
       // interpersonalTaskDetails: [],
-      // homeTaskDetails: [],
+      homeTaskDetails: ["laundry", "grocery", "groceries", "cvs"],
       physicalHealthTaskDetails: ["workout", "run"],
       // mentalHealthTaskDetails: [],
     },

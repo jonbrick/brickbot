@@ -14,6 +14,8 @@ const {
   formatBlocksWithTimeRanges,
   formatTasksByDay,
   applySummarizeFilters,
+  filterEventsByContentFilters,
+  filterTasksByContentFilters,
 } = require("../utils/calendar-data-helpers");
 const { matchInterpersonalCategory } = require("../parsers/interpersonal-matcher");
 
@@ -63,8 +65,21 @@ function transformCalendarEventsToRecapData(
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
+    // Filter events by date range first
+    const dateFilteredEvents = events.filter((event) =>
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
+
+    // Filter events by content filters BEFORE counting
+    const filteredEvents = filterEventsByContentFilters(
+      dateFilteredEvents,
+      `${calendarId}Blocks`,
+      "personal"
+    );
+
+    // Calculate counts using filtered events
     const data = calculateCalendarData(
-      events,
+      filteredEvents,
       weekStartDate,
       weekEndDate,
       true,
@@ -77,11 +92,12 @@ function transformCalendarEventsToRecapData(
     summary[`${calendarId}HoursTotal`] =
       data.hoursTotal !== undefined ? data.hoursTotal : 0;
 
-    // Calculate blocks
-    const filteredEvents = events.filter((event) =>
-      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    // Calculate blocks (already filtered)
+    summary[`${calendarId}Blocks`] = applySummarizeFilters(
+      formatBlocksWithTimeRanges(filteredEvents),
+      `${calendarId}Blocks`,
+      "personal"
     );
-    summary[`${calendarId}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(filteredEvents), `${calendarId}Blocks`, "personal");
   }
 
   /**
@@ -98,8 +114,22 @@ function transformCalendarEventsToRecapData(
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
+    // Filter events by date range first
+    const dateFilteredEvents = events.filter((event) =>
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
+
+    // Filter events by content filters BEFORE counting
+    // Note: sober doesn't have blocks, so we use a generic column name
+    const filteredEvents = filterEventsByContentFilters(
+      dateFilteredEvents,
+      `${calendarId}Blocks`,
+      "personal"
+    );
+
+    // Calculate Days count from filtered events only
     const data = calculateCalendarData(
-      events,
+      filteredEvents,
       weekStartDate,
       weekEndDate,
       false,
@@ -122,8 +152,21 @@ function transformCalendarEventsToRecapData(
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
+    // Filter events by date range first
+    const dateFilteredEvents = events.filter((event) =>
+      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
+
+    // Filter events by content filters BEFORE counting
+    const filteredEvents = filterEventsByContentFilters(
+      dateFilteredEvents,
+      `${calendarId}Blocks`,
+      "personal"
+    );
+
+    // Calculate Days count from filtered events
     const data = calculateCalendarData(
-      events,
+      filteredEvents,
       weekStartDate,
       weekEndDate,
       false,
@@ -131,11 +174,12 @@ function transformCalendarEventsToRecapData(
     );
     summary[`${calendarId}Days`] = data.days || 0;
 
-    // Calculate blocks with conditional hour display
-    const filteredEvents = events.filter((event) =>
-      isDateInWeek(event.date, weekStartDate, weekEndDate)
+    // Calculate blocks (already filtered)
+    summary[`${calendarId}Blocks`] = applySummarizeFilters(
+      formatBlocksWithTimeRanges(filteredEvents),
+      `${calendarId}Blocks`,
+      "personal"
     );
-    summary[`${calendarId}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(filteredEvents), `${calendarId}Blocks`, "personal");
   }
 
   /**
@@ -151,15 +195,38 @@ function transformCalendarEventsToRecapData(
     weekEndDate
   ) {
     if (groupId === "sleep") {
+      // Filter earlyWakeup events by date range first
+      const earlyWakeupDateFiltered = (calendarEvents.earlyWakeup || []).filter(
+        (event) => isDateInWeek(event.date, weekStartDate, weekEndDate)
+      );
+      // Filter by content filters (note: sleep doesn't have blocks, so we use a generic column name)
+      const earlyWakeupFiltered = filterEventsByContentFilters(
+        earlyWakeupDateFiltered,
+        "sleepHoursTotal",
+        "personal"
+      );
+
+      // Filter sleepIn events by date range first
+      const sleepInDateFiltered = (calendarEvents.sleepIn || []).filter(
+        (event) => isDateInWeek(event.date, weekStartDate, weekEndDate)
+      );
+      // Filter by content filters
+      const sleepInFiltered = filterEventsByContentFilters(
+        sleepInDateFiltered,
+        "sleepHoursTotal",
+        "personal"
+      );
+
+      // Calculate from filtered events
       const earlyWakeup = calculateCalendarData(
-        calendarEvents.earlyWakeup || [],
+        earlyWakeupFiltered,
         weekStartDate,
         weekEndDate,
         true,
         false
       );
       const sleepIn = calculateCalendarData(
-        calendarEvents.sleepIn || [],
+        sleepInFiltered,
         weekStartDate,
         weekEndDate,
         true,
@@ -202,8 +269,17 @@ function transformCalendarEventsToRecapData(
   ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
-    const filteredEvents = events.filter((event) =>
+    
+    // Filter events by date range first
+    const dateFilteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
+
+    // Filter events by content filters BEFORE counting
+    const filteredEvents = filterEventsByContentFilters(
+      dateFilteredEvents,
+      `${calendarId}Details`,
+      "personal"
     );
 
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
@@ -454,13 +530,25 @@ function transformCalendarEventsToRecapData(
     const taskCategories = Object.keys(CALENDARS.tasks.categories);
 
     taskCategories.forEach((category) => {
-      const categoryTasks = tasksByCategory[category] || [];
+      let categoryTasks = tasksByCategory[category] || [];
 
-      // Count completed tasks
+      // Filter tasks by content filters BEFORE counting
+      categoryTasks = filterTasksByContentFilters(
+        categoryTasks,
+        `${category}TaskDetails`,
+        "personal"
+      );
+
+      // Count completed tasks (only non-filtered)
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
       // Build task details string (format: day-grouped with newlines)
-      summary[`${category}TaskDetails`] = applySummarizeFilters(formatTasksByDay(categoryTasks), `${category}TaskDetails`, "personal");
+      // Tasks are already filtered, but applySummarizeFilters provides consistency
+      summary[`${category}TaskDetails`] = applySummarizeFilters(
+        formatTasksByDay(categoryTasks),
+        `${category}TaskDetails`,
+        "personal"
+      );
     });
   }
 

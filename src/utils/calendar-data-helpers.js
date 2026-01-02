@@ -270,7 +270,56 @@ function applySummarizeFilters(formattedText, columnName, recapType) {
     return true;
   });
   
+  // Remove any empty or whitespace-only lines before joining
+  filtered = filtered.filter((line) => line.trim().length > 0);
+  
   return filtered.join('\n');
+}
+
+/**
+ * Filter events based on CONTENT_FILTERS.summarize
+ * @param {Array} events - Array of event objects with summary property
+ * @param {string} columnName - Column name for filtering (e.g., "workoutBlocks", "mentalHealthBlocks")
+ * @param {string} recapType - Recap type ("personal" or "work")
+ * @returns {Array} Filtered events array
+ */
+function filterEventsByContentFilters(events, columnName, recapType) {
+  if (!events || events.length === 0) return events;
+  if (!columnName || !recapType) return events;
+  
+  const filterWords = CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
+  if (filterWords.length === 0) return events;
+  
+  return events.filter((event) => {
+    const eventSummary = event.summary || "";
+    // Filter out events containing filter words (word boundary match)
+    return !filterWords.some(word => 
+      new RegExp(`\\b${word}\\b`, 'i').test(eventSummary)
+    );
+  });
+}
+
+/**
+ * Filter tasks based on CONTENT_FILTERS.summarize
+ * @param {Array} tasks - Array of task objects with title property
+ * @param {string} columnName - Column name for filtering (e.g., "personalTaskDetails", "physicalHealthTaskDetails")
+ * @param {string} recapType - Recap type ("personal" or "work")
+ * @returns {Array} Filtered tasks array
+ */
+function filterTasksByContentFilters(tasks, columnName, recapType) {
+  if (!tasks || tasks.length === 0) return tasks;
+  if (!columnName || !recapType) return tasks;
+  
+  const filterWords = CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
+  if (filterWords.length === 0) return tasks;
+  
+  return tasks.filter((task) => {
+    const taskTitle = task.title || "";
+    // Filter out tasks containing filter words (word boundary match)
+    return !filterWords.some(word => 
+      new RegExp(`\\b${word}\\b`, 'i').test(taskTitle)
+    );
+  });
 }
 
 module.exports = {
@@ -280,5 +329,7 @@ module.exports = {
   formatBlocksWithTimeRanges,
   formatTasksByDay,
   applySummarizeFilters,
+  filterEventsByContentFilters,
+  filterTasksByContentFilters,
 };
 

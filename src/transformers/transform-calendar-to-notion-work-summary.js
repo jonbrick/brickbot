@@ -13,6 +13,8 @@ const {
   formatBlocksWithTimeRanges,
   formatTasksByDay,
   applySummarizeFilters,
+  filterEventsByContentFilters,
+  filterTasksByContentFilters,
 } = require("../utils/calendar-data-helpers");
 
 /**
@@ -90,8 +92,16 @@ function transformCalendarEventsToRecapData(
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
 
-    const filteredEvents = events.filter((event) =>
+    // Filter events by date range first
+    const dateFilteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
+    );
+
+    // Filter events by content filters BEFORE counting
+    const filteredEvents = filterEventsByContentFilters(
+      dateFilteredEvents,
+      `${calendarId}Details`,
+      "work"
     );
 
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
@@ -163,10 +173,17 @@ function transformCalendarEventsToRecapData(
     const categories = Object.keys(CALENDARS.workCalendar.categories);
 
     categories.forEach((category) => {
-      const categoryEvents = eventsByCategory[category] || [];
+      let categoryEvents = eventsByCategory[category] || [];
+
+      // Filter events by content filters BEFORE counting
+      categoryEvents = filterEventsByContentFilters(
+        categoryEvents,
+        `${category}Blocks`,
+        "work"
+      );
 
       // Always include all fields for selected calendar (clean slate)
-      // Calculate sessions (count of events)
+      // Calculate sessions (count of events) from filtered events
       summary[`${category}Sessions`] = categoryEvents.length || 0;
 
       // Calculate hours total (sum of durationHours, rounded to 2 decimals)
@@ -180,8 +197,12 @@ function transformCalendarEventsToRecapData(
       }, 0);
       summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
-      // Calculate blocks
-      summary[`${category}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(categoryEvents), `${category}Blocks`, "work");
+      // Calculate blocks (already filtered)
+      summary[`${category}Blocks`] = applySummarizeFilters(
+        formatBlocksWithTimeRanges(categoryEvents),
+        `${category}Blocks`,
+        "work"
+      );
     });
   }
 
@@ -209,13 +230,25 @@ function transformCalendarEventsToRecapData(
     const taskCategories = Object.keys(CALENDARS.workTasks.categories);
 
     taskCategories.forEach((category) => {
-      const categoryTasks = tasksByCategory[category] || [];
+      let categoryTasks = tasksByCategory[category] || [];
 
-      // Count completed tasks
+      // Filter tasks by content filters BEFORE counting
+      categoryTasks = filterTasksByContentFilters(
+        categoryTasks,
+        `${category}TaskDetails`,
+        "work"
+      );
+
+      // Count completed tasks (only non-filtered)
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
       // Build task details string (format: day-grouped with newlines)
-      summary[`${category}TaskDetails`] = applySummarizeFilters(formatTasksByDay(categoryTasks), `${category}TaskDetails`, "work");
+      // Tasks are already filtered, but applySummarizeFilters provides consistency
+      summary[`${category}TaskDetails`] = applySummarizeFilters(
+        formatTasksByDay(categoryTasks),
+        `${category}TaskDetails`,
+        "work"
+      );
     });
   }
 

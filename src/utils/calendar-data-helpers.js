@@ -235,48 +235,6 @@ function formatTasksByDay(tasks) {
 }
 
 /**
- * Apply content filters to formatted text for summarize command
- * Filters out lines containing words from CONTENT_FILTERS.summarize (word boundary match, case-insensitive)
- * Preserves day headers (lines ending with ':')
- * @param {string} formattedText - Formatted text with day headers and event/task lines
- * @param {string} columnName - Column name for filtering (e.g., "workoutBlocks", "personalTaskDetails")
- * @param {string} recapType - Recap type ("personal" or "work")
- * @returns {string} Filtered text
- */
-function applySummarizeFilters(formattedText, columnName, recapType) {
-  if (!formattedText || !columnName || !recapType) return formattedText;
-  
-  const filterWords = CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
-  if (filterWords.length === 0) return formattedText;
-  
-  const lines = formattedText.split('\n');
-  
-  // FIRST: Filter out lines containing filter words
-  let filtered = lines.filter((line) => {
-    // Filter lines containing filter words (word boundary match)
-    return !filterWords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(line));
-  });
-  
-  // THEN: Remove day header lines that are now empty (standalone day headers)
-  // This handles cases where all content for a day was filtered out
-  filtered = filtered.filter((line) => {
-    const trimmed = line.trim();
-    // Keep day headers only if they have content after them (not standalone)
-    // Remove lines that are just day headers (e.g., "Tue:", "Wed:")
-    if (trimmed.endsWith(':')) {
-      // Check if this is a standalone day header (just "Mon:", "Tue:", etc.)
-      return !/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun):\s*$/.test(trimmed);
-    }
-    return true;
-  });
-  
-  // Remove any empty or whitespace-only lines before joining
-  filtered = filtered.filter((line) => line.trim().length > 0);
-  
-  return filtered.join('\n');
-}
-
-/**
  * Filter events based on CONTENT_FILTERS.summarize
  * @param {Array} events - Array of event objects with summary property
  * @param {string} columnName - Column name for filtering (e.g., "workoutBlocks", "mentalHealthBlocks")
@@ -328,7 +286,6 @@ module.exports = {
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
-  applySummarizeFilters,
   filterEventsByContentFilters,
   filterTasksByContentFilters,
 };

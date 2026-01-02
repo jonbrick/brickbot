@@ -13,11 +13,12 @@ const {
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
-  applySummarizeFilters,
   filterEventsByContentFilters,
   filterTasksByContentFilters,
 } = require("../utils/calendar-data-helpers");
-const { matchInterpersonalCategory } = require("../parsers/interpersonal-matcher");
+const {
+  matchInterpersonalCategory,
+} = require("../parsers/interpersonal-matcher");
 
 /**
  * Transform calendar events to weekly summary data
@@ -93,11 +94,7 @@ function transformCalendarEventsToRecapData(
       data.hoursTotal !== undefined ? data.hoursTotal : 0;
 
     // Calculate blocks (already filtered)
-    summary[`${calendarId}Blocks`] = applySummarizeFilters(
-      formatBlocksWithTimeRanges(filteredEvents),
-      `${calendarId}Blocks`,
-      "personal"
-    );
+    summary[`${calendarId}Blocks`] = formatBlocksWithTimeRanges(filteredEvents);
   }
 
   /**
@@ -175,11 +172,7 @@ function transformCalendarEventsToRecapData(
     summary[`${calendarId}Days`] = data.days || 0;
 
     // Calculate blocks (already filtered)
-    summary[`${calendarId}Blocks`] = applySummarizeFilters(
-      formatBlocksWithTimeRanges(filteredEvents),
-      `${calendarId}Blocks`,
-      "personal"
-    );
+    summary[`${calendarId}Blocks`] = formatBlocksWithTimeRanges(filteredEvents);
   }
 
   /**
@@ -269,7 +262,7 @@ function transformCalendarEventsToRecapData(
   ) {
     const fetchKey = FETCH_KEY_MAPPING[calendarId] || calendarId;
     const events = calendarEvents[fetchKey] || [];
-    
+
     // Filter events by date range first
     const dateFilteredEvents = events.filter((event) =>
       isDateInWeek(event.date, weekStartDate, weekEndDate)
@@ -284,14 +277,15 @@ function transformCalendarEventsToRecapData(
 
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
 
-    const detailsText = filteredEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const day = getDayAbbreviation(event.date);
-        return `${eventName} (${day})`;
-      })
-      .join(", ") || "";
-    
+    const detailsText =
+      filteredEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          return `${eventName} (${day})`;
+        })
+        .join(", ") || "";
+
     // Truncate to Notion's 2000 character limit
     summary[`${calendarId}Details`] = truncateForNotion(detailsText);
   }
@@ -429,7 +423,9 @@ function transformCalendarEventsToRecapData(
 
         default:
           if (process.env.DEBUG) {
-            console.warn(`Unknown processing pattern: ${pattern} for ${groupId}`);
+            console.warn(
+              `Unknown processing pattern: ${pattern} for ${groupId}`
+            );
           }
       }
     });
@@ -459,7 +455,11 @@ function transformCalendarEventsToRecapData(
     // Group events by category for per-category data
     const eventsByCategory = {};
     filteredEvents.forEach((event) => {
-      const category = getEnhancedPersonalCategory(event, currentWeekNumber, relationships);
+      const category = getEnhancedPersonalCategory(
+        event,
+        currentWeekNumber,
+        relationships
+      );
       if (!eventsByCategory[category]) {
         eventsByCategory[category] = [];
       }
@@ -475,7 +475,8 @@ function transformCalendarEventsToRecapData(
       // For "ignore" category, only calculate blocks
       if (category === "ignore") {
         // Calculate blocks
-        summary[`${category}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(categoryEvents), `${category}Blocks`, "personal");
+        summary[`${category}Blocks`] =
+          formatBlocksWithTimeRanges(categoryEvents);
       } else {
         // Always include all fields for selected calendar (clean slate)
         // Calculate sessions (count of events)
@@ -489,7 +490,8 @@ function transformCalendarEventsToRecapData(
         summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
         // Calculate blocks
-        summary[`${category}Blocks`] = applySummarizeFilters(formatBlocksWithTimeRanges(categoryEvents), `${category}Blocks`, "personal");
+        summary[`${category}Blocks`] =
+          formatBlocksWithTimeRanges(categoryEvents);
       }
     });
   }
@@ -506,7 +508,7 @@ function transformCalendarEventsToRecapData(
     const tasksByCategory = {};
     tasks.forEach((task) => {
       let categoryKey = getCategoryKey(task.category);
-      
+
       // Split interpersonal tasks into family/relationship/interpersonal
       if (categoryKey === "interpersonal") {
         const pseudoEvent = { summary: task.title };
@@ -516,7 +518,7 @@ function transformCalendarEventsToRecapData(
           relationships
         );
       }
-      
+
       if (categoryKey && categoryKey !== "work") {
         // Skip work tasks (not in CSV)
         if (!tasksByCategory[categoryKey]) {
@@ -543,12 +545,7 @@ function transformCalendarEventsToRecapData(
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
       // Build task details string (format: day-grouped with newlines)
-      // Tasks are already filtered, but applySummarizeFilters provides consistency
-      summary[`${category}TaskDetails`] = applySummarizeFilters(
-        formatTasksByDay(categoryTasks),
-        `${category}TaskDetails`,
-        "personal"
-      );
+      summary[`${category}TaskDetails`] = formatTasksByDay(categoryTasks);
     });
   }
 

@@ -12,7 +12,6 @@ const {
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
-  applySummarizeFilters,
   filterEventsByContentFilters,
   filterTasksByContentFilters,
 } = require("../utils/calendar-data-helpers");
@@ -198,11 +197,7 @@ function transformCalendarEventsToRecapData(
       summary[`${category}HoursTotal`] = Math.round(hoursTotal * 100) / 100;
 
       // Calculate blocks (already filtered)
-      summary[`${category}Blocks`] = applySummarizeFilters(
-        formatBlocksWithTimeRanges(categoryEvents),
-        `${category}Blocks`,
-        "work"
-      );
+      summary[`${category}Blocks`] = formatBlocksWithTimeRanges(categoryEvents);
     });
   }
 
@@ -243,12 +238,7 @@ function transformCalendarEventsToRecapData(
       summary[`${category}TasksComplete`] = categoryTasks.length || 0;
 
       // Build task details string (format: day-grouped with newlines)
-      // Tasks are already filtered, but applySummarizeFilters provides consistency
-      summary[`${category}TaskDetails`] = applySummarizeFilters(
-        formatTasksByDay(categoryTasks),
-        `${category}TaskDetails`,
-        "work"
-      );
+      summary[`${category}TaskDetails`] = formatTasksByDay(categoryTasks);
     });
   }
 

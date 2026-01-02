@@ -5,7 +5,11 @@ const { fetchCompletedTasks } = require("../summarizers/summarize-tasks");
 const config = require("../config");
 const { parseWeekNumber } = require("../utils/date");
 const { delay } = require("../utils/async");
-const { SUMMARY_GROUPS, CALENDARS, getTaskCompletionFields } = require("../config/unified-sources");
+const {
+  SUMMARY_GROUPS,
+  CALENDARS,
+  getTaskCompletionFields,
+} = require("../config/unified-sources");
 const { getCategoryShortName } = require("../utils/display-names");
 
 /**
@@ -77,7 +81,6 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       await delay(config.sources.rateLimits.notion.backoffMs);
     }
 
-
     // Fetch relationships context for personal recap (needed for task categorization)
     let relationshipsContext = null;
     if (recapType === "personal") {
@@ -87,6 +90,7 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
 
         if (relationshipsDbId) {
           const relationshipsDb = new NotionDatabase();
+          const relationshipsProps = config.notion.properties.relationships;
 
           // Find current week's Personal Summary page
           const summaryRepo = new SummaryDatabase(recapType);
@@ -106,15 +110,18 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
             // Extract relationship data with active week numbers
             const relationships = await Promise.all(
               relationshipsPages.map(async (page) => {
-                const nameProperty = page.properties["Name"];
+                const nameProperty =
+                  page.properties[relationshipsProps.name.name];
                 const name = nameProperty?.title?.[0]?.plain_text || "";
 
-                const nicknamesProperty = page.properties["Nicknames"];
+                const nicknamesProperty =
+                  page.properties[relationshipsProps.nicknames.name];
                 const nicknames =
                   nicknamesProperty?.rich_text?.[0]?.plain_text || "";
 
                 // Extract relation property (array of page objects with id)
-                const activeWeeksProperty = page.properties["⏰ 2025 Weeks"];
+                const activeWeeksProperty =
+                  page.properties[relationshipsProps.activeWeeks.name];
                 const activeWeekPageIds =
                   activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
 
@@ -127,9 +134,10 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
                         page_id: weekPageId,
                       });
                     // Extract week number from title like "Week 05" -> 5
-                    const titleProp =
-                      weekPage.properties["Name"] ||
-                      weekPage.properties["Week"];
+                    const titlePropName = config.notion.getPropertyName(
+                      summaryRepo.props.title
+                    );
+                    const titleProp = weekPage.properties[titlePropName];
                     const title = titleProp?.title?.[0]?.plain_text || "";
                     const match = title.match(/Week (\d+)/i);
                     if (match) {
@@ -212,7 +220,11 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
     }
 
     // Update week summary
-    await summaryRepo.updateWeekSummary(weekSummary.id, summary, sourcesToFetch);
+    await summaryRepo.updateWeekSummary(
+      weekSummary.id,
+      summary,
+      sourcesToFetch
+    );
 
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);

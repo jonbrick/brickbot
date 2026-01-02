@@ -8,13 +8,13 @@ module.exports = {
   properties: {
     name: { name: "Name", type: "title", enabled: true },
     nicknames: { name: "Nicknames", type: "text", enabled: true },
-    activeWeeks2025: { name: "⏰ 2025 Weeks", type: "relation", enabled: true },
+    activeWeeks: { name: "Weeks", type: "relation", enabled: true },
   },
 
   fieldMappings: {
     name: "name",
     nicknames: "nicknames",
-    activeWeeks2025: "activeWeeks2025",
+    activeWeeks: "activeWeeks",
   },
 };
 

@@ -155,6 +155,7 @@ async function aggregateCalendarDataForWeek(
 
         if (relationshipsDbId) {
           const relationshipsDb = new NotionDatabase();
+          const relationshipsProps = config.notion.properties.relationships;
 
           // Find current week's Personal Summary page to get its ID
           const summaryRepo = new SummaryDatabase(recapType);
@@ -174,15 +175,15 @@ async function aggregateCalendarDataForWeek(
             // Extract relationship data with active week numbers
             const relationships = await Promise.all(
               relationshipsPages.map(async (page) => {
-                const nameProperty = page.properties["Name"];
+                const nameProperty = page.properties[relationshipsProps.name.name];
                 const name = nameProperty?.title?.[0]?.plain_text || "";
 
-                const nicknamesProperty = page.properties["Nicknames"];
+                const nicknamesProperty = page.properties[relationshipsProps.nicknames.name];
                 const nicknames =
                   nicknamesProperty?.rich_text?.[0]?.plain_text || "";
 
                 // Extract relation property (array of page objects with id)
-                const activeWeeksProperty = page.properties["⏰ 2025 Weeks"];
+                const activeWeeksProperty = page.properties[relationshipsProps.activeWeeks.name];
                 const activeWeekPageIds =
                   activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
 
@@ -195,9 +196,8 @@ async function aggregateCalendarDataForWeek(
                         page_id: weekPageId,
                       });
                     // Extract week number from title like "Week 05" -> 5
-                    const titleProp =
-                      weekPage.properties["Name"] ||
-                      weekPage.properties["Week"];
+                    const titlePropName = config.notion.getPropertyName(summaryRepo.props.title);
+                    const titleProp = weekPage.properties[titlePropName];
                     const title = titleProp?.title?.[0]?.plain_text || "";
                     const match = title.match(/Week (\d+)/i);
                     if (match) {

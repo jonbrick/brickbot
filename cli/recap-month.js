@@ -210,6 +210,8 @@ async function main() {
           showProgress
         );
 
+        spinner.stop();
+
         // Display results inline
         if (results.personal) {
           if (results.personal.success) {
@@ -250,6 +252,7 @@ async function main() {
             const SummaryDatabase = require("../src/databases/SummaryDatabase");
             const personalDb = new SummaryDatabase("personal");
 
+            spinner.stop();
             spinner = createSpinner("Finding Personal recap record...");
             spinner.start();
             try {
@@ -267,6 +270,7 @@ async function main() {
                     personalRecord.id,
                     results.personal.monthlyRecap
                   );
+                  spinner.stop();
                   const recordTitle =
                     personalRecord.properties[
                       personalDb.monthlyProps.title.name
@@ -292,6 +296,7 @@ async function main() {
             const SummaryDatabase = require("../src/databases/SummaryDatabase");
             const workDb = new SummaryDatabase("work");
 
+            spinner.stop();
             spinner = createSpinner("Finding Work recap record...");
             spinner.start();
             try {
@@ -306,6 +311,7 @@ async function main() {
                     workRecord.id,
                     results.work.monthlyRecap
                   );
+                  spinner.stop();
                   const recordTitle =
                     workRecord.properties[workDb.monthlyProps.title.name]
                       ?.title[0]?.plain_text || "Unknown";

@@ -4,12 +4,18 @@
  */
 
 const NotionDatabase = require("./NotionDatabase");
+const config = require("../config");
 
 class MonthsDatabase extends NotionDatabase {
   constructor() {
     super();
-    this.databaseId = process.env.MONTHS_DATABASE_ID;
-    this.yearsDatabaseId = process.env.NOTION_YEARS_DATABASE_ID;
+    // Get property configs
+    this.yearsProps = config.notion.properties.years;
+    this.monthsProps = config.notion.properties.months;
+    this.summaryProps = config.notion.properties.personalSummary;
+    
+    this.databaseId = config.notion.databases.months;
+    this.yearsDatabaseId = config.notion.databases.years;
   }
 
   /**
@@ -24,7 +30,7 @@ class MonthsDatabase extends NotionDatabase {
 
     try {
       const filter = {
-        property: "Year", // Title property name in Years DB
+        property: config.notion.getPropertyName(this.yearsProps.year),
         title: {
           equals: year.toString(),
         },
@@ -87,11 +93,11 @@ class MonthsDatabase extends NotionDatabase {
       const filter = {
         and: [
           {
-            property: "Month",
+            property: config.notion.getPropertyName(this.monthsProps.month),
             title: { equals: title },
           },
           {
-            property: "Year",
+            property: config.notion.getPropertyName(this.monthsProps.year),
             relation: { contains: yearPageId },
           },
         ],
@@ -111,21 +117,13 @@ class MonthsDatabase extends NotionDatabase {
    * @returns {number|null} Week number or null if not found
    */
   extractWeekNumberFromPage(weekPage) {
-    // Try common title property names
-    const titleProps = ["Week", "Name", "Title"];
+    // Use config to get title property name
+    const titlePropName = config.notion.getPropertyName(this.summaryProps.title);
+    const prop = weekPage.properties[titlePropName];
     let title = "";
-
-    for (const propName of titleProps) {
-      const prop = weekPage.properties[propName];
-      if (
-        prop &&
-        prop.type === "title" &&
-        prop.title &&
-        prop.title.length > 0
-      ) {
-        title = prop.title[0].plain_text || "";
-        break;
-      }
+    
+    if (prop && prop.type === "title" && prop.title && prop.title.length > 0) {
+      title = prop.title[0].plain_text || "";
     }
 
     if (!title) {
@@ -154,8 +152,8 @@ class MonthsDatabase extends NotionDatabase {
       return [];
     }
 
-    // Get generic "Weeks" relation property
-    const relationPropName = "Weeks";
+    // Get "Weeks" relation property from config
+    const relationPropName = config.notion.getPropertyName(this.monthsProps.weeks);
     const relationProperty = monthPage.properties[relationPropName];
 
     if (!relationProperty || relationProperty.type !== "relation") {

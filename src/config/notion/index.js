@@ -17,6 +17,8 @@ const workSummary = require("./work-summary");
 const personalMonthlyRecap = require("./personal-monthly-recap");
 const workMonthlyRecap = require("./work-monthly-recap");
 const relationships = require("./relationships");
+const years = require("./years");
+const months = require("./months");
 
 // Aggregate database IDs
 const databases = {
@@ -34,6 +36,8 @@ const databases = {
   personalMonthlyRecap: personalMonthlyRecap.database,
   workMonthlyRecap: workMonthlyRecap.database,
   relationships: relationships.database,
+  years: years.database,
+  months: months.database,
 };
 
 // Aggregate properties
@@ -52,6 +56,8 @@ const properties = {
   personalMonthlyRecap: personalMonthlyRecap.properties,
   workMonthlyRecap: workMonthlyRecap.properties,
   relationships: relationships.properties,
+  years: years.properties,
+  months: months.properties,
 };
 
 // Aggregate field mappings
@@ -68,6 +74,8 @@ const fieldMappings = {
   personalSummary: personalSummary.fieldMappings,
   workSummary: workSummary.fieldMappings,
   relationships: relationships.fieldMappings || {},
+  years: years.fieldMappings,
+  months: months.fieldMappings,
 };
 
 // Color mappings (for categorization and display)

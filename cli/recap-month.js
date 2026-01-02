@@ -179,8 +179,8 @@ async function main() {
       // Process recaps
       let spinner = createSpinner(`Processing ${month}/${year}...`);
       spinner.start();
-      const results = await processRecaps(month, year, weeks, availableTypes, displayOnly, showProgress);
-      spinner.stop();
+      try {
+        const results = await processRecaps(month, year, weeks, availableTypes, displayOnly, showProgress);
 
       // Display results inline
       if (results.personal) {
@@ -222,18 +222,27 @@ async function main() {
           
           spinner = createSpinner("Finding Personal recap record...");
           spinner.start();
-          const personalRecord = await personalDb.findMonthRecap(month, year);
-          spinner.stop();
-
-          if (personalRecord) {
-            spinner = createSpinner("Updating Personal recap...");
-            spinner.start();
-            await personalDb.upsertMonthRecap(personalRecord.id, results.personal.monthlyRecap);
+          try {
+            const personalRecord = await personalDb.findMonthRecap(month, year);
             spinner.stop();
-            const recordTitle = personalRecord.properties[personalDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
-            console.log(`✅ Personal recap updated: ${recordTitle}`);
-          } else {
-            console.log(`⚠️  Personal recap record not found for ${month}/${year}`);
+
+            if (personalRecord) {
+              spinner = createSpinner("Updating Personal recap...");
+              spinner.start();
+              try {
+                await personalDb.upsertMonthRecap(personalRecord.id, results.personal.monthlyRecap);
+                const recordTitle = personalRecord.properties[personalDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
+                console.log(`✅ Personal recap updated: ${recordTitle}`);
+              } finally {
+                spinner.stop();
+              }
+            } else {
+              console.log(`⚠️  Personal recap record not found for ${month}/${year}`);
+            }
+          } finally {
+            if (spinner) {
+              spinner.stop();
+            }
           }
         }
 
@@ -244,22 +253,34 @@ async function main() {
           
           spinner = createSpinner("Finding Work recap record...");
           spinner.start();
-          const workRecord = await workDb.findMonthRecap(month, year);
-          spinner.stop();
-
-          if (workRecord) {
-            spinner = createSpinner("Updating Work recap...");
-            spinner.start();
-            await workDb.upsertMonthRecap(workRecord.id, results.work.monthlyRecap);
+          try {
+            const workRecord = await workDb.findMonthRecap(month, year);
             spinner.stop();
-            const recordTitle = workRecord.properties[workDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
-            console.log(`✅ Work recap updated: ${recordTitle}`);
-          } else {
-            console.log(`⚠️  Work recap record not found for ${month}/${year}`);
+
+            if (workRecord) {
+              spinner = createSpinner("Updating Work recap...");
+              spinner.start();
+              try {
+                await workDb.upsertMonthRecap(workRecord.id, results.work.monthlyRecap);
+                const recordTitle = workRecord.properties[workDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
+                console.log(`✅ Work recap updated: ${recordTitle}`);
+              } finally {
+                spinner.stop();
+              }
+            } else {
+              console.log(`⚠️  Work recap record not found for ${month}/${year}`);
+            }
+          } finally {
+            if (spinner) {
+              spinner.stop();
+            }
           }
         }
       } else {
         console.log("ℹ️ Display mode: Monthly recap data generated but not saved to Notion");
+      }
+      } finally {
+        spinner.stop();
       }
     }
 

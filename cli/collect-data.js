@@ -256,6 +256,9 @@ async function main() {
       }
     }
   } catch (error) {
+    if (typeof spinner !== "undefined") {
+      spinner.stop();
+    }
     console.error("\n❌ Error:", error.message);
     if (error.stack) {
       console.error(error.stack);

@@ -450,14 +450,14 @@ async function main() {
 
       const spinner = createSpinner(`Processing Week ${weekNumber}, ${year}...`);
       spinner.start();
-      const weekResult = await processWeek(
-        weekNumber,
-        year,
-        buckets,
-        displayOnly
-      );
-      spinner.stop();
-      weekResults.push(weekResult);
+      try {
+        const weekResult = await processWeek(
+          weekNumber,
+          year,
+          buckets,
+          displayOnly
+        );
+        weekResults.push(weekResult);
 
       // Update counts
       if (weekResult.work) {
@@ -568,6 +568,9 @@ async function main() {
         if (statuses.length > 0) {
           console.log(statuses.join(" | ") + "\n");
         }
+      }
+      } finally {
+        spinner.stop();
       }
     }
 

@@ -276,6 +276,9 @@ async function main() {
 
     console.log("✅ Done!\n");
   } catch (error) {
+    if (typeof spinner !== "undefined") {
+      spinner.stop();
+    }
     console.error("\n❌ Error:", error.message);
     if (error.stack && process.env.DEBUG) {
       console.error(error.stack);

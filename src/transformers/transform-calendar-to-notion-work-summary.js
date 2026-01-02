@@ -104,15 +104,16 @@ function transformCalendarEventsToRecapData(
     );
 
     summary[`${calendarId}Sessions`] = filteredEvents.length || 0;
-    
-    const detailsText = filteredEvents
-      .map((event) => {
-        const eventName = event.summary || "Untitled Event";
-        const day = getDayAbbreviation(event.date);
-        return `${eventName} (${day})`;
-      })
-      .join(", ") || "";
-    
+
+    const detailsText =
+      filteredEvents
+        .map((event) => {
+          const eventName = event.summary || "Untitled Event";
+          const day = getDayAbbreviation(event.date);
+          return `${eventName} (${day})`;
+        })
+        .join(", ") || "";
+
     // Truncate to Notion's 2000 character limit
     summary[`${calendarId}Details`] = truncateForNotion(detailsText);
   }
@@ -203,14 +204,17 @@ function transformCalendarEventsToRecapData(
 
   // Work Task data (only if "workTasks" is selected)
   if (shouldCalculate("workTasks") && tasks.length > 0) {
-    const { getWorkCategoryKey } = require("../config/notion/task-categories");
+    const {
+      getCategoryKey,
+      getWorkCategoryKey,
+    } = require("../config/notion/task-categories");
 
     // Group tasks by category
     const tasksByCategory = {};
     tasks.forEach((task) => {
       // Filter IN work tasks (opposite of personal recap which filters OUT work tasks)
       // Trim and normalize task category to handle whitespace
-      if (task.category && task.category.trim() === "💼 Work") {
+      if (task.category && getCategoryKey(task.category.trim()) === "work") {
         const categoryKey = getWorkCategoryKey(task.workCategory);
         if (categoryKey) {
           if (!tasksByCategory[categoryKey]) {

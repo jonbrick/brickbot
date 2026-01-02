@@ -428,6 +428,7 @@ function buildCalendarFetches(
       fetches.push({
         key: calendar.fetchKey,
         calendarId,
+        calendarKey: calendar.id,
         accountType,
         ignoreAllDayEvents,
         excludeKeywords,

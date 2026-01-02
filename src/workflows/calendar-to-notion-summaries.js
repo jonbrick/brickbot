@@ -106,10 +106,13 @@ async function aggregateCalendarDataForWeek(
         fetchConfig.calendarId,
         startDate,
         endDate,
-        fetchConfig.accountType,
-        fetchConfig.ignoreAllDayEvents,
-        fetchConfig.excludeKeywords,
-        fetchConfig.ignoreDeclinedEvents
+        {
+          accountType: fetchConfig.accountType,
+          ignoreAllDayEvents: fetchConfig.ignoreAllDayEvents,
+          excludeKeywords: fetchConfig.excludeKeywords,
+          ignoreDeclinedEvents: fetchConfig.ignoreDeclinedEvents,
+          calendarKey: fetchConfig.calendarKey,
+        }
       ),
     }));
 

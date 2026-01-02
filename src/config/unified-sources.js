@@ -119,6 +119,7 @@ const CALENDARS = {
     name: "Normal Wake Up",
     emoji: "☀️",
     ignoreAllDayEvents: true,
+    dateLogic: "end",
     dataFields: FIELD_TEMPLATES.simpleCounter("earlyWakeup", "Early Wakeup"),
   },
   sleepIn: {
@@ -127,6 +128,7 @@ const CALENDARS = {
     name: "Sleep In",
     emoji: "🌙",
     ignoreAllDayEvents: true,
+    dateLogic: "end",
     // Special case: sleepHoursTotal is aggregated across both normalWakeUp + sleepIn
     // That's why it uses "sleepHoursTotal" instead of "sleepInHoursTotal"
     dataFields: [

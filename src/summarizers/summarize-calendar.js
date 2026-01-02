@@ -2,6 +2,7 @@
 
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const { formatDateOnly } = require("../utils/date");
+const { CALENDARS } = require("../config/unified-sources");
 const config = require("../config");
 
 /**
@@ -10,24 +11,30 @@ const config = require("../config");
  * @param {string} calendarId - Google Calendar ID
  * @param {Date} startDate - Start date
  * @param {Date} endDate - End date
- * @param {string} accountType - "personal" or "work" (default: "personal")
- * @param {boolean} ignoreAllDayEvents - Whether to filter out all-day events (default: false)
- * @param {Array<string>} excludeKeywords - Keywords to filter out events whose summary contains any keyword (case-insensitive, default: [])
- * @param {boolean} ignoreDeclinedEvents - Whether to filter out events where the user has declined (default: false)
+ * @param {Object} options - Options object
+ * @param {string} options.accountType - "personal" or "work" (default: "personal")
+ * @param {boolean} options.ignoreAllDayEvents - Whether to filter out all-day events (default: false)
+ * @param {Array<string>} options.excludeKeywords - Keywords to filter out events whose summary contains any keyword (case-insensitive, default: [])
+ * @param {boolean} options.ignoreDeclinedEvents - Whether to filter out events where the user has declined (default: false)
+ * @param {string} options.calendarKey - Calendar key for config lookup (default: null)
  * @returns {Promise<Array>} Array of events with { date, durationHours }
  */
-async function fetchCalendarSummary(
-  calendarId,
-  startDate,
-  endDate,
-  accountType = "personal",
-  ignoreAllDayEvents = false,
-  excludeKeywords = [],
-  ignoreDeclinedEvents = false
-) {
+async function fetchCalendarSummary(calendarId, startDate, endDate, options = {}) {
+  const {
+    accountType = "personal",
+    ignoreAllDayEvents = false,
+    excludeKeywords = [],
+    ignoreDeclinedEvents = false,
+    calendarKey = null,
+  } = options;
   if (!calendarId) {
     throw new Error("Calendar ID is required");
   }
+
+  // Determine dateLogic from calendar config
+  const dateLogic = calendarKey 
+    ? (CALENDARS[calendarKey]?.dateLogic || "start")
+    : "start";
 
   try {
     const calendarService = new GoogleCalendarService(accountType);
@@ -59,8 +66,12 @@ async function fetchCalendarSummary(
             const durationMs = endDateTime - startDateTime;
             durationHours = durationMs / (1000 * 60 * 60); // Convert to hours
           }
-          // Use end time for event date (when you woke up, not when you fell asleep)
-          eventDate = formatDateOnly(endDateTime || startDateTime);
+          // Use dateLogic to determine which date to use
+          eventDate = formatDateOnly(
+            dateLogic === "end" 
+              ? (endDateTime || startDateTime)
+              : startDateTime
+          );
         }
         // Handle all-day events (with date only)
         else if (event.start.date) {

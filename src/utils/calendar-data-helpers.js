@@ -5,7 +5,7 @@
  * All functions are PURE (no closures) for testability
  */
 
-const { CONTENT_FILTERS } = require("../config/unified-sources");
+const { CONTENT_FILTERS, CONTENT_SPLITS } = require("../config/unified-sources");
 
 /**
  * Get 3-letter day abbreviation from a date string
@@ -258,6 +258,25 @@ function filterEventsByContentFilters(events, columnName, recapType) {
 }
 
 /**
+ * Check if a task should be split to a different category based on CONTENT_SPLITS
+ * @param {string} taskTitle - Task title to check
+ * @param {string} sourceCategory - Original category (e.g., "personal")
+ * @param {string} recapType - "personal" or "work"
+ * @returns {string|null} Target category if split needed, null otherwise
+ */
+function getSplitTargetCategory(taskTitle, sourceCategory, recapType) {
+  const splits = CONTENT_SPLITS?.summarize?.[recapType]?.[sourceCategory];
+  if (!splits) return null;
+  
+  for (const [targetCategory, words] of Object.entries(splits)) {
+    if (words.some(word => new RegExp(`\\b${word}\\b`, 'i').test(taskTitle))) {
+      return targetCategory;
+    }
+  }
+  return null;
+}
+
+/**
  * Filter tasks based on CONTENT_FILTERS.summarize
  * @param {Array} tasks - Array of task objects with title property
  * @param {string} columnName - Column name for filtering (e.g., "personalTaskDetails", "physicalHealthTaskDetails")
@@ -287,6 +306,7 @@ module.exports = {
   formatBlocksWithTimeRanges,
   formatTasksByDay,
   filterEventsByContentFilters,
+  getSplitTargetCategory,
   filterTasksByContentFilters,
 };
 

@@ -440,6 +440,10 @@ const CALENDARS = {
           "Mental Health"
         ),
       },
+      admin: {
+        emoji: "📝",
+        dataFields: FIELD_TEMPLATES.taskCategory("admin", "Admin"),
+      },
     },
   },
   workTasks: {
@@ -1769,6 +1773,7 @@ const MONTHLY_RECAP_CATEGORIES = {
       home: ["homeTaskDetails"],
       physicalHealth: ["physicalHealthTaskDetails"],
       mentalHealth: ["mentalHealthTaskDetails"],
+      admin: ["adminTaskDetails"],
     },
   },
   work: {
@@ -1890,6 +1895,21 @@ const CONTENT_FILTERS = {
 };
 
 /**
+ * Content Splits
+ * Words that redirect tasks from one category to another (before counting)
+ * Structure: { command: { recapType: { sourceCategory: { targetCategory: [words] } } } }
+ */
+const CONTENT_SPLITS = {
+  summarize: {
+    personal: {
+      personal: {
+        admin: ["update", "retro", "plan", "recap", "2024", "2025", "2026"],
+      },
+    },
+  },
+};
+
+/**
  * Monthly Recap Block Properties
  * Maps category keys to property keys and display names for block fields
  */
@@ -1935,6 +1955,7 @@ const MONTHLY_RECAP_TASK_PROPERTIES = {
       key: "personalMentalHealthTasks",
       name: "Mental Health - Task Details",
     },
+    admin: { key: "personalAdminTasks", name: "Admin - Task Details" },
   },
   work: {
     design: { key: "workDesignTasks", name: "Design - Task Details" },
@@ -2062,6 +2083,7 @@ module.exports = {
   generatePersonalSummaryProperties,
   generateWorkSummaryProperties,
   CONTENT_FILTERS,
+  CONTENT_SPLITS,
   MONTHLY_RECAP_CATEGORIES,
   MONTHLY_RECAP_BLOCK_PROPERTIES,
   MONTHLY_RECAP_TASK_PROPERTIES,

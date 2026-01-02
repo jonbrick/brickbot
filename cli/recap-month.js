@@ -44,12 +44,14 @@ async function selectRecapType() {
  */
 function getAvailableRecapTypes(selectedType) {
   const availableTypes = [];
-  
+
   if (selectedType === "all" || selectedType === "personal") {
     if (process.env.PERSONAL_MONTHLY_RECAP_DATABASE_ID) {
       availableTypes.push("personal");
     } else {
-      console.log("⚠️  PERSONAL_MONTHLY_RECAP_DATABASE_ID not set, skipping Personal recap");
+      console.log(
+        "⚠️  PERSONAL_MONTHLY_RECAP_DATABASE_ID not set, skipping Personal recap"
+      );
     }
   }
 
@@ -57,7 +59,9 @@ function getAvailableRecapTypes(selectedType) {
     if (process.env.WORK_MONTHLY_RECAP_DATABASE_ID) {
       availableTypes.push("work");
     } else {
-      console.log("⚠️  WORK_MONTHLY_RECAP_DATABASE_ID not set, skipping Work recap");
+      console.log(
+        "⚠️  WORK_MONTHLY_RECAP_DATABASE_ID not set, skipping Work recap"
+      );
     }
   }
 
@@ -100,7 +104,14 @@ async function selectAction() {
  * @param {Function} showProgress - Progress callback for workflows
  * @returns {Promise<Object>} Results with { personal, work }
  */
-async function processRecaps(month, year, weeks, recapTypes, displayOnly, showProgress) {
+async function processRecaps(
+  month,
+  year,
+  weeks,
+  recapTypes,
+  displayOnly,
+  showProgress
+) {
   const results = {
     personal: null,
     work: null,
@@ -108,10 +119,16 @@ async function processRecaps(month, year, weeks, recapTypes, displayOnly, showPr
 
   // Only process selected types
   if (recapTypes.includes("personal")) {
-    const personalResult = await generateMonthlyRecap("personal", month, year, weeks, {
-      showProgress,
-      displayOnly,
-    });
+    const personalResult = await generateMonthlyRecap(
+      "personal",
+      month,
+      year,
+      weeks,
+      {
+        showProgress,
+        displayOnly,
+      }
+    );
     results.personal = personalResult;
   }
 
@@ -129,11 +146,13 @@ async function processRecaps(month, year, weeks, recapTypes, displayOnly, showPr
 async function main() {
   try {
     output.header("Monthly Recap Generation");
-    console.log("Generates monthly recaps by aggregating weekly recap text data\n");
+    console.log(
+      "Generates monthly recaps by aggregating weekly recap text data\n"
+    );
 
     // Select recap type
     const selectedRecapType = await selectRecapType();
-    
+
     // Check which types are actually available
     const availableTypes = getAvailableRecapTypes(selectedRecapType);
 
@@ -142,7 +161,9 @@ async function main() {
     const displayOnly = action === "display";
 
     // Select month(s) - returns { months, displayText }
-    const { months, displayText } = await selectDateRange({ minGranularity: "month" });
+    const { months, displayText } = await selectDateRange({
+      minGranularity: "month",
+    });
     if (!months || months.length === 0) {
       throw new Error("No months selected");
     }
@@ -166,7 +187,7 @@ async function main() {
     // Process each month
     for (let i = 0; i < months.length; i++) {
       const { month, year, weeks } = months[i];
-      
+
       if (!weeks || weeks.length === 0) {
         console.warn(`⚠️  No weeks found for ${month}/${year}, skipping...`);
         continue;
@@ -180,105 +201,134 @@ async function main() {
       let spinner = createSpinner(`Processing ${month}/${year}...`);
       spinner.start();
       try {
-        const results = await processRecaps(month, year, weeks, availableTypes, displayOnly, showProgress);
+        const results = await processRecaps(
+          month,
+          year,
+          weeks,
+          availableTypes,
+          displayOnly,
+          showProgress
+        );
 
-      // Display results inline
-      if (results.personal) {
-        if (results.personal.success) {
-          const personalFormatted = formatMonthlyRecapResult(results.personal);
-          console.log(`✅ Personal: ${personalFormatted.successMessage}`);
-          if (personalFormatted.warnings.length > 0) {
-            personalFormatted.warnings.forEach((w) => console.log(w));
+        // Display results inline
+        if (results.personal) {
+          if (results.personal.success) {
+            const personalFormatted = formatMonthlyRecapResult(
+              results.personal
+            );
+            console.log(`✅ Personal: ${personalFormatted.successMessage}`);
+            if (personalFormatted.warnings.length > 0) {
+              personalFormatted.warnings.forEach((w) => console.log(w));
+            }
+            personalSuccessCount++;
+          } else {
+            console.log(`❌ Personal: ${results.personal.error}`);
+            personalFailureCount++;
           }
-          personalSuccessCount++;
-        } else {
-          console.log(`❌ Personal: ${results.personal.error}`);
-          personalFailureCount++;
         }
-      }
 
-      if (results.work) {
-        if (results.work.success) {
-          const workFormatted = formatMonthlyRecapResult(results.work);
-          console.log(`✅ Work: ${workFormatted.successMessage}`);
-          if (workFormatted.warnings.length > 0) {
-            workFormatted.warnings.forEach((w) => console.log(w));
+        if (results.work) {
+          if (results.work.success) {
+            const workFormatted = formatMonthlyRecapResult(results.work);
+            console.log(`✅ Work: ${workFormatted.successMessage}`);
+            if (workFormatted.warnings.length > 0) {
+              workFormatted.warnings.forEach((w) => console.log(w));
+            }
+            workSuccessCount++;
+          } else {
+            console.log(`❌ Work: ${results.work.error}`);
+            workFailureCount++;
           }
-          workSuccessCount++;
-        } else {
-          console.log(`❌ Work: ${results.work.error}`);
-          workFailureCount++;
         }
-      }
 
-      console.log();
+        console.log();
 
-      // Update Notion if not display mode
-      if (!displayOnly) {
-        // Update Personal database independently if successful
-        if (results.personal && results.personal.success) {
-          const SummaryDatabase = require("../src/databases/SummaryDatabase");
-          const personalDb = new SummaryDatabase("personal");
-          
-          spinner = createSpinner("Finding Personal recap record...");
-          spinner.start();
-          try {
-            const personalRecord = await personalDb.findMonthRecap(month, year);
-            spinner.stop();
+        // Update Notion if not display mode
+        if (!displayOnly) {
+          // Update Personal database independently if successful
+          if (results.personal && results.personal.success) {
+            const SummaryDatabase = require("../src/databases/SummaryDatabase");
+            const personalDb = new SummaryDatabase("personal");
 
-            if (personalRecord) {
-              spinner = createSpinner("Updating Personal recap...");
-              spinner.start();
-              try {
-                await personalDb.upsertMonthRecap(personalRecord.id, results.personal.monthlyRecap);
-                const recordTitle = personalRecord.properties[personalDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
-                console.log(`✅ Personal recap updated: ${recordTitle}`);
-              } finally {
+            spinner = createSpinner("Finding Personal recap record...");
+            spinner.start();
+            try {
+              const personalRecord = await personalDb.findMonthRecap(
+                month,
+                year
+              );
+              spinner.stop();
+
+              if (personalRecord) {
+                spinner = createSpinner("Updating Personal recap...");
+                spinner.start();
+                try {
+                  await personalDb.upsertMonthRecap(
+                    personalRecord.id,
+                    results.personal.monthlyRecap
+                  );
+                  const recordTitle =
+                    personalRecord.properties[
+                      personalDb.monthlyProps.title.name
+                    ]?.title[0]?.plain_text || "Unknown";
+                  console.log(`✅ Personal recap updated: ${recordTitle}`);
+                } finally {
+                  spinner.stop();
+                }
+              } else {
+                console.log(
+                  `⚠️  Personal recap record not found for ${month}/${year}`
+                );
+              }
+            } finally {
+              if (spinner) {
                 spinner.stop();
               }
-            } else {
-              console.log(`⚠️  Personal recap record not found for ${month}/${year}`);
-            }
-          } finally {
-            if (spinner) {
-              spinner.stop();
             }
           }
-        }
 
-        // Update Work database independently if successful
-        if (results.work && results.work.success) {
-          const SummaryDatabase = require("../src/databases/SummaryDatabase");
-          const workDb = new SummaryDatabase("work");
-          
-          spinner = createSpinner("Finding Work recap record...");
-          spinner.start();
-          try {
-            const workRecord = await workDb.findMonthRecap(month, year);
-            spinner.stop();
+          // Update Work database independently if successful
+          if (results.work && results.work.success) {
+            const SummaryDatabase = require("../src/databases/SummaryDatabase");
+            const workDb = new SummaryDatabase("work");
 
-            if (workRecord) {
-              spinner = createSpinner("Updating Work recap...");
-              spinner.start();
-              try {
-                await workDb.upsertMonthRecap(workRecord.id, results.work.monthlyRecap);
-                const recordTitle = workRecord.properties[workDb.monthlyProps.title.name]?.title[0]?.plain_text || "Unknown";
-                console.log(`✅ Work recap updated: ${recordTitle}`);
-              } finally {
+            spinner = createSpinner("Finding Work recap record...");
+            spinner.start();
+            try {
+              const workRecord = await workDb.findMonthRecap(month, year);
+              spinner.stop();
+
+              if (workRecord) {
+                spinner = createSpinner("Updating Work recap...");
+                spinner.start();
+                try {
+                  await workDb.upsertMonthRecap(
+                    workRecord.id,
+                    results.work.monthlyRecap
+                  );
+                  const recordTitle =
+                    workRecord.properties[workDb.monthlyProps.title.name]
+                      ?.title[0]?.plain_text || "Unknown";
+                  console.log(`✅ Work recap updated: ${recordTitle}`);
+                } finally {
+                  spinner.stop();
+                }
+              } else {
+                console.log(
+                  `⚠️  Work recap record not found for ${month}/${year}`
+                );
+              }
+            } finally {
+              if (spinner) {
                 spinner.stop();
               }
-            } else {
-              console.log(`⚠️  Work recap record not found for ${month}/${year}`);
-            }
-          } finally {
-            if (spinner) {
-              spinner.stop();
             }
           }
+        } else {
+          console.log(
+            "ℹ️ Display mode: Monthly recap data generated but not saved to Notion"
+          );
         }
-      } else {
-        console.log("ℹ️ Display mode: Monthly recap data generated but not saved to Notion");
-      }
       } finally {
         spinner.stop();
       }
@@ -293,36 +343,63 @@ async function main() {
     if (totalFailure === 0 && totalSuccess > 0) {
       const parts = [];
       if (personalSuccessCount > 0) {
-        parts.push(`${personalSuccessCount} personal month${personalSuccessCount !== 1 ? "s" : ""}`);
+        parts.push(
+          `${personalSuccessCount} personal month${
+            personalSuccessCount !== 1 ? "s" : ""
+          }`
+        );
       }
       if (workSuccessCount > 0) {
-        parts.push(`${workSuccessCount} work month${workSuccessCount !== 1 ? "s" : ""}`);
+        parts.push(
+          `${workSuccessCount} work month${workSuccessCount !== 1 ? "s" : ""}`
+        );
       }
       output.done(`${parts.join(" and ")} completed successfully`);
     } else if (totalSuccess > 0 && totalFailure > 0) {
       const successParts = [];
       const failureParts = [];
       if (personalSuccessCount > 0) {
-        successParts.push(`${personalSuccessCount} personal month${personalSuccessCount !== 1 ? "s" : ""}`);
+        successParts.push(
+          `${personalSuccessCount} personal month${
+            personalSuccessCount !== 1 ? "s" : ""
+          }`
+        );
       }
       if (workSuccessCount > 0) {
-        successParts.push(`${workSuccessCount} work month${workSuccessCount !== 1 ? "s" : ""}`);
+        successParts.push(
+          `${workSuccessCount} work month${workSuccessCount !== 1 ? "s" : ""}`
+        );
       }
       if (personalFailureCount > 0) {
-        failureParts.push(`${personalFailureCount} personal month${personalFailureCount !== 1 ? "s" : ""}`);
+        failureParts.push(
+          `${personalFailureCount} personal month${
+            personalFailureCount !== 1 ? "s" : ""
+          }`
+        );
       }
       if (workFailureCount > 0) {
-        failureParts.push(`${workFailureCount} work month${workFailureCount !== 1 ? "s" : ""}`);
+        failureParts.push(
+          `${workFailureCount} work month${workFailureCount !== 1 ? "s" : ""}`
+        );
       }
-      console.log(`⚠️ ${successParts.join(" and ")} completed successfully, ${failureParts.join(" and ")} failed.`);
+      console.log(
+        `⚠️ ${successParts.join(
+          " and "
+        )} completed successfully, ${failureParts.join(" and ")} failed.`
+      );
       process.exit(1);
     } else if (totalFailure > 0 && totalSuccess === 0) {
-      console.log(`❌ All ${totalFailure} month${totalFailure !== 1 ? "s" : ""} failed.`);
+      console.log(
+        `❌ All ${totalFailure} month${totalFailure !== 1 ? "s" : ""} failed.`
+      );
       process.exit(1);
     } else {
       console.log("ℹ️ No sources were processed");
     }
   } catch (error) {
+    if (typeof spinner !== "undefined") {
+      spinner.stop();
+    }
     console.log(`\n❌ Fatal error: ${error.message}`);
     if (process.env.DEBUG) {
       console.error(error);

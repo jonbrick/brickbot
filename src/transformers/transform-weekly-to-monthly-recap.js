@@ -401,7 +401,7 @@ function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
  * Returns an object with four category-specific task fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
- * @returns {Object} Object with personalPersonalTasks, personalHomeTasks, personalPhysicalHealthTasks, and personalMentalHealthTasks
+ * @returns {Object} Object with personalPersonalTasks, personalHomeTasks, personalPhysicalHealthTasks, personalMentalHealthTasks, and personalAdminTasks
  */
 function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.personal.tasks;
@@ -434,12 +434,20 @@ function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
     categories.mentalHealth,
     MONTHLY_RECAP_TASK_PROPERTIES.personal.mentalHealth.key
   );
+  const admin = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.admin,
+    MONTHLY_RECAP_TASK_PROPERTIES.personal.admin.key
+  );
 
   return {
     personalPersonalTasks: personal || "",
     personalHomeTasks: home || "",
     personalPhysicalHealthTasks: physicalHealth || "",
     personalMentalHealthTasks: mentalHealth || "",
+    personalAdminTasks: admin || "",
   };
 }
 

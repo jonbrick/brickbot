@@ -15,6 +15,7 @@ const {
   formatTasksByDay,
   filterEventsByContentFilters,
   filterTasksByContentFilters,
+  getSplitTargetCategory,
 } = require("../utils/calendar-data-helpers");
 const {
   matchInterpersonalCategory,
@@ -517,6 +518,14 @@ function transformCalendarEventsToRecapData(
           currentWeekNumber,
           relationships
         );
+      }
+
+      // Split personal tasks to admin based on keywords (before grouping)
+      if (categoryKey === "personal") {
+        const splitTarget = getSplitTargetCategory(task.title, "personal", "personal");
+        if (splitTarget) {
+          categoryKey = splitTarget;
+        }
       }
 
       if (categoryKey && categoryKey !== "work") {

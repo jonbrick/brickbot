@@ -118,7 +118,8 @@ class MonthsDatabase extends NotionDatabase {
    */
   extractWeekNumberFromPage(weekPage) {
     // Use config to get title property name
-    const titlePropName = config.notion.getPropertyName(this.summaryProps.title);
+    const weeksProps = config.notion.properties.weeks;
+    const titlePropName = config.notion.getPropertyName(weeksProps.week);
     const prop = weekPage.properties[titlePropName];
     let title = "";
     

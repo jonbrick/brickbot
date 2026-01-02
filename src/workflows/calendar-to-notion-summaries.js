@@ -166,66 +166,66 @@ async function aggregateCalendarDataForWeek(
             endDate
           );
 
-          if (weekSummary) {
-            // Fetch all relationships
-            const relationshipsPages = await relationshipsDb.queryDatabaseAll(
-              relationshipsDbId
-            );
+          // Fetch all relationships
+          const relationshipsPages = await relationshipsDb.queryDatabaseAll(
+            relationshipsDbId
+          );
 
-            // Extract relationship data with active week numbers
-            const relationships = await Promise.all(
-              relationshipsPages.map(async (page) => {
-                const nameProperty = page.properties[relationshipsProps.name.name];
-                const name = nameProperty?.title?.[0]?.plain_text || "";
+          // Extract relationship data with active week numbers
+          const relationships = await Promise.all(
+            relationshipsPages.map(async (page) => {
+              const nameProperty = page.properties[relationshipsProps.name.name];
+              const name = nameProperty?.title?.[0]?.plain_text || "";
 
-                const nicknamesProperty = page.properties[relationshipsProps.nicknames.name];
-                const nicknames =
-                  nicknamesProperty?.rich_text?.[0]?.plain_text || "";
+              const nicknamesProperty = page.properties[relationshipsProps.nicknames.name];
+              const nicknames =
+                nicknamesProperty?.rich_text?.[0]?.plain_text || "";
 
-                // Extract relation property (array of page objects with id)
-                const activeWeeksProperty = page.properties[relationshipsProps.activeWeeks.name];
-                const activeWeekPageIds =
-                  activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
+              // Extract relation property (array of page objects with id)
+              const activeWeeksProperty = page.properties[relationshipsProps.activeWeeks.name];
+              const activeWeekPageIds =
+                activeWeeksProperty?.relation?.map((rel) => rel.id) || [];
 
-                // Fetch each related week page to get its week number from title
-                const activeWeekNumbers = [];
-                for (const weekPageId of activeWeekPageIds) {
-                  try {
-                    const weekPage =
-                      await relationshipsDb.client.pages.retrieve({
-                        page_id: weekPageId,
-                      });
-                    // Extract week number from title like "Week 05" -> 5
-                    const titlePropName = config.notion.getPropertyName(summaryRepo.props.title);
-                    const titleProp = weekPage.properties[titlePropName];
-                    const title = titleProp?.title?.[0]?.plain_text || "";
-                    const match = title.match(/Week (\d+)/i);
-                    if (match) {
-                      activeWeekNumbers.push(parseInt(match[1], 10));
-                    }
-                  } catch (error) {
-                    // Skip if we can't fetch the page
-                    errors.push(`Could not fetch week page ${weekPageId}`);
+              // Fetch each related week page to get its week number from title
+              const activeWeekNumbers = [];
+              for (const weekPageId of activeWeekPageIds) {
+                try {
+                  const weekPage =
+                    await relationshipsDb.client.pages.retrieve({
+                      page_id: weekPageId,
+                    });
+                  // Extract week number from title like "Week 05" -> 5
+                  const weeksProps = config.notion.properties.weeks;
+                  const titlePropName = config.notion.getPropertyName(weeksProps.week);
+                  const titleProp = weekPage.properties[titlePropName];
+                  const title = titleProp?.title?.[0]?.plain_text || "";
+                  const match = title.match(/Week (\d+)/i);
+
+                  if (match) {
+                    activeWeekNumbers.push(parseInt(match[1], 10));
                   }
+                } catch (error) {
+                  // Skip if we can't fetch the page
+                  errors.push(`Could not fetch week page ${weekPageId}`);
                 }
+              }
 
-                return {
-                  name,
-                  nicknames,
-                  activeWeekNumbers,
-                };
-              })
-            );
+              return {
+                name,
+                nicknames,
+                activeWeekNumbers,
+              };
+            })
+          );
 
-            relationshipsContext = {
-              currentWeekNumber: weekNumber,
-              currentYear: year,
-              relationships,
-            };
+          relationshipsContext = {
+            currentWeekNumber: weekNumber,
+            currentYear: year,
+            relationships,
+          };
 
-            if (relationships.length > 0) {
-              relationshipsLoaded = relationships.length;
-            }
+          if (relationships.length > 0) {
+            relationshipsLoaded = relationships.length;
           }
         }
       } catch (error) {

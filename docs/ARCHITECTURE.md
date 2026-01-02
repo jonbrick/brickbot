@@ -191,10 +191,10 @@ INTEGRATIONS: {
 
 Brickbot supports different sync patterns based on data characteristics:
 
-| Pattern | Properties | Behavior | Use For |
-|---------|------------|----------|---------|
-| **Checkbox** | `calendarCreatedProperty` only | One-way, create-only | API-sourced data (append-only) |
-| **Hybrid** | Both `calendarEventIdProperty` + `calendarCreatedProperty` | Bidirectional, update/delete | User-managed data |
+| Pattern      | Properties                                                 | Behavior                     | Use For                        |
+| ------------ | ---------------------------------------------------------- | ---------------------------- | ------------------------------ |
+| **Checkbox** | `calendarCreatedProperty` only                             | One-way, create-only         | API-sourced data (append-only) |
+| **Hybrid**   | Both `calendarEventIdProperty` + `calendarCreatedProperty` | Bidirectional, update/delete | User-managed data              |
 
 #### Checkbox Pattern (One-Way Sync)
 
@@ -203,6 +203,7 @@ Used by: oura, strava, github, steam, withings, bloodPressure, medications
 - Tracks sync status with boolean checkbox
 - Creates calendar events, never updates or deletes
 - Appropriate for API data that doesn't change after creation
+
 ```javascript
 databaseConfig: {
   dateProperty: "date",
@@ -215,9 +216,10 @@ databaseConfig: {
 Used by: events, trips
 
 - Stores Google Calendar event ID + tracks sync status
-- Can update existing calendar events when Notion records change  
+- Can update existing calendar events when Notion records change
 - Can delete orphaned calendar events when Notion records are deleted
 - Appropriate for manually managed data that users edit/delete
+
 ```javascript
 databaseConfig: {
   dateProperty: "Date",
@@ -292,6 +294,7 @@ MONTHLY_RECAP_CATEGORIES: {
 **CLI Usage**:
 
 The `yarn recap` command now includes type selection:
+
 - "All (Personal + Work)" - Processes both recap types
 - "Personal only" - Processes only personal recap
 - "Work only" - Processes only work recap
@@ -383,6 +386,61 @@ console.log(`✅ ${result.count} items processed`);
 - Shared helper functions
 - Date handling, formatting, logging
 - No business logic
+
+## Relationship Matching System
+
+The system categorizes interpersonal calendar events into "family", "relationship", or "interpersonal" based on Notion database relationships.
+
+### Database Chain
+
+The relationship matching relies on a three-database chain in Notion:
+
+1. **Relationships Database** (`src/config/notion/relationships.js`)
+
+   - Contains relationship records with `Name`, `Nicknames`, and `Weeks` (relation) properties
+   - The `Weeks` relation property links to pages in the Weeks database
+
+2. **Weeks Database** (`src/config/notion/weeks.js`)
+
+   - Contains week pages with a `Week` title property (e.g., "Week 38")
+   - These are standalone week records used for tracking active weeks per relationship
+
+3. **Personal Summary Database** (`src/config/notion/personal-summary.js`)
+   - Contains weekly summary pages with a `Week Summary` title property (e.g., "Week 38 Personal Summary")
+   - Note: This is a different database from Weeks, with a different title property name
+
+### Matching Flow
+
+When `yarn summarize` runs for personal summaries:
+
+1. **Load Relationships** (`src/workflows/calendar-to-notion-summaries.js`):
+
+   - Fetches all relationships from the Relationships database
+   - For each relationship, extracts linked Week page IDs from the "Weeks" relation property
+   - Fetches each linked Week page from the Weeks database
+   - Extracts week numbers from the "Week" title property (using regex `/Week (\d+)/i`)
+   - Builds `activeWeekNumbers` array for each relationship
+
+2. **Categorize Events** (`src/parsers/interpersonal-matcher.js`):
+   - For each interpersonal calendar event (colorId = "3"):
+     - First checks family keywords (returns "family" if matched)
+     - Then checks relationships:
+       - Tests if event summary contains relationship name or nickname (word-boundary matching)
+       - Checks if `currentWeekNumber` is in the relationship's `activeWeekNumbers` array
+       - If both match → returns "relationship"
+     - Otherwise returns "interpersonal" (default)
+
+### Configuration Files
+
+- `src/config/notion/relationships.js` - Relationships database configuration
+- `src/config/notion/weeks.js` - Weeks database configuration (title property = "Week")
+- The matching logic: `src/parsers/interpersonal-matcher.js`
+
+### Common Issues
+
+- **Empty activeWeekNumbers**: Check that `weeks.js` config uses the correct title property name ("Week", not "Week Summary")
+- **No relationship matches**: Ensure relationships are linked to Week pages in Notion
+- **Property name mismatch**: The Weeks database uses "Week" while Personal Summary uses "Week Summary" - these are different databases with different schemas
 
 ## Key Design Patterns
 

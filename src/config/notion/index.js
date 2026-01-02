@@ -19,6 +19,7 @@ const workMonthlyRecap = require("./work-monthly-recap");
 const relationships = require("./relationships");
 const years = require("./years");
 const months = require("./months");
+const weeks = require("./weeks");
 
 // Aggregate database IDs
 const databases = {
@@ -38,6 +39,7 @@ const databases = {
   relationships: relationships.database,
   years: years.database,
   months: months.database,
+  weeks: weeks.database,
 };
 
 // Aggregate properties
@@ -58,6 +60,7 @@ const properties = {
   relationships: relationships.properties,
   years: years.properties,
   months: months.properties,
+  weeks: weeks.properties,
 };
 
 // Aggregate field mappings
@@ -76,6 +79,7 @@ const fieldMappings = {
   relationships: relationships.fieldMappings || {},
   years: years.fieldMappings,
   months: months.fieldMappings,
+  weeks: weeks.fieldMappings || {},
 };
 
 // Color mappings (for categorization and display)

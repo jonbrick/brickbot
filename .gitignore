@@ -1,5 +1,4 @@
 node_modules/
 .env
-.env-2025
 .DS_Store
 *.log 

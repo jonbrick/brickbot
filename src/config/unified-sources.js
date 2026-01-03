@@ -1905,7 +1905,17 @@ const CONTENT_SPLITS = {
   summarize: {
     personal: {
       personal: {
-        admin: ["update", "retro", "plan", "recap", "2024", "2025", "2026"],
+        admin: [
+          "journals",
+          "journal",
+          "update",
+          "retro",
+          "plan",
+          "recap",
+          "2024",
+          "2025",
+          "2026",
+        ],
       },
     },
   },

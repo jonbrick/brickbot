@@ -47,7 +47,7 @@ function formatRecordsForDisplay(records, sourceId, notionService) {
 
       // Get property name from config
       // field.property can be either:
-      // 1. A config key (e.g., "eventName") - for backward compatibility
+      // 1. A config key (e.g., "nightOfDate") - used by older integrations (Oura, Strava, etc.)
       // 2. A Notion property name (e.g., "Event Name") - for new integrations
       let propConfigEntry = propConfig[field.property];
 

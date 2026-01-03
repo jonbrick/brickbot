@@ -2098,18 +2098,6 @@ function generateWorkMonthlyRecapProperties() {
   return props;
 }
 
-/**
- * Generate Monthly Recap properties object (DEPRECATED - use type-specific generators)
- * @deprecated Use generatePersonalMonthlyRecapProperties() or generateWorkMonthlyRecapProperties()
- * @returns {Object} Properties object with all fields (for backward compatibility)
- */
-function generateMonthlyRecapProperties() {
-  return {
-    ...generatePersonalMonthlyRecapProperties(),
-    ...generateWorkMonthlyRecapProperties(),
-  };
-}
-
 module.exports = {
   FIELD_TEMPLATES,
   CALENDARS,
@@ -2130,7 +2118,6 @@ module.exports = {
   MONTHLY_RECAP_TASK_PROPERTIES,
   generatePersonalMonthlyRecapProperties,
   generateWorkMonthlyRecapProperties,
-  generateMonthlyRecapProperties, // Keep for backward compatibility
   getBlocksFields,
   getTaskFields,
   getTaskCompletionFields,

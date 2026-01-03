@@ -6,7 +6,7 @@
 const calendarMappings = require("./mappings");
 const { resolveCalendarId, getCalendarIds, hasCalendarsConfigured } = require("../../utils/calendar-mapper");
 
-// Calendar IDs from environment variables (for backward compatibility)
+// Calendar IDs from environment variables (used for config validation in src/config/index.js)
 const calendars = {
   normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
   sleepIn: process.env.SLEEP_IN_CALENDAR_ID,

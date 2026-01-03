@@ -129,6 +129,7 @@ async function handleAllSources(startDate, endDate, action) {
         console.log(); // Blank line after table
       }
     } catch (error) {
+      spinner.stop();
       console.log(`❌ ${source.name} failed: ${error.message}\n`);
       aggregatedResults.failed.push({
         source: source.name,
@@ -218,6 +219,7 @@ async function handleSourceData(sourceId, startDate, endDate, action) {
 async function main() {
   console.log("\n🤖 Brickbot - Data Collection Tool\n");
 
+  let spinner;
   try {
     // Select action first
     const actionString = await selectAction();
@@ -233,7 +235,7 @@ async function main() {
     if (source === "all") {
       await handleAllSources(startDate, endDate, action);
     } else {
-      const spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
+      spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
       spinner.start();
       const result = await handleSourceData(source, startDate, endDate, action);
       spinner.stop();
@@ -256,14 +258,13 @@ async function main() {
       }
     }
   } catch (error) {
-    if (typeof spinner !== "undefined") {
-      spinner.stop();
-    }
     console.error("\n❌ Error:", error.message);
     if (error.stack) {
       console.error(error.stack);
     }
     process.exit(1);
+  } finally {
+    if (spinner) spinner.stop();
   }
 }
 

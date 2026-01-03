@@ -120,6 +120,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
         displayRecordsTable(result.displayData, result.metadata.sourceId);
       }
     } catch (error) {
+      spinner.stop();
       console.log(`❌ ${source.name} failed: ${error.message}\n`);
       aggregatedResults.failed.push({
         source: source.name,
@@ -230,6 +231,7 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
 async function main() {
   console.log("\n🤖 Brickbot - Sync to Calendar\n");
 
+  let spinner;
   try {
     // Check if calendar sync is enabled
     if (process.env.ENABLE_CALENDAR_SYNC !== "true") {
@@ -254,7 +256,7 @@ async function main() {
     if (source === "all") {
       await handleAllCalendarSyncs(startDate, endDate, action);
     } else {
-      const spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
+      spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
       spinner.start();
       const result = await handleCalendarSync(source, startDate, endDate, action);
       spinner.stop();
@@ -276,14 +278,13 @@ async function main() {
 
     console.log("✅ Done!\n");
   } catch (error) {
-    if (typeof spinner !== "undefined") {
-      spinner.stop();
-    }
     console.error("\n❌ Error:", error.message);
     if (error.stack && process.env.DEBUG) {
       console.error(error.stack);
     }
     process.exit(1);
+  } finally {
+    if (spinner) spinner.stop();
   }
 }
 

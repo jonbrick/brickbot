@@ -184,6 +184,8 @@ async function main() {
     let workSuccessCount = 0;
     let workFailureCount = 0;
 
+    let spinner;
+
     // Process each month
     for (let i = 0; i < months.length; i++) {
       const { month, year, weeks } = months[i];
@@ -198,7 +200,7 @@ async function main() {
       output.sectionHeader(`Generating monthly recaps for ${month}/${year}`);
 
       // Process recaps
-      let spinner = createSpinner(`Processing ${month}/${year}...`);
+      spinner = createSpinner(`Processing ${month}/${year}...`);
       spinner.start();
       try {
         const results = await processRecaps(
@@ -403,7 +405,7 @@ async function main() {
       console.log("ℹ️ No sources were processed");
     }
   } catch (error) {
-    if (typeof spinner !== "undefined") {
+    if (spinner) {
       spinner.stop();
     }
     console.log(`\n❌ Fatal error: ${error.message}`);

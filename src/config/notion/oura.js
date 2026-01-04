@@ -1,19 +1,19 @@
 /**
  * @fileoverview Oura Database Configuration
  * @layer 1 - API → Notion (Integration name)
- * 
+ *
  * Purpose: Defines Notion database properties and field mappings for Oura database
- * 
+ *
  * Responsibilities:
  * - Define database ID (from environment variable)
  * - Define property names and types
  * - Define field mappings for data transformation
  * - Define sleep categorization rules
- * 
+ *
  * Data Flow:
  * - Used by: OuraDatabase, oura-to-notion-oura transformer
  * - Naming: Uses INTEGRATION name (oura)
- * 
+ *
  * Example:
  * ```
  * const config = require('./config/notion');
@@ -23,7 +23,7 @@
 
 module.exports = {
   database: process.env.NOTION_SLEEP_DATABASE_ID,
-  
+
   properties: {
     awakeTime: { name: "Awake Time", type: "number", enabled: true },
     bedtime: { name: "Bedtime", type: "text", enabled: true },
@@ -106,4 +106,3 @@ module.exports = {
     sleepInLabel: "Sleep In",
   },
 };
-

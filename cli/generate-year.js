@@ -2090,6 +2090,7 @@ async function printEnvIdsOnly(pageId, year, notionClient) {
  * Main CLI function
  */
 async function main() {
+  let spinner;
   try {
     output.header("Generate Year Structure");
     console.log(
@@ -2116,14 +2117,14 @@ async function main() {
     }
 
     // Fetch the page
-    let spinner = createSpinner("Fetching page...");
+    spinner = createSpinner("Fetching page...");
     spinner.start();
     let page;
     try {
       page = await fetchPage(pageId, notionClient);
       spinner.stop();
     } catch (error) {
-      spinner.stop();
+      if (spinner) spinner.stop();
       console.error(`❌ ${error.message}`);
       process.exit(1);
     }
@@ -2342,6 +2343,7 @@ async function main() {
       // Don't exit - allow user to see what was completed
     }
   } catch (error) {
+    if (spinner) spinner.stop();
     console.error(`\n❌ Error: ${error.message}`);
     if (process.env.DEBUG) {
       console.error(error.stack);

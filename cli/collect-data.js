@@ -99,8 +99,9 @@ async function handleAllSources(startDate, endDate, action) {
     // Phase indicator
     output.phase(i + 1, sources.length, source.name);
 
+    let spinner;
     try {
-      const spinner = createSpinner(`Processing ${source.name}...`);
+      spinner = createSpinner(`Processing ${source.name}...`);
       spinner.start();
       const result = await handleSourceData(
         source.id,
@@ -129,7 +130,7 @@ async function handleAllSources(startDate, endDate, action) {
         console.log(); // Blank line after table
       }
     } catch (error) {
-      spinner.stop();
+      if (spinner) spinner.stop();
       console.log(`❌ ${source.name} failed: ${error.message}\n`);
       aggregatedResults.failed.push({
         source: source.name,

@@ -776,21 +776,21 @@ const INTEGRATIONS = {
       calendarCreatedProperty: "calendarCreated",
     },
   },
-  github: {
-    id: "github",
-    name: "GitHub (PRs)",
-    notionDbEnvVar: "NOTION_PRS_DATABASE_ID",
-    calendarRouting: ["personalPRs", "workPRs"],
+  githubPersonal: {
+    id: "githubPersonal",
+    name: "GitHub Personal (Activity)",
+    notionDbEnvVar: "NOTION_PERSONAL_PRS_DATABASE_ID",
+    calendarRouting: ["personalPRs"],
     collect: true,
     displayMetadata: {
-      tableTitle: "GITHUB ACTIVITIES",
-      emptyMessage: "⚠️  No GitHub activities found for this date range\n",
-      displayType: "github",
+      tableTitle: "GITHUB PERSONAL ACTIVITIES",
+      emptyMessage: "⚠️  No GitHub personal activities found for this date range\n",
+      displayType: "githubPersonal",
     },
     updateCalendar: true,
     calendarSyncMetadata: {
-      emptyMessage: "✅ No PR records found without calendar events\n",
-      sourceType: "github",
+      emptyMessage: "✅ No personal PR records found without calendar events\n",
+      sourceType: "githubPersonal",
       eventType: "allDay",
       displayNameProperty: "repository",
       displayNameFormat: "repoDate",
@@ -817,7 +817,6 @@ const INTEGRATIONS = {
         { key: "commitsCount", property: "commitsCount", default: 0 },
         { key: "totalLinesAdded", property: "totalLinesAdded", default: 0 },
         { key: "totalLinesDeleted", property: "totalLinesDeleted", default: 0 },
-        { key: "projectType", property: "projectType", default: "Personal" },
         {
           key: "linesAdded",
           property: null, // Computed field - alias for totalLinesAdded
@@ -829,17 +828,91 @@ const INTEGRATIONS = {
           compute: (record) => record.totalLinesDeleted || 0,
         },
       ],
-      tableTitle: "💻 GITHUB PR RECORDS TO SYNC",
+      tableTitle: "💻 GITHUB PERSONAL PR RECORDS TO SYNC",
       displayFormat: (record) =>
         `💻 ${record.date}: ${record.repository} - ${
           record.commitsCount
         } commit${record.commitsCount === 1 ? "" : "s"} (+${
           record.linesAdded
-        }/-${record.linesDeleted} lines) → ${record.projectType}`,
+        }/-${record.linesDeleted} lines)`,
       recordLabel: "PR record",
     },
     databaseConfig: {
       dateProperty: "date",
+      uniqueIdProperty: "uniqueId",
+      uniqueIdType: "text",
+      calendarCreatedProperty: "calendarCreated",
+    },
+  },
+  githubWork: {
+    id: "githubWork",
+    name: "GitHub Work (PRs)",
+    notionDbEnvVar: "NOTION_WORK_PRS_DATABASE_ID",
+    calendarRouting: ["workPRs"],
+    collect: true,
+    displayMetadata: {
+      tableTitle: "GITHUB WORK PRS",
+      emptyMessage: "⚠️  No GitHub work PRs found for this date range\n",
+      displayType: "githubWork",
+    },
+    updateCalendar: true,
+    calendarSyncMetadata: {
+      emptyMessage: "✅ No work PR records found without calendar events\n",
+      sourceType: "githubWork",
+      eventType: "allDay",
+      displayNameProperty: "prTitle",
+      displayNameFormat: "text",
+      skipReason: "Missing merge date",
+      transformerFile: "../transformers/notion-github-to-calendar-prs.js",
+      transformerFunction: "transformPRToCalendarEvent",
+      useMultipleCalendarServices: true,
+      displayFields: [
+        {
+          key: "prTitle",
+          property: "prTitle",
+          format: (val) => val || "Unknown PR",
+        },
+        {
+          key: "repository",
+          property: "repository",
+          format: (val) => {
+            if (!val) return "Unknown Repository";
+            const repoMatch = val.match(/^([^\s-]+)/);
+            if (repoMatch) {
+              const repoPath = repoMatch[1];
+              const parts = repoPath.split("/");
+              return parts[parts.length - 1];
+            }
+            return val;
+          },
+        },
+        { key: "mergeDate", property: "mergeDate" },
+        { key: "prNumber", property: "prNumber", default: 0 },
+        { key: "commitsCount", property: "commitsCount", default: 0 },
+        { key: "totalLinesAdded", property: "totalLinesAdded", default: 0 },
+        { key: "totalLinesDeleted", property: "totalLinesDeleted", default: 0 },
+        {
+          key: "linesAdded",
+          property: null, // Computed field - alias for totalLinesAdded
+          compute: (record) => record.totalLinesAdded || 0,
+        },
+        {
+          key: "linesDeleted",
+          property: null, // Computed field - alias for totalLinesDeleted
+          compute: (record) => record.totalLinesDeleted || 0,
+        },
+      ],
+      tableTitle: "💻 GITHUB WORK PR RECORDS TO SYNC",
+      displayFormat: (record) =>
+        `💻 ${record.mergeDate}: ${record.prTitle} (#${record.prNumber}) - ${
+          record.commitsCount
+        } commit${record.commitsCount === 1 ? "" : "s"} (+${
+          record.linesAdded
+        }/-${record.linesDeleted} lines)`,
+      recordLabel: "PR record",
+    },
+    databaseConfig: {
+      dateProperty: "mergeDate",
       uniqueIdProperty: "uniqueId",
       uniqueIdType: "text",
       calendarCreatedProperty: "calendarCreated",

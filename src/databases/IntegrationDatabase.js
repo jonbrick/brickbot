@@ -42,6 +42,31 @@ class IntegrationDatabase extends NotionDatabase {
   }
 
   /**
+   * Create a new page in a database
+   * Override to pass configKey for scoped property type detection
+   *
+   * @param {string} databaseId - Database ID
+   * @param {Object} properties - Page properties
+   * @param {Array} children - Page content blocks
+   * @returns {Promise<Object>} Created page
+   */
+  async createPage(databaseId, properties, children = []) {
+    return super.createPage(databaseId, properties, children, this.configKey);
+  }
+
+  /**
+   * Update an existing page
+   * Override to pass configKey for scoped property type detection
+   *
+   * @param {string} pageId - Page ID
+   * @param {Object} properties - Properties to update
+   * @returns {Promise<Object>} Updated page
+   */
+  async updatePage(pageId, properties) {
+    return super.updatePage(pageId, properties, this.configKey);
+  }
+
+  /**
    * Find record by unique ID
    *
    * @param {string|number} uniqueId - Unique ID to search for

@@ -45,6 +45,7 @@ const github = {
   token: process.env.GITHUB_TOKEN,
   username: process.env.GITHUB_USERNAME,
   apiBaseUrl: "https://api.github.com",
+  workOrg: process.env.GITHUB_WORK_ORG || "cortexapps",
   workRepos:
     process.env.GITHUB_WORK_REPOS?.split(",")
       .map((r) => r.trim())

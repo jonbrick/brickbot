@@ -50,16 +50,30 @@ function validateConfig() {
     // Note: Access/refresh tokens are managed by TokenService, validate separately if needed
   }
 
-  // GitHub validation
-  if (notion.databases.github) {
+  // GitHub Personal validation
+  if (notion.databases.githubPersonal) {
     if (!process.env.GITHUB_TOKEN) {
       errors.push(
-        "GITHUB_TOKEN is required (NOTION_PRS_DATABASE_ID is configured)"
+        "GITHUB_TOKEN is required (NOTION_PERSONAL_PRS_DATABASE_ID is configured)"
       );
     }
     if (!process.env.GITHUB_USERNAME) {
       errors.push(
-        "GITHUB_USERNAME is required (NOTION_PRS_DATABASE_ID is configured)"
+        "GITHUB_USERNAME is required (NOTION_PERSONAL_PRS_DATABASE_ID is configured)"
+      );
+    }
+  }
+
+  // GitHub Work validation
+  if (notion.databases.githubWork) {
+    if (!process.env.GITHUB_TOKEN) {
+      errors.push(
+        "GITHUB_TOKEN is required (NOTION_WORK_PRS_DATABASE_ID is configured)"
+      );
+    }
+    if (!process.env.GITHUB_USERNAME) {
+      errors.push(
+        "GITHUB_USERNAME is required (NOTION_WORK_PRS_DATABASE_ID is configured)"
       );
     }
   }

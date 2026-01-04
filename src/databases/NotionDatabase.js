@@ -95,13 +95,14 @@ class NotionDatabase {
    * @param {string} databaseId - Database ID
    * @param {Object} properties - Page properties
    * @param {Array} children - Page content blocks
+   * @param {string|null} configKey - Optional config key to scope property type detection
    * @returns {Promise<Object>} Created page
    */
-  async createPage(databaseId, properties, children = []) {
+  async createPage(databaseId, properties, children = [], configKey = null) {
     try {
       const response = await this.client.pages.create({
         parent: { database_id: databaseId },
-        properties: this._formatProperties(properties),
+        properties: this._formatProperties(properties, configKey),
         children,
       });
 
@@ -116,13 +117,14 @@ class NotionDatabase {
    *
    * @param {string} pageId - Page ID
    * @param {Object} properties - Properties to update
+   * @param {string|null} configKey - Optional config key to scope property type detection
    * @returns {Promise<Object>} Updated page
    */
-  async updatePage(pageId, properties) {
+  async updatePage(pageId, properties, configKey = null) {
     try {
       const response = await this.client.pages.update({
         page_id: pageId,
-        properties: this._formatProperties(properties),
+        properties: this._formatProperties(properties, configKey),
       });
 
       return response;
@@ -434,9 +436,10 @@ class NotionDatabase {
    * Format properties for Notion API
    *
    * @param {Object} properties - Simple key-value properties
+   * @param {string|null} configKey - Optional config key to scope property type detection
    * @returns {Object} Formatted Notion properties
    */
-  _formatProperties(properties) {
+  _formatProperties(properties, configKey = null) {
     const formatted = {};
 
     Object.entries(properties).forEach(([key, value]) => {
@@ -459,24 +462,32 @@ class NotionDatabase {
           };
         } else {
           // Check if this property should be formatted as a title based on config
-          const isTitleProperty = this._isTitleProperty(key);
+          const isTitleProperty = this._isTitleProperty(key, configKey);
           if (isTitleProperty) {
             formatted[key] = {
               title: [{ text: { content: value } }],
             };
           } else {
             // Check if this property should be a select type
-            const isSelectProperty = this._isSelectProperty(key);
+            const isSelectProperty = this._isSelectProperty(key, configKey);
             if (isSelectProperty) {
               formatted[key] = {
                 select: { name: value },
               };
             } else {
-              // Allow empty strings for rich_text to enable clearing fields
-              // Notion API accepts empty rich_text arrays to clear fields
-              formatted[key] = {
-                rich_text: value === "" ? [] : [{ text: { content: value } }],
-              };
+              // Check if this property should be a URL type
+              const isUrlProperty = this._isUrlProperty(key, configKey);
+              if (isUrlProperty) {
+                formatted[key] = {
+                  url: value || null,
+                };
+              } else {
+                // Allow empty strings for rich_text to enable clearing fields
+                // Notion API accepts empty rich_text arrays to clear fields
+                formatted[key] = {
+                  rich_text: value === "" ? [] : [{ text: { content: value } }],
+                };
+              }
             }
           }
         }
@@ -513,10 +524,26 @@ class NotionDatabase {
   /**
    * Check if a property key should be formatted as a title type
    * @param {string} key - Property key/name
+   * @param {string|null} configKey - Optional config key to scope the check
    * @returns {boolean} True if it's a title property
    */
-  _isTitleProperty(key) {
+  _isTitleProperty(key, configKey = null) {
     const properties = config.notion.properties;
+
+    // If configKey provided, only check that specific integration
+    if (configKey) {
+      const props = properties[configKey];
+      if (props) {
+        for (const propKey in props) {
+          if (props[propKey].name === key && props[propKey].type === "title") {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // Otherwise, check all databases (backward compatibility)
     let foundInConfig = false;
     let isTitleType = false;
 
@@ -567,16 +594,67 @@ class NotionDatabase {
   /**
    * Check if a property key should be formatted as a select type
    * @param {string} key - Property key/name
+   * @param {string|null} configKey - Optional config key to scope the check
    * @returns {boolean} True if it's a select property
    */
-  _isSelectProperty(key) {
+  _isSelectProperty(key, configKey = null) {
     const properties = config.notion.properties;
 
+    // If configKey provided, only check that specific integration
+    if (configKey) {
+      const props = properties[configKey];
+      if (props) {
+        for (const propKey in props) {
+          if (props[propKey].name === key && props[propKey].type === "select") {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // Otherwise, check all databases (backward compatibility)
     // Check all databases for select properties
     for (const dbKey in properties) {
       const props = properties[dbKey];
       for (const propKey in props) {
         if (props[propKey].name === key && props[propKey].type === "select") {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if a property key should be formatted as a URL type
+   * @param {string} key - Property key/name
+   * @param {string|null} configKey - Optional config key to scope the check
+   * @returns {boolean} True if it's a URL property
+   */
+  _isUrlProperty(key, configKey = null) {
+    const properties = config.notion.properties;
+
+    // If configKey provided, only check that specific integration
+    if (configKey) {
+      const props = properties[configKey];
+      if (props) {
+        for (const propKey in props) {
+          if (props[propKey].name === key && props[propKey].type === "url") {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // Otherwise, check all databases (backward compatibility)
+    // Check all databases for URL properties
+    for (const dbKey in properties) {
+      const props = properties[dbKey];
+      for (const propKey in props) {
+        if (props[propKey].name === key && props[propKey].type === "url") {
           return true;
         }
       }

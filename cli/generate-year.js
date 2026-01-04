@@ -2038,6 +2038,55 @@ async function runPhase6(pageId, databasesPageId, year, notionClient) {
 }
 
 /**
+ * Print .env IDs only - scans existing databases and outputs their IDs
+ * @param {string} pageId - Year page ID
+ * @param {string} year - Year string
+ * @param {Object} notionClient - Notion client instance
+ */
+async function printEnvIdsOnly(pageId, year, notionClient) {
+  // Import config
+  const { DATABASE_CONFIG } = require("./generate-year-config");
+
+  // Find existing databases subpage
+  const existingSubpageId = await findDatabasesSubpage(pageId, year, notionClient);
+  if (!existingSubpageId) {
+    console.error("\n❌ No databases found. Run full script first to create them.");
+    process.exit(1);
+  }
+
+  // Scan for databases
+  console.log("🔍 Scanning for database IDs...");
+  const databaseMap = await scanForDatabases(pageId, existingSubpageId, notionClient);
+  
+  if (Object.keys(databaseMap).length === 0) {
+    console.error("\n❌ No databases found. Run full script first to create them.");
+    process.exit(1);
+  }
+
+  // Map database names to env vars
+  const databases = [];
+  for (const config of DATABASE_CONFIG) {
+    const dbName = config.name.replace("{year}", year);
+    const dbId = databaseMap[dbName];
+    
+    if (dbId) {
+      databases.push({
+        envVar: config.envVar,
+        id: dbId
+      });
+    }
+  }
+
+  // Sort by envVar name for consistent output
+  databases.sort((a, b) => a.envVar.localeCompare(b.envVar));
+
+  // Print output
+  outputEnvVars(databases, year);
+  
+  process.exit(0);
+}
+
+/**
  * Main CLI function
  */
 async function main() {
@@ -2088,6 +2137,24 @@ async function main() {
 
     // Extract year from page title
     const year = extractYearFromTitle(pageTitle);
+
+    // Menu prompt: choose action
+    const { action } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "action",
+        message: "What would you like to do?",
+        choices: ["Run full script", "Print .env IDs only"]
+      }
+    ]);
+
+    // If "Print .env IDs only" selected, execute and exit
+    if (action === "Print .env IDs only") {
+      await printEnvIdsOnly(pageId, year, notionClient);
+      return; // Exit early (printEnvIdsOnly already calls process.exit(0))
+    }
+
+    // Otherwise, continue with full script
 
     // Find or create "{year} Databases" subpage (needed for both Phase 1 and Phase 2)
     let databasesPageId;

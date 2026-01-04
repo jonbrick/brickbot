@@ -1,11 +1,14 @@
 /**
  * Shared calendar data processing helpers
  * Used by personal and work recap transformers
- * 
+ *
  * All functions are PURE (no closures) for testability
  */
 
-const { CONTENT_FILTERS, CONTENT_SPLITS } = require("../config/unified-sources");
+const {
+  CONTENT_FILTERS,
+  CONTENT_SPLITS,
+} = require("../config/unified-sources");
 
 /**
  * Get 3-letter day abbreviation from a date string
@@ -64,7 +67,13 @@ function isDateInWeek(dateStr, weekStartDate, weekEndDate) {
  * @param {boolean} includeSessions - Whether to count sessions
  * @returns {Object} { days, sessions?, hoursTotal? }
  */
-function calculateCalendarData(events, weekStartDate, weekEndDate, includeHours = false, includeSessions = false) {
+function calculateCalendarData(
+  events,
+  weekStartDate,
+  weekEndDate,
+  includeHours = false,
+  includeSessions = false
+) {
   if (!events || events.length === 0) {
     return {
       days: 0,
@@ -229,7 +238,7 @@ function formatTasksByDay(tasks) {
     });
 
   const formatted = dayBlocks.join("\n\n");
-  
+
   // Truncate to Notion's 2000 character limit
   return truncateForNotion(formatted);
 }
@@ -244,15 +253,16 @@ function formatTasksByDay(tasks) {
 function filterEventsByContentFilters(events, columnName, recapType) {
   if (!events || events.length === 0) return events;
   if (!columnName || !recapType) return events;
-  
-  const filterWords = CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
+
+  const filterWords =
+    CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
   if (filterWords.length === 0) return events;
-  
+
   return events.filter((event) => {
     const eventSummary = event.summary || "";
     // Filter out events containing filter words (word boundary match)
-    return !filterWords.some(word => 
-      new RegExp(`\\b${word}\\b`, 'i').test(eventSummary)
+    return !filterWords.some((word) =>
+      new RegExp(`\\b${word}\\b`, "i").test(eventSummary)
     );
   });
 }
@@ -267,9 +277,18 @@ function filterEventsByContentFilters(events, columnName, recapType) {
 function getSplitTargetCategory(taskTitle, sourceCategory, recapType) {
   const splits = CONTENT_SPLITS?.summarize?.[recapType]?.[sourceCategory];
   if (!splits) return null;
-  
+
   for (const [targetCategory, words] of Object.entries(splits)) {
-    if (words.some(word => new RegExp(`\\b${word}\\b`, 'i').test(taskTitle))) {
+    if (
+      words.some((word) => {
+        // For words ending in non-word chars (like "feat:"), use startsWith
+        // For regular words, use word boundary matching
+        if (/\W$/.test(word)) {
+          return taskTitle.toLowerCase().startsWith(word.toLowerCase());
+        }
+        return new RegExp(`\\b${word}\\b`, "i").test(taskTitle);
+      })
+    ) {
       return targetCategory;
     }
   }
@@ -286,15 +305,16 @@ function getSplitTargetCategory(taskTitle, sourceCategory, recapType) {
 function filterTasksByContentFilters(tasks, columnName, recapType) {
   if (!tasks || tasks.length === 0) return tasks;
   if (!columnName || !recapType) return tasks;
-  
-  const filterWords = CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
+
+  const filterWords =
+    CONTENT_FILTERS.summarize?.[recapType]?.[columnName] || [];
   if (filterWords.length === 0) return tasks;
-  
+
   return tasks.filter((task) => {
     const taskTitle = task.title || "";
     // Filter out tasks containing filter words (word boundary match)
-    return !filterWords.some(word => 
-      new RegExp(`\\b${word}\\b`, 'i').test(taskTitle)
+    return !filterWords.some((word) =>
+      new RegExp(`\\b${word}\\b`, "i").test(taskTitle)
     );
   });
 }
@@ -309,4 +329,3 @@ module.exports = {
   getSplitTargetCategory,
   filterTasksByContentFilters,
 };
-

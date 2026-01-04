@@ -441,6 +441,13 @@ function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
     categories.admin,
     MONTHLY_RECAP_TASK_PROPERTIES.personal.admin.key
   );
+  const coding = combineWeeklyTasksByCategory(
+    weeklySummaries,
+    "personal",
+    summaryDb,
+    categories.coding,
+    MONTHLY_RECAP_TASK_PROPERTIES.personal.coding.key
+  );
 
   return {
     personalPersonalTasks: personal || "",
@@ -448,6 +455,7 @@ function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
     personalPhysicalHealthTasks: physicalHealth || "",
     personalMentalHealthTasks: mentalHealth || "",
     personalAdminTasks: admin || "",
+    personalCodingTasks: coding || "",
   };
 }
 

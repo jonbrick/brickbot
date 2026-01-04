@@ -23,6 +23,7 @@
 - [Adding a New Summary Group](#adding-a-new-summary-group)
 - [Adding a Calendar to Monthly Recaps](#adding-a-calendar-to-monthly-recaps)
 - [Adding a New Monthly Recap Category](#adding-a-new-monthly-recap-category)
+- [Adding a Personal Task Category with Content Splitting](#adding-a-personal-task-category-with-content-splitting)
 - [Modifying Transformers](#modifying-transformers)
 - [Testing Your Changes](#testing-your-changes)
 
@@ -57,6 +58,7 @@ INTEGRATIONS: {
 ```
 
 **Note**: Choose the appropriate calendar sync pattern based on your data:
+
 - **Checkbox pattern** (one-way sync): Use only `calendarCreatedProperty` for API-sourced data that doesn't change after creation
 - **Hybrid pattern** (bidirectional sync): Use both `calendarEventIdProperty` and `calendarCreatedProperty` for user-managed data that may be edited or deleted
 
@@ -68,9 +70,11 @@ See [Calendar Sync Patterns](ARCHITECTURE.md#calendar-sync-patterns) in ARCHITEC
       authType: "oauth", // or "apiKey"
       rateLimitPerMinute: 60,
     },
-  },
+
+},
 }
-```
+
+````
 
 ### Step 2: Create Environment Variables
 
@@ -83,7 +87,7 @@ MYNEWAPI_CLIENT_SECRET=your_client_secret
 MYNEWAPI_ACCESS_TOKEN=your_access_token
 MYNEWAPI_REFRESH_TOKEN=your_refresh_token
 NOTION_MYNEWAPI_DATABASE_ID=your_notion_database_id
-```
+````
 
 ### Step 3: Create Notion Config
 
@@ -560,6 +564,7 @@ MONTHLY_RECAP_CATEGORIES: {
 ```
 
 **Category Guidelines**:
+
 - `dietAndExercise`: Physical health, food, and exercise-related activities
 - `interpersonal`: Social, family, relationships, mental health
 - `hobby`: Creative, intellectual, and entertainment activities
@@ -620,8 +625,9 @@ function generatePersonalMonthlyRecapProperties() {
   const props = {
     title: { name: "Month Recap", type: "title", enabled: true },
     // ... existing properties
-    personalNewCategoryBlocks: {  // ADD THIS (camelCase from category key)
-      name: "New Category - Block Details",  // Display name in Notion
+    personalNewCategoryBlocks: {
+      // ADD THIS (camelCase from category key)
+      name: "New Category - Block Details", // Display name in Notion
       type: "text",
       enabled: true,
     },
@@ -637,7 +643,8 @@ function generateWorkMonthlyRecapProperties() {
   const props = {
     title: { name: "Month Recap", type: "title", enabled: true },
     // ... existing properties
-    workNewCategoryBlocks: {  // ADD THIS
+    workNewCategoryBlocks: {
+      // ADD THIS
       name: "New Category - Block Details",
       type: "text",
       enabled: true,
@@ -658,7 +665,7 @@ Update `combinePersonalBlocksByCategory()` or `combineWorkBlocksByCategory()` to
 ```javascript
 function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.personal;
-  
+
   // ... existing categories
   const newCategory = combineWeeklyBlocksByCategory(
     weeklySummaries,
@@ -669,7 +676,7 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
 
   return {
     // ... existing fields
-    personalNewCategoryBlocks: newCategory || "",  // ADD THIS
+    personalNewCategoryBlocks: newCategory || "", // ADD THIS
   };
 }
 ```
@@ -701,6 +708,127 @@ yarn recap-month
 ```
 
 **Done!** Your new monthly recap category is now functional.
+
+---
+
+## Adding a Personal Task Category with Content Splitting
+
+**Goal**: Add a new task category that captures tasks based on title keywords (e.g., tasks starting with "Feat:", "Bug:", "Spike:" go to a "Coding" category).
+
+**Time estimate**: 15-20 minutes
+
+### Overview
+
+Content splitting redirects tasks from one category to another based on keywords in the task title. This happens BEFORE counting, so the task appears in the target category's count and details.
+
+### Step 1: Add Task Category to CALENDARS.tasks.categories
+
+**File**: `src/config/unified-sources.js`
+
+Add your new category to `CALENDARS.tasks.categories`:
+
+```javascript
+tasks: {
+  categories: {
+    // ... existing categories (personal, family, home, etc.)
+    coding: {
+      emoji: "🖥️",
+      dataFields: FIELD_TEMPLATES.taskCategory("coding", "Coding"),
+    },
+  },
+},
+```
+
+### Step 2: Add Split Keywords to CONTENT_SPLITS
+
+**File**: `src/config/unified-sources.js`
+
+Add your keywords to `CONTENT_SPLITS.summarize.personal.personal`:
+
+```javascript
+CONTENT_SPLITS: {
+  summarize: {
+    personal: {
+      personal: {
+        admin: ["journals", "retro", "plan", "recap"],  // existing
+        coding: ["feat:", "bug:", "spike:"],            // ADD THIS
+      },
+    },
+  },
+},
+```
+
+**Note**: Keywords ending in non-word characters (like `:`) use prefix matching. Regular words use word-boundary matching (case-insensitive).
+
+### Step 3: Add to MONTHLY_RECAP_CATEGORIES
+
+**File**: `src/config/unified-sources.js`
+
+```javascript
+MONTHLY_RECAP_CATEGORIES: {
+  personal: {
+    tasks: {
+      // ... existing categories
+      coding: ["codingTaskDetails"],  // ADD THIS
+    },
+  },
+},
+```
+
+### Step 4: Add to MONTHLY_RECAP_TASK_PROPERTIES
+
+**File**: `src/config/unified-sources.js`
+
+```javascript
+MONTHLY_RECAP_TASK_PROPERTIES: {
+  personal: {
+    // ... existing categories
+    coding: { key: "personalCodingTasks", name: "Coding - Task Details" },  // ADD THIS
+  },
+},
+```
+
+### Step 5: Update Monthly Recap Transformer
+
+**File**: `src/transformers/transform-weekly-to-monthly-recap.js`
+
+In `combinePersonalTasksByCategory()`, add after the `admin` variable:
+
+```javascript
+const coding = combineWeeklyTasksByCategory(
+  weeklySummaries,
+  "personal",
+  summaryDb,
+  categories.coding,
+  MONTHLY_RECAP_TASK_PROPERTIES.personal.coding.key
+);
+```
+
+And add to the return object:
+
+```javascript
+return {
+  // ... existing fields
+  personalCodingTasks: coding || "", // ADD THIS
+};
+```
+
+### Step 6: Add Notion Properties
+
+Manually add these properties to your Notion databases:
+
+**Weekly Summary Database**:
+
+- `Coding - Tasks Complete` (Number)
+- `Coding - Task Details` (Text)
+
+**Monthly Recap Database**:
+
+- `Coding - Task Details` (Text)
+
+### Testing
+
+Run `yarn summarize` and verify tasks with your keywords appear in the new category instead of "Personal".
 
 ---
 
@@ -885,7 +1013,9 @@ async function myWorkflow(weekNumber, year, options = {}) {
     weekNumber,
     year,
     data: {
-      summary: { /* calculated metrics */ },
+      summary: {
+        /* calculated metrics */
+      },
       relationshipsLoaded: 0,
       // ... other data
     },

@@ -446,6 +446,10 @@ const CALENDARS = {
         emoji: "📝",
         dataFields: FIELD_TEMPLATES.taskCategory("admin", "Admin"),
       },
+      coding: {
+        emoji: "🖥️",
+        dataFields: FIELD_TEMPLATES.taskCategory("coding", "Coding"),
+      },
     },
   },
   workTasks: {
@@ -1849,6 +1853,7 @@ const MONTHLY_RECAP_CATEGORIES = {
       physicalHealth: ["physicalHealthTaskDetails"],
       mentalHealth: ["mentalHealthTaskDetails"],
       admin: ["adminTaskDetails"],
+      coding: ["codingTaskDetails"],
     },
   },
   work: {
@@ -2018,6 +2023,7 @@ const CONTENT_SPLITS = {
           "2025",
           "2026",
         ],
+        coding: ["feat:", "bug:", "spike:"],
       },
     },
   },
@@ -2070,6 +2076,7 @@ const MONTHLY_RECAP_TASK_PROPERTIES = {
       name: "Mental Health - Task Details",
     },
     admin: { key: "personalAdminTasks", name: "Admin - Task Details" },
+    coding: { key: "personalCodingTasks", name: "Coding - Task Details" },
   },
   work: {
     design: { key: "workDesignTasks", name: "Design - Task Details" },

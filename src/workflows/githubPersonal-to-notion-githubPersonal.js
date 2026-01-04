@@ -1,7 +1,8 @@
 // Syncs GitHub Personal commit data to Notion with upsert support
 
-const { fetchGithubPersonalData } = require("../collectors/collect-githubPersonal");
-const { transformGitHubPersonalToNotion } = require("../transformers/githubPersonal-to-notion-githubPersonal");
+const {
+  transformGitHubPersonalToNotion,
+} = require("../transformers/githubPersonal-to-notion-githubPersonal");
 const IntegrationDatabase = require("../databases/IntegrationDatabase");
 const BaseWorkflow = require("./BaseWorkflow");
 const config = require("../config");
@@ -10,12 +11,11 @@ const config = require("../config");
  * Sync GitHub Personal activities to Notion with upsert logic
  * Updates existing records (by uniqueId) or creates new ones
  *
- * @param {Date} startDate - Start date
- * @param {Date} endDate - End date
+ * @param {Array} activities - Array of processed GitHub Personal activities
  * @param {Object} options - Sync options
  * @returns {Promise<Object>} Sync results with created, updated, errors arrays
  */
-async function syncGithubPersonalToNotion(startDate, endDate, options = {}) {
+async function syncGitHubPersonalToNotion(activities, options = {}) {
   // Create repository instance
   const repo = new IntegrationDatabase("githubPersonal");
 
@@ -23,19 +23,6 @@ async function syncGithubPersonalToNotion(startDate, endDate, options = {}) {
   const databaseId = config.notion.databases.githubPersonal;
   if (!databaseId) {
     throw new Error("Database ID not found for integration: githubPersonal");
-  }
-
-  // Fetch data from collector
-  const activities = await fetchGithubPersonalData(startDate, endDate);
-
-  if (activities.length === 0) {
-    return {
-      created: [],
-      updated: [],
-      skipped: [],
-      errors: [],
-      total: 0,
-    };
   }
 
   // Custom syncSingle function with upsert logic
@@ -92,6 +79,5 @@ async function syncGithubPersonalToNotion(startDate, endDate, options = {}) {
 }
 
 module.exports = {
-  syncGithubPersonalToNotion,
+  syncGitHubPersonalToNotion,
 };
-

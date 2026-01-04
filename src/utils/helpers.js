@@ -13,6 +13,8 @@
 function idToFunctionName(id) {
   const specialCases = {
     github: "GitHub",
+    githubPersonal: "GitHubPersonal",
+    githubWork: "GitHubWork",
   };
   return specialCases[id] || id.charAt(0).toUpperCase() + id.slice(1);
 }
@@ -20,4 +22,3 @@ function idToFunctionName(id) {
 module.exports = {
   idToFunctionName,
 };
-

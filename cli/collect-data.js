@@ -116,10 +116,13 @@ async function handleAllSources(startDate, endDate, action) {
       if (result.fetchedCount === 0) {
         console.log(`ℹ️ No records found\n`);
       } else if (action === "sync" && result.results) {
-        const { created, skipped } = result.results;
+        const { created, updated, skipped } = result.results;
         const recordLabel = result.fetchedCount === 1 ? "record" : "records";
+        const updatedCount = updated?.length || 0;
+        const updatedSection =
+          updatedCount > 0 ? ` | ${updatedCount} updated` : "";
         console.log(
-          `✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped\n`
+          `✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created${updatedSection} | ${skipped.length} skipped\n`
         );
       } else if (action === "display" && result.displayData) {
         printDataTable(
@@ -245,10 +248,13 @@ async function main() {
       if (result.fetchedCount === 0) {
         console.log(`\nℹ️ No records found`);
       } else if (action === "sync" && result.results) {
-        const { created, skipped } = result.results;
+        const { created, updated, skipped } = result.results;
         const recordLabel = result.fetchedCount === 1 ? "record" : "records";
+        const updatedCount = updated?.length || 0;
+        const updatedSection =
+          updatedCount > 0 ? ` | ${updatedCount} updated` : "";
         console.log(
-          `✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created | ${skipped.length} skipped`
+          `✅ ${result.fetchedCount} ${recordLabel} → ${created.length} created${updatedSection} | ${skipped.length} skipped`
         );
       } else if (action === "display" && result.displayData) {
         printDataTable(

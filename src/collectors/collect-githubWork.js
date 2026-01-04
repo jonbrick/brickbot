@@ -9,7 +9,7 @@ const GitHubService = require("../services/GitHubService");
  * @param {Date} endDate - End date
  * @returns {Promise<Array>} Processed GitHub merged PRs
  */
-async function fetchGithubWorkData(startDate, endDate) {
+async function fetchGitHubWorkData(startDate, endDate) {
   const service = new GitHubService();
 
   // Debug: Log the date range being queried
@@ -35,5 +35,4 @@ async function fetchGithubWorkData(startDate, endDate) {
   return activities;
 }
 
-module.exports = { fetchGithubWorkData };
-
+module.exports = { fetchGitHubWorkData };

@@ -151,7 +151,7 @@ function convertGroupToActivity(repoGroup) {
  * @param {Date} endDate - End date
  * @returns {Promise<Array>} Processed GitHub activities
  */
-async function fetchGithubPersonalData(startDate, endDate) {
+async function fetchGitHubPersonalData(startDate, endDate) {
   const service = new GitHubService();
 
   // Debug: Log the date range being queried
@@ -174,8 +174,21 @@ async function fetchGithubPersonalData(startDate, endDate) {
     service
   );
 
-  return activities;
+  // Filter activities to only include dates within requested range (after EST conversion)
+  const filteredActivities = activities.filter((activity) => {
+    const activityDate = new Date(activity.date);
+    activityDate.setHours(0, 0, 0, 0);
+    
+    const startDateOnly = new Date(startDate);
+    startDateOnly.setHours(0, 0, 0, 0);
+    
+    const endDateOnly = new Date(endDate);
+    endDateOnly.setHours(23, 59, 59, 999);
+    
+    return activityDate >= startDateOnly && activityDate <= endDateOnly;
+  });
+
+  return filteredActivities;
 }
 
-module.exports = { fetchGithubPersonalData };
-
+module.exports = { fetchGitHubPersonalData };

@@ -36,7 +36,7 @@ const WORK_COLOR_MAPPING = {
 // Maps Notion category select values (with emojis) to Google Calendar color IDs
 const EVENTS_TRIPS_CATEGORY_TO_COLOR = {
   "🍻 Interpersonal": "3", // Grape (purple)
-  "💼 Work": "9", // Blueberry (blue)
+  "💼 Work": "1", // Peacock (blue)
   "🌱 Personal": null, // Default (no color)
 };
 

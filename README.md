@@ -227,7 +227,8 @@ For each database:
 3. Extract the ID from the URL: `https://notion.so/{workspace}/{DATABASE_ID}?v=...`
 4. Add to `.env`:
    ```bash
-   NOTION_PRS_DATABASE_ID=xxxxxxxxxxxxx
+   NOTION_PERSONAL_PRS_DATABASE_ID=xxxxxxxxxxxxx
+   NOTION_WORK_PRS_DATABASE_ID=xxxxxxxxxxxxx
    NOTION_WORKOUTS_DATABASE_ID=xxxxxxxxxxxxx
    NOTION_SLEEP_DATABASE_ID=xxxxxxxxxxxxx
    NOTION_BODY_WEIGHT_DATABASE_ID=xxxxxxxxxxxxx
@@ -425,7 +426,8 @@ ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 # ============================================
 # Notion Database IDs
 # ============================================
-NOTION_PRS_DATABASE_ID=xxxxxxxxxxxxx
+NOTION_PERSONAL_PRS_DATABASE_ID=xxxxxxxxxxxxx
+NOTION_WORK_PRS_DATABASE_ID=xxxxxxxxxxxxx
 NOTION_WORKOUTS_DATABASE_ID=xxxxxxxxxxxxx
 NOTION_SLEEP_DATABASE_ID=xxxxxxxxxxxxx
 NOTION_BODY_WEIGHT_DATABASE_ID=xxxxxxxxxxxxx

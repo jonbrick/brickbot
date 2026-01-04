@@ -74,7 +74,7 @@ The most important architectural concept is the **three-layer data flow** where 
 
 **Purpose**: Collect and persist raw API data in Notion databases
 
-- Uses **integration names**: `oura`, `strava`, `github`, `withings`, `steam`
+- Uses **integration names**: `oura`, `strava`, `githubPersonal`, `githubWork`, `withings`, `steam`
 - Each integration = one Notion database
 - No domain abstraction yet
 - Files: `collect-*.js`, `*-to-notion-*.js`, `IntegrationDatabase.js`
@@ -198,7 +198,7 @@ Brickbot supports different sync patterns based on data characteristics:
 
 #### Checkbox Pattern (One-Way Sync)
 
-Used by: oura, strava, github, steam, withings, bloodPressure, medications
+Used by: oura, strava, githubPersonal, githubWork, steam, withings, bloodPressure, medications
 
 - Tracks sync status with boolean checkbox
 - Creates calendar events, never updates or deletes

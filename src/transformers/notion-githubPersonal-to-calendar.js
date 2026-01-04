@@ -1,4 +1,4 @@
-// Transforms GitHub Notion records to PRs Calendar events
+// Transforms GitHub Personal Notion records to Personal PRs Calendar events
 
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
@@ -7,44 +7,46 @@ const { formatDateOnly } = require("../utils/date");
 /**
  * Format PR description for event description
  *
- * @param {Object} prRecord - Notion PR record
- * @param {GitHubDatabase} prRepo - PR database instance for extracting properties
+ * @param {Object} personalRecord - Notion PR record
+ * @param {GitHubDatabase} personalRepo - PR database instance for extracting properties
  * @returns {string} Formatted description
  */
-function formatPRDescription(prRecord, prRepo) {
-  const props = config.notion.properties.github;
+function formatPRDescription(personalRecord, personalRepo) {
+  const props = config.notion.properties.githubPersonal;
 
   const repository =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.repository)) ||
-    "Unknown Repository";
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.repository)
+    ) || "Unknown Repository";
 
   const commitsCount =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitsCount)) || 0;
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.commitsCount)
+    ) || 0;
 
   const totalLinesAdded =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) || 0;
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.totalLinesAdded)
+    ) || 0;
 
   const totalLinesDeleted =
-    prRepo.extractProperty(
-      prRecord,
+    personalRepo.extractProperty(
+      personalRecord,
       config.notion.getPropertyName(props.totalLinesDeleted)
     ) || 0;
 
-  const prTitles =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.prTitles)) || "";
-
   const commitMessages =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitMessages)) || "";
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.commitMessages)
+    ) || "";
 
   let description = `💻 ${repository}
 📊 ${commitsCount} commit${commitsCount === 1 ? "" : "s"}
 📈 +${totalLinesAdded}/-${totalLinesDeleted} lines`;
-
-  if (prTitles) {
-    description += `\n🔀 PR: ${prTitles}`;
-  } else {
-    description += `\n🔀 PR: None`;
-  }
 
   if (commitMessages) {
     description += `\n\n📝 Commits:\n${commitMessages}`;
@@ -77,43 +79,49 @@ function extractRepoName(repository) {
 /**
  * Transform Notion PR record to Google Calendar event (all-day)
  *
- * @param {Object} prRecord - Notion page object
- * @param {GitHubDatabase} prRepo - PR database instance for extracting properties
+ * @param {Object} personalRecord - Notion page object
+ * @param {GitHubDatabase} personalRepo - PR database instance for extracting properties
  * @returns {Object} Google Calendar event data
  */
-function transformPRToCalendarEvent(prRecord, prRepo) {
-  const props = config.notion.properties.github;
+function transformGithubPersonalToCalendarEvent(personalRecord, personalRepo) {
+  const props = config.notion.properties.githubPersonal;
 
   // Extract properties from Notion page
   const repository =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.repository)) ||
-    "Unknown Repository";
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.repository)
+    ) || "Unknown Repository";
 
-  const date = prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.date));
+  const date = personalRepo.extractProperty(
+    personalRecord,
+    config.notion.getPropertyName(props.date)
+  );
 
   const commitsCount =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.commitsCount)) || 0;
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.commitsCount)
+    ) || 0;
 
   const totalLinesAdded =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.totalLinesAdded)) || 0;
+    personalRepo.extractProperty(
+      personalRecord,
+      config.notion.getPropertyName(props.totalLinesAdded)
+    ) || 0;
 
   const totalLinesDeleted =
-    prRepo.extractProperty(
-      prRecord,
+    personalRepo.extractProperty(
+      personalRecord,
       config.notion.getPropertyName(props.totalLinesDeleted)
     ) || 0;
 
-  const projectType =
-    prRepo.extractProperty(prRecord, config.notion.getPropertyName(props.projectType)) ||
-    "Personal";
-
-  // Get calendar ID using centralized mapper (automatically extracts Project Type property)
-  const calendarId = resolveCalendarId("github", prRecord, prRepo);
+  // Get calendar ID using centralized mapper
+  const calendarId = resolveCalendarId("githubPersonal", personalRecord, personalRepo);
 
   if (!calendarId) {
-    const calendarType = projectType === "Work" ? "Work" : "Personal";
     throw new Error(
-      `${calendarType} PR calendar ID not configured. Set ${calendarType.toUpperCase()}_PRS_CALENDAR_ID in .env file.`
+      "Personal PR calendar ID not configured. Set PERSONAL_PRS_CALENDAR_ID in .env file."
     );
   }
 
@@ -143,14 +151,11 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
   }
 
   // Create description with PR details
-  const description = formatPRDescription(prRecord, prRepo);
-
-  // Map projectType to accountType
-  const accountType = projectType === "Work" ? "work" : "personal";
+  const description = formatPRDescription(personalRecord, personalRepo);
 
   return {
     calendarId,
-    accountType,
+    accountType: "personal",
     event: {
       summary,
       description,
@@ -165,7 +170,8 @@ function transformPRToCalendarEvent(prRecord, prRepo) {
 }
 
 module.exports = {
-  transformPRToCalendarEvent,
+  transformGithubPersonalToCalendarEvent,
   formatPRDescription,
   extractRepoName,
 };
+

@@ -87,7 +87,8 @@ const githubDb = new GitHubDatabase();
 // New way (one class, config-driven)
 const ouraDb = new IntegrationDatabase("oura");
 const stravaDb = new IntegrationDatabase("strava");
-const githubDb = new IntegrationDatabase("github");
+const githubPersonalDb = new IntegrationDatabase("githubPersonal");
+const githubWorkDb = new IntegrationDatabase("githubWork");
 ```
 
 ### Template Method Pattern (BaseWorkflow)

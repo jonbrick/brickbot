@@ -47,17 +47,23 @@ const calendarMappings = {
   },
 
   /**
-   * GitHub PRs calendar mapping
-   * Routes based on "Project Type" property value
+   * GitHub Personal PRs calendar mapping
+   * All personal PRs go to personal PRs calendar (direct mapping)
    */
-  github: {
-    type: "property-based",
-    sourceDatabase: "prs",
-    routingProperty: "Project Type",
-    mappings: {
-      Personal: process.env.PERSONAL_PRS_CALENDAR_ID,
-      Work: process.env.WORK_PRS_CALENDAR_ID,
-    },
+  githubPersonal: {
+    type: "direct",
+    sourceDatabase: "githubPersonal",
+    calendarId: process.env.PERSONAL_PRS_CALENDAR_ID,
+  },
+
+  /**
+   * GitHub Work PRs calendar mapping
+   * All work PRs go to work PRs calendar (direct mapping)
+   */
+  githubWork: {
+    type: "direct",
+    sourceDatabase: "githubWork",
+    calendarId: process.env.WORK_PRS_CALENDAR_ID,
   },
 
   /**

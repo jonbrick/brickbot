@@ -36,7 +36,7 @@ async function selectAction() {
   const choices = [
     {
       name: `All Sources (${sortedCollectors
-        .map((s) => s.name.split(" ")[0])
+        .map((s) => s.name.split(" (")[0])
         .join(", ")})`,
       value: "all",
     },

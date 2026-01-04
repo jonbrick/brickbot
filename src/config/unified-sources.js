@@ -795,8 +795,8 @@ const INTEGRATIONS = {
       displayNameProperty: "repository",
       displayNameFormat: "repoDate",
       skipReason: "Missing date",
-      transformerFile: "../transformers/notion-github-to-calendar-prs.js",
-      transformerFunction: "transformPRToCalendarEvent",
+      transformerFile: "../transformers/notion-githubPersonal-to-calendar.js",
+      transformerFunction: "transformGithubPersonalToCalendarEvent",
       useMultipleCalendarServices: true,
       displayFields: [
         {
@@ -863,8 +863,8 @@ const INTEGRATIONS = {
       displayNameProperty: "prTitle",
       displayNameFormat: "text",
       skipReason: "Missing merge date",
-      transformerFile: "../transformers/notion-github-to-calendar-prs.js",
-      transformerFunction: "transformPRToCalendarEvent",
+      transformerFile: "../transformers/notion-githubWork-to-calendar.js",
+      transformerFunction: "transformGithubWorkToCalendarEvent",
       useMultipleCalendarServices: true,
       displayFields: [
         {

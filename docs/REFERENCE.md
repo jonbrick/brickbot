@@ -194,7 +194,8 @@ const DEFAULT_BATCH_SIZE = 10;
 INTEGRATIONS: {
   oura: { id: "oura", ... },
   strava: { id: "strava", ... },
-  github: { id: "github", ... },
+  githubPersonal: { id: "githubPersonal", ... },
+  githubWork: { id: "githubWork", ... },
 }
 ```
 
@@ -604,7 +605,8 @@ Universal date range selector with context-aware options.
 NOTION_API_KEY=secret_xxxxx
 NOTION_OURA_DATABASE_ID=xxxxx
 NOTION_STRAVA_DATABASE_ID=xxxxx
-NOTION_GITHUB_DATABASE_ID=xxxxx
+NOTION_PERSONAL_PRS_DATABASE_ID=xxxxx
+NOTION_WORK_PRS_DATABASE_ID=xxxxx
 NOTION_STEAM_DATABASE_ID=xxxxx
 NOTION_WITHINGS_DATABASE_ID=xxxxx
 PERSONAL_WEEK_SUMMARY_DATABASE_ID=xxxxx

@@ -52,7 +52,7 @@ Personal data pipeline that automatically collects data from external sources (G
 ### Layer 1: API → Notion (Integration Names)
 
 - External API data → Notion databases
-- Uses **integration names**: `oura`, `strava`, `github`, `withings`, `steam`
+- Uses **integration names**: `oura`, `strava`, `githubPersonal`, `githubWork`, `withings`, `steam`
 - Each integration has its own Notion database
 - Example: Oura sleep data → Notion Sleep database
 

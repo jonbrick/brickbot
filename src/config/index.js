@@ -102,7 +102,7 @@ function validateConfig() {
   // Optional: Strict validation mode
   if (process.env.VALIDATE_ALL_INTEGRATIONS === "true") {
     // Validate all database IDs are set
-    const requiredDatabases = ["oura", "strava", "github", "steam", "withings"];
+    const requiredDatabases = ["oura", "strava", "steam", "withings"];
     requiredDatabases.forEach((dbKey) => {
       if (!notion.databases[dbKey]) {
         errors.push(

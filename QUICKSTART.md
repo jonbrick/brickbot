@@ -87,7 +87,7 @@ Add a calendar? Edit the config. Add an integration? Edit the config. No code ch
 - **BaseWorkflow**: Reusable batch processing logic
 - **Calendar Mapper**: Declarative routing rules
 
-## Three Main Commands
+## Four Main Commands
 
 ### 1. Collect Data
 
@@ -112,6 +112,14 @@ yarn summarize
 ```
 
 Pulls calendar data, aggregates metrics, generates AI summaries, creates weekly summary.
+
+### 4. Sweep Reminders
+
+```bash
+yarn sweep
+```
+
+Moves Apple Reminders into Notion Tasks for today, then deletes from Reminders.
 
 ## Common Workflows
 

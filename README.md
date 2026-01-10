@@ -566,6 +566,14 @@ yarn summarize
 
 Pulls calendar data, aggregates metrics, generates AI summaries, and creates weekly summary pages in Notion.
 
+#### 4. Sweep Apple Reminders to Notion
+
+```bash
+yarn sweep
+```
+
+Moves incomplete reminders from Apple Reminders into Notion Tasks database (Due Date = today, Status = 🔴 To Do), then deletes them from Reminders.
+
 ### Token Management
 
 ```bash
@@ -587,6 +595,12 @@ yarn update         # Sync to calendar
 
 ```bash
 yarn summarize # Generate weekly summaries and insights
+```
+
+### Quick Task Capture
+
+```bash
+yarn sweep  # Move reminders to Notion Tasks
 ```
 
 ## Testing & Validation

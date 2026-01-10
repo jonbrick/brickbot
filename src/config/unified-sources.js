@@ -788,7 +788,8 @@ const INTEGRATIONS = {
     collect: true,
     displayMetadata: {
       tableTitle: "GITHUB PERSONAL ACTIVITIES",
-      emptyMessage: "⚠️  No GitHub personal activities found for this date range\n",
+      emptyMessage:
+        "⚠️  No GitHub personal activities found for this date range\n",
       displayType: "githubPersonal",
     },
     updateCalendar: true,
@@ -2023,7 +2024,7 @@ const CONTENT_SPLITS = {
           "2025",
           "2026",
         ],
-        coding: ["feat:", "bug:", "spike:"],
+        coding: ["feat:", "bug:", "spike:", "merge", "docs:"],
       },
     },
   },

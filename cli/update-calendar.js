@@ -93,6 +93,7 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   const aggregatedResults = {
     successful: [],
     failed: [],
+    errors: [],
   };
 
   for (let i = 0; i < sources.length; i++) {
@@ -116,7 +117,28 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
         const { created, skipped, deleted, errors } = result.results;
         const recordLabel = result.fetchedCount === 1 ? "record" : "records";
         const deletedCount = deleted?.length || 0;
-        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} synced | ${skipped.length} skipped | ${deletedCount} deleted\n`);
+        const errorCount = errors?.length || 0;
+        const errorSection = errorCount > 0 ? ` | ${errorCount} errors` : "";
+        console.log(`✅ ${result.fetchedCount} ${recordLabel} → ${created.length} synced | ${skipped.length} skipped | ${deletedCount} deleted${errorSection}\n`);
+        
+        // Collect errors for final summary
+        if (errorCount > 0) {
+          errors.forEach((error) => {
+            const identifier =
+              error.session ||
+              error.activity ||
+              error.measurementId ||
+              error.pageId ||
+              "Unknown";
+            aggregatedResults.errors.push({
+              source: source.name,
+              identifier,
+              error: error.error || error.message || "Unknown error",
+            });
+            console.log(`   ❌ ${identifier}: ${error.error || error.message || "Unknown error"}`);
+          });
+          console.log(); // Blank line after errors
+        }
       } else if (action === "display" && result.displayData) {
         displayRecordsTable(result.displayData, result.metadata.sourceId);
       }
@@ -138,7 +160,9 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   // Final summary
   console.log(output.divider());
   const duration = Math.round((Date.now() - startTime) / 1000);
-  output.done(`${aggregatedResults.successful.length} sources completed`, `${duration}s`);
+  const errorCount = aggregatedResults.errors.length;
+  const errorText = errorCount > 0 ? ` (${errorCount} error${errorCount !== 1 ? "s" : ""})` : "";
+  output.done(`${aggregatedResults.successful.length} sources completed${errorText}`, `${duration}s`);
 }
 
 /**

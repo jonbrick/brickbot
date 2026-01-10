@@ -9,6 +9,7 @@
     "summarize": "node cli/summarize-week.js",
     "recap": "node cli/recap-month.js",
     "generate": "node cli/generate-year.js",
+    "sweep": "node cli/sweep-reminders.js",
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",
     "tokens:setup": "node cli/tokens/setup.js",

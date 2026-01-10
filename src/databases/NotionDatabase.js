@@ -512,9 +512,19 @@ class NotionDatabase {
         formatted[key] = {
           multi_select: value.map((item) => ({ name: item })),
         };
-      } else if (typeof value === "object" && value.type) {
-        // Already formatted
-        formatted[key] = value;
+      } else if (typeof value === "object") {
+        // Check if it's already a Notion API-formatted property
+        const notionPropertyKeys = ['status', 'select', 'title', 'date', 'number', 'checkbox', 'rich_text', 'url', 'multi_select'];
+        const hasNotionPropertyKey = Object.keys(value).some(key => notionPropertyKeys.includes(key));
+        
+        if (hasNotionPropertyKey) {
+          // Already formatted for Notion API
+          formatted[key] = value;
+        } else if (value.type) {
+          // Legacy format with type property
+          formatted[key] = value;
+        }
+        // Otherwise skip (object doesn't match any pattern)
       }
     });
 

@@ -751,7 +751,7 @@ CONTENT_SPLITS: {
     personal: {
       personal: {
         admin: ["journals", "retro", "plan", "recap"],  // existing
-        coding: ["feat:", "bug:", "spike:", "merge", "docs:"],         // ADD THIS
+        coding: ["feat:", "bug:", "spike:", "merge", "docs:", "skill:"],         // ADD THIS
       },
     },
   },

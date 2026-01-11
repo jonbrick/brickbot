@@ -2024,7 +2024,7 @@ const CONTENT_SPLITS = {
           "2025",
           "2026",
         ],
-        coding: ["feat:", "bug:", "spike:", "merge", "docs:"],
+        coding: ["feat:", "bug:", "spike:", "merge", "docs:", "skill:"],
       },
     },
   },

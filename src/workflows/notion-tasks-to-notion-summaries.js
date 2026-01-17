@@ -198,6 +198,7 @@ async function summarizeWeek(recapType, weekNumber, year, options = {}) {
       };
       results.counts = counts;
       results.errors = errors;
+      results.selectedSources = sourcesToFetch;
       return results;
     }
 

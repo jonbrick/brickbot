@@ -13,7 +13,7 @@ const { EMOJI } = require("./output");
 /**
  * Build success message data grouped by SUMMARY_GROUPS with emojis
  * @param {Array<string>} calendarsToFetch - Calendar group IDs to include
- * @param {Object} summary - Summary object with calculated values
+ * @param {Object} summary Summary object with calculated values
  * @param {Object} sourcesConfig - Sources configuration
  * @returns {Array<string>} Formatted lines for display
  */

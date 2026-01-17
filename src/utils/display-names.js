@@ -44,7 +44,7 @@ function getGroupShortName(groupId, fullName) {
 /**
  * Get short display name for a category or field
  * @param {string} key - Category key or field key (e.g., "physicalHealth", "avgSystolic")
- * @param {string} label - Label from dataField (e.g., "Physical Health - Sessions")
+ * @param {string} label - Label from dataField (e.g., "Physical Health Sessions")
  * @returns {string} Short name for display (e.g., "Physical")
  */
 function getCategoryShortName(key, label) {

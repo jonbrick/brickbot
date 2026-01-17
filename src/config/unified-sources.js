@@ -21,20 +21,20 @@ const FIELD_TEMPLATES = {
    * Generates: meditationDays, meditationSessions, meditationHoursTotal, meditationBlocks
    */
   standardActivity: (id, name) => [
-    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+    { type: "count", label: `${name} Days`, notionProperty: `${id}Days` },
     {
       type: "count",
-      label: `${name} - Sessions`,
+      label: `${name} Sessions`,
       notionProperty: `${id}Sessions`,
     },
     {
       type: "decimal",
-      label: `${name} - Hours Total`,
+      label: `${name} Hours Total`,
       notionProperty: `${id}HoursTotal`,
     },
     {
       type: "optionalText",
-      label: `${name} - Blocks`,
+      label: `${name} Blocks`,
       notionProperty: `${id}Blocks`,
     },
   ],
@@ -44,7 +44,7 @@ const FIELD_TEMPLATES = {
    * Used by: normalWakeUp, sober
    */
   simpleCounter: (id, name) => [
-    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+    { type: "count", label: `${name} Days`, notionProperty: `${id}Days` },
   ],
 
   /**
@@ -52,10 +52,10 @@ const FIELD_TEMPLATES = {
    * Used by: drinking
    */
   counterWithBlocks: (id, name) => [
-    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+    { type: "count", label: `${name} Days`, notionProperty: `${id}Days` },
     {
       type: "optionalText",
-      label: `${name} - Blocks`,
+      label: `${name} Blocks`,
       notionProperty: `${id}Blocks`,
     },
   ],
@@ -65,7 +65,7 @@ const FIELD_TEMPLATES = {
    * Used by: sleepIn (with special sleepHoursTotal added separately)
    */
   sleepDays: (id, name) => [
-    { type: "count", label: `${name} - Days`, notionProperty: `${id}Days` },
+    { type: "count", label: `${name} Days`, notionProperty: `${id}Days` },
   ],
 
   /**
@@ -75,17 +75,17 @@ const FIELD_TEMPLATES = {
   categoryActivity: (id, name) => [
     {
       type: "count",
-      label: `${name} - Sessions`,
+      label: `${name} Sessions`,
       notionProperty: `${id}Sessions`,
     },
     {
       type: "decimal",
-      label: `${name} - Hours Total`,
+      label: `${name} Hours Total`,
       notionProperty: `${id}HoursTotal`,
     },
     {
       type: "optionalText",
-      label: `${name} - Blocks`,
+      label: `${name} Blocks`,
       notionProperty: `${id}Blocks`,
     },
   ],
@@ -97,12 +97,12 @@ const FIELD_TEMPLATES = {
   taskCategory: (id, name) => [
     {
       type: "count",
-      label: `${name} - Tasks Complete`,
+      label: `${name} Tasks Complete`,
       notionProperty: `${id}TasksComplete`,
     },
     {
       type: "optionalText",
-      label: `${name} - Task Details`,
+      label: `${name} Task Details`,
       notionProperty: `${id}TaskDetails`,
     },
   ],
@@ -135,7 +135,7 @@ const CALENDARS = {
       ...FIELD_TEMPLATES.sleepDays("sleepIn", "Sleep In"),
       {
         type: "decimal",
-        label: "Sleep - Hours Total",
+        label: "Sleep Hours Total",
         notionProperty: "sleepHoursTotal",
       },
     ],
@@ -218,7 +218,7 @@ const CALENDARS = {
     dataFields: [
       {
         type: "decimal",
-        label: "Body Weight - Average",
+        label: "Body Weight Average",
         notionProperty: "bodyWeightAverage",
       },
     ],
@@ -231,12 +231,12 @@ const CALENDARS = {
     dataFields: [
       {
         type: "decimal",
-        label: "Blood Pressure - Average Systolic",
+        label: "Blood Pressure Average Systolic",
         notionProperty: "avgSystolic",
       },
       {
         type: "decimal",
-        label: "Blood Pressure - Average Diastolic",
+        label: "Blood Pressure Diastolic Average",
         notionProperty: "avgDiastolic",
       },
     ],
@@ -249,12 +249,12 @@ const CALENDARS = {
     dataFields: [
       {
         type: "count",
-        label: "Personal PRs - Sessions",
+        label: "Personal PRs Sessions",
         notionProperty: "personalPRsSessions",
       },
       {
         type: "optionalText",
-        label: "Personal PRs - Details",
+        label: "Personal PRs Details",
         notionProperty: "personalPRsDetails",
       },
     ],
@@ -267,12 +267,12 @@ const CALENDARS = {
     dataFields: [
       {
         type: "count",
-        label: "Work PRs - Sessions",
+        label: "Work PRs Sessions",
         notionProperty: "workPRsSessions",
       },
       {
         type: "optionalText",
-        label: "Work PRs - Details",
+        label: "Work PRs Details",
         notionProperty: "workPRsDetails",
       },
     ],
@@ -335,7 +335,7 @@ const CALENDARS = {
         dataFields: [
           {
             type: "optionalText",
-            label: "Ignore - Blocks",
+            label: "Ignore Blocks",
             notionProperty: "ignoreBlocks",
           },
         ],
@@ -2056,7 +2056,7 @@ const MONTHLY_RECAP_BLOCK_PROPERTIES = {
     hobbies: { key: "personalHobbiesBlocks", name: "Hobbies - Block Details" },
     mentalHealth: {
       key: "personalMentalHealthBlocks",
-      name: "Mental Health - Blocks",
+      name: "Mental Health  Blocks",
     },
   },
   work: {

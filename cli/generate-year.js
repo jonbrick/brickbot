@@ -843,7 +843,7 @@ async function runPhase3(pageId, databasesPageId, year, notionClient) {
 
 /**
  * Check if Phase 4 is already complete by checking Weeks database row count
- * @param {string} weeksDbId - Weeks database ID
+ * @param {string} weeksDbId Weeks database ID
  * @param {Object} notionClient - Notion client instance
  * @returns {Promise<boolean>} True if Phase 4 is complete
  */
@@ -1194,7 +1194,7 @@ async function runPhase4(pageId, databasesPageId, year, notionClient) {
 
 /**
  * Check if Phase 5 is already complete by checking if Week 01 has a Month relation set
- * @param {string} weeksDbId - Weeks database ID
+ * @param {string} weeksDbId Weeks database ID
  * @param {string} relationPropertyName - Relation property name
  * @param {Object} notionClient - Notion client instance
  * @returns {Promise<boolean>} True if Phase 5 is complete
@@ -1233,7 +1233,7 @@ async function checkPhase5Complete(weeksDbId, relationPropertyName, notionClient
 
 /**
  * Fetch all week rows with their titles, dates, and page IDs
- * @param {string} weeksDbId - Weeks database ID
+ * @param {string} weeksDbId Weeks database ID
  * @param {string} datePropertyName - Date property name
  * @param {Object} notionClient - Notion client instance
  * @returns {Promise<Array>} Array of {pageId, title, startDate, endDate} objects
@@ -1286,7 +1286,7 @@ async function getWeekRows(weeksDbId, datePropertyName, notionClient) {
 
 /**
  * Fetch all month rows and build a map from month name to page ID
- * @param {string} monthsDbId - Months database ID
+ * @param {string} monthsDbId Months database ID
  * @param {Object} notionClient - Notion client instance
  * @returns {Promise<Object>} Object mapping month name (e.g., "January") to page ID
  */
@@ -1712,25 +1712,25 @@ async function createWeeklyRecords(databaseMap, year, notionClient) {
   
   const weeklyConfigs = [
     {
-      dbName: "{year} Personal Summaries - Weeks",
+      dbName: "{year} Personal Summaries Weeks",
       titleProperty: "Week Summary",
       titleFormat: (weekNum) => `Week ${String(weekNum).padStart(2, "0")} Personal Summary`,
       relationProperty: "⏰ {year} Weeks"
     },
     {
-      dbName: "{year} Work Summaries - Weeks",
+      dbName: "{year} Work Summaries Weeks",
       titleProperty: "Week Summary",
       titleFormat: (weekNum) => `Week ${String(weekNum).padStart(2, "0")} Work Summary`,
       relationProperty: "⏰ {year} Weeks"
     },
     {
-      dbName: "{year} Personal Retro - Weeks",
+      dbName: "{year} Personal Retro Weeks",
       titleProperty: "Personal Retro",
       titleFormat: (weekNum) => `Week ${String(weekNum).padStart(2, "0")} Personal Retro`,
       relationProperty: "⏰ {year} Weeks"
     },
     {
-      dbName: "{year} Work Retro - Weeks",
+      dbName: "{year} Work Retro Weeks",
       titleProperty: "Work Retro",
       titleFormat: (weekNum) => `Week ${String(weekNum).padStart(2, "0")} Work Retro`,
       relationProperty: "⏰ {year} Weeks"
@@ -2329,8 +2329,8 @@ async function main() {
       console.log(`  • ${year} Tasks: Status`);
       console.log(`  • ${year} Goals: Status`);
       console.log(`  • ${year} Rocks: Status, Retro`);
-      console.log(`  • ${year} Personal Retro - Weeks: Status`);
-      console.log(`  • ${year} Work Retro - Weeks: Status`);
+      console.log(`  • ${year} Personal Retro Weeks: Status`);
+      console.log(`  • ${year} Work Retro Weeks: Status`);
       console.log(`  • ${year} Personal Recaps - Month: Personal Recap Status`);
       console.log(`  • ${year} Work Recaps - Month: Work Recap Status`);
       console.log("\nIn Notion: Open each database → + New Property → Status");

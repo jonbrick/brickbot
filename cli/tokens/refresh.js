@@ -85,7 +85,7 @@ async function main() {
           service: serviceConfig.name,
           success: true,
           message: "Refreshed successfully",
-          details: result.envUpdates
+         Details: result.envUpdates
             ? Object.entries(result.envUpdates).map(
                 ([key, value]) => `${key} updated`
               )
@@ -109,7 +109,7 @@ async function main() {
             service: serviceConfig.name,
             success: false,
             message: "Refresh token expired or revoked",
-            details: [
+           Details: [
               "❌ This refresh token is no longer valid and cannot be refreshed.",
               "💡 Run 'yarn tokens:setup' to re-authenticate and get new tokens."
             ],

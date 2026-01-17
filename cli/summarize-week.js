@@ -459,6 +459,25 @@ async function main() {
         );
         weekResults.push(weekResult);
 
+        // Debug logging - check summary immediately after processWeek
+        if (process.env.DEBUG || displayOnly) {
+          console.log(`\n[DEBUG cli] After processWeek - Week ${weekNumber}, ${year}`);
+          if (weekResult.work) {
+            console.log(`[DEBUG cli] weekResult.work.summary exists:`, !!weekResult.work.summary);
+            console.log(`[DEBUG cli] weekResult.work.summary keys:`, weekResult.work.summary ? Object.keys(weekResult.work.summary) : 'N/A');
+            console.log(`[DEBUG cli] weekResult.work.summary count:`, weekResult.work.summary ? Object.keys(weekResult.work.summary).length : 0);
+          } else {
+            console.log(`[DEBUG cli] weekResult.work: null`);
+          }
+          if (weekResult.personal) {
+            console.log(`[DEBUG cli] weekResult.personal.summary exists:`, !!weekResult.personal.summary);
+            console.log(`[DEBUG cli] weekResult.personal.summary keys:`, weekResult.personal.summary ? Object.keys(weekResult.personal.summary) : 'N/A');
+            console.log(`[DEBUG cli] weekResult.personal.summary count:`, weekResult.personal.summary ? Object.keys(weekResult.personal.summary).length : 0);
+          } else {
+            console.log(`[DEBUG cli] weekResult.personal: null`);
+          }
+        }
+
       // Update counts
       if (weekResult.work) {
         if (weekResult.work.error) {
@@ -584,6 +603,19 @@ async function main() {
         // Display work results
         if (weekResult.work) {
           if (weekResult.work.summary) {
+            // Debug logging - check summary before displaySourceData
+            if (process.env.DEBUG || displayOnly) {
+              console.log(`\n[DEBUG cli] Before displaySourceData (work) - Week ${weekNumber}, ${year}`);
+              console.log(`[DEBUG cli] weekResult.work keys:`, Object.keys(weekResult.work));
+              console.log(`[DEBUG cli] weekResult.work.summary keys:`, Object.keys(weekResult.work.summary || {}));
+              console.log(`[DEBUG cli] weekResult.work.summary count:`, Object.keys(weekResult.work.summary || {}).length);
+              const summarySample = {};
+              const summaryKeys = Object.keys(weekResult.work.summary || {});
+              summaryKeys.slice(0, 5).forEach(key => {
+                summarySample[key] = weekResult.work.summary[key];
+              });
+              console.log(`[DEBUG cli] weekResult.work.summary sample (first 5):`, JSON.stringify(summarySample, null, 2));
+            }
             output.sectionHeader(`Work Summary - Week ${weekNumber}, ${year}`);
             displaySourceData(weekResult.work, "all");
             if (weekResult.work.error) {
@@ -602,6 +634,19 @@ async function main() {
         // Display personal results
         if (weekResult.personal) {
           if (weekResult.personal.summary) {
+            // Debug logging - check summary before displaySourceData
+            if (process.env.DEBUG || displayOnly) {
+              console.log(`\n[DEBUG cli] Before displaySourceData (personal) - Week ${weekNumber}, ${year}`);
+              console.log(`[DEBUG cli] weekResult.personal keys:`, Object.keys(weekResult.personal));
+              console.log(`[DEBUG cli] weekResult.personal.summary keys:`, Object.keys(weekResult.personal.summary || {}));
+              console.log(`[DEBUG cli] weekResult.personal.summary count:`, Object.keys(weekResult.personal.summary || {}).length);
+              const summarySample = {};
+              const summaryKeys = Object.keys(weekResult.personal.summary || {});
+              summaryKeys.slice(0, 5).forEach(key => {
+                summarySample[key] = weekResult.personal.summary[key];
+              });
+              console.log(`[DEBUG cli] weekResult.personal.summary sample (first 5):`, JSON.stringify(summarySample, null, 2));
+            }
             output.sectionHeader(
               `Personal Summary - Week ${weekNumber}, ${year}`
             );

@@ -16,7 +16,7 @@ const config = require("../config");
 /**
  * Extract week number from page title
  * @param {Object} page - Notion page object
- * @param {Object} summaryDb - SummaryDatabase instance
+ * @param {Object} summaryDb SummaryDatabase instance
  * @returns {number|null} Week number or null if not found
  */
 function extractWeekNumberFromTitle(page, summaryDb) {
@@ -153,7 +153,7 @@ function transformWeeklyText(weeklyText, weekNumber) {
  * Groups all blocks by week first, then combines with single week header per week
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {string} recapType - "personal" or "work"
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @returns {string} Combined blocks text
  */
 function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
@@ -201,7 +201,7 @@ function combineWeeklyBlocks(weeklySummaries, recapType, summaryDb) {
  * Groups all blocks by week first, then combines with single week header per week
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {string} recapType - "personal" or "work"
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @param {Array<string>} categoryFields - Array of block field keys to include
  * @param {string} columnName - Column name for filtering (e.g., "personalFamilyBlocks", "workMeetingsBlocks")
  * @returns {string} Combined blocks text for this category
@@ -258,7 +258,7 @@ function combineWeeklyBlocksByCategory(
  * Groups all tasks by week first, then combines with single week header per week
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {string} recapType - "personal" or "work"
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @param {Array<string>} categoryFields - Array of task field keys to include
  * @param {string} columnName - Column name for filtering (e.g., "personalPersonalTasks", "workDesignTasks")
  * @returns {string} Combined tasks text for this category
@@ -314,7 +314,7 @@ function combineWeeklyTasksByCategory(
  * Extract and combine personal blocks by category from weekly summary pages
  * Returns an object with four category-specific block fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @returns {Object} Object with personalFamilyBlocks, personalRelationshipBlocks, personalInterpersonalBlocks, and personalHobbiesBlocks
  */
 function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
@@ -369,7 +369,7 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
  * Extract and combine work blocks by category from weekly summary pages
  * Returns an object with two category-specific block fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @returns {Object} Object with workMeetingsBlocks and workSocialBlocks
  */
 function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
@@ -400,7 +400,7 @@ function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
  * Extract and combine personal tasks by category from weekly summary pages
  * Returns an object with four category-specific task fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @returns {Object} Object with personalPersonalTasks, personalHomeTasks, personalPhysicalHealthTasks, personalMentalHealthTasks, and personalAdminTasks
  */
 function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
@@ -463,7 +463,7 @@ function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
  * Extract and combine work tasks by category from weekly summary pages
  * Returns an object with five category-specific task fields
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
- * @param {Object} summaryDb - SummaryDatabase instance for extracting properties
+ * @param {Object} summaryDb SummaryDatabase instance for extracting properties
  * @returns {Object} Object with workDesignTasks, workResearchTasks, workAdminTasks, workCodingTasks, and workQATasks
  */
 function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
@@ -526,7 +526,7 @@ function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
  * Transform weekly recaps into monthly recap data
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {string} recapType - "personal" or "work"
- * @param {Object} summaryDb - SummaryDatabase instance
+ * @param {Object} summaryDb SummaryDatabase instance
  * @param {number} month - Month number (1-12)
  * @param {number} year - Year
  * @returns {Object} Monthly recap data

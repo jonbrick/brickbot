@@ -473,7 +473,7 @@ class TokenService {
 
     return {
       summary,
-      details: allStatus,
+     Details: allStatus,
     };
   }
 

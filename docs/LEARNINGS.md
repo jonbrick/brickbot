@@ -68,7 +68,7 @@ await db.findByUniqueId("sleep_123");
 
 - [`src/databases/IntegrationDatabase.js`](../src/databases/IntegrationDatabase.js) - Generic integration access
 - [`src/databases/NotionDatabase.js`](../src/databases/NotionDatabase.js) - Base CRUD operations
-- [`src/databases/SummaryDatabase.js`](../src/databases/SummaryDatabase.js) - Summary-specific queries
+- [`src/databases/SummaryDatabase.js`](../src/databases/SummaryDatabase.js) Summary-specific queries
 
 **See also:** [INTERNALS.md - Repository Pattern](INTERNALS.md#repository-pattern)
 

@@ -11,7 +11,7 @@ const { getSourceDataKeys } = require('../config/unified-sources');
  * Build properties object for Personal Summary database update
  * Uses config-driven approach to replace repetitive property assignments
  * 
- * @param {Object} summaryData - Summary data to convert to properties
+ * @param {Object} summaryData Summary data to convert to properties
  * @param {Object} props - Property configuration from config.notion.properties.personalSummary
  * @param {Array<string>} selectedSources - Array of source keys to ensure all fields are included for (e.g., ["sleep", "workout"])
  * @returns {Object} Properties object ready for Notion API

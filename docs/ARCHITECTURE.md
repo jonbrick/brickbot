@@ -433,7 +433,7 @@ When `yarn summarize` runs for personal summaries:
 ### Configuration Files
 
 - `src/config/notion/relationships.js` - Relationships database configuration
-- `src/config/notion/weeks.js` - Weeks database configuration (title property = "Week")
+- `src/config/notion/weeks.js` Weeks database configuration (title property = "Week")
 - The matching logic: `src/parsers/interpersonal-matcher.js`
 
 ### Common Issues

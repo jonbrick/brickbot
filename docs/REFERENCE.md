@@ -88,8 +88,8 @@ Use **summary group names**:
 
 ```javascript
 // Files
-calendar - to - notion - personal - summary.js;
-notion - tasks - to - notion - summaries.js;
+calendar - to - notion - personal Summary.js;
+notion  Tasks - to - notion - summaries.js;
 
 // Variables (internal identifiers - keep as-is)
 const personalRecapData = aggregatePersonalData();
@@ -300,7 +300,7 @@ All files should include a `@layer` annotation in their JSDoc header:
 
 /**
  * Description of what this file does
- * @layer 3 - Summary (Domain Aggregation)
+ * @layer 3 Summary (Domain Aggregation)
  */
 ```
 

@@ -795,7 +795,7 @@ function showInfo(message) {
 /**
  * Display summary table of results
  *
- * @param {Object} summary - Summary data
+ * @param {Object} summary Summary data
  */
 function showSummary(summary) {
   console.log("\n" + "=".repeat(60));

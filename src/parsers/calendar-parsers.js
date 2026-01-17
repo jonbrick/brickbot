@@ -8,7 +8,7 @@
  * Extracts weight values using regex and calculates average
  * @param {Object} calendarEvents - All calendar events keyed by fetchKey
  * @param {Function} isDateInWeek - Function to check if date is in current week
- * @param {Object} group - SUMMARY_GROUPS config for this calendar
+ * @param {Object} group Summary_GROUPS config for this calendar
  * @returns {Object} Summary fields to merge
  */
 function weightParser(calendarEvents, isDateInWeek, group) {
@@ -42,7 +42,7 @@ function weightParser(calendarEvents, isDateInWeek, group) {
  * Extracts systolic/diastolic values and calculates averages
  * @param {Object} calendarEvents - All calendar events keyed by fetchKey
  * @param {Function} isDateInWeek - Function to check if date is in current week
- * @param {Object} group - SUMMARY_GROUPS config for this calendar
+ * @param {Object} group Summary_GROUPS config for this calendar
  * @returns {Object} Summary fields to merge
  */
 function bloodPressureParser(calendarEvents, isDateInWeek, group) {

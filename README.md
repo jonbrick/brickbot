@@ -733,7 +733,7 @@ Adding a new calendar integration follows a simple 4-step process:
        },
        {
          type: "decimal",
-         label: "Meditation - Hours Total",
+         label: "Meditation Hours Total",
          notionProperty: "meditationHoursTotal",
        },
      ],

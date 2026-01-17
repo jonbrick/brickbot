@@ -819,7 +819,7 @@ Manually add these properties to your Notion databases:
 
 **Weekly Summary Database**:
 
-- `Coding - Tasks Complete` (Number)
+- `Coding Tasks Complete` (Number)
 - `Coding - Task Details` (Text)
 
 **Monthly Recap Database**:

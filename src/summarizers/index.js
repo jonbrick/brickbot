@@ -12,7 +12,7 @@ const taskWorkflow = require("../workflows/notion-tasks-to-notion-summaries");
 
 /**
  * Check if a calendar-based group is available (all calendars have env vars set)
- * @param {Object} group - Summary group configuration
+ * @param {Object} group Summary group configuration
  * @returns {boolean} True if all required calendars are configured
  */
 function isCalendarGroupAvailable(group) {
@@ -32,7 +32,7 @@ function isCalendarGroupAvailable(group) {
 
 /**
  * Check if a Notion-based group is available (database env var is set)
- * @param {Object} group - Summary group configuration
+ * @param {Object} group Summary group configuration
  * @returns {boolean} True if database env var is configured
  */
 function isNotionGroupAvailable(group) {
@@ -128,7 +128,7 @@ summarizableGroups.forEach(([id, group]) => {
 
 /**
  * Get summarizer configuration by ID
- * @param {string} id - Summary group ID
+ * @param {string} id Summary group ID
  * @returns {Object|null} Summarizer config with { id, workflow, recapType, sourceOrigin, groupConfig } or null if not found
  */
 function getSummarizer(id) {

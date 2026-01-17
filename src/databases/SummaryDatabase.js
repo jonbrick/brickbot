@@ -104,7 +104,7 @@ class SummaryDatabase extends NotionDatabase {
    * Update week summary with summary data
    *
    * @param {string} pageId - Page ID to update
-   * @param {Object} summaryData - Summary data to update
+   * @param {Object} summaryData Summary data to update
    * @param {Array<string>} selectedCalendars - Array of calendar keys to ensure all fields are included for
    * @returns {Promise<Object>} Updated page
    */
@@ -179,7 +179,7 @@ class SummaryDatabase extends NotionDatabase {
    * Note: Monthly recap records must be pre-created in Notion with format "12. Dec Summary"
    *
    * @param {string} pageId - Page ID to update (required - record must exist)
-   * @param {Object} summaryData - Summary data to update
+   * @param {Object} summaryData Summary data to update
    * @returns {Promise<Object>} Updated page
    */
   async upsertMonthRecap(pageId, summaryData) {

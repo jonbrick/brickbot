@@ -72,6 +72,13 @@ async function aggregateCalendarDataForWeek(
     error: null,
   };
 
+  // Debug logging
+  if (displayOnly || process.env.DEBUG) {
+    console.log(`\n[DEBUG workflow] recapType: ${recapType}, weekNumber: ${weekNumber}, year: ${year}`);
+    console.log(`[DEBUG workflow] selectedCalendars:`, selectedCalendars);
+    console.log(`[DEBUG workflow] displayOnly: ${displayOnly}`);
+  }
+
   try {
     // Calculate week date range
     const { startDate, endDate } = parseWeekNumber(weekNumber, year);
@@ -88,12 +95,27 @@ async function aggregateCalendarDataForWeek(
             .filter((source) => !source.isNotionSource) // Exclude Notion sources for calendar fetch
             .map((source) => source.id);
 
+    // Debug logging
+    if (displayOnly || process.env.DEBUG) {
+      console.log(`[DEBUG workflow] availableSources count: ${availableSources.length}`);
+      console.log(`[DEBUG workflow] availableSources IDs:`, availableSources.map(s => s.id));
+      console.log(`[DEBUG workflow] calendarsToFetch:`, calendarsToFetch);
+    }
+
     // Build calendar fetch configurations
     const fetchConfigs = mappings.buildCalendarFetches(
       calendarsToFetch,
       accountType,
       sourcesConfig
     );
+
+    // Debug logging
+    if (displayOnly || process.env.DEBUG) {
+      console.log(`[DEBUG workflow] fetchConfigs.length:`, fetchConfigs.length);
+      if (fetchConfigs.length > 0) {
+        console.log(`[DEBUG workflow] fetchConfigs keys:`, fetchConfigs.map(f => f.key));
+      }
+    }
 
     if (fetchConfigs.length === 0) {
       throw new Error("No calendars selected or available to fetch.");
@@ -246,6 +268,27 @@ async function aggregateCalendarDataForWeek(
     );
     results.summary = summary;
 
+    // Debug logging
+    if (displayOnly || process.env.DEBUG) {
+      console.log(`[DEBUG workflow] calendarEvents keys:`, Object.keys(calendarEvents));
+      const eventCounts = Object.entries(calendarEvents).reduce((acc, [key, events]) => {
+        acc[key] = Array.isArray(events) ? events.length : 'N/A';
+        return acc;
+      }, {});
+      console.log(`[DEBUG workflow] calendarEvents counts:`, eventCounts);
+      console.log(`[DEBUG workflow] summary keys:`, Object.keys(summary));
+      console.log(`[DEBUG workflow] summary count: ${Object.keys(summary).length}`);
+      if (Object.keys(summary).length > 0) {
+        const sampleSummary = {};
+        Object.keys(summary).slice(0, 10).forEach(key => {
+          sampleSummary[key] = summary[key];
+        });
+        console.log(`[DEBUG workflow] summary sample:`, JSON.stringify(sampleSummary, null, 2).substring(0, 800));
+      } else {
+        console.log(`[DEBUG workflow] ⚠️  Summary is EMPTY!`);
+      }
+    }
+
     // If display only, return early without updating Notion
     if (displayOnly) {
       const counts = {};
@@ -262,6 +305,7 @@ async function aggregateCalendarDataForWeek(
       };
       results.counts = counts;
       results.errors = errors;
+      results.selectedCalendars = calendarsToFetch;
       return results;
     }
 

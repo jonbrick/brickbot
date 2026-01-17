@@ -691,6 +691,25 @@ const SUMMARY_GROUPS = {
 };
 
 /**
+ * HABITS_GROUP_IDS - Groups that belong to Personal Habits database
+ * These groups are excluded from Personal Summary (they have their own database)
+ */
+const HABITS_GROUP_IDS = [
+  "workout",
+  "reading",
+  "meditation",
+  "cooking",
+  "art",
+  "coding",
+  "music",
+  "videoGames",
+  "bodyWeight",
+  "bloodPressure",
+  "sleep",
+  "drinkingDays",
+];
+
+/**
  * INTEGRATIONS - API → Notion
  * Each integration defines which Notion database it uses and which calendars it syncs to
  */
@@ -1521,9 +1540,12 @@ function derivePropertiesFromUnified(sourceType) {
   };
 
   // Filter SUMMARY_GROUPS by sourceType
-  const groups = Object.values(SUMMARY_GROUPS).filter(
-    (group) => group.sourceType === sourceType
-  );
+  const groups = Object.values(SUMMARY_GROUPS).filter((group) => {
+    if (group.sourceType !== sourceType) return false;
+    // Exclude habits groups from personal summary (they go to habits DB)
+    if (sourceType === "personal" && HABITS_GROUP_IDS.includes(group.id)) return false;
+    return true;
+  });
 
   // For each group, collect dataFields from CALENDARS
   groups.forEach((group) => {
@@ -1535,6 +1557,10 @@ function derivePropertiesFromUnified(sourceType) {
         Object.values(calendar.categories).forEach((category) => {
           if (category.dataFields) {
             category.dataFields.forEach((field) => {
+              // Skip Sessions fields
+              if (field.notionProperty.endsWith("Sessions")) {
+                return;
+              }
               properties[field.notionProperty] = {
                 name: field.label,
                 type: mapToNotionType(field.type),
@@ -1556,6 +1582,10 @@ function derivePropertiesFromUnified(sourceType) {
         // Collect direct dataFields
         if (calendar.dataFields && Array.isArray(calendar.dataFields)) {
           calendar.dataFields.forEach((field) => {
+            // Skip Sessions fields
+            if (field.notionProperty.endsWith("Sessions")) {
+              return;
+            }
             properties[field.notionProperty] = {
               name: field.label,
               type: mapToNotionType(field.type),
@@ -1569,6 +1599,10 @@ function derivePropertiesFromUnified(sourceType) {
           Object.values(calendar.categories).forEach((category) => {
             if (category.dataFields && Array.isArray(category.dataFields)) {
               category.dataFields.forEach((field) => {
+                // Skip Sessions fields
+                if (field.notionProperty.endsWith("Sessions")) {
+                  return;
+                }
                 properties[field.notionProperty] = {
                   name: field.label,
                   type: mapToNotionType(field.type),
@@ -1601,6 +1635,74 @@ function generatePersonalSummaryProperties() {
  */
 function generateWorkSummaryProperties() {
   return derivePropertiesFromUnified("work");
+}
+
+/**
+ * Generate Personal Habits properties object from habits-related data sources
+ * This includes activities, health metrics, sleep, and drinking (excluding Blocks fields)
+ * @returns {Object} Properties object compatible with personal-habits.js format
+ */
+function generateHabitsProperties() {
+  const properties = {
+    // Special metadata properties (not in data sources)
+    title: { name: "Week Summary", type: "title", enabled: true },
+    date: { name: "Date", type: "date", enabled: true },
+    weekNumber: { name: "Week Number", type: "number", enabled: true },
+    year: { name: "Year", type: "number", enabled: true },
+  };
+
+  // Filter SUMMARY_GROUPS to only include habits-related groups
+  const groups = Object.values(SUMMARY_GROUPS).filter(
+    (group) =>
+      HABITS_GROUP_IDS.includes(group.id) && group.sourceType === "personal"
+  );
+
+  // For each group, collect dataFields from CALENDARS
+  groups.forEach((group) => {
+    // Handle calendar-based groups
+    if (group.calendars && Array.isArray(group.calendars)) {
+      group.calendars.forEach((calendarId) => {
+        const calendar = CALENDARS[calendarId];
+        if (!calendar) return;
+
+        // Collect direct dataFields (excluding Blocks)
+        if (calendar.dataFields && Array.isArray(calendar.dataFields)) {
+          calendar.dataFields.forEach((field) => {
+            // Skip Blocks fields
+            if (field.notionProperty.endsWith("Blocks")) {
+              return;
+            }
+            properties[field.notionProperty] = {
+              name: field.label,
+              type: mapToNotionType(field.type),
+              enabled: true,
+            };
+          });
+        }
+
+        // Collect category-based dataFields (though habits groups don't use categories)
+        if (calendar.categories) {
+          Object.values(calendar.categories).forEach((category) => {
+            if (category.dataFields && Array.isArray(category.dataFields)) {
+              category.dataFields.forEach((field) => {
+                // Skip Blocks fields
+                if (field.notionProperty.endsWith("Blocks")) {
+                  return;
+                }
+                properties[field.notionProperty] = {
+                  name: field.label,
+                  type: mapToNotionType(field.type),
+                  enabled: true,
+                };
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  return properties;
 }
 
 /**
@@ -2200,6 +2302,7 @@ module.exports = {
   // derivePropertiesFromUnified removed - only used internally
   generatePersonalSummaryProperties,
   generateWorkSummaryProperties,
+  generateHabitsProperties,
   CONTENT_FILTERS,
   CONTENT_SPLITS,
   MONTHLY_RECAP_CATEGORIES,

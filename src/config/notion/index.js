@@ -15,6 +15,7 @@ const events = require("./events");
 const trips = require("./trips");
 const personalSummary = require("./personal-summary");
 const workSummary = require("./work-summary");
+const personalHabits = require("./personal-habits");
 const personalMonthlyRecap = require("./personal-monthly-recap");
 const workMonthlyRecap = require("./work-monthly-recap");
 const relationships = require("./relationships");
@@ -36,6 +37,7 @@ const databases = {
   trips: trips.database,
   personalSummary: personalSummary.database,
   workSummary: workSummary.database,
+  personalHabits: personalHabits.database,
   personalMonthlyRecap: personalMonthlyRecap.database,
   workMonthlyRecap: workMonthlyRecap.database,
   relationships: relationships.database,
@@ -58,6 +60,7 @@ const properties = {
   trips: trips.properties,
   personalSummary: personalSummary.properties,
   workSummary: workSummary.properties,
+  personalHabits: personalHabits.properties,
   personalMonthlyRecap: personalMonthlyRecap.properties,
   workMonthlyRecap: workMonthlyRecap.properties,
   relationships: relationships.properties,
@@ -80,6 +83,7 @@ const fieldMappings = {
   trips: trips.fieldMappings || {},
   personalSummary: personalSummary.fieldMappings,
   workSummary: workSummary.fieldMappings,
+  personalHabits: personalHabits.fieldMappings,
   relationships: relationships.fieldMappings || {},
   years: years.fieldMappings,
   months: months.fieldMappings,

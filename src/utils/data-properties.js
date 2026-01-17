@@ -74,11 +74,11 @@ function buildDataProperties(summaryData, props, selectedSources = []) {
     }
   });
   
-  // Check for missing property configurations and throw clear error
+  // Check for missing property configurations and warn (don't throw)
+  // Missing props may be intentionally removed from DB (e.g., Sessions fields)
   if (missingProps.length > 0) {
-    throw new Error(
-      `Missing property configuration(s) in personalSummary config: ${missingProps.join(', ')}. ` +
-      `Please add these properties to src/config/notion/personal-summary.js`
+    console.warn(
+      `[buildDataProperties] Skipping fields not in DB config: ${missingProps.join(', ')}`
     );
   }
   

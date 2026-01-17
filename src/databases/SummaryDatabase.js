@@ -13,29 +13,37 @@ const {
  * Handles both weekly summaries and monthly summaries
  * Follows the same pattern as IntegrationDatabase
  *
- * @param {string} summaryType - "personal" or "work"
+ * @param {string} summaryType - "personal", "work", or "personalHabits"
  */
 class SummaryDatabase extends NotionDatabase {
   constructor(summaryType) {
     super();
 
     // Validate summaryType
-    if (!["personal", "work"].includes(summaryType)) {
+    if (!["personal", "work", "personalHabits"].includes(summaryType)) {
       throw new Error(
-        `Invalid summaryType: ${summaryType}. Must be "personal" or "work"`
+        `Invalid summaryType: ${summaryType}. Must be "personal", "work", or "personalHabits"`
       );
     }
 
     this.summaryType = summaryType;
 
-    // For weekly summaries
-    this.databaseId = config.notion.databases[`${summaryType}Summary`];
-    this.props = config.notion.properties[`${summaryType}Summary`];
+    // For weekly summaries - detect if summaryType already has suffix
+    const configKey = summaryType.endsWith("Habits") || summaryType.endsWith("Summary")
+      ? summaryType
+      : `${summaryType}Summary`;
+    this.databaseId = config.notion.databases[configKey];
+    this.props = config.notion.properties[configKey];
 
-    // For monthly summaries (separate database)
-    this.monthlyDatabaseId =
-      config.notion.databases[`${summaryType}MonthlyRecap`];
-    this.monthlyProps = config.notion.properties[`${summaryType}MonthlyRecap`];
+    // For monthly summaries (separate database) - skip for personalHabits
+    if (summaryType === "personalHabits") {
+      this.monthlyDatabaseId = null;
+      this.monthlyProps = null;
+    } else {
+      this.monthlyDatabaseId =
+        config.notion.databases[`${summaryType}MonthlyRecap`];
+      this.monthlyProps = config.notion.properties[`${summaryType}MonthlyRecap`];
+    }
   }
 
   /**
@@ -58,7 +66,9 @@ class SummaryDatabase extends NotionDatabase {
     // Format week number with zero-padding (e.g., "01", "48")
     const weekNumberStr = String(weekNumber).padStart(2, "0");
     const summaryLabel =
-      this.summaryType === "personal" ? "Personal Summary" : "Work Summary";
+      this.summaryType === "personal" ? "Personal Summary" :
+      this.summaryType === "personalHabits" ? "Habits Summary" :
+      "Work Summary";
     const titleValue = `Week ${weekNumberStr} ${summaryLabel}`;
 
     // Query by title property

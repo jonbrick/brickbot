@@ -326,6 +326,28 @@ async function aggregateCalendarDataForWeek(
     // Update week summary
     await summaryRepo.updateWeekSummary(weekSummary.id, summary, calendarsToFetch);
 
+    // Also write to Personal Habits DB if this is a personal summary
+    if (recapType === "personal") {
+      const habitsRepo = new SummaryDatabase("personalHabits");
+      const habitsWeekSummary = await habitsRepo.findWeekSummary(
+        weekNumber,
+        year,
+        startDate,
+        endDate
+      );
+
+      if (habitsWeekSummary) {
+        await habitsRepo.updateWeekSummary(
+          habitsWeekSummary.id,
+          summary,
+          calendarsToFetch
+        );
+        await delay(config.sources.rateLimits.notion.backoffMs);
+      } else {
+        errors.push("Week summary record not found in Personal Habits database");
+      }
+    }
+
     // Rate limiting
     await delay(config.sources.rateLimits.notion.backoffMs);
 

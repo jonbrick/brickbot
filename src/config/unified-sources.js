@@ -231,7 +231,7 @@ const CALENDARS = {
     dataFields: [
       {
         type: "decimal",
-        label: "Blood Pressure Average Systolic",
+        label: "Blood Pressure Systolic Average",
         notionProperty: "avgSystolic",
       },
       {
@@ -707,6 +707,22 @@ const HABITS_GROUP_IDS = [
   "bloodPressure",
   "sleep",
   "drinkingDays",
+];
+
+/**
+ * TIME_BLOCKED_HABITS_IDS - Time-blocked habits that have Blocks/HoursTotal fields
+ * These are activities tracked with time blocks and should have Blocks/HoursTotal in Personal Summary
+ * Excludes counter-based habits (sleep, drinkingDays) and integration metrics (bodyWeight, bloodPressure)
+ */
+const TIME_BLOCKED_HABITS_IDS = [
+  "workout",
+  "reading",
+  "meditation",
+  "cooking",
+  "art",
+  "coding",
+  "music",
+  "videoGames",
 ];
 
 /**
@@ -1615,6 +1631,37 @@ function derivePropertiesFromUnified(sourceType) {
       });
     }
   });
+
+  // For Personal Summary: Add Blocks and HoursTotal fields from habits groups
+  if (sourceType === "personal") {
+    // Get time-blocked habits groups from SUMMARY_GROUPS
+    const habitsGroups = Object.values(SUMMARY_GROUPS).filter(
+      (group) =>
+        TIME_BLOCKED_HABITS_IDS.includes(group.id) &&
+        group.sourceType === "personal" &&
+        group.calendars
+    );
+
+    // For each habits group, add Blocks and HoursTotal fields
+    habitsGroups.forEach((group) => {
+      group.calendars.forEach((calendarId) => {
+        const calendar = CALENDARS[calendarId];
+        if (!calendar || !calendar.dataFields) return;
+
+        // Only add fields ending in "Blocks" or "HoursTotal"
+        calendar.dataFields.forEach((field) => {
+          const propName = field.notionProperty;
+          if (propName.endsWith("Blocks") || propName.endsWith("HoursTotal")) {
+            properties[propName] = {
+              name: field.label,
+              type: mapToNotionType(field.type),
+              enabled: true,
+            };
+          }
+        });
+      });
+    });
+  }
 
   return properties;
 }

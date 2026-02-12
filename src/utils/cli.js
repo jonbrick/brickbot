@@ -16,12 +16,51 @@ const {
   getWeekEnd,
   getMonthStart,
   getMonthEnd,
+  getDaysInMonth,
+  daysDifference,
 } = require("./date");
 const {
   deriveWeeksFromDateRange,
   formatWeekDisplay,
   getWeeksForMonthFromNotion,
 } = require("./date-pickers");
+
+/** Month choices for list prompts (1 = January .. 12 = December) */
+const MONTH_CHOICES = [
+  { name: "January", value: 1 },
+  { name: "February", value: 2 },
+  { name: "March", value: 3 },
+  { name: "April", value: 4 },
+  { name: "May", value: 5 },
+  { name: "June", value: 6 },
+  { name: "July", value: 7 },
+  { name: "August", value: 8 },
+  { name: "September", value: 9 },
+  { name: "October", value: 10 },
+  { name: "November", value: 11 },
+  { name: "December", value: 12 },
+];
+
+/**
+ * Inquirer question config for year input (2000-2100)
+ * @param {number} currentYear - Default year value
+ * @returns {Object} Inquirer question object
+ */
+function getYearPromptConfig(currentYear) {
+  return {
+    type: "input",
+    name: "year",
+    message: "Year:",
+    default: currentYear.toString(),
+    validate: (input) => {
+      const yearNum = parseInt(input);
+      if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+        return "Please enter a valid year (2000-2100)";
+      }
+      return true;
+    },
+  };
+}
 
 /**
  * Universal date range selector with context-aware options
@@ -255,19 +294,7 @@ async function selectDateRange(options = {}) {
       const currentYear = currentDate.getFullYear();
 
       const answers = await inquirer.prompt([
-        {
-          type: "input",
-          name: "year",
-          message: "Year:",
-          default: currentYear.toString(),
-          validate: (input) => {
-            const yearNum = parseInt(input);
-            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-              return "Please enter a valid year (2000-2100)";
-            }
-            return true;
-          },
-        },
+        getYearPromptConfig(currentYear),
         {
           type: "input",
           name: "weekNumber",
@@ -303,19 +330,7 @@ async function selectDateRange(options = {}) {
       const currentYear = currentDate.getFullYear();
 
       const answers = await inquirer.prompt([
-        {
-          type: "input",
-          name: "year",
-          message: "Year:",
-          default: currentYear.toString(),
-          validate: (input) => {
-            const yearNum = parseInt(input);
-            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-              return "Please enter a valid year (2000-2100)";
-            }
-            return true;
-          },
-        },
+        getYearPromptConfig(currentYear),
         {
           type: "input",
           name: "startWeek",
@@ -422,57 +437,19 @@ async function selectDateRange(options = {}) {
       const currentYear = currentDate.getFullYear();
 
       const answers = await inquirer.prompt([
-        {
-          type: "input",
-          name: "year",
-          message: "Year:",
-          default: currentYear.toString(),
-          validate: (input) => {
-            const yearNum = parseInt(input);
-            if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-              return "Please enter a valid year (2000-2100)";
-            }
-            return true;
-          },
-        },
+        getYearPromptConfig(currentYear),
         {
           type: "list",
           name: "startMonth",
           message: "Start month:",
-          choices: [
-            { name: "January", value: 1 },
-            { name: "February", value: 2 },
-            { name: "March", value: 3 },
-            { name: "April", value: 4 },
-            { name: "May", value: 5 },
-            { name: "June", value: 6 },
-            { name: "July", value: 7 },
-            { name: "August", value: 8 },
-            { name: "September", value: 9 },
-            { name: "October", value: 10 },
-            { name: "November", value: 11 },
-            { name: "December", value: 12 },
-          ],
+          choices: MONTH_CHOICES,
           pageSize: 12,
         },
         {
           type: "list",
           name: "endMonth",
           message: "End month:",
-          choices: [
-            { name: "January", value: 1 },
-            { name: "February", value: 2 },
-            { name: "March", value: 3 },
-            { name: "April", value: 4 },
-            { name: "May", value: 5 },
-            { name: "June", value: 6 },
-            { name: "July", value: 7 },
-            { name: "August", value: 8 },
-            { name: "September", value: 9 },
-            { name: "October", value: 10 },
-            { name: "November", value: 11 },
-            { name: "December", value: 12 },
-          ],
+          choices: MONTH_CHOICES,
           pageSize: 12,
         },
       ]);
@@ -537,48 +514,84 @@ async function selectDateRange(options = {}) {
     }
 
     case "custom": {
-      const answers = await inquirer.prompt([
-        {
-          type: "input",
-          name: "startDate",
-          message: "Start date (YYYY-MM-DD or 'yesterday', 'today'):",
-          validate: (input) => {
-            try {
-              parseDate(input);
-              return true;
-            } catch (e) {
-              return "Invalid date format";
-            }
-          },
-        },
-        {
-          type: "input",
-          name: "endDate",
-          message: "End date (YYYY-MM-DD or 'yesterday', 'today'):",
-          validate: (input) => {
-            try {
-              parseDate(input);
-              return true;
-            } catch (e) {
-              return "Invalid date format";
-            }
-          },
-        },
-      ]);
+      const currentDate = getToday();
+      const currentYear = currentDate.getFullYear();
 
-      startDate = parseDate(answers.startDate);
-      endDate = parseDate(answers.endDate);
+      let answers;
+      let startDateVal;
+      let endDateVal;
+      do {
+        answers = await inquirer.prompt([
+          getYearPromptConfig(currentYear),
+          {
+            type: "list",
+            name: "startMonth",
+            message: "Start month:",
+            choices: MONTH_CHOICES,
+            pageSize: 12,
+          },
+          {
+            type: "input",
+            name: "startDay",
+            message: "Start day:",
+            validate: (input, answers) => {
+              const day = parseInt(input, 10);
+              const max = getDaysInMonth(
+                parseInt(answers.year, 10),
+                answers.startMonth
+              );
+              if (isNaN(day) || day < 1 || day > max) {
+                return `Please enter a day between 1 and ${max}`;
+              }
+              return true;
+            },
+          },
+          {
+            type: "list",
+            name: "endMonth",
+            message: "End month:",
+            choices: (answers) =>
+              MONTH_CHOICES.filter((m) => m.value >= answers.startMonth),
+            default: 0,
+            pageSize: 12,
+          },
+          {
+            type: "input",
+            name: "endDay",
+            message: "End day:",
+            validate: (input, answers) => {
+              const day = parseInt(input, 10);
+              const max = getDaysInMonth(
+                parseInt(answers.year, 10),
+                answers.endMonth
+              );
+              if (isNaN(day) || day < 1 || day > max) {
+                return `Please enter a day between 1 and ${max}`;
+              }
+              return true;
+            },
+          },
+        ]);
 
-      let warningText = "";
-      if (startDate > endDate) {
-        warningText = "⚠️  Start date is after end date, swapping...\n";
-        [startDate, endDate] = [endDate, startDate];
-      }
+        const year = parseInt(answers.year, 10);
+        const startDay = parseInt(answers.startDay, 10);
+        const endDay = parseInt(answers.endDay, 10);
+        startDateVal = new Date(year, answers.startMonth - 1, startDay);
+        endDateVal = new Date(year, answers.endMonth - 1, endDay);
+
+        if (endDateVal < startDateVal) {
+          console.log("End date cannot be before start date.");
+        }
+      } while (endDateVal < startDateVal);
+
+      startDate = startDateVal;
+      endDate = endDateVal;
       endDate.setHours(23, 59, 59, 999);
 
-      displayText = `${warningText}\n📅 Selected: ${formatDateLong(
+      const dayCount = daysDifference(startDate, endDate) + 1;
+      displayText = `\n✅ Selected: ${formatDateLong(
         startDate
-      )} to ${formatDateLong(endDate)}\n`;
+      )} to ${formatDateLong(endDate)} (${dayCount} days)\n`;
       break;
     }
   }
@@ -623,37 +636,12 @@ async function selectMonthForWeeks() {
   const currentYear = currentDate.getFullYear();
 
   const answers = await inquirer.prompt([
-    {
-      type: "input",
-      name: "year",
-      message: "Year:",
-      default: currentYear.toString(),
-      validate: (input) => {
-        const yearNum = parseInt(input);
-        if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
-          return "Please enter a valid year (2000-2100)";
-        }
-        return true;
-      },
-    },
+    getYearPromptConfig(currentYear),
     {
       type: "list",
       name: "month",
       message: "Month:",
-      choices: [
-        { name: "January", value: 1 },
-        { name: "February", value: 2 },
-        { name: "March", value: 3 },
-        { name: "April", value: 4 },
-        { name: "May", value: 5 },
-        { name: "June", value: 6 },
-        { name: "July", value: 7 },
-        { name: "August", value: 8 },
-        { name: "September", value: 9 },
-        { name: "October", value: 10 },
-        { name: "November", value: 11 },
-        { name: "December", value: 12 },
-      ],
+      choices: MONTH_CHOICES,
       pageSize: 12,
     },
   ]);

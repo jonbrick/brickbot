@@ -423,6 +423,16 @@ function getMonthEnd(date) {
 }
 
 /**
+ * Get number of days in a month (handles leap year for February)
+ * @param {number} year - Year (e.g., 2026)
+ * @param {number} month - Month 1-12 (1 = January)
+ * @returns {number} Days in that month (28-31)
+ */
+function getDaysInMonth(year, month) {
+  return new Date(year, month, 0).getDate();
+}
+
+/**
  * Calculate difference in days between two dates
  * @param {Date} date1 - First date
  * @param {Date} date2 - Second date
@@ -651,6 +661,7 @@ module.exports = {
   getWeekEnd,
   getMonthStart,
   getMonthEnd,
+  getDaysInMonth,
   daysDifference,
   getDayName,
   formatDateOnly,

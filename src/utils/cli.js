@@ -35,20 +35,8 @@ const {
 async function selectDateRange(options = {}) {
   const { minGranularity = "day", allowFuture = true } = options;
 
-  // Build choices based on granularity
+  // Build choices based on granularity (order: weeks, months, days)
   const allChoices = [];
-
-  if (minGranularity === "day") {
-    // Day-level options
-    allChoices.push(
-      { name: "Today", value: "today" },
-      { name: "Yesterday", value: "yesterday" },
-      { name: "Last 30 days", value: "last30" },
-      { name: "Day Picker", value: "dayPicker" },
-      { name: "Day Range", value: "custom" },
-      new inquirer.Separator()
-    );
-  }
 
   if (minGranularity === "day" || minGranularity === "week") {
     // Week-level options
@@ -59,7 +47,6 @@ async function selectDateRange(options = {}) {
       { name: "Week Range (start to end)", value: "weekRange" }
     );
 
-    // Add separator after week options if there are month options following
     allChoices.push(new inquirer.Separator());
   }
 
@@ -74,6 +61,20 @@ async function selectDateRange(options = {}) {
       { name: "Last Month", value: "lastMonth" },
       { name: "Month Picker (all weeks in month)", value: "monthPicker" },
       { name: "Month Range (start to end)", value: "monthRange" }
+    );
+
+    allChoices.push(new inquirer.Separator());
+  }
+
+  if (minGranularity === "day") {
+    // Day-level options
+    allChoices.push(
+      { name: "Today", value: "today" },
+      { name: "Yesterday", value: "yesterday" },
+      { name: "Last 30 days", value: "last30" },
+      { name: "Day Picker", value: "dayPicker" },
+      { name: "Day Range", value: "custom" },
+      new inquirer.Separator()
     );
   }
 

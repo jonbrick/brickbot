@@ -66,7 +66,7 @@ async function main() {
     console.log("\n");
     showSuccess("OAuth setup wizard completed!");
     console.log(
-      "\n💡 Tip: Run 'yarn tokens:check' to verify all tokens are working\n"
+      "\n💡 Tip: Run 'yarn tokens' to verify all tokens are working\n"
     );
   } catch (error) {
     showError("Fatal error", error);

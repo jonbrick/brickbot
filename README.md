@@ -85,7 +85,7 @@ yarn tokens:setup
 #### 4. Verify Configuration
 
 ```bash
-yarn tokens:check
+yarn tokens
 ```
 
 ## Setup Guide
@@ -509,10 +509,10 @@ APPLE_NOTES_BATCH_SIZE=50
 #### 1. Check Token Status
 
 ```bash
-yarn tokens:check
+yarn tokens
 ```
 
-This will validate all your API credentials.
+This will check all token statuses and refresh expired OAuth tokens (except Google Calendar; for Google, run `yarn tokens:setup` manually).
 
 #### 2. Test Data Collection
 
@@ -577,9 +577,8 @@ Moves incomplete reminders from Apple Reminders into Notion Tasks database (Due 
 ### Token Management
 
 ```bash
-yarn tokens:check   # Check status of all API tokens
-yarn tokens:refresh # Refresh expired OAuth tokens
-yarn tokens:setup   # Run OAuth setup wizard
+yarn tokens        # Check all tokens and refresh expired OAuth (except Google Calendar)
+yarn tokens:setup  # Run OAuth setup wizard (use for Google Calendar or re-auth)
 ```
 
 ## Common Workflows
@@ -636,25 +635,24 @@ yarn collect
 
 ### Token Errors
 
-**Problem**: Tokens show as expired or invalid when running `yarn tokens:check`
+**Problem**: Tokens show as expired or invalid when running `yarn tokens`
 
 **Solution**:
 
-1. Try refreshing: `yarn tokens:refresh`
-2. If refresh fails, re-authenticate: `yarn tokens:setup`
-3. Select the service(s) that failed and follow the setup prompts
+1. Run `yarn tokens` to check and refresh (non-Google OAuth tokens are refreshed automatically).
+2. For Google Calendar tokens, run `yarn tokens:setup` manually.
+3. If refresh fails for other services, re-authenticate: `yarn tokens:setup` and select the service(s) that failed.
 
 **Common errors**:
 
 - `invalid_grant` or `invalid refresh_token`: Your refresh token expired or was revoked. Run `yarn tokens:setup` to re-authenticate.
-- `Token expired`: Usually fixable with `yarn tokens:refresh`
+- `Token expired`: Usually fixable by running `yarn tokens` (auto-refresh for Strava/Withings).
 - Services not showing: Check your `.env` file has the required credentials configured
 
 **Quick reference**:
 
-- Check token status: `yarn tokens:check`
-- Refresh expired tokens: `yarn tokens:refresh`
-- Re-authenticate services: `yarn tokens:setup`
+- Check and refresh tokens: `yarn tokens`
+- Google Calendar or re-authenticate: `yarn tokens:setup`
 
 ### "Configuration validation failed"
 
@@ -664,9 +662,8 @@ yarn collect
 
 ### "Invalid token" errors
 
-- Run `yarn tokens:check` to identify which tokens are invalid
-- Run `yarn tokens:refresh` to refresh expired OAuth tokens
-- Re-run `yarn tokens:setup` for permanently invalid tokens
+- Run `yarn tokens` to check status and refresh expired OAuth tokens
+- Re-run `yarn tokens:setup` for Google Calendar or permanently invalid tokens
 
 ### "Database not found"
 

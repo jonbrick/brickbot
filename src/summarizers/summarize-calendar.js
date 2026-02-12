@@ -15,7 +15,7 @@ const config = require("../config");
  * @param {string} options.accountType - "personal" or "work" (default: "personal")
  * @param {boolean} options.ignoreAllDayEvents - Whether to filter out all-day events (default: false)
  * @param {Array<string>} options.excludeKeywords - Keywords to filter out events whose summary contains any keyword (case-insensitive, default: [])
- * @param {boolean} options.ignoreDeclinedEvents - Whether to filter out events where the user has declined (default: false)
+ * @param {boolean} options.ignoreDeclinedEvents - When true, include only events where the user's response is "accepted" or "tentative"; exclude "declined" and "needsAction" (default: false)
  * @param {string} options.calendarKey - Calendar key for config lookup (default: null)
  * @returns {Promise<Array>} Array of events with { date, durationHours }
  */
@@ -89,11 +89,15 @@ async function fetchCalendarSummary(calendarId, startDate, endDate, options = {}
           return null;
         }
 
-        // Skip declined events if ignoreDeclinedEvents is true
+        // When ignoreDeclinedEvents: only include events where user has accepted or tentative.
+        // Exclude: declined, needsAction (invited but no response). Events with no self attendee (e.g. owned by user) are included.
         if (ignoreDeclinedEvents) {
           const selfAttendee = event.attendees?.find((a) => a.self);
-          if (selfAttendee?.responseStatus === "declined") {
-            return null;
+          if (selfAttendee) {
+            const status = selfAttendee.responseStatus || "needsAction";
+            if (status !== "accepted" && status !== "tentative") {
+              return null;
+            }
           }
         }
 

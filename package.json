@@ -12,6 +12,7 @@
     "sweep": "node cli/sweep-reminders.js",
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",
+    "tokens": "node cli/tokens/tokens.js",
     "tokens:setup": "node cli/tokens/setup.js",
     "verify:config": "node -e \"const m = require('./src/config/calendar/mappings'); const u = require('./src/config/unified-sources'); console.log(u.verifyDerivation(m.PERSONAL_RECAP_SOURCES, m.WORK_RECAP_SOURCES))\"",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -41,5 +42,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

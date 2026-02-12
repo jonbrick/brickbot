@@ -141,6 +141,7 @@ yarn summarize  # Full analysis pipeline
 ```bash
 yarn tokens:check   # Verify API credentials
 yarn tokens:refresh # Refresh expired tokens
+yarn tokens        # Check and refresh tokens (Google Calendar: use tokens:setup)
 yarn tokens:setup   # Initial OAuth setup
 ```
 

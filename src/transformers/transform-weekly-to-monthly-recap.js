@@ -312,214 +312,110 @@ function combineWeeklyTasksByCategory(
 
 /**
  * Extract and combine personal blocks by category from weekly summary pages
- * Returns an object with four category-specific block fields
+ * Returns an object with category-specific block fields (config-driven)
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb SummaryDatabase instance for extracting properties
- * @returns {Object} Object with personalFamilyBlocks, personalRelationshipBlocks, personalInterpersonalBlocks, and personalHobbiesBlocks
+ * @returns {Object} Object with personalFamilyBlocks, personalRelationshipBlocks, etc.
  */
 function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.personal.blocks;
-
-  const family = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.family,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.family.key
-  );
-  const relationship = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.relationship,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.relationship.key
-  );
-  const interpersonal = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.interpersonal,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.interpersonal.key
-  );
-  const hobbies = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.hobbies,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.hobbies.key
-  );
-  const mentalHealth = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.mentalHealth,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.personal.mentalHealth.key
-  );
-
-  return {
-    personalFamilyBlocks: family || "",
-    personalRelationshipBlocks: relationship || "",
-    personalInterpersonalBlocks: interpersonal || "",
-    personalHobbiesBlocks: hobbies || "",
-    personalMentalHealthBlocks: mentalHealth || "",
-  };
+  const result = {};
+  for (const [categoryKey, prop] of Object.entries(
+    MONTHLY_RECAP_BLOCK_PROPERTIES.personal,
+  )) {
+    const categoryFields = categories?.[categoryKey];
+    if (!categoryFields || !Array.isArray(categoryFields)) continue;
+    result[prop.key] =
+      combineWeeklyBlocksByCategory(
+        weeklySummaries,
+        "personal",
+        summaryDb,
+        categoryFields,
+        prop.key,
+      ) || "";
+  }
+  return result;
 }
 
 /**
  * Extract and combine work blocks by category from weekly summary pages
- * Returns an object with two category-specific block fields
+ * Returns an object with category-specific block fields (config-driven)
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb SummaryDatabase instance for extracting properties
- * @returns {Object} Object with workMeetingsBlocks and workSocialBlocks
+ * @returns {Object} Object with workMeetingsBlocks, workSocialBlocks, etc.
  */
 function combineWorkBlocksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.work.blocks;
-
-  const meetings = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.meetings,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.work.meetings.key
-  );
-  const social = combineWeeklyBlocksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.social,
-    MONTHLY_RECAP_BLOCK_PROPERTIES.work.social.key
-  );
-
-  return {
-    workMeetingsBlocks: meetings || "",
-    workSocialBlocks: social || "",
-  };
+  const result = {};
+  for (const [categoryKey, prop] of Object.entries(
+    MONTHLY_RECAP_BLOCK_PROPERTIES.work,
+  )) {
+    const categoryFields = categories?.[categoryKey];
+    if (!categoryFields || !Array.isArray(categoryFields)) continue;
+    result[prop.key] =
+      combineWeeklyBlocksByCategory(
+        weeklySummaries,
+        "work",
+        summaryDb,
+        categoryFields,
+        prop.key,
+      ) || "";
+  }
+  return result;
 }
 
 /**
  * Extract and combine personal tasks by category from weekly summary pages
- * Returns an object with four category-specific task fields
+ * Returns an object with category-specific task fields (config-driven)
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb SummaryDatabase instance for extracting properties
- * @returns {Object} Object with personalPersonalTasks, personalHomeTasks, personalPhysicalHealthTasks, personalMentalHealthTasks, and personalAdminTasks
+ * @returns {Object} Object with personalPersonalTasks, personalHomeTasks, etc.
  */
 function combinePersonalTasksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.personal.tasks;
-
-  const personal = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.personal,
-    MONTHLY_RECAP_TASK_PROPERTIES.personal.personal.key
-  );
-  const home = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.home,
-    MONTHLY_RECAP_TASK_PROPERTIES.personal.home.key
-  );
-  const physicalHealth = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.physicalHealth,
-    MONTHLY_RECAP_TASK_PROPERTIES.personal.physicalHealth.key
-  );
-  const mentalHealth = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.mentalHealth,
-    MONTHLY_RECAP_TASK_PROPERTIES.personal.mentalHealth.key
-  );
-  const admin = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.admin,
-    MONTHLY_RECAP_TASK_PROPERTIES.personal.admin.key
-  );
-  const coding = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "personal",
-    summaryDb,
-    categories.coding,
-    MONTHLY_RECAP_TASK_PROPERTIES.personal.coding.key
-  );
-
-  return {
-    personalPersonalTasks: personal || "",
-    personalHomeTasks: home || "",
-    personalPhysicalHealthTasks: physicalHealth || "",
-    personalMentalHealthTasks: mentalHealth || "",
-    personalAdminTasks: admin || "",
-    personalCodingTasks: coding || "",
-  };
+  const result = {};
+  for (const [categoryKey, prop] of Object.entries(
+    MONTHLY_RECAP_TASK_PROPERTIES.personal,
+  )) {
+    const categoryFields = categories?.[categoryKey];
+    if (!categoryFields || !Array.isArray(categoryFields)) continue;
+    result[prop.key] =
+      combineWeeklyTasksByCategory(
+        weeklySummaries,
+        "personal",
+        summaryDb,
+        categoryFields,
+        prop.key,
+      ) || "";
+  }
+  return result;
 }
 
 /**
  * Extract and combine work tasks by category from weekly summary pages
- * Returns an object with five category-specific task fields
+ * Returns an object with category-specific task fields (config-driven)
  * @param {Array} weeklySummaries - Array of weekly recap Notion pages (already sorted by date)
  * @param {Object} summaryDb SummaryDatabase instance for extracting properties
- * @returns {Object} Object with workDesignTasks, workResearchTasks, workAdminTasks, workCodingTasks, and workQATasks
+ * @returns {Object} Object with workDesignTasks, workResearchTasks, etc.
  */
 function combineWorkTasksByCategory(weeklySummaries, summaryDb) {
   const categories = MONTHLY_RECAP_CATEGORIES.work.tasks;
-
-  const design = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.design,
-    MONTHLY_RECAP_TASK_PROPERTIES.work.design.key
-  );
-  const research = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.research,
-    MONTHLY_RECAP_TASK_PROPERTIES.work.research.key
-  );
-  const admin = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.admin,
-    MONTHLY_RECAP_TASK_PROPERTIES.work.admin.key
-  );
-  const coding = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.coding,
-    MONTHLY_RECAP_TASK_PROPERTIES.work.coding.key
-  );
-  const qa = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.qa,
-    MONTHLY_RECAP_TASK_PROPERTIES.work.qa.key
-  );
-  const sketch = combineWeeklyTasksByCategory(
-    weeklySummaries,
-    "work",
-    summaryDb,
-    categories.sketch,
-    MONTHLY_RECAP_TASK_PROPERTIES.work.sketch.key
-  );
-
-  return {
-    workDesignTasks: design || "",
-    workResearchTasks: research || "",
-    workAdminTasks: admin || "",
-    workCodingTasks: coding || "",
-    workQATasks: qa || "",
-    workSketchTasks: sketch || "",
-  };
+  const result = {};
+  for (const [categoryKey, prop] of Object.entries(
+    MONTHLY_RECAP_TASK_PROPERTIES.work,
+  )) {
+    const categoryFields = categories?.[categoryKey];
+    if (!categoryFields || !Array.isArray(categoryFields)) continue;
+    result[prop.key] =
+      combineWeeklyTasksByCategory(
+        weeklySummaries,
+        "work",
+        summaryDb,
+        categoryFields,
+        prop.key,
+      ) || "";
+  }
+  return result;
 }
 
 /**

@@ -10,25 +10,23 @@ const transformSteamToCalendarEvent = buildTransformer("steam", {
   summary: "🎮 {{gameName}}",
   description: (values) => {
     const gameName = values.gameName || "Gaming Session";
-    const hoursPlayed = values.hoursPlayed || 0;
     const minutesPlayed = values.minutesPlayed || 0;
-    const sessionCount = values.sessionCount || 0;
-    const sessionDetails = values.sessionDetails || "";
+    const startTimeDisplay = values.startTimeDisplay || "";
+    const endTimeDisplay = values.endTimeDisplay || "";
 
-    // Format total playtime
     let playtimeText = "";
-    if (hoursPlayed > 0) {
-      playtimeText = `${hoursPlayed}h ${minutesPlayed}m`;
+    if (minutesPlayed >= 60) {
+      const hours = Math.floor(minutesPlayed / 60);
+      const mins = minutesPlayed % 60;
+      playtimeText = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
     } else {
       playtimeText = `${minutesPlayed}m`;
     }
 
-    let description = `🎮 ${gameName}
-⏱️ Total Playtime: ${playtimeText}
-📊 Sessions: ${sessionCount}`;
+    let description = `🎮 ${gameName}\n⏱️ Playtime: ${playtimeText}`;
 
-    if (sessionDetails) {
-      description += `\n🕐 Session Times: ${sessionDetails}`;
+    if (startTimeDisplay && endTimeDisplay) {
+      description += `\n🕐 ${startTimeDisplay} - ${endTimeDisplay}`;
     }
 
     return description;
@@ -44,10 +42,9 @@ const transformSteamToCalendarEvent = buildTransformer("steam", {
   },
   properties: {
     gameName: props.gameName,
-    hoursPlayed: props.hoursPlayed,
     minutesPlayed: props.minutesPlayed,
-    sessionCount: props.sessionCount,
-    sessionDetails: props.sessionDetails,
+    startTimeDisplay: props.startTimeDisplay,
+    endTimeDisplay: props.endTimeDisplay,
   },
 });
 

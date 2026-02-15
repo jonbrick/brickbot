@@ -46,18 +46,18 @@ class SteamService {
       throw new Error(
         `Failed to test Steam connection: ${
           error.response?.data?.message || error.message
-        }`
+        }`,
       );
     }
   }
 
   /**
-   * Fetch gaming sessions for date range
+   * Fetch gaming periods for date range
    * Fetches data day by day from the Steam Lambda API
    *
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
-   * @returns {Promise<Array>} Array of daily gaming sessions
+   * @returns {Promise<Array>} Array of daily gaming periods
    */
   async fetchGamingSessions(startDate, endDate) {
     try {
@@ -75,12 +75,12 @@ class SteamService {
             const data = response.data;
 
             // Only include days with gaming activity
-            if (data.total_hours > 0) {
+            if (data.period_count > 0) {
               sessions.push({
                 date: dateStr,
-                totalHours: data.total_hours,
-                gameCount: data.game_count || 0,
-                games: data.games || [],
+                totalMinutes: data.total_minutes,
+                periodCount: data.period_count,
+                periods: data.periods || [],
               });
             }
           }
@@ -90,7 +90,7 @@ class SteamService {
             console.warn(
               `Failed to fetch data for ${dateStr}: ${
                 error.response?.status || error.message
-              }`
+              }`,
             );
           }
         }
@@ -104,7 +104,7 @@ class SteamService {
       throw new Error(
         `Failed to fetch Steam gaming sessions: ${
           error.response?.data?.message || error.message
-        }`
+        }`,
       );
     }
   }
@@ -124,4 +124,3 @@ class SteamService {
 }
 
 module.exports = SteamService;
-

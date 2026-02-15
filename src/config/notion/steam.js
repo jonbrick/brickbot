@@ -12,12 +12,6 @@
  * Data Flow:
  * - Used by: SteamDatabase, steam-to-notion-steam transformer
  * - Naming: Uses INTEGRATION name (steam)
- *
- * Example:
- * ```
- * const config = require('./config/notion');
- * const dbId = config.databases.steam;
- * ```
  */
 
 module.exports = {
@@ -26,23 +20,22 @@ module.exports = {
   properties: {
     gameName: { name: "Game Name", type: "title", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
-    hoursPlayed: { name: "Hours Played", type: "number", enabled: true },
-    minutesPlayed: { name: "Minutes Played", type: "number", enabled: true },
-    sessionCount: { name: "Session Count", type: "number", enabled: true },
-    sessionDetails: {
-      name: "Session Details",
+    startTime: { name: "Start Time", type: "rich_text", enabled: true },
+    endTime: { name: "End Time", type: "rich_text", enabled: true },
+    startTimeDisplay: {
+      name: "Start Time (Display)",
       type: "rich_text",
       enabled: true,
     },
-    activityId: { name: "Activity ID", type: "rich_text", enabled: true },
-    startTime: { name: "Start Time", type: "rich_text", enabled: true },
-    endTime: { name: "End Time", type: "rich_text", enabled: true },
-    platform: {
-      name: "Platform",
-      type: "select",
-      options: ["Steam"],
+    endTimeDisplay: {
+      name: "End Time (Display)",
+      type: "rich_text",
       enabled: true,
     },
+    startTimeUTC: { name: "Start Time UTC", type: "rich_text", enabled: true },
+    endTimeUTC: { name: "End Time UTC", type: "rich_text", enabled: true },
+    minutesPlayed: { name: "Minutes Played", type: "number", enabled: true },
+    activityId: { name: "Activity ID", type: "rich_text", enabled: true },
     calendarCreated: {
       name: "Calendar Created",
       type: "checkbox",
@@ -53,14 +46,14 @@ module.exports = {
   fieldMappings: {
     gameName: "gameName",
     date: "date",
-    hoursPlayed: "hoursPlayed",
-    minutesPlayed: "minutesPlayed",
-    sessionCount: "sessionCount",
-    sessionDetails: "sessionDetails",
-    activityId: "activityId",
     startTime: "startTime",
     endTime: "endTime",
-    platform: "platform",
+    startTimeDisplay: "startTimeDisplay",
+    endTimeDisplay: "endTimeDisplay",
+    startTimeUTC: "startTimeUTC",
+    endTimeUTC: "endTimeUTC",
+    minutesPlayed: "minutesPlayed",
+    activityId: "activityId",
     calendarCreated: "calendarCreated",
   },
 };

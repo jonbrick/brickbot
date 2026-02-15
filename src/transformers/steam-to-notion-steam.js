@@ -13,24 +13,28 @@ const { formatDateForNotion } = require("../utils/date-handler");
 function transformSteamToNotion(activity) {
   const props = config.notion.properties.steam;
 
-  // Build properties object using getPropertyName helper
   const allProperties = {
     [config.notion.getPropertyName(props.gameName)]: activity.gameName || "",
     [config.notion.getPropertyName(props.date)]: activity.date
-      ? formatDateForNotion('steam', activity.date)
+      ? formatDateForNotion("steam", activity.date)
       : "",
-    [config.notion.getPropertyName(props.hoursPlayed)]: activity.hoursPlayed || 0,
-    [config.notion.getPropertyName(props.minutesPlayed)]: activity.minutesPlayed || 0,
-    [config.notion.getPropertyName(props.sessionCount)]: activity.sessionCount || 0,
-    [config.notion.getPropertyName(props.sessionDetails)]: activity.sessionDetails || "",
-    [config.notion.getPropertyName(props.activityId)]: activity.activityId || "",
     [config.notion.getPropertyName(props.startTime)]: activity.startTime || "",
     [config.notion.getPropertyName(props.endTime)]: activity.endTime || "",
-    [config.notion.getPropertyName(props.platform)]: activity.platform || "Steam",
+    [config.notion.getPropertyName(props.startTimeDisplay)]:
+      activity.startTimeDisplay || "",
+    [config.notion.getPropertyName(props.endTimeDisplay)]:
+      activity.endTimeDisplay || "",
+    [config.notion.getPropertyName(props.startTimeUTC)]:
+      activity.startTimeUTC || "",
+    [config.notion.getPropertyName(props.endTimeUTC)]:
+      activity.endTimeUTC || "",
+    [config.notion.getPropertyName(props.minutesPlayed)]:
+      activity.minutesPlayed || 0,
+    [config.notion.getPropertyName(props.activityId)]:
+      activity.activityId || "",
     [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
-  // Filter out disabled properties
   return filterEnabledProperties(allProperties, props);
 }
 
@@ -48,4 +52,3 @@ module.exports = {
   transformSteamToNotion,
   batchTransformSteamToNotion,
 };
-

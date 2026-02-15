@@ -33,6 +33,7 @@ function getEasternOffset(dateStr) {
 
 /**
  * Fetch Steam gaming data for date range
+ * Each API period becomes one activity (one Notion record, one calendar event)
  *
  * @param {Date} startDate - Start date
  * @param {Date} endDate - End date
@@ -41,135 +42,96 @@ function getEasternOffset(dateStr) {
 async function fetchSteamData(startDate, endDate) {
   const service = new SteamService();
 
-  // Debug: Log the date range being queried
   if (process.env.DEBUG) {
     console.log(
-      `Querying Steam gaming data from ${startDate.toISOString()} to ${endDate.toISOString()}`
+      `Querying Steam gaming data from ${startDate.toISOString()} to ${endDate.toISOString()}`,
     );
   }
 
-  // Fetch gaming sessions
   const sessions = await service.fetchGamingSessions(startDate, endDate);
 
   if (sessions.length === 0) {
     return [];
   }
 
-    // Transform sessions into activities format (one per game per day)
-    const activities = [];
+  const activities = [];
 
-    for (const daySession of sessions) {
-      for (const game of daySession.games) {
-        // Generate activity ID for de-duplication
-        // Format: gameName-date (sanitized)
-        const activityId = `${game.name.replace(/[^a-zA-Z0-9]/g, "-")}-${
-          daySession.date
-        }`;
+  for (const daySession of sessions) {
+    for (let i = 0; i < daySession.periods.length; i++) {
+      const period = daySession.periods[i];
 
-        // Format session details
-        const sessionDetails = game.sessions
-          ? game.sessions
-              .map(
-                (session) =>
-                  `${session.start_time}-${session.end_time} (${session.duration_minutes}min)`
-              )
-              .join(", ")
-          : "";
+      // Activity ID includes period index to avoid dedup collisions
+      const activityId = `${period.name.replace(/[^a-zA-Z0-9]/g, "-")}-${daySession.date}-P${i + 1}`;
 
-        // TIMEZONE HANDLING FOR STEAM:
-        // 
-        // Steam API returns gaming session times in UTC. We need to handle two things:
-        // 1. Date extraction: Uses centralized handler (extractSourceDate) for consistency
-        // 2. Time formatting: Manual conversion for precise calendar event datetime strings
-        // 
-        // Why manual time formatting?
-        // - Calendar events need full ISO datetime strings with timezone offsets (e.g., "2025-10-28T16:00:00-04:00")
-        // - The centralized handler is designed for date extraction, not time formatting
-        // - We need precise control over the timezone offset format for Google Calendar API
-        // 
-        // Date extraction (line 92, 134): Uses extractSourceDate() which applies UTC→Eastern conversion
-        // Time formatting (lines 107-131): Manual conversion using getEasternOffset() helper
-        // 
-        // See config.sources.dateHandling.steam for date extraction configuration.
-        let startTime = "";
-        let endTime = "";
-        // Initial date extraction for date-only case (no sessions yet)
-        let dateObj = extractSourceDate('steam', `${daySession.date}T12:00:00Z`); // Uses centralized handler
-        let actualDate = formatDate(dateObj);
-        
-        if (game.sessions && game.sessions.length > 0) {
-          const firstSession = game.sessions[0];
-          const lastSession = game.sessions[game.sessions.length - 1];
-          
-          // Normalize time format (ensure HH:MM format with leading zeros)
-          const normalizeTime = (timeStr) => {
-            const parts = timeStr.split(':');
-            const hours = parts[0].padStart(2, '0');
-            const minutes = parts[1].padStart(2, '0');
-            return `${hours}:${minutes}`;
-          };
-          
-          // Manual timezone conversion for time formatting (not date extraction)
-          // Parse UTC times from API
-          const startUTC = new Date(`${daySession.date}T${normalizeTime(firstSession.start_time)}:00Z`);
-          const endUTC = new Date(`${daySession.date}T${normalizeTime(lastSession.end_time)}:00Z`);
-          
-          // Get Eastern Time offset (handles DST automatically: -04:00 for EDT, -05:00 for EST)
-          const offset = getEasternOffset(daySession.date);
-          const offsetHours = parseInt(offset.split(':')[0]);
-          
-          // Apply offset to convert UTC to Eastern Time
-          // Note: Steam API times need an additional -1 hour adjustment (Steam-specific quirk)
-          const startEDT = new Date(startUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
-          const endEDT = new Date(endUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
-          
-          // Format as ISO datetime strings with timezone offset for calendar events
-          // This creates strings like "2025-10-28T16:00:00-04:00" for Google Calendar API
-          const formatWithOffset = (date, offset) => {
-            const year = date.getUTCFullYear();
-            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(date.getUTCDate()).padStart(2, '0');
-            const hours = String(date.getUTCHours()).padStart(2, '0');
-            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-            return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offset}`;
-          };
-          
-          startTime = formatWithOffset(startEDT, offset);
-          endTime = formatWithOffset(endEDT, offset);
-          
-          // Re-extract date using centralized handler now that we have actual session times
-          // This ensures the date accounts for timezone conversion (may shift if session crosses midnight)
-          dateObj = extractSourceDate('steam', startUTC); // Uses centralized handler for consistency
-          actualDate = formatDate(dateObj); // Format as YYYY-MM-DD string for grouping
-        }
+      // TIMEZONE HANDLING:
+      // API returns full ISO timestamps in UTC (e.g., "2026-01-22T02:54:48.217Z")
+      // We convert to Eastern Time for Notion and Google Calendar
+      const startUTC = new Date(period.start_time);
+      const endUTC = new Date(period.end_time);
 
-        // Create activity object
-        const activity = {
-          activityId,
-          gameName: game.name,
-          date: dateObj, // Store Date object, transformer will format it
-          dateObj: dateObj,
-          hoursPlayed: game.minutes
-            ? parseFloat((game.minutes / 60).toFixed(2))
-            : 0,
-          minutesPlayed: game.minutes || 0,
-          sessionCount: game.sessions ? game.sessions.length : 0,
-          sessions: game.sessions || [],
-          sessionDetails,
-          startTime,
-          endTime,
-          platform: "Steam",
-          // Keep raw data for debugging
-          raw: game,
-        };
+      // Get Eastern Time offset (handles DST: -04:00 for EDT, -05:00 for EST)
+      const offset = getEasternOffset(daySession.date);
+      const offsetHours = parseInt(offset.split(":")[0]);
 
-        activities.push(activity);
-      }
+      // Apply offset to convert UTC to Eastern Time
+      // Additional -1 hour adjustment compensates for Checker detection lag
+      const startEastern = new Date(
+        startUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000,
+      );
+      const endEastern = new Date(
+        endUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000,
+      );
+
+      // Format as ISO datetime strings with timezone offset for Google Calendar
+      const formatWithOffset = (date, offset) => {
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(date.getUTCDate()).padStart(2, "0");
+        const hours = String(date.getUTCHours()).padStart(2, "0");
+        const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+        const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offset}`;
+      };
+
+      const startTime = formatWithOffset(startEastern, offset);
+      const endTime = formatWithOffset(endEastern, offset);
+
+      // Human-readable display times (e.g., "8:00 PM")
+      const formatDisplay = (date) => {
+        const hours = date.getUTCHours();
+        const minutes = date.getUTCMinutes();
+        const ampm = hours >= 12 ? "PM" : "AM";
+        const displayHours = hours % 12 || 12;
+        const displayMinutes = String(minutes).padStart(2, "0");
+        return `${displayHours}:${displayMinutes} ${ampm}`;
+      };
+
+      const startTimeDisplay = formatDisplay(startEastern);
+      const endTimeDisplay = formatDisplay(endEastern);
+
+      // Derive date from timezone-adjusted start time (fixes UTC date bug)
+      const dateObj = extractSourceDate("steam", startUTC);
+
+      const activity = {
+        activityId,
+        gameName: period.name,
+        date: dateObj,
+        dateObj: dateObj,
+        minutesPlayed: period.duration_minutes || 0,
+        startTime,
+        endTime,
+        startTimeDisplay,
+        endTimeDisplay,
+        startTimeUTC: period.start_time,
+        endTimeUTC: period.end_time,
+        raw: period,
+      };
+
+      activities.push(activity);
     }
+  }
 
-    return activities;
+  return activities;
 }
 
 module.exports = { fetchSteamData };
-

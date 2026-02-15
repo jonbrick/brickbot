@@ -302,14 +302,14 @@ const CALENDARS = {
         emoji: "🩵",
         dataFields: FIELD_TEMPLATES.categoryActivity(
           "relationship",
-          "Relationship"
+          "Relationship",
         ),
       },
       interpersonal: {
         emoji: "🍻",
         dataFields: FIELD_TEMPLATES.categoryActivity(
           "interpersonal",
-          "Interpersonal"
+          "Interpersonal",
         ),
       },
       home: {
@@ -320,14 +320,14 @@ const CALENDARS = {
         emoji: "💪",
         dataFields: FIELD_TEMPLATES.categoryActivity(
           "physicalHealth",
-          "Physical Health"
+          "Physical Health",
         ),
       },
       mentalHealth: {
         emoji: "❤️",
         dataFields: FIELD_TEMPLATES.categoryActivity(
           "mentalHealth",
-          "Mental Health"
+          "Mental Health",
         ),
       },
       ignore: {
@@ -382,7 +382,7 @@ const CALENDARS = {
         emoji: "🌱",
         dataFields: FIELD_TEMPLATES.categoryActivity(
           "personalAndSocial",
-          "Personal & Social"
+          "Personal & Social",
         ),
       },
       rituals: {
@@ -414,14 +414,14 @@ const CALENDARS = {
         emoji: "🩵",
         dataFields: FIELD_TEMPLATES.taskCategory(
           "relationship",
-          "Relationship"
+          "Relationship",
         ),
       },
       interpersonal: {
         emoji: "🍻",
         dataFields: FIELD_TEMPLATES.taskCategory(
           "interpersonal",
-          "Interpersonal"
+          "Interpersonal",
         ),
       },
       home: {
@@ -432,14 +432,14 @@ const CALENDARS = {
         emoji: "💪",
         dataFields: FIELD_TEMPLATES.taskCategory(
           "physicalHealth",
-          "Physical Health"
+          "Physical Health",
         ),
       },
       mentalHealth: {
         emoji: "❤️",
         dataFields: FIELD_TEMPLATES.taskCategory(
           "mentalHealth",
-          "Mental Health"
+          "Mental Health",
         ),
       },
       admin: {
@@ -983,17 +983,18 @@ const INTEGRATIONS = {
       displayFields: [
         { key: "gameName", property: "gameName" },
         { key: "date", property: "date" },
-        { key: "hoursPlayed", property: "hoursPlayed" },
         { key: "minutesPlayed", property: "minutesPlayed" },
-        { key: "sessionCount", property: "sessionCount" },
+        { key: "startTimeDisplay", property: "startTimeDisplay" },
+        { key: "endTimeDisplay", property: "endTimeDisplay" },
         {
           key: "playtime",
-          property: null, // Computed field
+          property: null,
           compute: (record) => {
-            const hours = record.hoursPlayed || 0;
             const minutes = record.minutesPlayed || 0;
-            if (hours > 0) {
-              return `${hours}h ${minutes}m`;
+            if (minutes >= 60) {
+              const hours = Math.floor(minutes / 60);
+              const mins = minutes % 60;
+              return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
             }
             return `${minutes}m`;
           },
@@ -1001,9 +1002,7 @@ const INTEGRATIONS = {
       ],
       tableTitle: "🎮 STEAM GAMING RECORDS TO SYNC",
       displayFormat: (record) =>
-        `🎮 ${record.date}: ${record.gameName} (${record.playtime}) - ${
-          record.sessionCount
-        } session${record.sessionCount === 1 ? "" : "s"}`,
+        `🎮 ${record.date}: ${record.gameName} (${record.playtime}) ${record.startTimeDisplay}-${record.endTimeDisplay}`,
       recordLabel: "gaming record",
     },
     databaseConfig: {
@@ -1316,7 +1315,7 @@ function verifyDerivation(personalSources = null, workSources = null) {
 
   // Check personal recap sources
   const expectedPersonalGroups = Object.keys(SUMMARY_GROUPS).filter(
-    (id) => SUMMARY_GROUPS[id].sourceType === "personal"
+    (id) => SUMMARY_GROUPS[id].sourceType === "personal",
   );
 
   expectedPersonalGroups.forEach((groupId) => {
@@ -1333,7 +1332,7 @@ function verifyDerivation(personalSources = null, workSources = null) {
 
   // Check work recap sources
   const expectedWorkGroups = Object.keys(SUMMARY_GROUPS).filter(
-    (id) => SUMMARY_GROUPS[id].sourceType === "work"
+    (id) => SUMMARY_GROUPS[id].sourceType === "work",
   );
 
   expectedWorkGroups.forEach((groupId) => {
@@ -1380,8 +1379,8 @@ function verifyDerivation(personalSources = null, workSources = null) {
           return acc;
         }, {}),
         null,
-        2
-      )
+        2,
+      ),
     );
     console.log("\nDerived WORK_SUMMARY_SOURCES structure:");
     console.log(JSON.stringify(derivedWork, null, 2));
@@ -1393,8 +1392,8 @@ function verifyDerivation(personalSources = null, workSources = null) {
           return acc;
         }, {}),
         null,
-        2
-      )
+        2,
+      ),
     );
   }
 
@@ -1422,14 +1421,14 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
   // Compare id
   if (derivedGroup.id !== existingGroup.id) {
     errors.push(
-      `❌ ID mismatch for ${groupId}: derived="${derivedGroup.id}", existing="${existingGroup.id}"`
+      `❌ ID mismatch for ${groupId}: derived="${derivedGroup.id}", existing="${existingGroup.id}"`,
     );
   }
 
   // Compare sourceType
   if (derivedGroup.sourceType !== existingGroup.sourceType) {
     errors.push(
-      `❌ sourceType mismatch for ${groupId}: derived="${derivedGroup.sourceType}", existing="${existingGroup.sourceType}"`
+      `❌ sourceType mismatch for ${groupId}: derived="${derivedGroup.sourceType}", existing="${existingGroup.sourceType}"`,
     );
   }
 
@@ -1437,7 +1436,7 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
   if (derivedGroup.isNotionSource) {
     if (!existingGroup.isNotionSource) {
       errors.push(
-        `❌ Expected ${groupId} to be Notion source but existing is not`
+        `❌ Expected ${groupId} to be Notion source but existing is not`,
       );
       return;
     }
@@ -1445,7 +1444,7 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
       warnings.push(
         `⚠️  databaseId differs for ${groupId}: derived uses ${
           derivedGroup.databaseId ? "env var" : "undefined"
-        }, existing uses ${existingGroup.databaseId ? "env var" : "undefined"}`
+        }, existing uses ${existingGroup.databaseId ? "env var" : "undefined"}`,
       );
     }
     return;
@@ -1455,7 +1454,7 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
   if (!derivedGroup.calendars || !existingGroup.calendars) {
     if (derivedGroup.calendars !== existingGroup.calendars) {
       errors.push(
-        `❌ Calendar array mismatch for ${groupId}: one is missing calendars array`
+        `❌ Calendar array mismatch for ${groupId}: one is missing calendars array`,
       );
     }
     return;
@@ -1463,7 +1462,7 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
 
   if (derivedGroup.calendars.length !== existingGroup.calendars.length) {
     errors.push(
-      `❌ Calendar count mismatch for ${groupId}: derived=${derivedGroup.calendars.length}, existing=${existingGroup.calendars.length}`
+      `❌ Calendar count mismatch for ${groupId}: derived=${derivedGroup.calendars.length}, existing=${existingGroup.calendars.length}`,
     );
   } else {
     // Compare each calendar config
@@ -1472,20 +1471,20 @@ function compareGroups(groupId, derivedGroup, existingGroup, errors, warnings) {
 
       if (derivedCal.key !== existingCal.key) {
         errors.push(
-          `❌ Calendar key mismatch for ${groupId}[${index}]: derived="${derivedCal.key}", existing="${existingCal.key}"`
+          `❌ Calendar key mismatch for ${groupId}[${index}]: derived="${derivedCal.key}", existing="${existingCal.key}"`,
         );
       }
 
       if (derivedCal.envVar !== existingCal.envVar) {
         errors.push(
-          `❌ Calendar envVar mismatch for ${groupId}[${index}]: derived="${derivedCal.envVar}", existing="${existingCal.envVar}"`
+          `❌ Calendar envVar mismatch for ${groupId}[${index}]: derived="${derivedCal.envVar}", existing="${existingCal.envVar}"`,
         );
       }
 
       // fetchKey might differ - this is a warning, not an error
       if (derivedCal.fetchKey !== existingCal.fetchKey) {
         warnings.push(
-          `⚠️  Calendar fetchKey differs for ${groupId}[${index}]: derived="${derivedCal.fetchKey}", existing="${existingCal.fetchKey}"`
+          `⚠️  Calendar fetchKey differs for ${groupId}[${index}]: derived="${derivedCal.fetchKey}", existing="${existingCal.fetchKey}"`,
         );
       }
     });
@@ -1559,7 +1558,8 @@ function derivePropertiesFromUnified(sourceType) {
   const groups = Object.values(SUMMARY_GROUPS).filter((group) => {
     if (group.sourceType !== sourceType) return false;
     // Exclude habits groups from personal summary (they go to habits DB)
-    if (sourceType === "personal" && HABITS_GROUP_IDS.includes(group.id)) return false;
+    if (sourceType === "personal" && HABITS_GROUP_IDS.includes(group.id))
+      return false;
     return true;
   });
 
@@ -1639,7 +1639,7 @@ function derivePropertiesFromUnified(sourceType) {
       (group) =>
         TIME_BLOCKED_HABITS_IDS.includes(group.id) &&
         group.sourceType === "personal" &&
-        group.calendars
+        group.calendars,
     );
 
     // For each habits group, add Blocks and HoursTotal fields
@@ -1701,7 +1701,7 @@ function generateHabitsProperties() {
   // Filter SUMMARY_GROUPS to only include habits-related groups
   const groups = Object.values(SUMMARY_GROUPS).filter(
     (group) =>
-      HABITS_GROUP_IDS.includes(group.id) && group.sourceType === "personal"
+      HABITS_GROUP_IDS.includes(group.id) && group.sourceType === "personal",
   );
 
   // For each group, collect dataFields from CALENDARS
@@ -1815,7 +1815,7 @@ function deriveDataSources() {
 
         // Determine if we need categories or flat data structure
         const hasCategories = group.calendars.some(
-          (calId) => CALENDARS[calId]?.categories
+          (calId) => CALENDARS[calId]?.categories,
         );
 
         if (hasCategories) {
@@ -1906,7 +1906,7 @@ function getSourceDataKeys(sourceId) {
 
   if (source.categories) {
     return Object.values(source.categories).flatMap((cat) =>
-      Object.keys(cat.data)
+      Object.keys(cat.data),
     );
   }
 
@@ -1929,7 +1929,7 @@ function getSourceData(sourceId) {
   if (source.categories) {
     return Object.values(source.categories).reduce(
       (acc, cat) => ({ ...acc, ...cat.data }),
-      {}
+      {},
     );
   }
 
@@ -2304,7 +2304,7 @@ function getTaskCompletionFields(recapType) {
   if (!calendar || !calendar.categories) return [];
 
   return Object.keys(calendar.categories).map(
-    (catId) => `${catId}TasksComplete`
+    (catId) => `${catId}TasksComplete`,
   );
 }
 
@@ -2321,14 +2321,14 @@ function generatePersonalMonthlyRecapProperties() {
   Object.entries(MONTHLY_RECAP_BLOCK_PROPERTIES.personal).forEach(
     ([_, prop]) => {
       props[prop.key] = { name: prop.name, type: "text", enabled: true };
-    }
+    },
   );
 
   // Personal task properties
   Object.entries(MONTHLY_RECAP_TASK_PROPERTIES.personal).forEach(
     ([_, prop]) => {
       props[prop.key] = { name: prop.name, type: "text", enabled: true };
-    }
+    },
   );
 
   return props;

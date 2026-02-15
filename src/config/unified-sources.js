@@ -2051,9 +2051,11 @@ const CONTENT_FILTERS = {
       // interpersonalBlocks: [],
       // homeBlocks: [],
       // physicalHealthBlocks: [],
+      // Filter-out-words
       mentalHealthBlocks: ["rot", "wasted", "waste"],
       // ignoreBlocks: [],
       // Personal task category details
+      // Filter-out-words
       personalTaskDetails: [
         "shave",
         "laundry",
@@ -2072,6 +2074,7 @@ const CONTENT_FILTERS = {
       // familyTaskDetails: [],
       // relationshipTaskDetails: [],
       // interpersonalTaskDetails: [],
+      // Filter-out-words
       homeTaskDetails: [
         "shave",
         "laundry",
@@ -2087,6 +2090,7 @@ const CONTENT_FILTERS = {
         "dishes",
         "fold clothes",
       ],
+      // Filter-out-words
       physicalHealthTaskDetails: ["workout", "run"],
       // mentalHealthTaskDetails: [],
     },
@@ -2098,6 +2102,7 @@ const CONTENT_FILTERS = {
       // critBlocks: [],
       // sketchBlocks: [],
       // researchBlocks: [],
+      // Filter-out-words
       personalAndSocialBlocks: ["lunch"],
       // ritualsBlocks: [],
       // qaBlocks: [],
@@ -2126,6 +2131,7 @@ const CONTENT_FILTERS = {
       // personalInterpersonalBlocks: [],
       // personalHobbiesBlocks: [],
       // Task columns
+      // Filter-out-words
       personalPersonalTasks: [
         "shave",
         "laundry",
@@ -2141,6 +2147,7 @@ const CONTENT_FILTERS = {
         "dishes",
         "fold clothes",
       ],
+      // Filter-out-words
       personalHomeTasks: [
         "shave",
         "laundry",
@@ -2157,11 +2164,13 @@ const CONTENT_FILTERS = {
         "fold clothes",
       ],
       // personalPhysicalHealthTasks: [],
+      // Filter-out-words
       personalMentalHealthTasks: ["rot", "wasted", "waste"],
     },
     work: {
       // Block columns
       // workMeetingsBlocks: [],
+      // Filter-out-words
       workSocialBlocks: ["lunch"],
       // Task columns
       // workDesignTasks: [],
@@ -2182,6 +2191,7 @@ const CONTENT_SPLITS = {
   summarize: {
     personal: {
       personal: {
+        // Categorize-by-title
         admin: [
           "journals",
           "journal",
@@ -2193,6 +2203,7 @@ const CONTENT_SPLITS = {
           "2025",
           "2026",
         ],
+        // Categorize-by-title
         coding: [
           "plugin:",
           "feat:",

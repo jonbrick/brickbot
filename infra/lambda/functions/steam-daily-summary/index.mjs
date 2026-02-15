@@ -8,6 +8,36 @@ import {
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
+// Convert UTC timestamp to Eastern date (YYYY-MM-DD), handles EST/EDT automatically
+function getEasternDate(isoTimestamp) {
+  return new Date(isoTimestamp).toLocaleDateString("en-CA", {
+    timeZone: "America/New_York",
+  });
+}
+
+// Convert UTC timestamp to Eastern ISO with offset (e.g., 2026-01-21T21:54:48-05:00)
+function toEasternISO(isoTimestamp) {
+  const dt = new Date(isoTimestamp);
+  const eastern = new Date(
+    dt.toLocaleString("en-US", { timeZone: "America/New_York" }),
+  );
+  const offsetMs = eastern.getTime() - dt.getTime();
+  const offsetHours = Math.round(offsetMs / (1000 * 60 * 60));
+  const offsetStr =
+    offsetHours <= 0
+      ? `-${String(Math.abs(offsetHours)).padStart(2, "0")}:00`
+      : `+${String(offsetHours).padStart(2, "0")}:00`;
+
+  const year = eastern.getFullYear();
+  const month = String(eastern.getMonth() + 1).padStart(2, "0");
+  const day = String(eastern.getDate()).padStart(2, "0");
+  const hours = String(eastern.getHours()).padStart(2, "0");
+  const minutes = String(eastern.getMinutes()).padStart(2, "0");
+  const seconds = String(eastern.getSeconds()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetStr}`;
+}
+
 export const handler = async (event) => {
   console.log("Starting daily summary generation...");
 
@@ -79,6 +109,10 @@ export const handler = async (event) => {
       // Sort sessions by timestamp
       data.sessions.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
+      // Derive Eastern date from this game's earliest session
+      const earliestTimestamp = data.sessions[0].timestamp;
+      const easternDate = getEasternDate(earliestTimestamp);
+
       // Detect play periods (group consecutive sessions within 90 min)
       const playPeriods = [];
       let currentPeriod = null;
@@ -116,17 +150,20 @@ export const handler = async (event) => {
       // Write one record per period
       for (let i = 0; i < playPeriods.length; i++) {
         const period = playPeriods[i];
-        const endTime = new Date(
+        const endTimeUTC = new Date(
           new Date(period.last_check_time).getTime() + 30 * 60 * 1000,
-        );
+        ).toISOString();
 
         const item = {
-          record_id: `DAILY_${targetDate}_${gameId}_PERIOD_${i + 1}`,
-          date: targetDate,
+          record_id: `DAILY_${easternDate}_${gameId}_PERIOD_${i + 1}`,
+          date: easternDate,
+          date_utc: targetDate,
           game_id: gameId,
           game_name: data.game_name,
-          start_time: period.start_time,
-          end_time: endTime.toISOString(),
+          start_time: toEasternISO(period.start_time),
+          start_time_utc: period.start_time,
+          end_time: toEasternISO(endTimeUTC),
+          end_time_utc: endTimeUTC,
           duration_minutes: period.minutes,
         };
 
@@ -141,14 +178,14 @@ export const handler = async (event) => {
       }
 
       console.log(
-        `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${data.total_minutes} minutes across ${playPeriods.length} periods`,
+        `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${data.total_minutes} minutes across ${playPeriods.length} periods (Eastern date: ${easternDate}, UTC date: ${targetDate})`,
       );
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: `${dryRun ? "[DRY RUN] " : ""}Created ${summariesCreated} period summaries for ${targetDate}`,
+        message: `${dryRun ? "[DRY RUN] " : ""}Created ${summariesCreated} period summaries for ${targetDate} (Eastern: ${getEasternDate(response.Items[0].timestamp)})`,
         games: Object.keys(gameData).map((gameId) => ({
           game: gameData[gameId].game_name,
           total_minutes: gameData[gameId].total_minutes,

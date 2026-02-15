@@ -2197,6 +2197,7 @@ const CONTENT_SPLITS = {
           "plugin:",
           "feat:",
           "bug:",
+          "refactor:",
           "spike:",
           "merge",
           "docs:",

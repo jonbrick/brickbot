@@ -180,7 +180,7 @@ Play period start = timestamp of first check in the cluster. Play period end = h
 1. `SteamService` calls the API Handler day-by-day for the requested date range
 2. For each game with sessions, the collector:
    - Formats session details as human-readable string (e.g., `"5:00-5:30 (31min), 4:00-4:30 (30min)"`)
-   - Converts UTC session times to Eastern Time with the **-1 hour offset** (see below)
+   - Converts UTC session times to Eastern Time
    - Generates `activityId` as `{gameName}-{date}` (sanitized)
    - Extracts the date using `extractSourceDate('steam', startUTC)`
 3. Syncs activities to Notion's Steam Data DB
@@ -191,22 +191,6 @@ Play period start = timestamp of first check in the cluster. Play period end = h
 - No additional time manipulation at this layer
 - Calendar mapping: all Steam records → `VIDEO_GAMES_CALENDAR_ID`
 - Event type: `dateTime` (not all-day)
-
-## The -1 Hour Offset
-
-**This is intentional, not a bug.**
-
-The Checker runs every 30 minutes and records the timestamp when it *detects* increased playtime, not when you actually started playing. If you start at 10:05 PM, the 10:30 PM check is the first to see the increase.
-
-The -1 hour shift in `collect-steam.js` compensates for this detection lag, pushing timestamps back by ~1 hour to approximate when you actually started playing.
-
-**Verified with real data:** Warhammer III on Feb 2, 2026 — calendar event showed correct 11:00 PM - 11:30 PM EST times after the offset.
-
-The offset is applied in `collect-steam.js` during the UTC→Eastern conversion:
-```javascript
-const startEDT = new Date(startUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
-const endEDT = new Date(endUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
-```
 
 ## Notion Database
 
@@ -221,8 +205,8 @@ const endEDT = new Date(endUTC.getTime() + (offsetHours - 1) * 60 * 60 * 1000);
 | Session Count | number | `games[].sessions.length` |
 | Session Details | text | Formatted string (e.g., `"5:00-5:30 (31min)"`) |
 | Activity ID | text | `{gameName}-{date}` sanitized |
-| Start Time | text | UTC→Eastern with -1hr offset |
-| End Time | text | UTC→Eastern with -1hr offset |
+| Start Time | text | UTC→Eastern |
+| End Time | text | UTC→Eastern |
 | Platform | select | Hardcoded `"Steam"` |
 | Calendar Created | checkbox | Set by `yarn update` |
 

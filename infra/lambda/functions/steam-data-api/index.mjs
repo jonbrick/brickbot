@@ -64,11 +64,16 @@ export const handler = async (event) => {
 };
 
 async function getDailyData(date) {
+  // Filter on Eastern date field (not record_id) so brickbot can query by Eastern date
   const scanCommand = new ScanCommand({
     TableName: "steam-playtime",
-    FilterExpression: "begins_with(record_id, :prefix)",
+    FilterExpression: "begins_with(record_id, :prefix) AND #date = :date",
+    ExpressionAttributeNames: {
+      "#date": "date",
+    },
     ExpressionAttributeValues: {
-      ":prefix": `DAILY_${date}`,
+      ":prefix": "DAILY_",
+      ":date": date,
     },
   });
 
@@ -78,8 +83,11 @@ async function getDailyData(date) {
     name: item.game_name,
     game_id: item.game_id,
     date: item.date,
+    date_utc: item.date_utc,
     start_time: item.start_time,
+    start_time_utc: item.start_time_utc,
     end_time: item.end_time,
+    end_time_utc: item.end_time_utc,
     duration_minutes: item.duration_minutes,
   }));
 
@@ -118,8 +126,11 @@ async function getDateRangeData(startDate, endDate) {
     name: item.game_name,
     game_id: item.game_id,
     date: item.date,
+    date_utc: item.date_utc,
     start_time: item.start_time,
+    start_time_utc: item.start_time_utc,
     end_time: item.end_time,
+    end_time_utc: item.end_time_utc,
     duration_minutes: item.duration_minutes,
   }));
 

@@ -15,7 +15,7 @@ function getEasternDate(isoTimestamp) {
   });
 }
 
-// Convert UTC timestamp to Eastern ISO with offset (e.g., 2026-01-21T21:54:48-05:00)
+// Convert UTC timestamp to Eastern ISO with offset (e.g., 2026-01-21T21:30:00-05:00)
 function toEasternISO(isoTimestamp) {
   const dt = new Date(isoTimestamp);
   const eastern = new Date(
@@ -36,6 +36,43 @@ function toEasternISO(isoTimestamp) {
   const seconds = String(eastern.getSeconds()).padStart(2, "0");
 
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetStr}`;
+}
+
+// Snap a check timestamp to a 30-min block boundary
+// The Checker runs every ~30 min and detects playtime that occurred in the preceding window.
+// We round the check time UP to the nearest :00 or :30 to get the block end.
+// Block start = block end - 30 min.
+//
+// Example: check ran at 9:54 PM → rounds up to 10:00 PM → block is 9:30 - 10:00 PM
+// Example: check ran at 10:24 PM → rounds up to 10:30 PM → block is 10:00 - 10:30 PM
+function snapToBlock(isoTimestamp) {
+  const dt = new Date(isoTimestamp);
+  const minutes = dt.getUTCMinutes();
+
+  // Round up to nearest :00 or :30
+  let blockEnd;
+  if (minutes === 0 || minutes === 30) {
+    // Already on a boundary — this IS the block end
+    blockEnd = new Date(dt);
+    blockEnd.setUTCSeconds(0, 0);
+  } else if (minutes > 30) {
+    // Round up to next :00
+    blockEnd = new Date(dt);
+    blockEnd.setUTCMinutes(0, 0, 0);
+    blockEnd.setUTCHours(blockEnd.getUTCHours() + 1);
+  } else {
+    // minutes > 0 && minutes < 30 — round up to :30
+    blockEnd = new Date(dt);
+    blockEnd.setUTCMinutes(30, 0, 0);
+  }
+
+  // Block start = block end - 30 min
+  const blockStart = new Date(blockEnd.getTime() - 30 * 60 * 1000);
+
+  return {
+    blockStart: blockStart.toISOString(),
+    blockEnd: blockEnd.toISOString(),
+  };
 }
 
 export const handler = async (event) => {
@@ -109,37 +146,41 @@ export const handler = async (event) => {
       // Sort sessions by timestamp
       data.sessions.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-      // Derive Eastern date from this game's earliest session
-      const earliestTimestamp = data.sessions[0].timestamp;
-      const easternDate = getEasternDate(earliestTimestamp);
+      // Snap each check to a 30-min block
+      const blocks = data.sessions.map((session) => ({
+        ...snapToBlock(session.timestamp),
+        checkTime: session.timestamp,
+      }));
 
-      // Detect play periods (group consecutive sessions within 90 min)
+      // Detect play periods (consecutive blocks within 90 min = same period)
       const playPeriods = [];
       let currentPeriod = null;
 
-      data.sessions.forEach((session, index) => {
-        const sessionTime = new Date(session.timestamp);
-
+      blocks.forEach((block, index) => {
         if (!currentPeriod) {
           currentPeriod = {
-            start_time: session.timestamp,
-            last_check_time: session.timestamp,
-            minutes: session.minutes,
+            start: block.blockStart,
+            end: block.blockEnd,
+            blockCount: 1,
           };
         } else {
-          const prevSession = data.sessions[index - 1];
-          const timeDiff =
-            (sessionTime - new Date(prevSession.timestamp)) / 1000 / 60;
+          // Gap = time between previous block end and this block start
+          const gap =
+            (new Date(block.blockStart) - new Date(currentPeriod.end)) /
+            1000 /
+            60;
 
-          if (timeDiff <= 90) {
-            currentPeriod.last_check_time = session.timestamp;
-            currentPeriod.minutes += session.minutes;
+          if (gap <= 90) {
+            // Same period — extend to this block's end
+            currentPeriod.end = block.blockEnd;
+            currentPeriod.blockCount++;
           } else {
+            // New period
             playPeriods.push(currentPeriod);
             currentPeriod = {
-              start_time: session.timestamp,
-              last_check_time: session.timestamp,
-              minutes: session.minutes,
+              start: block.blockStart,
+              end: block.blockEnd,
+              blockCount: 1,
             };
           }
         }
@@ -148,23 +189,24 @@ export const handler = async (event) => {
       if (currentPeriod) playPeriods.push(currentPeriod);
 
       // Write one record per period
+      // record_id uses UTC date (targetDate) — just a unique key
+      // date field uses Eastern date per-period — what brickbot queries on
       for (let i = 0; i < playPeriods.length; i++) {
         const period = playPeriods[i];
-        const endTimeUTC = new Date(
-          new Date(period.last_check_time).getTime() + 30 * 60 * 1000,
-        ).toISOString();
+        const easternDate = getEasternDate(period.start);
+        const durationMinutes = period.blockCount * 30;
 
         const item = {
-          record_id: `DAILY_${easternDate}_${gameId}_PERIOD_${i + 1}`,
+          record_id: `DAILY_${targetDate}_${gameId}_PERIOD_${i + 1}`,
           date: easternDate,
           date_utc: targetDate,
           game_id: gameId,
           game_name: data.game_name,
-          start_time: toEasternISO(period.start_time),
-          start_time_utc: period.start_time,
-          end_time: toEasternISO(endTimeUTC),
-          end_time_utc: endTimeUTC,
-          duration_minutes: period.minutes,
+          start_time: toEasternISO(period.start),
+          start_time_utc: period.start,
+          end_time: toEasternISO(period.end),
+          end_time_utc: period.end,
+          duration_minutes: durationMinutes,
         };
 
         if (dryRun) {
@@ -178,18 +220,16 @@ export const handler = async (event) => {
       }
 
       console.log(
-        `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${data.total_minutes} minutes across ${playPeriods.length} periods (Eastern date: ${easternDate}, UTC date: ${targetDate})`,
+        `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${playPeriods.length} period(s), ${blocks.length} blocks (UTC date: ${targetDate})`,
       );
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: `${dryRun ? "[DRY RUN] " : ""}Created ${summariesCreated} period summaries for ${targetDate} (Eastern: ${getEasternDate(response.Items[0].timestamp)})`,
-        games: Object.keys(gameData).map((gameId) => ({
-          game: gameData[gameId].game_name,
-          total_minutes: gameData[gameId].total_minutes,
-        })),
+        message: `${dryRun ? "[DRY RUN] " : ""}Created ${summariesCreated} period summaries for ${targetDate}`,
+        summariesCreated,
+        targetDate,
       }),
     };
   } catch (error) {

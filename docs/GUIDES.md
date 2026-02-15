@@ -671,7 +671,7 @@ function combinePersonalBlocksByCategory(weeklySummaries, summaryDb) {
     weeklySummaries,
     "personal",
     summaryDb,
-    categories.newCategory
+    categories.newCategory,
   );
 
   return {
@@ -751,7 +751,7 @@ CONTENT_SPLITS: {
     personal: {
       personal: {
         admin: ["journals", "retro", "plan", "recap"],  // existing
-        coding: ["feat:", "bug:", "spike:", "merge", "docs:", "skill:", "plugin:"],         // ADD THIS
+        coding: ["feat:", "bug:", "spike:", "merge", "docs:", "skill:", "plugin:", "refactor:"],         // ADD THIS
       },
     },
   },
@@ -800,7 +800,7 @@ const coding = combineWeeklyTasksByCategory(
   "personal",
   summaryDb,
   categories.coding,
-  MONTHLY_RECAP_TASK_PROPERTIES.personal.coding.key
+  MONTHLY_RECAP_TASK_PROPERTIES.personal.coding.key,
 );
 ```
 
@@ -1056,7 +1056,7 @@ function formatMyWorkflowResult(result, recapType) {
   const successLines = buildSuccessData(
     result.selectedSources || [],
     result.data?.summary || result.summary || {},
-    SUMMARY_GROUPS
+    SUMMARY_GROUPS,
   );
   const warnings = formatErrors(result.errors);
   const stats = {

@@ -19,10 +19,15 @@ const {
 } = require("../src/collectors");
 const { INTEGRATIONS } = require("../src/config/unified-sources");
 
+const dryRun = process.argv.includes("--dry-run");
+
 /**
  * Select action type and source
+ * @param {Object} options
+ * @param {boolean} options.dryRun - If true, skip action prompt and use display-only
  */
-async function selectAction() {
+async function selectAction(options = {}) {
+  const { dryRun: isDryRun = false } = options;
   const collectorIds = getCollectorIds();
 
   // Build choices from collector registry
@@ -46,7 +51,7 @@ async function selectAction() {
     })),
   ];
 
-  const { source, action } = await inquirer.prompt([
+  const answers = await inquirer.prompt([
     {
       type: "list",
       name: "source",
@@ -62,9 +67,12 @@ async function selectAction() {
         { name: "Sync to Notion", value: "sync" },
         { name: "Display only (debug)", value: "display" },
       ],
+      when: () => !isDryRun,
     },
   ]);
 
+  const source = answers.source;
+  const action = isDryRun ? "display" : answers.action;
   return `${source}-${action}`;
 }
 
@@ -225,8 +233,11 @@ async function main() {
 
   let spinner;
   try {
+    if (dryRun) {
+      console.log("ℹ️ Dry run: displaying only (no sync to Notion)\n");
+    }
     // Select action first
-    const actionString = await selectAction();
+    const actionString = await selectAction({ dryRun });
     const [source, action] = actionString.split("-");
 
     // Select date range (day granularity - default)

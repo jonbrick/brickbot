@@ -36,6 +36,8 @@ const {
   formatErrors,
 } = require("../src/utils/workflow-output");
 
+const dryRun = process.argv.includes("--dry-run");
+
 /**
  * Select action type (display only or update)
  * @param {Object} sourceTypes - Object indicating which source types are selected
@@ -417,14 +419,17 @@ async function main() {
     };
 
     // Select action
-    const action = await selectAction(sourceTypes);
+    const action = dryRun ? "display" : await selectAction(sourceTypes);
     const displayOnly = action === "display";
+    if (dryRun) {
+      console.log("ℹ️ Dry run: results will not be saved to Notion\n");
+    }
 
     // Select week(s) - week granularity mode always returns weeks array
     const { weeks, displayText } = await selectDateRange({ minGranularity: "week" });
     if (displayText) console.log(displayText);
 
-    if (displayOnly) {
+    if (displayOnly && !dryRun) {
       console.log("ℹ️ Display mode: Results will not be saved to Notion\n");
     }
 

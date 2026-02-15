@@ -23,10 +23,15 @@ const {
 } = require("../src/updaters");
 const { INTEGRATIONS } = require("../src/config/unified-sources");
 
+const dryRun = process.argv.includes("--dry-run");
+
 /**
  * Select source and action type (display only or sync to calendar)
+ * @param {Object} options
+ * @param {boolean} options.dryRun - If true, skip action prompt and use display-only
  */
-async function selectSourceAndAction() {
+async function selectSourceAndAction(options = {}) {
+  const { dryRun: isDryRun = false } = options;
   const updaterIds = getUpdaterIds();
 
   // Build choices from updater registry
@@ -50,7 +55,7 @@ async function selectSourceAndAction() {
     })),
   ];
 
-  const { source, action } = await inquirer.prompt([
+  const answers = await inquirer.prompt([
     {
       type: "list",
       name: "source",
@@ -66,9 +71,13 @@ async function selectSourceAndAction() {
         { name: "Sync to Calendar", value: "sync" },
         { name: "Display only (debug)", value: "display" },
       ],
+      when: () => !isDryRun,
     },
   ]);
-  return { source, action };
+  return {
+    source: answers.source,
+    action: isDryRun ? "display" : answers.action,
+  };
 }
 
 /**
@@ -267,8 +276,11 @@ async function main() {
       return;
     }
 
+    if (dryRun) {
+      console.log("ℹ️ Dry run: displaying only (no sync to Calendar)\n");
+    }
     // Select source and action
-    const { source, action } = await selectSourceAndAction();
+    const { source, action } = await selectSourceAndAction({ dryRun });
 
     // Select date range (day granularity, no future dates for calendar sync)
     const { startDate, endDate, displayText } = await selectDateRange({ 

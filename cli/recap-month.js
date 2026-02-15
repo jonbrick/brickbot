@@ -14,6 +14,8 @@ const {
 const output = require("../src/utils/output");
 const { formatMonthlyRecapResult } = require("../src/utils/workflow-output");
 
+const dryRun = process.argv.includes("--dry-run");
+
 /**
  * Select recap type
  * @returns {Promise<string>} Selected recap type ("all", "personal", or "work")
@@ -157,8 +159,11 @@ async function main() {
     const availableTypes = getAvailableRecapTypes(selectedRecapType);
 
     // Select action
-    const action = await selectAction();
+    const action = dryRun ? "display" : await selectAction();
     const displayOnly = action === "display";
+    if (dryRun) {
+      console.log("ℹ️ Dry run: results will not be saved to Notion\n");
+    }
 
     // Select month(s) - returns { months, displayText }
     const { months, displayText } = await selectDateRange({

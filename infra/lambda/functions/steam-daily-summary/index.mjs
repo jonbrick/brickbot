@@ -12,6 +12,8 @@ export const handler = async (event) => {
   console.log("Starting daily summary generation...");
 
   try {
+    const dryRun = event.dryRun || false;
+
     // Get date from event or use yesterday
     let targetDate;
     if (event.date) {
@@ -22,7 +24,7 @@ export const handler = async (event) => {
       targetDate = yesterday.toISOString().split("T")[0];
     }
 
-    console.log(`Processing date: ${targetDate}`);
+    console.log(`Processing date: ${targetDate}${dryRun ? " [DRY RUN]" : ""}`);
 
     // Scan for all records from target date with session_minutes
     const scanCommand = new ScanCommand({
@@ -77,88 +79,76 @@ export const handler = async (event) => {
       // Sort sessions by timestamp
       data.sessions.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-      // Detect play periods (group consecutive sessions)
+      // Detect play periods (group consecutive sessions within 90 min)
       const playPeriods = [];
       let currentPeriod = null;
 
       data.sessions.forEach((session, index) => {
         const sessionTime = new Date(session.timestamp);
-        const sessionHour = sessionTime.getHours();
 
         if (!currentPeriod) {
-          // Start new period
           currentPeriod = {
-            start_hour: sessionHour,
-            end_hour: sessionHour,
+            start_time: session.timestamp,
+            last_check_time: session.timestamp,
             minutes: session.minutes,
-            session_count: 1,
           };
         } else {
-          // Check if this is part of the same gaming period (within 1 hour)
           const prevSession = data.sessions[index - 1];
           const timeDiff =
-            (sessionTime - new Date(prevSession.timestamp)) / 1000 / 60; // minutes
+            (sessionTime - new Date(prevSession.timestamp)) / 1000 / 60;
 
           if (timeDiff <= 90) {
-            // Same gaming period if within 90 minutes
-            currentPeriod.end_hour = sessionHour;
+            currentPeriod.last_check_time = session.timestamp;
             currentPeriod.minutes += session.minutes;
-            currentPeriod.session_count++;
           } else {
-            // Gap too large, save current period and start new one
             playPeriods.push(currentPeriod);
             currentPeriod = {
-              start_hour: sessionHour,
-              end_hour: sessionHour,
+              start_time: session.timestamp,
+              last_check_time: session.timestamp,
               minutes: session.minutes,
-              session_count: 1,
             };
           }
         }
       });
 
-      // Don't forget the last period
-      if (currentPeriod) {
-        playPeriods.push(currentPeriod);
+      if (currentPeriod) playPeriods.push(currentPeriod);
+
+      // Write one record per period
+      for (let i = 0; i < playPeriods.length; i++) {
+        const period = playPeriods[i];
+        const endTime = new Date(
+          new Date(period.last_check_time).getTime() + 30 * 60 * 1000,
+        );
+
+        const item = {
+          record_id: `DAILY_${targetDate}_${gameId}_PERIOD_${i + 1}`,
+          date: targetDate,
+          game_id: gameId,
+          game_name: data.game_name,
+          start_time: period.start_time,
+          end_time: endTime.toISOString(),
+          duration_minutes: period.minutes,
+        };
+
+        if (dryRun) {
+          console.log(`[DRY RUN] Would write:`, JSON.stringify(item));
+        } else {
+          await docClient.send(
+            new PutCommand({ TableName: "steam-playtime", Item: item }),
+          );
+        }
+        summariesCreated++;
       }
 
-      // Format play periods for storage
-      const formattedPeriods = playPeriods.map((period) => ({
-        start_time: `${period.start_hour}:00`,
-        end_time: `${period.end_hour}:30`, // Since we check every 30 min
-        duration_minutes: period.minutes,
-        checks: period.session_count,
-      }));
-
-      // Store daily summary
-      const summaryItem = {
-        record_id: `DAILY_${targetDate}_${gameId}`,
-        date: targetDate,
-        game_id: gameId,
-        game_name: data.game_name,
-        total_minutes: data.total_minutes,
-        total_hours: Number((data.total_minutes / 60).toFixed(1)),
-        play_periods: formattedPeriods,
-        period_count: formattedPeriods.length,
-      };
-
       console.log(
-        `Saving summary for ${data.game_name}: ${data.total_minutes} minutes across ${formattedPeriods.length} periods`,
+        `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${data.total_minutes} minutes across ${playPeriods.length} periods`,
       );
-
-      const putCommand = new PutCommand({
-        TableName: "steam-playtime",
-        Item: summaryItem,
-      });
-
-      await docClient.send(putCommand);
-      summariesCreated++;
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: `Created ${summariesCreated} daily summaries for ${targetDate}`,
+        message: `${dryRun ? "[DRY RUN] " : ""}Created ${summariesCreated} period summaries for ${targetDate}`,
         games: Object.keys(gameData).map((gameId) => ({
           game: gameData[gameId].game_name,
           total_minutes: gameData[gameId].total_minutes,

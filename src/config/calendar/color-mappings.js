@@ -35,9 +35,12 @@ const WORK_COLOR_MAPPING = {
 // Events/Trips Category to Color Mapping
 // Maps Notion category select values (with emojis) to Google Calendar color IDs
 const EVENTS_TRIPS_CATEGORY_TO_COLOR = {
-  "🍻 Interpersonal": "3", // Grape (purple)
-  "💼 Work": "1", // Peacock (blue)
-  "🌱 Personal": null, // Default (no color)
+  "🍻 Interpersonal": "3", // Grape
+  "💼 Work": "1", // Peacock
+  "🌱 Personal": null, // Default
+  "❤️ Mental Health": "11", // Tomato (red) — matches personal calendar
+  "🏠 Home": "5", // Banana (yellow) — matches personal calendar
+  "💪 Physical Health": "8", // Graphite — matches personal calendar
 };
 
 // Events Subcategory to Color Mapping (overrides category when set)
@@ -98,7 +101,7 @@ function getPersonalCategoryDisplayName(colorId) {
 function getEnhancedPersonalCategory(
   event,
   currentWeekNumber = null,
-  relationships = []
+  relationships = [],
 ) {
   const {
     matchInterpersonalCategory,

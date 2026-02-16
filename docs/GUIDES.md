@@ -878,6 +878,8 @@ CALENDARS: {
 }
 ```
 
+**Events and Trips**: Event colors for Notion Events and Trips are configured in `src/config/calendar/color-mappings.js`, not in CALENDARS. Events support **subcategory overrides** (e.g. "Wasted day" → red): add an entry to `EVENTS_SUBCATEGORY_TO_COLOR` with the exact Notion Subcategory value and the desired color ID (e.g. `"11"` for red). See [REFERENCE](REFERENCE.md#calendar-color-mappings) for the full palette and mapping layout.
+
 **Google Calendar Color IDs**:
 
 - 1: Lavender

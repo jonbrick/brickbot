@@ -40,6 +40,12 @@ const EVENTS_TRIPS_CATEGORY_TO_COLOR = {
   "🌱 Personal": null, // Default (no color)
 };
 
+// Events Subcategory to Color Mapping (overrides category when set)
+// Maps Notion Events Subcategory values to Google Calendar color IDs
+const EVENTS_SUBCATEGORY_TO_COLOR = {
+  "Wasted day": "11", // Tomato/red
+};
+
 // PALE_BLUE	Enum	 Pale Blue ("1"), referred to as "Peacock" in th Calendar UI.
 // PALE_GREEN	Enum	 Pale Green ("2"), referred to as "Sage" in th Calendar UI.
 // MAUVE	Enum	 Mauve ("3"),, referred to as "Grape" in th Calendar UI.
@@ -145,14 +151,30 @@ function getColorIdFromNotionCategory(category) {
   return EVENTS_TRIPS_CATEGORY_TO_COLOR[category] || null;
 }
 
+/**
+ * Get Google Calendar color ID for a Notion Event (subcategory overrides category)
+ * @param {string|null} category - Notion Events Category value
+ * @param {string|Array|null} subcategory - Notion Events Subcategory value (may be array from multi-select)
+ * @returns {string|null} Google Calendar color ID or null if no color
+ */
+function getColorIdForNotionEvent(category, subcategory) {
+  const sub = Array.isArray(subcategory) ? subcategory[0] : subcategory;
+  if (sub != null && EVENTS_SUBCATEGORY_TO_COLOR[sub] !== undefined) {
+    return EVENTS_SUBCATEGORY_TO_COLOR[sub];
+  }
+  return getColorIdFromNotionCategory(category);
+}
+
 module.exports = {
   PERSONAL_COLOR_MAPPING,
   WORK_COLOR_MAPPING,
   EVENTS_TRIPS_CATEGORY_TO_COLOR,
+  EVENTS_SUBCATEGORY_TO_COLOR,
   getPersonalCategoryByColor,
   getPersonalCategoryDisplayName,
   getEnhancedPersonalCategory,
   getWorkCategoryByColor,
   getWorkCategoryDisplayName,
   getColorIdFromNotionCategory,
+  getColorIdForNotionEvent,
 };

@@ -92,7 +92,7 @@ async function handleAllSources(startDate, endDate, action) {
   const sources = collectorIds
     .map((id) => ({
       id,
-      name: INTEGRATIONS[id].name.split(" (")[0],
+      name: INTEGRATIONS[id].name.split(" ")[0],
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 

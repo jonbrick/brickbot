@@ -344,6 +344,18 @@ sleep: {
 }
 ```
 
+### Calendar color mappings
+
+**Location**: `src/config/calendar/color-mappings.js`
+
+When syncing Notion Events and Trips to Google Calendar, event color is set from these mappings. When reading calendar events for summaries/recaps, Personal and Work category is derived from `colorId`.
+
+- **Events**: Color is resolved by **subcategory first**, then **category** fallback. Subcategory map: `EVENTS_SUBCATEGORY_TO_COLOR`. Category map: `EVENTS_TRIPS_CATEGORY_TO_COLOR` (e.g. Interpersonal, Work, Personal).
+- **Trips**: Color from **category** only via `EVENTS_TRIPS_CATEGORY_TO_COLOR`.
+- **Personal/Work (read path)**: `PERSONAL_COLOR_MAPPING` and `WORK_COLOR_MAPPING` map `colorId` to category for summary/recap flows.
+
+**Google Calendar color IDs** (1–11): 1 Peacock, 2 Sage, 3 Grape, 4 Flamingo, 5 Banana, 6 Tangerine, 7 Lavender, 8 Graphite, 9 Blueberry, 10 Basil, 11 Tomato.
+
 ### SUMMARY_GROUPS Registry
 
 **Location**: `src/config/unified-sources.js`

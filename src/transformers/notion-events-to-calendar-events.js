@@ -3,7 +3,7 @@
 const config = require("../config");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
 const {
-  getColorIdFromNotionCategory,
+  getColorIdForNotionEvent,
 } = require("../config/calendar/color-mappings");
 const { addOneDay } = require("../utils/date");
 
@@ -76,8 +76,8 @@ function transformEventToCalendarEvent(record, repo) {
     end: { date: addOneDay(dateRange.end) },
   };
 
-  // Add color if mapped
-  const colorId = getColorIdFromNotionCategory(category);
+  // Add color if mapped (subcategory overrides category)
+  const colorId = getColorIdForNotionEvent(category, subcategory);
   if (colorId) {
     event.colorId = colorId;
   }

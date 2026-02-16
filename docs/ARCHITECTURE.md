@@ -218,6 +218,7 @@ Used by: events, trips
 - Stores Google Calendar event ID + tracks sync status
 - Can update existing calendar events when Notion records change
 - Can delete orphaned calendar events when Notion records are deleted
+- Records with Status **🧊 Ice Box** or **↗️ Next Year** are skipped (not synced); see `CALENDAR_SKIP_STATUSES` in `src/config/notion/task-categories.js`
 - Appropriate for manually managed data that users edit/delete
 
 ```javascript

@@ -5,6 +5,7 @@ const { resolveCalendarId } = require("../utils/calendar-mapper");
 const {
   getColorIdFromNotionCategory,
 } = require("../config/calendar/color-mappings");
+const { CALENDAR_SKIP_STATUSES } = require("../config/notion/task-categories");
 const { addOneDay } = require("../utils/date");
 
 /**
@@ -29,6 +30,15 @@ function extractEmoji(subcategory) {
  */
 function transformTripToCalendarEvent(record, repo) {
   const props = config.notion.properties.trips;
+
+  // Skip records with status in calendar skip list (e.g. Ice Box, Next Year)
+  const status = repo.extractProperty(
+    record,
+    config.notion.getPropertyName(props.status)
+  );
+  if (status && CALENDAR_SKIP_STATUSES.includes(status)) {
+    return null;
+  }
 
   // Extract properties using config property names
   const tripName = repo.extractProperty(

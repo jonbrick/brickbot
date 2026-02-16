@@ -356,6 +356,14 @@ When syncing Notion Events and Trips to Google Calendar, event color is set from
 
 **Google Calendar color IDs** (1–11): 1 Peacock, 2 Sage, 3 Grape, 4 Flamingo, 5 Banana, 6 Tangerine, 7 Lavender, 8 Graphite, 9 Blueberry, 10 Basil, 11 Tomato.
 
+**Events and Trips calendar sync**: Events and Trips databases must have a **Status** (select) property in Notion. Records with Status **🧊 Ice Box** or **↗️ Next Year** are skipped by `yarn update` (not synced to Google Calendar). The skip list is defined in `src/config/notion/task-categories.js` as `CALENDAR_SKIP_STATUSES`.
+
+### Medications config
+
+**Location**: `src/config/notion/medications.js`
+
+List and order of medications are defined by `MEDICATION_SECTIONS` (section labels and fields). Each section’s fields must have matching entries in `properties` and `fieldMappings`; Notion checkbox column names must match `properties[].name`. See [Internals – Medications list and calendar event format](INTERNALS.md#medications-list-and-calendar-event-format) for description/summary behavior and how to add or reorder medications.
+
 ### SUMMARY_GROUPS Registry
 
 **Location**: `src/config/unified-sources.js`

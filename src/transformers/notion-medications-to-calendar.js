@@ -1,7 +1,7 @@
 // Transforms Medications Notion records to Calendar events
 
 const config = require("../config");
-const { MEDICATION_FIELDS } = require("../config/notion/medications");
+const { MEDICATION_SECTIONS } = require("../config/notion/medications");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
 
 /**
@@ -23,32 +23,40 @@ function transformMedicationToCalendarEvent(record, repo) {
     return null; // Skip if missing date
   }
 
-  // Check each medication and build description
   const descriptionLines = [];
-  let checkedCount = 0;
-  const totalCount = MEDICATION_FIELDS.length;
+  const sectionsWithChecked = [];
 
-  for (const field of MEDICATION_FIELDS) {
-    const isChecked = repo.extractProperty(
-      record,
-      config.notion.getPropertyName(props[field.key])
-    );
-
-    if (isChecked) {
-      checkedCount++;
-      descriptionLines.push(`✅ ${field.label}`);
-    } else {
-      descriptionLines.push(`❌ ${field.label}`);
+  for (const section of MEDICATION_SECTIONS) {
+    let hasAnyChecked = false;
+    for (const field of section.fields) {
+      const isChecked = repo.extractProperty(
+        record,
+        config.notion.getPropertyName(props[field.key])
+      );
+      if (isChecked) {
+        hasAnyChecked = true;
+      }
+      descriptionLines.push(isChecked ? `✅ ${field.label}` : `❌ ${field.label}`);
+    }
+    sectionsWithChecked.push({ ...section, hasAnyChecked });
+    // Add separator after section except after the last one
+    if (section !== MEDICATION_SECTIONS[MEDICATION_SECTIONS.length - 1]) {
+      descriptionLines.push("-----------");
     }
   }
 
-  // Skip if no medications checked
-  if (checkedCount === 0) {
+  // Skip when no section has any check
+  const anySectionChecked = sectionsWithChecked.some((s) => s.hasAnyChecked);
+  if (!anySectionChecked) {
     return null;
   }
 
-  // Build event
-  const summary = `💊 Medication (${checkedCount}/${totalCount})`;
+  const summary =
+    "💊 " +
+    sectionsWithChecked
+      .filter((s) => s.hasAnyChecked)
+      .map((s) => s.label)
+      .join(", ");
   const description = descriptionLines.join("\n");
 
   // Format date as YYYY-MM-DD

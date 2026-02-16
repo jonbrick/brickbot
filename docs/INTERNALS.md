@@ -19,6 +19,7 @@
 ## Table of Contents
 
 - [Design Patterns](#design-patterns)
+  - [Medications list and calendar event format](#medications-list-and-calendar-event-format)
 - [Output at Edges](#output-at-edges)
 - [Code Quality & DRY Principles](#code-quality--dry-principles)
 - [API Rate Limiting](#api-rate-limiting)
@@ -224,19 +225,19 @@ function autoDiscoverCollectors() {
 // Direct mapping: one database → one calendar
 {
   type: 'direct',
-  sourceDatabase: 'oura',
-  calendarId: process.env.GOOGLE_CALENDAR_SLEEP_ID,
+  sourceDatabase: 'medications',
+  calendarId: process.env.MEDICATIONS_CALENDAR_ID,
 }
 
 // Property-based mapping: route by property value
 {
   type: 'property-based',
-  sourceDatabase: 'medications',
-  routingProperty: 'Medication Type',
+  sourceDatabase: 'sleep',
+  routingProperty: 'Google Calendar',
   mappings: {
-    'Blood Pressure': process.env.GOOGLE_CALENDAR_BLOOD_PRESSURE_ID,
-    'Supplement': process.env.GOOGLE_CALENDAR_SUPPLEMENTS_ID,
-  }
+    'Normal Wake Up': process.env.NORMAL_WAKE_UP_CALENDAR_ID,
+    'Sleep In': process.env.SLEEP_IN_CALENDAR_ID,
+  },
 }
 
 // Lookup-based mapping: route by lookup table
@@ -248,6 +249,24 @@ function autoDiscoverCollectors() {
   defaultCalendar: process.env.GOOGLE_CALENDAR_DEFAULT_ID,
 }
 ```
+
+### Medications list and calendar event format
+
+**Location**: `src/config/notion/medications.js`
+
+The medication list, section order, and Notion column mapping are defined in one place:
+
+- **`MEDICATION_SECTIONS`** – Array of sections. Each section has a `label` (used in the calendar event summary) and `fields` (array of `{ key, label }`). The order of sections and fields controls the calendar event description and the left-to-right summary.
+- **`properties`** – Notion property definitions. Each medication is a checkbox; the `name` must match the Notion column name exactly.
+- **`fieldMappings`** – Map config keys to Notion property keys (typically the same string).
+
+To add or reorder medications: edit `MEDICATION_SECTIONS` (and add the corresponding entry to `properties` and `fieldMappings`), then add a matching checkbox column in the Notion Medications database.
+
+**Calendar event behavior:**
+
+- **Description**: Section lines (one per medication: ✅ or ❌ plus label), with `-----------` between sections.
+- **Summary**: `💊` plus comma-separated section labels for sections that have at least one checkbox checked; sections with no checks are omitted.
+- **Skip**: No event is created when every checkbox is unchecked.
 
 ---
 

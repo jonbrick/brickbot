@@ -25,6 +25,7 @@ module.exports = {
 
   properties: {
     eventName: { name: "Event Name", type: "title", enabled: true },
+    status: { name: "Status", type: "select", enabled: true },
     category: { name: "Category", type: "select", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
     subcategory: { name: "Subcategory", type: "select", enabled: true },

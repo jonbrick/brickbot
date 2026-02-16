@@ -34,6 +34,9 @@ const TASK_STATUS_MAPPING = {
   "🧊 Ice Box": "iceBox",
 };
 
+/** Status values that should be skipped for calendar sync (Events/Trips) */
+const CALENDAR_SKIP_STATUSES = ["🧊 Ice Box", "↗️ Next Year"];
+
 /**
  * Get category key from task Category value
  * @param {string} taskType - Task Category value (e.g., "💪 Physical Health")
@@ -60,6 +63,7 @@ module.exports = {
   TASK_CATEGORY_MAPPING,
   WORK_TASK_CATEGORY_MAPPING,
   TASK_STATUS_MAPPING,
+  CALENDAR_SKIP_STATUSES,
   getCategoryKey,
   getWorkCategoryKey,
 };

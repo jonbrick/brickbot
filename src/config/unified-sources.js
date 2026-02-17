@@ -2192,6 +2192,16 @@ const CONTENT_SPLITS = {
     personal: {
       personal: {
         // Categorize-by-title
+        coding: [
+          "plugin:",
+          "feat:",
+          "bug:",
+          "refactor:",
+          "spike:",
+          "merge",
+          "docs:",
+          "skill:",
+        ],
         admin: [
           "journals",
           "journal",
@@ -2202,17 +2212,6 @@ const CONTENT_SPLITS = {
           "2024",
           "2025",
           "2026",
-        ],
-        // Categorize-by-title
-        coding: [
-          "plugin:",
-          "feat:",
-          "bug:",
-          "refactor:",
-          "spike:",
-          "merge",
-          "docs:",
-          "skill:",
         ],
       },
     },

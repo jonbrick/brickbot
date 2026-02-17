@@ -1,6 +1,7 @@
 // Transforms GitHub Personal Notion records to Personal PRs Calendar events
 
 const config = require("../config");
+const { CALENDARS } = require("../config/unified-sources");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
 const { formatDateOnly } = require("../utils/date");
 
@@ -129,7 +130,7 @@ function transformGithubPersonalToCalendarEvent(personalRecord, personalRepo) {
   const repoName = extractRepoName(repository);
 
   // Format event title with calculations
-  const summary = `${repoName}: ${commitsCount} commit${
+  const summary = `${CALENDARS.personalPRs.emoji} ${repoName}: ${commitsCount} commit${
     commitsCount === 1 ? "" : "s"
   } (+${totalLinesAdded}/-${totalLinesDeleted} lines)`;
 

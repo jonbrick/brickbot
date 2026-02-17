@@ -1,6 +1,7 @@
 // Transforms Withings Notion records to Body Weight Calendar events
 
 const config = require("../config");
+const { CALENDARS } = require("../config/unified-sources");
 const { buildTransformer } = require("./buildTransformer");
 
 const props = config.notion.properties.withings;
@@ -49,11 +50,11 @@ function transformBodyWeightToCalendarEvent(record, repo) {
     config.notion.getPropertyName(props.weight)
   );
 
-  // Handle summary: "Weight: {weight} lbs" or "Weight Measurement"
+  // Handle summary: emoji + "Weight: {weight} lbs" or "Weight Measurement"
   if (weight !== null && weight !== undefined) {
-    result.event.summary = `Weight: ${weight} lbs`;
+    result.event.summary = `${CALENDARS.bodyWeight.emoji} Weight: ${weight} lbs`;
   } else {
-    result.event.summary = "Weight Measurement";
+    result.event.summary = `${CALENDARS.bodyWeight.emoji} Weight Measurement`;
   }
 
   return result;

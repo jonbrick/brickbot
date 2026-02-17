@@ -1,13 +1,14 @@
 // Transforms Strava Notion records to Workout Calendar events
 
 const config = require("../config");
+const { CALENDARS } = require("../config/unified-sources");
 const { buildTransformer } = require("./buildTransformer");
 
 const props = config.notion.properties.strava;
 
 // Build transformer using helper
 const transformWorkoutToCalendarEvent = buildTransformer("workouts", {
-  summary: "{{name}}",
+  summary: `${CALENDARS.workout.emoji} {{name}}`,
   description: (values) => {
     const activityName = values.name || "Workout";
     const duration = values.duration || "N/A";

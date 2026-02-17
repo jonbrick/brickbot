@@ -1,13 +1,14 @@
 // Transforms Steam Notion records to Video Games Calendar events
 
 const config = require("../config");
+const { CALENDARS } = require("../config/unified-sources");
 const { buildTransformer } = require("./buildTransformer");
 
 const props = config.notion.properties.steam;
 
 // Build transformer using helper
 const transformSteamToCalendarEvent = buildTransformer("steam", {
-  summary: "🎮 {{gameName}}",
+  summary: `${CALENDARS.videoGames.emoji} {{gameName}}`,
   description: (values) => {
     const gameName = values.gameName || "Gaming Session";
     const minutesPlayed = values.minutesPlayed || 0;

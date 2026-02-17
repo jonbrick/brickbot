@@ -51,6 +51,7 @@ function transformMedicationToCalendarEvent(record, repo) {
     return null;
   }
 
+  // Prefix must match ADDITIONAL_EMOJI_PREFIXES in config/calendar/summary-emoji-prefixes.js so yarn summarize can strip it.
   const summary =
     "💊 " +
     sectionsWithChecked

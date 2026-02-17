@@ -1,6 +1,7 @@
 // Transforms GitHub Work Notion records to Work PRs Calendar events
 
 const config = require("../config");
+const { CALENDARS } = require("../config/unified-sources");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
 const { formatDateOnly } = require("../utils/date");
 
@@ -115,7 +116,7 @@ function transformGithubWorkToCalendarEvent(workRecord, workRepo) {
   }
 
   // Format event title with PR title and number
-  const summary = `${prTitle} (#${prNumber})`;
+  const summary = `${CALENDARS.workPRs.emoji} ${prTitle} (#${prNumber})`;
 
   // Format date as YYYY-MM-DD for all-day event
   let dateStr = null;

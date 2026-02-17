@@ -13,6 +13,7 @@ const {
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
+  stripKnownCalendarSummaryEmoji,
   filterEventsByContentFilters,
   filterTasksByContentFilters,
   getSplitTargetCategory,
@@ -281,7 +282,7 @@ function transformCalendarEventsToRecapData(
     const detailsText =
       filteredEvents
         .map((event) => {
-          const eventName = event.summary || "Untitled Event";
+          const eventName = stripKnownCalendarSummaryEmoji(event.summary) || "Untitled Event";
           const day = getDayAbbreviation(event.date);
           return `${eventName} (${day})`;
         })

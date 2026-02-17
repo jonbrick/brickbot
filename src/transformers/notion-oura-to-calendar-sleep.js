@@ -1,6 +1,7 @@
 // Transforms Oura Notion records to Sleep Calendar events
 
 const config = require("../config");
+const { SUMMARY_GROUPS } = require("../config/unified-sources");
 const { resolveCalendarId } = require("../utils/calendar-mapper");
 
 /**
@@ -126,7 +127,7 @@ function transformSleepToCalendarEvent(sleepRecord, sleepRepo) {
   }
 
   // Format event title with calculations
-  const summary = `Sleep - ${sleepDuration}hrs (${efficiency}% efficiency)`;
+  const summary = `${SUMMARY_GROUPS.sleep.emoji} Sleep - ${sleepDuration}hrs (${efficiency}% efficiency)`;
 
   // Use ISO timestamps directly for dateTime events
   const startDateTime = bedtime || null;

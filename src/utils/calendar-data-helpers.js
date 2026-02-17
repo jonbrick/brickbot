@@ -9,6 +9,30 @@ const {
   CONTENT_FILTERS,
   CONTENT_SPLITS,
 } = require("../config/unified-sources");
+const { CALENDAR_SUMMARY_EMOJI_PREFIXES } = require("../config/calendar/summary-emoji-prefixes");
+
+/**
+ * Strip a known calendar summary emoji prefix from the start of a title (for recap display).
+ * If the string starts with a letter, do not strip. Only strips prefixes from our config list.
+ * @param {string} summary - Event summary/title
+ * @returns {string} Summary with known leading emoji (and optional space) removed, or unchanged
+ */
+function stripKnownCalendarSummaryEmoji(summary) {
+  if (summary == null || typeof summary !== "string") return summary;
+  const trimmed = summary.trim();
+  if (trimmed.length === 0) return summary;
+  // If it starts with a letter, no emoji prefix to strip
+  if (/^\p{L}/u.test(trimmed)) return summary;
+  for (const prefix of CALENDAR_SUMMARY_EMOJI_PREFIXES) {
+    if (!prefix || prefix.length === 0) continue;
+    if (trimmed.startsWith(prefix)) {
+      let rest = trimmed.slice(prefix.length);
+      if (rest.startsWith(" ")) rest = rest.slice(1);
+      return rest.trim();
+    }
+  }
+  return summary;
+}
 
 /**
  * Get 3-letter day abbreviation from a date string
@@ -174,7 +198,7 @@ function formatBlocksWithTimeRanges(events) {
           return new Date(a.startDateTime) - new Date(b.startDateTime);
         })
         .map((event) => {
-          const eventName = event.summary || "Untitled Event";
+          const eventName = stripKnownCalendarSummaryEmoji(event.summary) || "Untitled Event";
 
           if (event.isAllDayEvent) {
             return `${eventName} (all day)`;
@@ -325,6 +349,7 @@ module.exports = {
   calculateCalendarData,
   formatBlocksWithTimeRanges,
   formatTasksByDay,
+  stripKnownCalendarSummaryEmoji,
   filterEventsByContentFilters,
   getSplitTargetCategory,
   filterTasksByContentFilters,

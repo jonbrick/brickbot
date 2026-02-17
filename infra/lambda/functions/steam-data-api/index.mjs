@@ -64,16 +64,15 @@ export const handler = async (event) => {
 };
 
 async function getDailyData(date) {
-  // Filter on Eastern date field (not record_id) so brickbot can query by Eastern date
   const scanCommand = new ScanCommand({
     TableName: "steam-playtime",
-    FilterExpression: "begins_with(record_id, :prefix) AND #date = :date",
+    FilterExpression: "#date = :date AND begins_with(record_id, :prefix)",
     ExpressionAttributeNames: {
       "#date": "date",
     },
     ExpressionAttributeValues: {
-      ":prefix": "DAILY_",
       ":date": date,
+      ":prefix": "DAILY_",
     },
   });
 

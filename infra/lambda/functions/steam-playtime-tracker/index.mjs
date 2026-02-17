@@ -8,6 +8,13 @@ import {
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
+// Convert UTC timestamp to Eastern date (YYYY-MM-DD), handles EST/EDT automatically
+function getEasternDate(isoTimestamp) {
+  return new Date(isoTimestamp).toLocaleDateString("en-CA", {
+    timeZone: "America/New_York",
+  });
+}
+
 export const handler = async (event) => {
   console.log("Starting Steam playtime check...");
 
@@ -25,7 +32,8 @@ export const handler = async (event) => {
 
     const games = data.response.games;
     const timestamp = new Date().toISOString();
-    const date = timestamp.split("T")[0];
+    const date_utc = timestamp.split("T")[0];
+    const date = getEasternDate(timestamp);
 
     console.log(`Found ${games.length} games. Processing...`);
 
@@ -70,6 +78,7 @@ export const handler = async (event) => {
               game_name: game.name,
               timestamp: timestamp,
               date: date,
+              date_utc: date_utc,
               total_minutes: currentMinutes,
               session_minutes: delta,
             },

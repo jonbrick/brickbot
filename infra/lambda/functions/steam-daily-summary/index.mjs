@@ -93,13 +93,13 @@ export const handler = async (event) => {
 
     console.log(`Processing date: ${targetDate}${dryRun ? " [DRY RUN]" : ""}`);
 
-    // Scan for all records from target date with session_minutes
+    // Scan for all Checker records from target UTC date with session_minutes
     const scanCommand = new ScanCommand({
       TableName: "steam-playtime",
       FilterExpression:
-        "#date = :date AND attribute_exists(session_minutes) AND session_minutes > :zero",
+        "#date_utc = :date AND attribute_exists(session_minutes) AND session_minutes > :zero",
       ExpressionAttributeNames: {
-        "#date": "date",
+        "#date_utc": "date_utc",
       },
       ExpressionAttributeValues: {
         ":date": targetDate,

@@ -277,6 +277,9 @@ async function main() {
                     personalRecord.id,
                     results.personal.monthlyRecap
                   );
+                  await personalDb.syncFormulaValuesToValueProperties(
+                    personalRecord.id
+                  );
                   spinner.stop();
                   const recordTitle =
                     personalRecord.properties[
@@ -317,6 +320,9 @@ async function main() {
                   await workDb.upsertMonthRecap(
                     workRecord.id,
                     results.work.monthlyRecap
+                  );
+                  await workDb.syncFormulaValuesToValueProperties(
+                    workRecord.id
                   );
                   spinner.stop();
                   const recordTitle =

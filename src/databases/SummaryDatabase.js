@@ -7,6 +7,26 @@ const {
   MONTHLY_RECAP_BLOCK_PROPERTIES,
   MONTHLY_RECAP_TASK_PROPERTIES,
 } = require("../config/unified-sources");
+const { delay } = require("../utils/async");
+
+/** Formula property name → Values text property name (Personal monthly recap) */
+const PERSONAL_FORMULA_TO_VALUES = {
+  "Personal Rocks": "Personal Rocks Values",
+  "Monthly Habits": "Monthly Habits Values",
+  "Personal Trips & Events": "Personal Trips & Events Values",
+  "What went well?": "What went well? Values",
+  "What didn't go so well?": "What didn't go so well? Values",
+  "What did I learn?": "What did I learn? Values",
+};
+
+/** Formula property name → Values text property name (Work monthly recap) */
+const WORK_FORMULA_TO_VALUES = {
+  "Work Rocks": "Work Rocks Values",
+  "Work Trips & Events": "Work Trips & Events Values",
+  "What went well?": "What went well? Values",
+  "What didn't go so well?": "What didn't go so well? Values",
+  "What did I learn?": "What did I learn? Values",
+};
 
 /**
  * Generic summary database for both Personal and Work summaries
@@ -252,6 +272,35 @@ class SummaryDatabase extends NotionDatabase {
     });
 
     return await this.updatePage(pageId, properties);
+  }
+
+  /**
+   * Copy formula property values to their corresponding Values text properties.
+   * Call after upsertMonthRecap so formulas are computed; then read page and write to Value columns.
+   *
+   * @param {string} pageId - Monthly recap page ID
+   * @returns {Promise<void>}
+   */
+  async syncFormulaValuesToValueProperties(pageId) {
+    if (this.summaryType !== "personal" && this.summaryType !== "work") {
+      return;
+    }
+    const map =
+      this.summaryType === "personal"
+        ? PERSONAL_FORMULA_TO_VALUES
+        : WORK_FORMULA_TO_VALUES;
+    const page = await this.getPage(pageId);
+    await delay(config.sources.rateLimits.notion.backoffMs);
+
+    const properties = {};
+    for (const [formulaName, valueName] of Object.entries(map)) {
+      const val = this.extractProperty(page, formulaName);
+      properties[valueName] = val != null ? String(val) : "";
+    }
+    if (Object.keys(properties).length === 0) return;
+
+    await this.updatePage(pageId, properties);
+    await delay(config.sources.rateLimits.notion.backoffMs);
   }
 }
 

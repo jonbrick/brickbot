@@ -392,6 +392,17 @@ class NotionDatabase {
       case "files":
         return property.files.map((file) => file.name);
 
+      case "formula": {
+        const formula = property.formula;
+        if (!formula) return null;
+        const t = formula.type;
+        if (t === "string" && formula.string != null) return formula.string;
+        if (t === "number" && formula.number != null) return String(formula.number);
+        if (t === "boolean" && formula.boolean != null) return String(formula.boolean);
+        if (t === "date" && formula.date?.start != null) return formula.date.start;
+        return null;
+      }
+
       default:
         return null;
     }

@@ -22,16 +22,17 @@ class SummaryDatabase extends NotionDatabase {
     // Validate summaryType
     if (!["personal", "work", "personalHabits"].includes(summaryType)) {
       throw new Error(
-        `Invalid summaryType: ${summaryType}. Must be "personal", "work", or "personalHabits"`
+        `Invalid summaryType: ${summaryType}. Must be "personal", "work", or "personalHabits"`,
       );
     }
 
     this.summaryType = summaryType;
 
     // For weekly summaries - detect if summaryType already has suffix
-    const configKey = summaryType.endsWith("Habits") || summaryType.endsWith("Summary")
-      ? summaryType
-      : `${summaryType}Summary`;
+    const configKey =
+      summaryType.endsWith("Habits") || summaryType.endsWith("Summary")
+        ? summaryType
+        : `${summaryType}Summary`;
     this.databaseId = config.notion.databases[configKey];
     this.props = config.notion.properties[configKey];
 
@@ -42,7 +43,8 @@ class SummaryDatabase extends NotionDatabase {
     } else {
       this.monthlyDatabaseId =
         config.notion.databases[`${summaryType}MonthlyRecap`];
-      this.monthlyProps = config.notion.properties[`${summaryType}MonthlyRecap`];
+      this.monthlyProps =
+        config.notion.properties[`${summaryType}MonthlyRecap`];
     }
   }
 
@@ -66,9 +68,11 @@ class SummaryDatabase extends NotionDatabase {
     // Format week number with zero-padding (e.g., "01", "48")
     const weekNumberStr = String(weekNumber).padStart(2, "0");
     const summaryLabel =
-      this.summaryType === "personal" ? "Personal Summary" :
-      this.summaryType === "personalHabits" ? "Habits Summary" :
-      "Work Summary";
+      this.summaryType === "personal"
+        ? "Personal Summary"
+        : this.summaryType === "personalHabits"
+          ? "Habits Summary"
+          : "Work Summary";
     const titleValue = `Week ${weekNumberStr} ${summaryLabel}`;
 
     // Query by title property
@@ -123,7 +127,7 @@ class SummaryDatabase extends NotionDatabase {
     const properties = buildDataProperties(
       summaryData,
       this.props,
-      selectedCalendars
+      selectedCalendars,
     );
 
     return await this.updatePage(pageId, properties);
@@ -142,10 +146,10 @@ class SummaryDatabase extends NotionDatabase {
     }
 
     const titleProperty = config.notion.getPropertyName(
-      this.monthlyProps.title
+      this.monthlyProps.title,
     );
 
-    // Format: "12. Dec Summary"
+    // Format: "12. Dec Personal Recap" or "12. Dec Work Recap"
     const monthNames = [
       "Jan",
       "Feb",
@@ -162,7 +166,9 @@ class SummaryDatabase extends NotionDatabase {
     ];
     const monthStr = String(month).padStart(2, "0");
     const monthAbbr = monthNames[month - 1];
-    const titleValue = `${monthStr}. ${monthAbbr} Recap`;
+    const recapLabel =
+      this.summaryType === "personal" ? "Personal Recap" : "Work Recap";
+    const titleValue = `${monthStr}. ${monthAbbr} ${recapLabel}`;
 
     try {
       const filter = {
@@ -186,7 +192,7 @@ class SummaryDatabase extends NotionDatabase {
 
   /**
    * Update monthly recap with summary data
-   * Note: Monthly recap records must be pre-created in Notion with format "12. Dec Summary"
+   * Note: Monthly recap records must be pre-created in Notion with format "12. Dec Personal Recap" or "12. Dec Work Recap"
    *
    * @param {string} pageId - Page ID to update (required - record must exist)
    * @param {Object} summaryData Summary data to update
@@ -215,31 +221,33 @@ class SummaryDatabase extends NotionDatabase {
       ];
       const monthStr = String(summaryData.month).padStart(2, "0");
       const monthAbbr = monthNames[summaryData.month - 1];
-      const expectedTitle = `${monthStr}. ${monthAbbr} Summary`;
+      const recapLabel =
+        this.summaryType === "personal" ? "Personal Recap" : "Work Recap";
+      const expectedTitle = `${monthStr}. ${monthAbbr} ${recapLabel}`;
       throw new Error(
-        `Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`
+        `Monthly recap record not found. Please create a record in Notion with title: "${expectedTitle}"`,
       );
     }
 
     const properties = {};
 
     // Map only the properties relevant to this summaryType
-    const allProps = this.summaryType === "personal"
-      ? {
-          ...MONTHLY_RECAP_BLOCK_PROPERTIES.personal,
-          ...MONTHLY_RECAP_TASK_PROPERTIES.personal,
-        }
-      : {
-          ...MONTHLY_RECAP_BLOCK_PROPERTIES.work,
-          ...MONTHLY_RECAP_TASK_PROPERTIES.work,
-        };
+    const allProps =
+      this.summaryType === "personal"
+        ? {
+            ...MONTHLY_RECAP_BLOCK_PROPERTIES.personal,
+            ...MONTHLY_RECAP_TASK_PROPERTIES.personal,
+          }
+        : {
+            ...MONTHLY_RECAP_BLOCK_PROPERTIES.work,
+            ...MONTHLY_RECAP_TASK_PROPERTIES.work,
+          };
 
     Object.entries(allProps).forEach(([categoryKey, propConfig]) => {
       const dataKey = propConfig.key;
       if (summaryData[dataKey] !== undefined) {
-        properties[
-          config.notion.getPropertyName(this.monthlyProps[dataKey])
-        ] = summaryData[dataKey] || "";
+        properties[config.notion.getPropertyName(this.monthlyProps[dataKey])] =
+          summaryData[dataKey] || "";
       }
     });
 

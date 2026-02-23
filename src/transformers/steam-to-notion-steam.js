@@ -32,7 +32,6 @@ function transformSteamToNotion(activity) {
       activity.minutesPlayed || 0,
     [config.notion.getPropertyName(props.activityId)]:
       activity.activityId || "",
-    [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
   return filterEnabledProperties(allProperties, props);

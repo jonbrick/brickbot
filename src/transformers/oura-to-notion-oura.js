@@ -65,7 +65,6 @@ function transformOuraToNotion(session) {
     [config.notion.getPropertyName(props.efficiency)]: session.efficiency || null,
     [config.notion.getPropertyName(props.googleCalendar)]: sleepInType,
     [config.notion.getPropertyName(props.sleepId)]: session.sleepId || "",
-    [config.notion.getPropertyName(props.calendarCreated)]: false,
     [config.notion.getPropertyName(props.type)]: session.type || "Sleep",
     // New fields
     [config.notion.getPropertyName(props.sleepLatency)]: session.latency

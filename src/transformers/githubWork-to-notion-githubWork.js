@@ -51,7 +51,6 @@ function transformGitHubWorkToNotion(pr) {
       2000
     ),
     [config.notion.getPropertyName(props.uniqueId)]: pr.uniqueId || "",
-    [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
   // Filter out disabled properties

@@ -31,7 +31,6 @@ function transformWithingsToNotion(measurement) {
     [config.notion.getPropertyName(props.measurementTime)]: measurement.measurementTime || "",
     [config.notion.getPropertyName(props.deviceModel)]: measurement.deviceModel || "",
     [config.notion.getPropertyName(props.measurementId)]: measurement.measurementId || "",
-    [config.notion.getPropertyName(props.calendarCreated)]: false,
   };
 
   // Filter out disabled properties

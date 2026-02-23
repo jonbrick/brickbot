@@ -30,7 +30,6 @@ function transformStravaToNotion(activity) {
     [config.notion.getPropertyName(props.averageHeartrate)]:
       activity.averageHeartrate || null,
     [config.notion.getPropertyName(props.maxHeartrate)]: activity.maxHeartrate || null,
-    [config.notion.getPropertyName(props.calendarCreated)]: false,
     // Optional fields
     [config.notion.getPropertyName(props.averageSpeed)]: activity.averageSpeed
       ? parseFloat(activity.averageSpeed)

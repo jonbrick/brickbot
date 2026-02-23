@@ -83,7 +83,7 @@ async function selectDateRange(options = {}) {
       { name: "This week (Sun-Sat)", value: "week" },
       { name: "Last week (Sun-Sat)", value: "lastWeek" },
       { name: "Week Picker", value: "singleWeek" },
-      { name: "Week Range (start to end)", value: "weekRange" }
+      { name: "Week Range (start to end)", value: "weekRange" },
     );
 
     allChoices.push(new inquirer.Separator());
@@ -99,7 +99,7 @@ async function selectDateRange(options = {}) {
       { name: "This Month", value: "thisMonth" },
       { name: "Last Month", value: "lastMonth" },
       { name: "Month Picker (all weeks in month)", value: "monthPicker" },
-      { name: "Month Range (start to end)", value: "monthRange" }
+      { name: "Month Range (start to end)", value: "monthRange" },
     );
 
     allChoices.push(new inquirer.Separator());
@@ -113,7 +113,8 @@ async function selectDateRange(options = {}) {
       { name: "Last 30 days", value: "last30" },
       { name: "Day Picker", value: "dayPicker" },
       { name: "Day Range", value: "custom" },
-      new inquirer.Separator()
+      { name: "+/- 3 days", value: "plusMinus3" },
+      new inquirer.Separator(),
     );
   }
 
@@ -148,6 +149,17 @@ async function selectDateRange(options = {}) {
       startDate.setDate(startDate.getDate() - 29); // 29 days ago
       endDate = getToday();
       endDate.setHours(23, 59, 59, 999);
+      break;
+    }
+
+    case "plusMinus3": {
+      const today = getToday();
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 3);
+      endDate = new Date(today);
+      endDate.setDate(today.getDate() + 3);
+      endDate.setHours(23, 59, 59, 999);
+      displayText = `\n✅ Selected: ${formatDateLong(startDate)} to ${formatDateLong(endDate)} (7 days)\n`;
       break;
     }
 
@@ -187,7 +199,7 @@ async function selectDateRange(options = {}) {
 
       const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(
         year,
-        month
+        month,
       );
 
       const monthName = new Date(year, month - 1, 1).toLocaleString("default", {
@@ -202,7 +214,7 @@ async function selectDateRange(options = {}) {
         ? `⚠️  ${warning}\n${buildMonthDisplayText(
             monthName,
             year,
-            notionWeeks
+            notionWeeks,
           )}`
         : buildMonthDisplayText(monthName, year, notionWeeks);
       break;
@@ -221,7 +233,7 @@ async function selectDateRange(options = {}) {
 
       const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(
         year,
-        month
+        month,
       );
 
       const monthName = new Date(year, month - 1, 1).toLocaleString("default", {
@@ -236,7 +248,7 @@ async function selectDateRange(options = {}) {
         ? `⚠️  ${warning}\n${buildMonthDisplayText(
             monthName,
             year,
-            notionWeeks
+            notionWeeks,
           )}`
         : buildMonthDisplayText(monthName, year, notionWeeks);
       break;
@@ -274,7 +286,7 @@ async function selectDateRange(options = {}) {
       // Also return week metadata
       const weekNumber = getWeekNumber(
         lastWeekDate,
-        lastWeekDate.getFullYear()
+        lastWeekDate.getFullYear(),
       );
       weeks = [
         {
@@ -314,7 +326,7 @@ async function selectDateRange(options = {}) {
 
       const { startDate: wkStart, endDate: wkEnd } = parseWeekNumber(
         weekNumber,
-        year
+        year,
       );
       startDate = wkStart;
       endDate = wkEnd;
@@ -375,7 +387,7 @@ async function selectDateRange(options = {}) {
       weeks = weekNumbers.map((wn) => {
         const { startDate: wkStart, endDate: wkEnd } = parseWeekNumber(
           wn,
-          year
+          year,
         );
         return { weekNumber: wn, year, startDate: wkStart, endDate: wkEnd };
       });
@@ -493,17 +505,17 @@ async function selectDateRange(options = {}) {
       // Build display text
       const firstMonthName = new Date(year, startMonth - 1, 1).toLocaleString(
         "default",
-        { month: "long" }
+        { month: "long" },
       );
       const lastMonthName = new Date(year, endMonth - 1, 1).toLocaleString(
         "default",
-        { month: "long" }
+        { month: "long" },
       );
       const monthLines = months
         .map((m) => {
           const monthName = new Date(m.year, m.month - 1, 1).toLocaleString(
             "default",
-            { month: "long" }
+            { month: "long" },
           );
           return `   ${monthName} ${m.year} (${m.weeks.length} weeks)`;
         })
@@ -538,7 +550,7 @@ async function selectDateRange(options = {}) {
               const day = parseInt(input, 10);
               const max = getDaysInMonth(
                 parseInt(answers.year, 10),
-                answers.startMonth
+                answers.startMonth,
               );
               if (isNaN(day) || day < 1 || day > max) {
                 return `Please enter a day between 1 and ${max}`;
@@ -563,7 +575,7 @@ async function selectDateRange(options = {}) {
               const day = parseInt(input, 10);
               const max = getDaysInMonth(
                 parseInt(answers.year, 10),
-                answers.endMonth
+                answers.endMonth,
               );
               if (isNaN(day) || day < 1 || day > max) {
                 return `Please enter a day between 1 and ${max}`;
@@ -590,7 +602,7 @@ async function selectDateRange(options = {}) {
 
       const dayCount = daysDifference(startDate, endDate) + 1;
       displayText = `\n✅ Selected: ${formatDateLong(
-        startDate
+        startDate,
       )} to ${formatDateLong(endDate)} (${dayCount} days)\n`;
       break;
     }
@@ -651,7 +663,7 @@ async function selectMonthForWeeks() {
 
   const { weeks: notionWeeks, warning } = await getWeeksForMonthFromNotion(
     year,
-    month
+    month,
   );
 
   const monthName = new Date(year, month - 1, 1).toLocaleString("default", {
@@ -714,7 +726,7 @@ async function selectSources(availableSources) {
  */
 async function confirmOperation(
   message = "Proceed with operation?",
-  defaultValue = true
+  defaultValue = true,
 ) {
   const { confirmed } = await inquirer.prompt([
     {
@@ -875,7 +887,7 @@ function showTable(rows, columns) {
   const widths = columns.map((col) => {
     const maxWidth = Math.max(
       col.length,
-      ...rows.map((row) => String(row[col] || "").length)
+      ...rows.map((row) => String(row[col] || "").length),
     );
     return Math.min(maxWidth, 50); // Cap at 50 chars
   });

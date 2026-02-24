@@ -4,6 +4,8 @@
   "description": "Personal data collection and summaries using Notion and Google Calendar",
   "main": "src/index.js",
   "scripts": {
+    "plan": "node cli/plan-parse.js",
+    "view": "open public/plan/index.html",
     "collect": "node cli/collect-data.js",
     "update": "node cli/update-calendar.js",
     "summarize": "node cli/summarize-week.js",
@@ -31,6 +33,7 @@
     "@notionhq/client": "^3.1.3",
     "applescript": "^1.0.0",
     "axios": "^1.12.2",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.5.0",
     "googleapis": "^150.0.1",
     "inquirer": "^8.2.5",

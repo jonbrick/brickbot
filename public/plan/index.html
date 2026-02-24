@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2026 Monthly Plan</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #fafaf9;
+        --surface: #ffffff;
+        --border: #e7e5e4;
+        --border-light: #f5f5f4;
+        --text: #1c1917;
+        --text-muted: #a8a29e;
+        --text-dim: #d6d3d1;
+        --accent: #292524;
+        --cat-work: #fef3c7;
+        --cat-personal: #d1fae5;
+        --cat-health: #ede9fe;
+        --cat-home: #e0f2fe;
+        --cat-interpersonal: #fce7f3;
+        --cat-mental: #fef9c3;
+        --span-trip: #dbeafe;
+        --span-trip-border: #93c5fd;
+        --span-event: #fef3c7;
+        --span-event-border: #fbbf24;
+
+        --col-meta: 72px;
+        --col-rocks: 220px;
+        --col-day-min: 120px;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        font-family:
+          "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--text);
+        background: var(--bg);
+        padding: 24px 32px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #app {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* --- Header --- */
+      .month-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 16px 0 20px;
+      }
+      .month-header h1 {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .month-nav {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 4px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        color: var(--text);
+        transition: background 0.15s;
+      }
+      .month-nav:hover {
+        background: var(--border-light);
+      }
+      .month-nav:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+
+      /* --- Summary --- */
+      .summary-table {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--border);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 20px;
+      }
+      .summary-cell {
+        background: var(--surface);
+        padding: 12px 14px;
+      }
+      .summary-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 6px;
+        opacity: 0.7;
+      }
+      .summary-text {
+        font-size: 12px;
+        line-height: 1.6;
+        white-space: pre-line;
+      }
+      .summary-text.empty {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+
+      /* --- Weeks table --- */
+      .weeks-table {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+      }
+
+      /* Header */
+      .week-header {
+        display: flex;
+        background: var(--accent);
+        color: #fafaf9;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .week-header .hdr-meta {
+        width: var(--col-meta);
+        min-width: var(--col-meta);
+        padding: 8px 8px;
+      }
+      .week-header .hdr-rocks {
+        width: var(--col-rocks);
+        min-width: var(--col-rocks);
+        padding: 8px 8px;
+      }
+      .week-header .hdr-days {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(7, minmax(var(--col-day-min), 1fr));
+      }
+      .week-header .hdr-days > div {
+        padding: 8px 8px;
+        text-align: center;
+      }
+
+      /* --- Week row: flex --- */
+      .week-wrapper {
+        display: flex;
+        border-top: 1px solid var(--border);
+        min-height: 160px;
+        flex: 1;
+      }
+
+      .week-meta {
+        width: var(--col-meta);
+        min-width: var(--col-meta);
+        padding: 8px 8px;
+        background: var(--border-light);
+        border-right: 1px solid var(--border);
+      }
+      .week-num {
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .week-dates {
+        font-size: 10px;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
+
+      .rocks-cell {
+        width: var(--col-rocks);
+        min-width: var(--col-rocks);
+        padding: 8px 8px;
+        border-right: 1px solid var(--border);
+        font-size: 11px;
+        overflow: hidden;
+      }
+      .rock-group {
+        margin-bottom: 4px;
+      }
+      .rock-group:last-child {
+        margin-bottom: 0;
+      }
+      .rock-category {
+        font-weight: 700;
+        font-size: 10px;
+        margin-bottom: 1px;
+      }
+      .rock-item {
+        padding-left: 4px;
+        line-height: 1.5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .rocks-empty {
+        color: var(--text-muted);
+        font-style: italic;
+        font-size: 11px;
+      }
+
+      /* --- Days area --- */
+      .days-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: calc(var(--col-day-min) * 7);
+      }
+
+      .days-row {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(var(--col-day-min), 1fr));
+      }
+
+      .day-cell {
+        padding: 4px 5px;
+        border-right: 1px solid var(--border-light);
+        min-width: 0;
+      }
+      .day-cell:last-child {
+        border-right: none;
+      }
+      .day-number {
+        font-size: 10px;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-bottom: 3px;
+      }
+      .day-cell.outside-month {
+        background: var(--border-light);
+      }
+      .day-cell.outside-month .day-number {
+        color: var(--text-dim);
+      }
+
+      .day-event-pill {
+        font-size: 10px;
+        font-weight: 500;
+        padding: 2px 6px;
+        border-radius: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        cursor: default;
+        height: 100%;
+      }
+
+      /* --- Span lanes --- */
+      .span-lane {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(var(--col-day-min), 1fr));
+        border-top: 1px solid var(--border-light);
+        height: 24px;
+        padding: 0 3px;
+        gap: 0 3px;
+      }
+
+      .span-bar {
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-radius: 3px;
+        cursor: default;
+        height: 100%;
+        min-width: 0;
+        line-height: 20px;
+      }
+      .span-bar.trip {
+        background: var(--span-trip);
+        border: 1px solid var(--span-trip-border);
+      }
+      .span-bar.event {
+        background: var(--span-event);
+        border: 1px solid var(--span-event-border);
+      }
+      .span-bar.cat-work {
+        background: var(--cat-work);
+        border: 1px solid #f59e0b;
+      }
+      .span-bar.cat-personal {
+        background: var(--cat-personal);
+        border: 1px solid #6ee7b7;
+      }
+      .span-bar.cat-health {
+        background: var(--cat-health);
+        border: 1px solid #c4b5fd;
+      }
+      .span-bar.cat-home {
+        background: var(--cat-home);
+        border: 1px solid #7dd3fc;
+      }
+      .span-bar.cat-interpersonal {
+        background: var(--cat-interpersonal);
+        border: 1px solid #f9a8d4;
+      }
+      .span-bar.cat-mental {
+        background: var(--cat-mental);
+        border: 1px solid #fde047;
+      }
+
+      .footer {
+        text-align: center;
+        padding: 20px 0 8px;
+        font-size: 11px;
+        color: var(--text-muted);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script>
+      let DATA = null;
+      let currentMonth = 2;
+      const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+      function getCatClass(c) {
+        if (!c) return "";
+        if (c.includes("Work")) return "cat-work";
+        if (c.includes("Personal")) return "cat-personal";
+        if (c.includes("Physical") || c.includes("Health")) return "cat-health";
+        if (c.includes("Home")) return "cat-home";
+        if (c.includes("Interpersonal")) return "cat-interpersonal";
+        if (c.includes("Mental")) return "cat-mental";
+        return "";
+      }
+
+      function retroEmoji(r) {
+        return r ? r.split(" ")[0] : "❓";
+      }
+
+      function fmtRange(s, e) {
+        const sd = new Date(s + "T00:00:00"),
+          ed = new Date(e + "T00:00:00");
+        const sm = sd.toLocaleString("en-US", { month: "short" }),
+          em = ed.toLocaleString("en-US", { month: "short" });
+        return sm === em
+          ? `${sm} ${sd.getDate()}–${ed.getDate()}`
+          : `${sm} ${sd.getDate()} – ${em} ${ed.getDate()}`;
+      }
+
+      function dstr(d) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }
+
+      function weekDays(w) {
+        const s = new Date(w.startDate + "T00:00:00");
+        return Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(s);
+          d.setDate(s.getDate() + i);
+          return { date: dstr(d), dom: d.getDate(), month: d.getMonth() + 1 };
+        });
+      }
+
+      function groupByCat(items) {
+        const g = {};
+        items.forEach((i) => {
+          const c = i.category || "Other";
+          (g[c] = g[c] || []).push(i);
+        });
+        return g;
+      }
+
+      function esc(s) {
+        return s
+          ? s
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+          : "";
+      }
+
+      function weekHasMonth(w, m) {
+        return weekDays(w).some((d) => d.month === m);
+      }
+
+      // --- Span lane allocation ---
+
+      function getSpansForWeek(days) {
+        const allSpans = [
+          ...DATA.trips.map((t) => ({
+            ...t,
+            st: "trip",
+            label: `✈️ ${t.name}`,
+          })),
+          ...DATA.events.map((e) => {
+            const label = e.subcategory
+              ? `${e.subcategory} – ${e.name}`
+              : e.name;
+            return { ...e, st: "event", label };
+          }),
+        ];
+        return allSpans.filter(
+          (s) => s.startDate <= days[6].date && s.endDate >= days[0].date,
+        );
+      }
+
+      function allocateLanes(spans, days) {
+        const sorted = [...spans].sort((a, b) => {
+          const aStart =
+            a.startDate < days[0].date ? days[0].date : a.startDate;
+          const bStart =
+            b.startDate < days[0].date ? days[0].date : b.startDate;
+          if (aStart !== bStart) return aStart < bStart ? -1 : 1;
+          return b.endDate < a.endDate ? -1 : a.endDate < b.endDate ? 1 : 0;
+        });
+
+        const lanes = [];
+        const result = [];
+
+        for (const span of sorted) {
+          const cs =
+            span.startDate < days[0].date ? days[0].date : span.startDate;
+          const ce = span.endDate > days[6].date ? days[6].date : span.endDate;
+          const si = days.findIndex((d) => d.date === cs);
+          const ei = days.findIndex((d) => d.date === ce);
+          if (si === -1 || ei === -1) continue;
+
+          let placed = false;
+          for (let l = 0; l < lanes.length; l++) {
+            if (!lanes[l].some((ex) => ex.si <= ei && ex.ei >= si)) {
+              lanes[l].push({ si, ei });
+              result.push({ span, lane: l, si, ei });
+              placed = true;
+              break;
+            }
+          }
+          if (!placed) {
+            lanes.push([{ si, ei }]);
+            result.push({ span, lane: lanes.length - 1, si, ei });
+          }
+        }
+        return { result, laneCount: lanes.length };
+      }
+
+      // --- Render ---
+
+      function render() {
+        const month = DATA.months.find((m) => m.month === currentMonth);
+        if (!month) return;
+        const weeks = month.weeks
+          .map((id) => DATA.weeks.find((w) => w.id === id))
+          .filter(Boolean)
+          .filter((w) => weekHasMonth(w, month.month));
+
+        document.getElementById("app").innerHTML = [
+          renderHeader(month),
+          `<div class="footer">Word of the Year: Drive</div>`,
+          renderSummary(month),
+          renderWeeks(month, weeks),
+        ].join("");
+
+        document.getElementById("prev")?.addEventListener("click", () => {
+          if (currentMonth > 1) {
+            currentMonth--;
+            render();
+          }
+        });
+        document.getElementById("next")?.addEventListener("click", () => {
+          if (currentMonth < 12) {
+            currentMonth++;
+            render();
+          }
+        });
+      }
+
+      function renderHeader(m) {
+        return `<div class="month-header">
+          <button class="month-nav" id="prev" ${currentMonth <= 1 ? "disabled" : ""}>←</button>
+          <h1>${m.name} ${m.year} ${m.emoji}</h1>
+          <button class="month-nav" id="next" ${currentMonth >= 12 ? "disabled" : ""}>→</button>
+        </div>`;
+      }
+
+      function renderSummary(m) {
+        const f = [
+          { k: "work", l: "💼 Work" },
+          { k: "personal", l: "🌱 Personal" },
+          { k: "interpersonal", l: "🍻 Interpersonal" },
+          { k: "home", l: "🏠 Home" },
+          { k: "health", l: "💪 Physical Health" },
+          { k: "mental", l: "❤️ Mental Health" },
+        ];
+        return `<div class="summary-table">${f
+          .map(({ k, l }) => {
+            const t = m.summary[k];
+            return `<div class="summary-cell"><div class="summary-label">${l}</div><div class="summary-text${t ? "" : " empty"}">${t ? esc(t) : "TBD"}</div></div>`;
+          })
+          .join("")}</div>`;
+      }
+
+      function renderWeeks(month, weeks) {
+        return `<div class="weeks-table">
+          <div class="week-header">
+            <div class="hdr-meta">Week</div>
+            <div class="hdr-rocks">Rocks</div>
+            <div class="hdr-days">${DAY_NAMES.map((d) => `<div>${d}</div>`).join("")}</div>
+          </div>
+          ${weeks.map((w) => renderWeek(month, w)).join("")}
+        </div>`;
+      }
+
+      const ROCK_CAT_ORDER = [
+        "💼 Work",
+        "🌱 Personal",
+        "🍻 Interpersonal",
+        "🏠 Home",
+        "💪 Physical Health",
+        "❤️ Mental Health",
+      ];
+
+      function renderWeek(month, week) {
+        const days = weekDays(week);
+        const rocks = DATA.rocks.filter((r) => r.weekId === week.id);
+
+        // Rocks — ordered categories, show empty state per category
+        let rocksHtml;
+        if (!rocks.length) {
+          rocksHtml = `<span class="rocks-empty">No rocks</span>`;
+        } else {
+          const groups = groupByCat(rocks);
+          // Show categories that have rocks in defined order, then any extras
+          const usedCats = new Set(Object.keys(groups));
+          const orderedCats = ROCK_CAT_ORDER.filter((c) => usedCats.has(c));
+          // Add any categories not in our order list
+          Object.keys(groups).forEach((c) => {
+            if (!orderedCats.includes(c)) orderedCats.push(c);
+          });
+
+          rocksHtml = orderedCats
+            .map((cat) => {
+              const items = groups[cat];
+              if (!items) return "";
+              return `<div class="rock-group"><div class="rock-category">${esc(cat)}</div>${items
+                .map(
+                  (r) =>
+                    `<div class="rock-item" title="${esc(r.name)}">${retroEmoji(r.retro)} ${esc(r.name)}</div>`,
+                )
+                .join("")}</div>`;
+            })
+            .join("");
+        }
+
+        // Day cells — numbers only
+        const dayCells = days
+          .map((day) => {
+            const outside = day.month !== month.month;
+            return `<div class="day-cell${outside ? " outside-month" : ""}"><div class="day-number">${day.dom}</div></div>`;
+          })
+          .join("");
+
+        // All events + trips through lane allocator
+        const spans = getSpansForWeek(days);
+        const { result: allocated, laneCount } = allocateLanes(spans, days);
+
+        let spanHtml = "";
+        for (let lane = 0; lane < laneCount; lane++) {
+          const bars = allocated
+            .filter((a) => a.lane === lane)
+            .map((a) => {
+              const s = a.span;
+              const cls = s.st === "trip" ? "trip" : getCatClass(s.category);
+              return `<div class="span-bar ${cls}" style="grid-column:${a.si + 1}/${a.ei + 2}" title="${esc(s.label)}">${esc(s.label)}</div>`;
+            })
+            .join("");
+          spanHtml += `<div class="span-lane">${bars}</div>`;
+        }
+
+        return `<div class="week-wrapper">
+          <div class="week-meta">
+            <div class="week-num">${week.name}</div>
+            <div class="week-dates">${fmtRange(week.startDate, week.endDate)}</div>
+          </div>
+          <div class="rocks-cell">${rocksHtml}</div>
+          <div class="days-area">
+            <div class="days-row">${dayCells}</div>
+            ${spanHtml}
+          </div>
+        </div>`;
+      }
+
+      async function init() {
+        try {
+          DATA = await (await fetch("data.json")).json();
+          render();
+        } catch (e) {
+          document.getElementById("app").innerHTML =
+            `<p style="color:red;padding:40px;">Failed to load data.json. Run <code>yarn plan</code> first.</p>`;
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>

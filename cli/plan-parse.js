@@ -169,6 +169,8 @@ function parsePersonalPlanMonths(rows) {
       health: row["Health Plan"]?.trim() || "",
       home: row["Home Plan"]?.trim() || "",
       personal: row["Personal Plan"]?.trim() || "",
+      interpersonal: row["Interpersonal Plan"]?.trim() || "",
+      mental: row["Mental Health Plan"]?.trim() || "",
     };
   }
   return plans;
@@ -216,10 +218,12 @@ function buildMonths(weeks, personalPlans, workPlans) {
       name: MONTH_NAMES[m],
       emoji: MONTH_EMOJIS[m],
       summary: {
-        health: personal.health || "",
-        home: personal.home || "",
-        personal: personal.personal || "",
         work: work.work || "",
+        personal: personal.personal || "",
+        interpersonal: personal.interpersonal || "",
+        home: personal.home || "",
+        health: personal.health || "",
+        mental: personal.mental || "",
       },
       weeks: Array.from(monthWeeks[m] || []).sort(),
     };

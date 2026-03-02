@@ -356,7 +356,7 @@ When syncing Notion Events and Trips to Google Calendar, event color is set from
 
 **Google Calendar color IDs** (1–11): 1 Peacock, 2 Sage, 3 Grape, 4 Flamingo, 5 Banana, 6 Tangerine, 7 Lavender, 8 Graphite, 9 Blueberry, 10 Basil, 11 Tomato.
 
-**Events and Trips calendar sync**: Events and Trips databases must have a **Status** (select) property in Notion. Records with Status **🧊 Ice Box** or **↗️ Next Year** are skipped by `yarn update` (not synced to Google Calendar). The skip list is defined in `src/config/notion/task-categories.js` as `CALENDAR_SKIP_STATUSES`.
+**Events and Trips calendar sync**: Events and Trips databases must have a **Status** (select) property in Notion. Records with Status **🧊 Ice Box**, **↗️ Next Year**, or **🛑 Won't Do** are skipped by `yarn update` (not synced to Google Calendar). The skip list is defined in `src/config/notion/task-categories.js` as `CALENDAR_SKIP_STATUSES`.
 
 ### Medications config
 

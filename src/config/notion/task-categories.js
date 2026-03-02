@@ -35,7 +35,7 @@ const TASK_STATUS_MAPPING = {
 };
 
 /** Status values that should be skipped for calendar sync (Events/Trips) */
-const CALENDAR_SKIP_STATUSES = ["🧊 Ice Box", "↗️ Next Year"];
+const CALENDAR_SKIP_STATUSES = ["🧊 Ice Box", "↗️ Next Year", "🛑 Won't Do"];
 
 /**
  * Get category key from task Category value

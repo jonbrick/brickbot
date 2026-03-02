@@ -556,7 +556,7 @@ Fetches data from Oura, Strava, Steam, GitHub, and Withings for a selected date 
 yarn update
 ```
 
-Creates calendar events from Notion records (PRs, workouts, sleep, body weight, video games, events, trips). Events and Trips with Status 🧊 Ice Box or ↗️ Next Year are skipped.
+Creates calendar events from Notion records (PRs, workouts, sleep, body weight, video games, events, trips). Events and Trips with Status 🧊 Ice Box, ↗️ Next Year, or 🛑 Won't Do are skipped.
 
 #### 3. Generate Weekly Summaries
 

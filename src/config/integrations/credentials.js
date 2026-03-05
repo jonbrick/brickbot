@@ -35,9 +35,7 @@ const withings = {
 
 // Steam configuration
 const steam = {
-  apiBaseUrl:
-    process.env.STEAM_URL ||
-    "https://fmbemz2etdgk23bce3wvf2yk540kezhy.lambda-url.us-east-2.on.aws",
+  apiBaseUrl: process.env.STEAM_URL,
 };
 
 // GitHub configuration
@@ -45,7 +43,7 @@ const github = {
   token: process.env.GITHUB_TOKEN,
   username: process.env.GITHUB_USERNAME,
   apiBaseUrl: "https://api.github.com",
-  workOrg: process.env.GITHUB_WORK_ORG || "cortexapps",
+  workOrg: process.env.GITHUB_WORK_ORG,
   workRepos:
     process.env.GITHUB_WORK_REPOS?.split(",")
       .map((r) => r.trim())

@@ -19,8 +19,8 @@ async function processPersonalCommitsIntoActivities(commits, service) {
     const commitDate = new Date(commit.committer.date); // UTC from GitHub API
     const repoName = commitItem.repository.full_name;
 
-    // Filter out work repos (cortexapps/*)
-    if (repoName.startsWith("cortexapps/")) {
+    // Filter out work repos
+    if (repoName.startsWith(`${service.workOrg}/`)) {
       continue;
     }
 
@@ -168,7 +168,7 @@ async function fetchGitHubPersonalData(startDate, endDate) {
     return [];
   }
 
-  // Process commits into activities (filters out cortexapps/* repos)
+  // Process commits into activities (filters out work org repos)
   const activities = await processPersonalCommitsIntoActivities(
     commits,
     service

@@ -7,8 +7,8 @@ const axios = require("axios");
 const config = require("../config");
 
 // Work repository classification helper
-function getProjectType(repoName) {
-  return repoName.startsWith("cortexapps/") ? "Work" : "Personal";
+function getProjectType(repoName, workOrg) {
+  return repoName.startsWith(`${workOrg}/`) ? "Work" : "Personal";
 }
 
 class GitHubService {
@@ -16,7 +16,7 @@ class GitHubService {
     this.token = config.sources.github.token;
     this.username = config.sources.github.username;
     this.baseURL = config.sources.github.apiBaseUrl;
-    this.workOrg = config.sources.github.workOrg || "cortexapps";
+    this.workOrg = config.sources.github.workOrg;
     this.workRepos = config.sources.github.workRepos || [];
     this._orgReposCache = {};
 
@@ -465,7 +465,7 @@ class GitHubService {
    */
   async expandWorkCommitIfSquashed(repoFullName, commit) {
     // Only expand commits from work repositories
-    if (!repoFullName.startsWith("cortexapps/")) {
+    if (!repoFullName.startsWith(`${this.workOrg}/`)) {
       return [commit];
     }
 

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance for AI assistants working on the Brickbot codebase.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -18,6 +18,8 @@ yarn update           # Sync Notion records → Google Calendar events
 yarn summarize        # Generate weekly summaries from calendar data
 yarn recap            # Generate monthly recaps from weekly summaries
 yarn generate         # Generate yearly config
+yarn plan             # Parse yarn plan data
+yarn view             # Open plan HTML viewer
 yarn sweep            # Move Apple Reminders → Notion Tasks
 yarn tokens           # Check all token status, refresh expired OAuth
 yarn tokens:setup     # Run OAuth setup wizard

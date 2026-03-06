@@ -5,7 +5,10 @@
   "main": "src/index.js",
   "scripts": {
     "plan": "node cli/plan-parse.js",
-    "view": "open public/plan/index.html",
+    "pull": "node cli/pull.js",
+    "push": "node cli/push.js",
+    "view": "node cli/view.js",
+    "nyc": "node cli/view.js /nyc/",
     "collect": "node cli/collect-data.js",
     "update": "node cli/update-calendar.js",
     "summarize": "node cli/summarize-week.js",

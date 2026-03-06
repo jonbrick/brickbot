@@ -17,6 +17,8 @@ const tokenConfig = require("../../src/config/tokens");
 const fs = require("fs");
 const path = require("path");
 
+const autoMode = process.argv.includes("--auto");
+
 async function main() {
   console.log("\n🔄 Brickbot - Token Refresher\n");
   console.log("This command refreshes OAuth2 tokens for services that support token refresh.");
@@ -60,14 +62,16 @@ async function main() {
         .join(", ")}\n`
     );
 
-    // Confirm operation
-    const confirmed = await confirmOperation(
-      `Ready to refresh ${tokensToRefresh.length} token(s)?`
-    );
+    // Confirm operation (skip in auto mode)
+    if (!autoMode) {
+      const confirmed = await confirmOperation(
+        `Ready to refresh ${tokensToRefresh.length} token(s)?`
+      );
 
-    if (!confirmed) {
-      console.log("\n❌ Operation cancelled\n");
-      process.exit(0);
+      if (!confirmed) {
+        console.log("\n❌ Operation cancelled\n");
+        process.exit(0);
+      }
     }
 
     // Refresh tokens

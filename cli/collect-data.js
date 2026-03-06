@@ -20,6 +20,7 @@ const {
 const { INTEGRATIONS } = require("../src/config/unified-sources");
 
 const dryRun = process.argv.includes("--dry-run");
+const autoMode = process.argv.includes("--auto");
 
 /**
  * Select action type and source
@@ -236,15 +237,31 @@ async function main() {
     if (dryRun) {
       console.log("ℹ️ Dry run: displaying only (no sync to Notion)\n");
     }
-    // Select action first
-    const actionString = await selectAction({ dryRun });
-    const [source, action] = actionString.split("-");
 
-    // Select date range (day granularity - default)
-    const { startDate, endDate, displayText } = await selectDateRange({
-      minGranularity: "day",
-    });
-    if (displayText) console.log(displayText);
+    let source, action, startDate, endDate;
+
+    if (autoMode) {
+      // Auto mode: all sources, sync, +/- 3 days
+      source = "all";
+      action = "sync";
+      const today = new Date();
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 3);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(today);
+      endDate.setDate(today.getDate() + 3);
+      endDate.setHours(23, 59, 59, 999);
+      console.log(`Auto mode: all sources, +/- 3 days (${formatDate(startDate)} to ${formatDate(endDate)})\n`);
+    } else {
+      // Interactive mode
+      const actionString = await selectAction({ dryRun });
+      [source, action] = actionString.split("-");
+
+      const dateResult = await selectDateRange({ minGranularity: "day" });
+      startDate = dateResult.startDate;
+      endDate = dateResult.endDate;
+      if (dateResult.displayText) console.log(dateResult.displayText);
+    }
 
     // Route to appropriate handler based on source
     if (source === "all") {

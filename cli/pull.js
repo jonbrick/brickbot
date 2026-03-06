@@ -24,6 +24,13 @@ const { createSpinner } = require("../src/utils/cli");
 const DATA_DIR = path.join(__dirname, "..", "data");
 const LOCAL_DIR = path.join(__dirname, "..", "local");
 
+const NYC_DATABASES = {
+  museums: { envVar: "NYC_MUSEUMS_DATABASE_ID", label: "Museums" },
+  restaurants: { envVar: "NYC_RESTAURANTS_DATABASE_ID", label: "Restaurants" },
+  tattoos: { envVar: "NYC_TATTOOS_DATABASE_ID", label: "Tattoos" },
+  venues: { envVar: "NYC_VENUES_DATABASE_ID", label: "Venues" },
+};
+
 // Ensure directories exist
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -165,6 +172,36 @@ async function pullPlanData(spinner) {
   console.log("✅ data/plan.json written");
 
   return plan;
+}
+
+async function pullNycData(spinner) {
+  const now = new Date().toISOString();
+  const nyc = { _meta: { pulledAt: now } };
+
+  for (const [key, dbConfig] of Object.entries(NYC_DATABASES)) {
+    const dbId = process.env[dbConfig.envVar];
+    if (!dbId) continue;
+
+    try {
+      spinner.start();
+      const pages = await db.queryDatabaseAll(dbId);
+      nyc[key] = pages.map(extractAllProperties);
+      spinner.stop(`  ✓ ${nyc[key].length} ${dbConfig.label}`);
+      await delay(config.sources.rateLimits.notion.backoffMs);
+    } catch (error) {
+      spinner.stop(`  ✗ ${dbConfig.label}: ${error.message}`);
+      nyc[key] = [];
+    }
+  }
+
+  ensureDir(DATA_DIR);
+  fs.writeFileSync(
+    path.join(DATA_DIR, "nyc.json"),
+    JSON.stringify(nyc, null, 2)
+  );
+  console.log("✅ data/nyc.json written");
+
+  return nyc;
 }
 
 async function pullCollectedData(spinner, startDate, endDate) {
@@ -453,6 +490,195 @@ function generateDataViewerHtml(title, dataFile) {
 </html>`;
 }
 
+function generateNycViewerHtml() {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Guide</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 2rem; background: #fafaf9; color: #1c1917; }
+    h1 { margin-bottom: 0.5rem; }
+    .controls { display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+    .meta { color: #a8a29e; font-size: 0.9rem; }
+    select, #search { padding: 8px 12px; border: 1px solid #e7e5e4; border-radius: 6px; font-size: 0.9rem; }
+    select { min-width: 180px; }
+    #search { width: 250px; }
+    .filter-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .pill { padding: 4px 12px; border: 1px solid #d6d3d1; border-radius: 999px; font-size: 0.8rem; cursor: pointer; background: white; transition: all 0.15s; }
+    .pill:hover { background: #f5f5f4; }
+    .pill.active { background: #1c1917; color: white; border-color: #1c1917; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    th, td { border: 1px solid #e7e5e4; padding: 6px 10px; text-align: left; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    th { background: #f5f5f4; font-weight: 600; position: sticky; top: 0; cursor: pointer; }
+    th:hover { background: #e7e5e4; }
+    tr:nth-child(even) { background: #fafaf9; }
+    tr:hover { background: #f0f0ef; }
+    .count { color: #78716c; font-size: 0.85rem; }
+    .error { color: #dc2626; }
+    a { color: #2563eb; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .status-done { color: #16a34a; font-weight: 500; }
+    .status-want { color: #d97706; font-weight: 500; }
+    .empty { color: #a8a29e; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>NYC Guide</h1>
+  <div class="meta" id="meta"></div>
+  <div class="controls">
+    <select id="section" onchange="switchSection()">
+      <option value="restaurants">Restaurants</option>
+      <option value="venues">Venues</option>
+      <option value="museums">Museums</option>
+      <option value="tattoos">Tattoos</option>
+    </select>
+    <input type="text" id="search" placeholder="Search..." oninput="renderTable()" />
+  </div>
+  <div class="filter-pills" id="pills"></div>
+  <div id="content">Loading...</div>
+
+  <script>
+    let rawData = null;
+    let currentSection = 'restaurants';
+    let activeFilter = null;
+    let sortCol = null;
+    let sortAsc = true;
+
+    const LINK_COLS = new Set(['GoogleMapsLink', 'Reservations', 'Website', 'Source']);
+    const HIDE_COLS = new Set(['_notionId', '_lastPulled', '_hash']);
+
+    async function loadData() {
+      try {
+        const resp = await fetch('../../data/nyc.json');
+        rawData = await resp.json();
+        if (rawData._meta) {
+          document.getElementById('meta').textContent = 'Pulled: ' + new Date(rawData._meta.pulledAt).toLocaleString();
+        }
+        switchSection();
+      } catch (e) {
+        document.getElementById('content').innerHTML = '<p class="error">Failed to load data. Run: yarn pull (select NYC)</p>';
+      }
+    }
+
+    function switchSection() {
+      currentSection = document.getElementById('section').value;
+      activeFilter = null;
+      sortCol = null;
+      sortAsc = true;
+      buildPills();
+      renderTable();
+    }
+
+    function buildPills() {
+      const pills = document.getElementById('pills');
+      pills.innerHTML = '';
+      const items = rawData[currentSection] || [];
+      if (items.length === 0) return;
+
+      // Find a good pill field (Category, Neighborhood, or Borough)
+      const pillField = ['Category', 'Neighborhood', 'Borough', 'Cuisine', 'Price'].find(f =>
+        items.some(i => i[f] && i[f] !== '')
+      );
+      if (!pillField) return;
+
+      const values = [...new Set(items.map(i => i[pillField]).filter(Boolean))].sort();
+      const allPill = document.createElement('span');
+      allPill.className = 'pill active';
+      allPill.textContent = 'All (' + items.length + ')';
+      allPill.onclick = () => { activeFilter = null; buildPills(); renderTable(); };
+      pills.appendChild(allPill);
+
+      for (const val of values) {
+        const count = items.filter(i => i[pillField] === val).length;
+        const pill = document.createElement('span');
+        pill.className = 'pill' + (activeFilter === val ? ' active' : '');
+        pill.textContent = val + ' (' + count + ')';
+        pill.onclick = () => { activeFilter = (activeFilter === val ? null : val); buildPills(); renderTable(); };
+        pills.appendChild(pill);
+        if (activeFilter === val) allPill.classList.remove('active');
+      }
+    }
+
+    function renderTable() {
+      const container = document.getElementById('content');
+      let items = rawData[currentSection] || [];
+      if (items.length === 0) { container.innerHTML = '<p class="empty">No data</p>'; return; }
+
+      // Determine pill filter field
+      const pillField = ['Category', 'Neighborhood', 'Borough', 'Cuisine', 'Price'].find(f =>
+        items.some(i => i[f] && i[f] !== '')
+      );
+
+      // Apply filters
+      if (activeFilter && pillField) {
+        items = items.filter(i => i[pillField] === activeFilter);
+      }
+      const query = document.getElementById('search').value.toLowerCase();
+      if (query) {
+        items = items.filter(item =>
+          Object.entries(item).some(([k, v]) => !HIDE_COLS.has(k) && String(v).toLowerCase().includes(query))
+        );
+      }
+
+      // Sort
+      if (sortCol !== null) {
+        items = [...items].sort((a, b) => {
+          const va = String(a[sortCol] || '');
+          const vb = String(b[sortCol] || '');
+          return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+      }
+
+      // Build columns (skip hidden/meta)
+      const allKeys = [];
+      const seen = new Set();
+      (rawData[currentSection] || []).forEach(item => {
+        Object.keys(item).forEach(k => { if (!HIDE_COLS.has(k) && !k.startsWith('_') && !seen.has(k)) { seen.add(k); allKeys.push(k); } });
+      });
+
+      let html = '<table><thead><tr>';
+      allKeys.forEach((k, i) => {
+        const arrow = sortCol === k ? (sortAsc ? ' ↑' : ' ↓') : '';
+        html += '<th onclick="sortBy(\\''+k+'\\')">' + k + arrow + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      items.forEach(item => {
+        html += '<tr>';
+        allKeys.forEach(k => {
+          let val = item[k];
+          if (val === null || val === undefined || val === '') {
+            html += '<td></td>';
+          } else if (LINK_COLS.has(k) && String(val).startsWith('http')) {
+            html += '<td><a href="' + val + '" target="_blank">Link</a></td>';
+          } else {
+            const s = String(val);
+            const cls = k === 'Status' ? (s === 'Done' ? ' class="status-done"' : s.includes('Want') ? ' class="status-want"' : '') : '';
+            html += '<td' + cls + ' title="' + s.replace(/"/g, '&quot;') + '">' + s + '</td>';
+          }
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      html += '<p class="count">' + items.length + ' items</p>';
+      container.innerHTML = html;
+    }
+
+    function sortBy(col) {
+      if (sortCol === col) { sortAsc = !sortAsc; }
+      else { sortCol = col; sortAsc = true; }
+      renderTable();
+    }
+
+    loadData();
+  </script>
+</body>
+</html>`;
+}
+
 function generateHtmlViews() {
   // Collected data viewer
   ensureDir(path.join(LOCAL_DIR, "collected"));
@@ -475,6 +701,13 @@ function generateHtmlViews() {
     generateDataViewerHtml("Calendar Events", "../../data/calendar.json")
   );
 
+  // NYC viewer
+  ensureDir(path.join(LOCAL_DIR, "nyc"));
+  fs.writeFileSync(
+    path.join(LOCAL_DIR, "nyc", "index.html"),
+    generateNycViewerHtml()
+  );
+
   console.log("✅ local/ HTML views updated");
 }
 
@@ -493,6 +726,7 @@ async function main() {
         { name: "Collected data (Oura, Strava, GitHub, Steam, Withings)", value: "collected", checked: true },
         { name: "Summaries & Recaps", value: "summaries", checked: true },
         { name: "Calendar events", value: "calendar", checked: true },
+        { name: "NYC (Museums, Restaurants, Tattoos, Venues)", value: "nyc", checked: true },
       ],
       validate: (answer) => answer.length > 0 ? true : "Select at least one",
     },
@@ -572,6 +806,11 @@ async function main() {
     if (sections.includes("calendar")) {
       console.log("\nPulling calendar events...");
       await pullCalendar(spinner, startDate, endDate);
+    }
+
+    if (sections.includes("nyc")) {
+      console.log("\nPulling NYC data...");
+      await pullNycData(spinner);
     }
 
     // Generate HTML views

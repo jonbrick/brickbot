@@ -22,6 +22,13 @@ const { createSpinner } = require("../src/utils/cli");
 const DATA_DIR = path.join(__dirname, "..", "data");
 const db = new NotionDatabase();
 
+const NYC_CONFIG_KEYS = {
+  museums: "nycMuseums",
+  restaurants: "nycRestaurants",
+  tattoos: "nycTattoos",
+  venues: "nycVenues",
+};
+
 const dryRun = process.argv.includes("--dry-run");
 
 // --- Hashing (must match pull.js) ---
@@ -284,6 +291,20 @@ async function pushCalendar(spinner) {
   );
 }
 
+async function pushNycData(spinner) {
+  const data = readDataFile("nyc.json");
+  if (!data) return;
+
+  console.log("\nPushing NYC data...");
+
+  for (const [key, records] of Object.entries(data)) {
+    if (key === "_meta") continue;
+    if (!Array.isArray(records)) continue;
+    const configKey = NYC_CONFIG_KEYS[key] || null;
+    await pushRecords(records, key, spinner, configKey);
+  }
+}
+
 // --- Main ---
 
 async function main() {
@@ -303,6 +324,7 @@ async function main() {
         { name: "Collected data", value: "collected" },
         { name: "Summaries & Recaps", value: "summaries" },
         { name: "Calendar events", value: "calendar" },
+        { name: "NYC data", value: "nyc" },
       ],
       validate: (answer) => answer.length > 0 ? true : "Select at least one",
     },
@@ -330,6 +352,7 @@ async function main() {
     if (sections.includes("collected")) await pushCollectedData(spinner);
     if (sections.includes("summaries")) await pushSummaries(spinner);
     if (sections.includes("calendar")) await pushCalendar(spinner);
+    if (sections.includes("nyc")) await pushNycData(spinner);
 
     console.log("\n✅ Push complete.\n");
   } catch (error) {

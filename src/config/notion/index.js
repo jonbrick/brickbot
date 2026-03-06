@@ -22,6 +22,10 @@ const relationships = require("./relationships");
 const years = require("./years");
 const months = require("./months");
 const weeks = require("./weeks");
+const nycMuseums = require("./nyc-museums");
+const nycRestaurants = require("./nyc-restaurants");
+const nycTattoos = require("./nyc-tattoos");
+const nycVenues = require("./nyc-venues");
 
 // Aggregate database IDs
 const databases = {
@@ -44,6 +48,10 @@ const databases = {
   years: years.database,
   months: months.database,
   weeks: weeks.database,
+  nycMuseums: nycMuseums.database,
+  nycRestaurants: nycRestaurants.database,
+  nycTattoos: nycTattoos.database,
+  nycVenues: nycVenues.database,
 };
 
 // Aggregate properties
@@ -67,6 +75,10 @@ const properties = {
   years: years.properties,
   months: months.properties,
   weeks: weeks.properties,
+  nycMuseums: nycMuseums.properties,
+  nycRestaurants: nycRestaurants.properties,
+  nycTattoos: nycTattoos.properties,
+  nycVenues: nycVenues.properties,
 };
 
 // Aggregate field mappings

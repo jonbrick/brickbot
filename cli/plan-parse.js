@@ -13,8 +13,8 @@ const path = require("path");
 const { parse } = require("csv-parse/sync");
 
 // --- Paths ---
-const CSV_DIR = path.join(__dirname, "..", "public", "plan", "csv");
-const OUTPUT_PATH = path.join(__dirname, "..", "public", "plan", "data.json");
+const CSV_DIR = path.join(__dirname, "..", "local", "plan", "csv");
+const OUTPUT_PATH = path.join(__dirname, "..", "local", "plan", "data.json");
 
 // --- Month emoji mapping ---
 const MONTH_EMOJIS = {

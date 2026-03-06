@@ -8,6 +8,43 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 **Data flow:** External APIs → Notion → Google Calendar → Weekly/Monthly Summaries
 
+## Current Focus
+
+Phase 2: Monthly Plan Viewer — transitioning from CSV parsing to live Notion API integration.
+
+**Next steps:**
+- Build `cli/plan-pull.js` script
+- Update yarn commands to use live API data instead of CSV exports
+- Verify remaining database schemas (Weeks, Personal Plan Months, Work Plan Months, Rocks, Events, Trips)
+- Test output against CSV-generated versions
+- Clean up deprecated CSV components
+
+## Active Work
+
+### EPICs
+- `[global]` Centralize `process.env.DEBUG` checks into utility function
+- `[global]` TypeScript migration (start with stripping JSDoc prose headers)
+- `[global]` Add Display columns to all Notion DBs (raw API data, calendar-formatted, human-readable) — follow Steam pattern
+- `[global]` Push property descriptions from config to Notion DB schema via API for all integrations
+- `[global]` Standardize timezone handling — convert in collectors, store UTC + Eastern in all Notion DBs
+- `[yarn retro]` Claude-powered weekly retrospective — DBs exist, needs CLI + workflow + prompts. Separate from `yarn reflect`
+- `[yarn reflect]` Claude-powered monthly reflection using all collected data
+
+### Known Bugs
+- `BUG-LOW [yarn generate]` Add Habits DB rows + Summary→Recap relations
+- `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
+
+## Development Principles
+
+- **Enhance existing patterns** before creating new code paths
+- **Eliminate redundant code entirely** — don't keep code "for future use" (trust git history)
+- **Config-driven first** — if a feature can be added via config, it should be
+- **Collectors never touch sync state fields** — separation of concerns is strict
+- **Errors must always be visible** in CLI output — hidden errors make debugging impossible
+- **All batch operations must be idempotent** and safe for multi-week runs
+- **Output at the edges** — only CLI files print to console; everything else returns structured data
+- **No assumptions** — verify before implementing; stress test assumptions before writing code
+
 ## Quick Reference
 
 ### Commands

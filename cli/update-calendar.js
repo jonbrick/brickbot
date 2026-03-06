@@ -24,6 +24,7 @@ const {
 const { INTEGRATIONS } = require("../src/config/unified-sources");
 
 const dryRun = process.argv.includes("--dry-run");
+const autoMode = process.argv.includes("--auto");
 
 /**
  * Select source and action type (display only or sync to calendar)
@@ -279,15 +280,35 @@ async function main() {
     if (dryRun) {
       console.log("ℹ️ Dry run: displaying only (no sync to Calendar)\n");
     }
-    // Select source and action
-    const { source, action } = await selectSourceAndAction({ dryRun });
 
-    // Select date range (day granularity, no future dates for calendar sync)
-    const { startDate, endDate, displayText } = await selectDateRange({ 
-      minGranularity: "day",
-      allowFuture: false 
-    });
-    if (displayText) console.log(displayText);
+    let source, action, startDate, endDate;
+
+    if (autoMode) {
+      // Auto mode: all sources, sync, +/- 3 days
+      source = "all";
+      action = "sync";
+      const today = new Date();
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - 3);
+      startDate.setHours(0, 0, 0, 0);
+      endDate = new Date(today);
+      endDate.setDate(today.getDate() + 3);
+      endDate.setHours(23, 59, 59, 999);
+      console.log(`Auto mode: all sources, +/- 3 days (${formatDate(startDate)} to ${formatDate(endDate)})\n`);
+    } else {
+      // Interactive mode
+      const selected = await selectSourceAndAction({ dryRun });
+      source = selected.source;
+      action = selected.action;
+
+      const dateResult = await selectDateRange({
+        minGranularity: "day",
+        allowFuture: false,
+      });
+      startDate = dateResult.startDate;
+      endDate = dateResult.endDate;
+      if (dateResult.displayText) console.log(dateResult.displayText);
+    }
 
     // Route to appropriate handler
     if (source === "all") {

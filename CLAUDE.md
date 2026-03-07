@@ -6,18 +6,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Brickbot is a personal data pipeline that collects data from external APIs (GitHub, Oura, Strava, Steam, Withings), stores it in Notion databases, syncs to Google Calendar, and generates AI-powered weekly/monthly summaries. Built with Node.js (plain JavaScript, no TypeScript).
 
-**Data flow:** External APIs → Notion → Google Calendar → Weekly/Monthly Summaries
+**Data flow:** External APIs → Notion → Google Calendar → Weekly/Monthly Summaries → Local JSON
 
 ## Current Focus
 
-Phase 2: Monthly Plan Viewer — transitioning from CSV parsing to live Notion API integration.
+Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 3x/day via launchd.
+
+**Recently completed:**
+- `yarn pull` / `yarn push` — bidirectional Notion sync with hash-based delta detection
+- NYC databases (museums, restaurants, tattoos, venues) integrated into pull/push/view
+- `yarn nyc` — HTML viewer with dropdown, filters, search, sortable columns
+- `yarn pull --auto` — non-interactive mode for automation
+- launchd automation with iMessage failure notifications
 
 **Next steps:**
-- Build `cli/plan-pull.js` script
-- Update yarn commands to use live API data instead of CSV exports
-- Verify remaining database schemas (Weeks, Personal Plan Months, Work Plan Months, Rocks, Events, Trips)
-- Test output against CSV-generated versions
-- Clean up deprecated CSV components
+- `yarn retro` — Claude-powered weekly retrospective
+- `yarn reflect` — Claude-powered monthly reflection
+- Resolve relation UUIDs to human-readable names in pulled data
+- `yarn overview` — Year at a Glance Notion page
 
 ## Active Work
 
@@ -50,20 +56,78 @@ Phase 2: Monthly Plan Viewer — transitioning from CSV parsing to live Notion A
 ### Commands
 
 ```bash
+# Data pipeline (automated 3x/day via launchd)
 yarn collect          # Fetch data from external APIs → Notion
 yarn update           # Sync Notion records → Google Calendar events
+yarn pull             # Pull Notion + Calendar → local JSON (data/*.json)
+yarn push             # Push local JSON edits → Notion (delta-only)
+
+# All three support --auto for non-interactive use
+# yarn collect --auto / yarn update --auto / yarn pull --auto
+
+# Summaries & reports
 yarn summarize        # Generate weekly summaries from calendar data
 yarn recap            # Generate monthly recaps from weekly summaries
 yarn generate         # Generate yearly config
+
+# Viewers
+yarn view             # Open plan HTML viewer (localhost:8787)
+yarn nyc              # Open NYC guide viewer (localhost:8787/nyc/)
+
+# NYC
+yarn nyc:import       # One-time CSV → Notion import for NYC databases
+
+# Utilities
 yarn plan             # Parse yarn plan data
-yarn view             # Open plan HTML viewer
 yarn sweep            # Move Apple Reminders → Notion Tasks
+yarn logs             # View today's automation log
 yarn tokens           # Check all token status, refresh expired OAuth
 yarn tokens:setup     # Run OAuth setup wizard
 yarn tokens:check     # Verify API credentials
 yarn tokens:refresh   # Refresh expired tokens
 yarn verify:config    # Verify config derivation consistency
 ```
+
+### Automation (launchd)
+
+Runs 3x daily (8am, 10am, 7pm) via `infra/launchd/com.brickbot.daily.plist`:
+
+```
+tokens:refresh → collect → update → pull
+```
+
+- **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
+- **Failure alerts:** iMessage notification on any step failure
+- **View logs:** `yarn logs` or check `local/logs/`
+
+**Setup:**
+```bash
+# Symlink plist and load
+ln -s /Users/jonbrick/projects/brickbot/infra/launchd/com.brickbot.daily.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
+
+# Verify it's loaded
+launchctl list | grep brickbot
+
+# Unload if needed
+launchctl unload ~/Library/LaunchAgents/com.brickbot.daily.plist
+```
+
+If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up.
+
+### Local Data Files
+
+`yarn pull` creates local JSON snapshots that Claude Code can read without API calls:
+
+| File | Contents | Scoped |
+|------|----------|--------|
+| `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
+| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings, etc. | Last 30 days |
+| `data/summaries.json` | Weekly summaries, Monthly recaps | All |
+| `data/calendar.json` | All Google Calendar events | Last 30 days |
+| `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
+
+**Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
 
 ### No Test Suite
 

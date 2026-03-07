@@ -11,18 +11,28 @@
         <string>/Users/jonbrick/projects/brickbot/infra/launchd/brickbot-daily.sh</string>
     </array>
 
-    <!-- Run at 8:00 AM daily -->
+    <!-- Run 3x daily: 8am, 10am, 7pm -->
     <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>8</integer>
-        <key>Minute</key>
-        <integer>0</integer>
-    </dict>
-
-    <!-- If Mac was asleep at 8am, run when it wakes up -->
-    <key>StartInterval</key>
-    <integer>0</integer>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>8</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>10</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>19</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
 
     <key>StandardOutPath</key>
     <string>/Users/jonbrick/projects/brickbot/local/logs/launchd-stdout.log</string>

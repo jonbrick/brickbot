@@ -10,6 +10,7 @@
     "view": "node cli/view.js",
     "nyc": "node cli/view.js /nyc/",
     "nyc:import": "node cli/nyc-import.js",
+    "logs": "cat local/logs/daily-$(date +%Y-%m-%d).log 2>/dev/null || echo 'No log for today'",
     "collect": "node cli/collect-data.js",
     "update": "node cli/update-calendar.js",
     "summarize": "node cli/summarize-week.js",

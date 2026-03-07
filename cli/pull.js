@@ -23,6 +23,7 @@ const { createSpinner } = require("../src/utils/cli");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const LOCAL_DIR = path.join(__dirname, "..", "local");
+const autoMode = process.argv.includes("--auto");
 
 const NYC_DATABASES = {
   museums: { envVar: "NYC_MUSEUMS_DATABASE_ID", label: "Museums" },
@@ -716,73 +717,86 @@ function generateHtmlViews() {
 async function main() {
   console.log("\n🤖 Brickbot - Pull Data\n");
 
-  const { sections } = await inquirer.prompt([
-    {
-      type: "checkbox",
-      name: "sections",
-      message: "What would you like to pull?",
-      choices: [
-        { name: "Plan data (Weeks, Months, Rocks, Events, Trips)", value: "plan", checked: true },
-        { name: "Collected data (Oura, Strava, GitHub, Steam, Withings)", value: "collected", checked: true },
-        { name: "Summaries & Recaps", value: "summaries", checked: true },
-        { name: "Calendar events", value: "calendar", checked: true },
-        { name: "NYC (Museums, Restaurants, Tattoos, Venues)", value: "nyc", checked: true },
-      ],
-      validate: (answer) => answer.length > 0 ? true : "Select at least one",
-    },
-  ]);
+  let sections, startDate, endDate;
 
-  // Date range for collected/calendar data
-  let startDate, endDate;
-  const needsDateRange = sections.includes("collected") || sections.includes("calendar");
-
-  if (needsDateRange) {
-    const { range } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "range",
-        message: "Date range for collected/calendar data:",
-        choices: [
-          { name: "Last 30 days", value: 30 },
-          { name: "Last 90 days", value: 90 },
-          { name: "This year", value: "year" },
-          { name: "Custom range", value: "custom" },
-        ],
-      },
-    ]);
-
+  if (autoMode) {
+    // Auto mode: pull everything, last 30 days for date-scoped data
+    sections = ["plan", "collected", "summaries", "calendar", "nyc"];
     endDate = new Date();
     endDate.setHours(23, 59, 59, 999);
+    startDate = new Date();
+    startDate.setDate(startDate.getDate() - 29);
+    startDate.setHours(0, 0, 0, 0);
+    console.log(`Auto mode: all sections, last 30 days (${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]})\n`);
+  } else {
+    const answers = await inquirer.prompt([
+      {
+        type: "checkbox",
+        name: "sections",
+        message: "What would you like to pull?",
+        choices: [
+          { name: "Plan data (Weeks, Months, Rocks, Events, Trips)", value: "plan", checked: true },
+          { name: "Collected data (Oura, Strava, GitHub, Steam, Withings)", value: "collected", checked: true },
+          { name: "Summaries & Recaps", value: "summaries", checked: true },
+          { name: "Calendar events", value: "calendar", checked: true },
+          { name: "NYC (Museums, Restaurants, Tattoos, Venues)", value: "nyc", checked: true },
+        ],
+        validate: (answer) => answer.length > 0 ? true : "Select at least one",
+      },
+    ]);
+    sections = answers.sections;
 
-    if (range === "year") {
-      startDate = new Date(new Date().getFullYear(), 0, 1);
-    } else if (range === "custom") {
-      const answers = await inquirer.prompt([
+    // Date range for collected/calendar data
+    const needsDateRange = sections.includes("collected") || sections.includes("calendar");
+
+    if (needsDateRange) {
+      const { range } = await inquirer.prompt([
         {
-          type: "input",
-          name: "start",
-          message: "Start date (YYYY-MM-DD):",
-          validate: (input) => !isNaN(Date.parse(input)) || "Invalid date",
-        },
-        {
-          type: "input",
-          name: "end",
-          message: "End date (YYYY-MM-DD):",
-          validate: (input) => !isNaN(Date.parse(input)) || "Invalid date",
+          type: "list",
+          name: "range",
+          message: "Date range for collected/calendar data:",
+          choices: [
+            { name: "Last 30 days", value: 30 },
+            { name: "Last 90 days", value: 90 },
+            { name: "This year", value: "year" },
+            { name: "Custom range", value: "custom" },
+          ],
         },
       ]);
-      startDate = new Date(answers.start);
-      endDate = new Date(answers.end);
-      endDate.setHours(23, 59, 59, 999);
-    } else {
-      startDate = new Date();
-      startDate.setDate(startDate.getDate() - range + 1);
-      startDate.setHours(0, 0, 0, 0);
-    }
 
-    console.log(
-      `\nDate range: ${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]}\n`
-    );
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+
+      if (range === "year") {
+        startDate = new Date(new Date().getFullYear(), 0, 1);
+      } else if (range === "custom") {
+        const dateAnswers = await inquirer.prompt([
+          {
+            type: "input",
+            name: "start",
+            message: "Start date (YYYY-MM-DD):",
+            validate: (input) => !isNaN(Date.parse(input)) || "Invalid date",
+          },
+          {
+            type: "input",
+            name: "end",
+            message: "End date (YYYY-MM-DD):",
+            validate: (input) => !isNaN(Date.parse(input)) || "Invalid date",
+          },
+        ]);
+        startDate = new Date(dateAnswers.start);
+        endDate = new Date(dateAnswers.end);
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - range + 1);
+        startDate.setHours(0, 0, 0, 0);
+      }
+
+      console.log(
+        `\nDate range: ${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]}\n`
+      );
+    }
   }
 
   const spinner = createSpinner("Pulling...");

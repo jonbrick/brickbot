@@ -819,12 +819,14 @@ function showSummary(summary) {
  * @returns {Object} Spinner control object
  */
 function createSpinner(message) {
+  const isTTY = process.stdout.isTTY;
   const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   let currentFrame = 0;
   let interval = null;
 
   return {
     start() {
+      if (!isTTY) return;
       process.stdout.write(`${frames[currentFrame]} ${message}`);
       interval = setInterval(() => {
         currentFrame = (currentFrame + 1) % frames.length;
@@ -837,7 +839,9 @@ function createSpinner(message) {
         clearInterval(interval);
         interval = null;
       }
-      process.stdout.write("\r\x1b[2K");
+      if (isTTY) {
+        process.stdout.write("\r\x1b[2K");
+      }
       if (finalMessage) {
         console.log(finalMessage);
       }

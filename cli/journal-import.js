@@ -116,38 +116,71 @@ function main() {
   console.log(`\nImporting from: ${inputPath}`);
 
   const raw = JSON.parse(fs.readFileSync(inputPath, "utf-8"));
-  const records = transformRecords(raw.records);
+  const newRecords = transformRecords(raw.records);
+
+  // Merge with existing journal data (record-level idempotency)
+  const journalPath = path.join(DATA_DIR, "journal.json");
+  let existing = { entries: [] };
+  if (fs.existsSync(journalPath)) {
+    existing = JSON.parse(fs.readFileSync(journalPath, "utf-8"));
+  }
+
+  // Build a map of existing entries by date
+  const entryMap = new Map();
+  for (const entry of existing.entries || []) {
+    entryMap.set(entry.date, entry);
+  }
+
+  // Merge: new records overwrite existing by date, existing entries not in import are kept
+  let added = 0;
+  let updated = 0;
+  let unchanged = 0;
+  for (const entry of newRecords) {
+    const prev = entryMap.get(entry.date);
+    if (!prev) {
+      added++;
+    } else if (JSON.stringify(prev) !== JSON.stringify(entry)) {
+      updated++;
+    } else {
+      unchanged++;
+    }
+    entryMap.set(entry.date, entry);
+  }
+  const kept = entryMap.size - added - updated - unchanged;
+
+  // Sort all entries by date
+  const allEntries = Array.from(entryMap.values()).sort((a, b) =>
+    a.date.localeCompare(b.date)
+  );
 
   const journal = {
     _meta: {
       importedAt: new Date().toISOString(),
       source: "5 Minute Journal",
-      totalEntries: records.length,
-      dateRange: records.length > 0
-        ? `${records[0].date} to ${records[records.length - 1].date}`
+      totalEntries: allEntries.length,
+      dateRange: allEntries.length > 0
+        ? `${allEntries[0].date} to ${allEntries[allEntries.length - 1].date}`
         : "none",
     },
-    entries: records,
+    entries: allEntries,
   };
 
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 
-  fs.writeFileSync(
-    path.join(DATA_DIR, "journal.json"),
-    JSON.stringify(journal, null, 2)
-  );
+  fs.writeFileSync(journalPath, JSON.stringify(journal, null, 2));
 
   console.log(`\n✅ data/journal.json written`);
-  console.log(`   ${records.length} entries (2026 only)`);
-  if (records.length > 0) {
-    console.log(`   ${records[0].date} → ${records[records.length - 1].date}`);
+  console.log(`   ${allEntries.length} total entries`);
+  console.log(`   ${added} added, ${updated} updated, ${unchanged} unchanged, ${kept} kept from previous`);
+  if (allEntries.length > 0) {
+    console.log(`   ${allEntries[0].date} → ${allEntries[allEntries.length - 1].date}`);
   }
 
   // Stats
-  const withGratitude = records.filter((r) => r.gratitude.length > 0).length;
-  const withEvening = records.filter((r) => r.amazingness.length > 0).length;
+  const withGratitude = allEntries.filter((r) => r.gratitude.length > 0).length;
+  const withEvening = allEntries.filter((r) => r.amazingness.length > 0).length;
   console.log(`   ${withGratitude} with morning entries, ${withEvening} with evening entries\n`);
 }
 

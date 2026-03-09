@@ -77,9 +77,15 @@ yarn nyc              # Open NYC guide viewer (localhost:8787/nyc/)
 # NYC
 yarn nyc:import       # One-time CSV → Notion import for NYC databases
 
-# Claude Code Skills
-# /retro              — Guided weekly retro conversation (reads data/*.json)
-# /reflect            — Guided monthly reflection conversation (reads data/*.json)
+# Claude Code Skills (start a new conversation to use)
+# /retro-personal-week    — Personal weekly retro
+# /retro-work-week        — Work weekly retro
+# /reflect-personal-month — Personal monthly reflection
+# /reflect-work-month     — Work monthly reflection
+# /plan-personal-week     — Plan personal week (set rocks)
+# /plan-work-week         — Plan work week (set rocks)
+# /plan-personal-month    — Plan personal month
+# /plan-work-month        — Plan work month
 
 # Utilities
 yarn plan             # Parse yarn plan data

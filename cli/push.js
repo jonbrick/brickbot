@@ -29,6 +29,21 @@ const NYC_CONFIG_KEYS = {
   venues: "nycVenues",
 };
 
+const RETRO_CONFIG_KEYS = {
+  personalWeekly: "personalRetro",
+  workWeekly: "workRetro",
+};
+
+const LIFE_CONFIG_KEYS = {
+  goals: "goals",
+  themes: "themes",
+  relationships: "relationships",
+  tasks: "tasks",
+  habits: "personalHabits",
+  personalMonthlyPlans: "personalMonthlyPlan",
+  workMonthlyPlans: "workMonthlyPlan",
+};
+
 const dryRun = process.argv.includes("--dry-run");
 
 // --- Hashing (must match pull.js) ---
@@ -305,6 +320,34 @@ async function pushNycData(spinner) {
   }
 }
 
+async function pushRetroData(spinner) {
+  const data = readDataFile("retro.json");
+  if (!data) return;
+
+  console.log("\nPushing retro data...");
+
+  for (const [key, records] of Object.entries(data)) {
+    if (key === "_meta") continue;
+    if (!Array.isArray(records)) continue;
+    const configKey = RETRO_CONFIG_KEYS[key] || null;
+    await pushRecords(records, key, spinner, configKey);
+  }
+}
+
+async function pushLifeData(spinner) {
+  const data = readDataFile("life.json");
+  if (!data) return;
+
+  console.log("\nPushing life data...");
+
+  for (const [key, records] of Object.entries(data)) {
+    if (key === "_meta") continue;
+    if (!Array.isArray(records)) continue;
+    const configKey = LIFE_CONFIG_KEYS[key] || null;
+    await pushRecords(records, key, spinner, configKey);
+  }
+}
+
 // --- Main ---
 
 async function main() {
@@ -325,6 +368,8 @@ async function main() {
         { name: "Summaries & Recaps", value: "summaries" },
         { name: "Calendar events", value: "calendar" },
         { name: "NYC data", value: "nyc" },
+        { name: "Retro data", value: "retro" },
+        { name: "Life data", value: "life" },
       ],
       validate: (answer) => answer.length > 0 ? true : "Select at least one",
     },
@@ -353,6 +398,8 @@ async function main() {
     if (sections.includes("summaries")) await pushSummaries(spinner);
     if (sections.includes("calendar")) await pushCalendar(spinner);
     if (sections.includes("nyc")) await pushNycData(spinner);
+    if (sections.includes("retro")) await pushRetroData(spinner);
+    if (sections.includes("life")) await pushLifeData(spinner);
 
     console.log("\n✅ Push complete.\n");
   } catch (error) {

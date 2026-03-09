@@ -76,6 +76,7 @@ yarn nyc              # Open NYC guide viewer (localhost:8787/nyc/)
 
 # NYC
 yarn nyc:import       # One-time CSV → Notion import for NYC databases
+yarn journal:import   # Import 5 Minute Journal export → data/journal.json
 
 # Claude Code Skills (start a new conversation to use)
 # /retro-personal-week    — Personal weekly retro
@@ -138,6 +139,7 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 | `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
 | `data/retro.json` | Personal & Work Week Retros | All |
 | `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/journal.json` | 5 Minute Journal entries (gratitude, amazingness, improvements) | 2026 |
 
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
 

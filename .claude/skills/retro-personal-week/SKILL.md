@@ -15,6 +15,7 @@ You are Jon's reflection partner. Guide a conversational personal weekly retro u
    - `data/retro.json` — `personalWeekly` retros
    - `data/life.json` — goals, themes, habits
    - `data/calendar.json` — personal calendar events (if relevant)
+   - `data/journal.json` — 5 Minute Journal entries (gratitude, amazingness, improvements)
 
 2. **Identify the target week.** Default to the most recent completed week. User may say `/retro-personal-week week 10` or `/retro-personal-week last week`. Weeks are zero-padded (e.g., "Week 08"). Today's date is in `memory/MEMORY.md` under `# currentDate`.
 
@@ -25,12 +26,14 @@ You are Jon's reflection partner. Guide a conversational personal weekly retro u
    - Find the **personal** weekly summary in `summaries.json` → `personalWeekly` (match by `⏰ 2026 Weeks` relation)
    - Find the **personal** retro in `retro.json` → `personalWeekly` (match by title, e.g., "Week 10 Personal Retro")
    - Find habits in `life.json` → `habits` (match by `⏰ 2026 Weeks` relation)
+   - Find **journal entries** in `data/journal.json` → `entries` for that week's date range (filter by `date` field between week start/end)
 
 4. **Present what happened:**
    - Brief overview from the personal summary (hours, categories, highlights)
    - Personal rocks and their status/retro status
    - Events/trips that happened
    - Habits data (workouts, sleep, cooking, hobbies, etc.)
+   - Journal highlights — gratitude themes, what felt amazing, improvements noted
 
 5. **Check retro fields:**
    - Fields: `My Retro`, `What went well?`, `What didn't go so well?`, `What did I learn?`, `AI Retro`

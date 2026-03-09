@@ -15,6 +15,7 @@ You are Jon's reflection partner. Guide a conversational personal monthly reflec
    - `data/retro.json` — `personalWeekly` retros
    - `data/life.json` — goals, themes, habits, `personalMonthlyPlans`
    - `data/calendar.json` — personal calendar events (if relevant)
+   - `data/journal.json` — 5 Minute Journal entries (gratitude, amazingness, improvements)
 
 2. **Identify the target month.** Default to the most recent completed month. User may say `/reflect-personal-month february` or `/reflect-personal-month month 2`. Months use format "02. Feb". Today's date is in `memory/MEMORY.md` under `# currentDate`.
 
@@ -27,6 +28,7 @@ You are Jon's reflection partner. Guide a conversational personal monthly reflec
    - Collect personal weekly retros from `retro.json` → `personalWeekly`
    - Check goals in `life.json` → `goals`
    - Check habits trends across the month's weeks
+   - Collect **journal entries** from `data/journal.json` → `entries` for the month's date range
 
 4. **Compare plan vs. reality:**
    - Personal monthly plan fields: `Personal Plan`, `Interpersonal Plan`, `Home Plan`, `Physical Health Plan`, `Mental Health Plan`
@@ -38,6 +40,7 @@ You are Jon's reflection partner. Guide a conversational personal monthly reflec
    - Hours/category trends from personal weekly summaries
    - Recurring themes from personal weekly retros
    - Habits trends (workouts, sleep, cooking, hobbies)
+   - Journal patterns — recurring gratitude themes, improvement areas, what felt amazing across the month
 
 6. **Check goals:**
    - Which personal goals moved forward this month?

@@ -32,6 +32,21 @@ const NYC_DATABASES = {
   venues: { envVar: "NYC_VENUES_DATABASE_ID", label: "Venues" },
 };
 
+const RETRO_DATABASES = {
+  personalWeekly: { envVar: "PERSONAL_WEEK_RETRO_DATABASE_ID", label: "Personal Week Retros" },
+  workWeekly: { envVar: "WORK_WEEK_RETRO_DATABASE_ID", label: "Work Week Retros" },
+};
+
+const LIFE_DATABASES = {
+  goals: { envVar: "NOTION_GOALS_DATABASE_ID", label: "Goals" },
+  themes: { envVar: "NOTION_THEMES_DATABASE_ID", label: "Themes" },
+  relationships: { envVar: "NOTION_RELATIONSHIPS_DATABASE_ID", label: "Relationships" },
+  tasks: { envVar: "TASKS_DATABASE_ID", label: "Tasks" },
+  habits: { envVar: "HABITS_WEEK_SUMMARY_DATABASE_ID", label: "Habits" },
+  personalMonthlyPlans: { envVar: "PERSONAL_MONTHLY_PLAN_DATABASE_ID", label: "Personal Monthly Plans" },
+  workMonthlyPlans: { envVar: "WORK_MONTHLY_PLAN_DATABASE_ID", label: "Work Monthly Plans" },
+};
+
 // Ensure directories exist
 function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
@@ -203,6 +218,66 @@ async function pullNycData(spinner) {
   console.log("✅ data/nyc.json written");
 
   return nyc;
+}
+
+async function pullRetroData(spinner) {
+  const now = new Date().toISOString();
+  const retro = { _meta: { pulledAt: now } };
+
+  for (const [key, dbConfig] of Object.entries(RETRO_DATABASES)) {
+    const dbId = process.env[dbConfig.envVar];
+    if (!dbId) continue;
+
+    try {
+      spinner.start();
+      const pages = await db.queryDatabaseAll(dbId);
+      retro[key] = pages.map(extractAllProperties);
+      spinner.stop(`  ✓ ${retro[key].length} ${dbConfig.label}`);
+      await delay(config.sources.rateLimits.notion.backoffMs);
+    } catch (error) {
+      spinner.stop(`  ✗ ${dbConfig.label}: ${error.message}`);
+      retro[key] = [];
+    }
+  }
+
+  ensureDir(DATA_DIR);
+  fs.writeFileSync(
+    path.join(DATA_DIR, "retro.json"),
+    JSON.stringify(retro, null, 2)
+  );
+  console.log("✅ data/retro.json written");
+
+  return retro;
+}
+
+async function pullLifeData(spinner) {
+  const now = new Date().toISOString();
+  const life = { _meta: { pulledAt: now } };
+
+  for (const [key, dbConfig] of Object.entries(LIFE_DATABASES)) {
+    const dbId = process.env[dbConfig.envVar];
+    if (!dbId) continue;
+
+    try {
+      spinner.start();
+      const pages = await db.queryDatabaseAll(dbId);
+      life[key] = pages.map(extractAllProperties);
+      spinner.stop(`  ✓ ${life[key].length} ${dbConfig.label}`);
+      await delay(config.sources.rateLimits.notion.backoffMs);
+    } catch (error) {
+      spinner.stop(`  ✗ ${dbConfig.label}: ${error.message}`);
+      life[key] = [];
+    }
+  }
+
+  ensureDir(DATA_DIR);
+  fs.writeFileSync(
+    path.join(DATA_DIR, "life.json"),
+    JSON.stringify(life, null, 2)
+  );
+  console.log("✅ data/life.json written");
+
+  return life;
 }
 
 async function pullCollectedData(spinner, startDate, endDate) {
@@ -709,6 +784,20 @@ function generateHtmlViews() {
     generateNycViewerHtml()
   );
 
+  // Retro viewer
+  ensureDir(path.join(LOCAL_DIR, "retro"));
+  fs.writeFileSync(
+    path.join(LOCAL_DIR, "retro", "index.html"),
+    generateDataViewerHtml("Retro Data", "../../data/retro.json")
+  );
+
+  // Life viewer
+  ensureDir(path.join(LOCAL_DIR, "life"));
+  fs.writeFileSync(
+    path.join(LOCAL_DIR, "life", "index.html"),
+    generateDataViewerHtml("Life Data", "../../data/life.json")
+  );
+
   console.log("✅ local/ HTML views updated");
 }
 
@@ -721,13 +810,13 @@ async function main() {
 
   if (autoMode) {
     // Auto mode: pull everything, last 30 days for date-scoped data
-    sections = ["plan", "collected", "summaries", "calendar", "nyc"];
+    sections = ["plan", "collected", "summaries", "calendar", "nyc", "retro", "life"];
     endDate = new Date();
     endDate.setHours(23, 59, 59, 999);
     startDate = new Date();
     startDate.setDate(startDate.getDate() - 29);
     startDate.setHours(0, 0, 0, 0);
-    console.log(`Auto mode: all sections, last 30 days (${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]})\n`);
+    console.log(`Auto mode: all sections (${sections.length}), last 30 days for date-scoped (${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]})\n`);
   } else {
     const answers = await inquirer.prompt([
       {
@@ -740,6 +829,8 @@ async function main() {
           { name: "Summaries & Recaps", value: "summaries", checked: true },
           { name: "Calendar events", value: "calendar", checked: true },
           { name: "NYC (Museums, Restaurants, Tattoos, Venues)", value: "nyc", checked: true },
+          { name: "Retro data (Personal & Work Week Retros)", value: "retro", checked: true },
+          { name: "Life data (Goals, Themes, Relationships, Tasks, Habits, Monthly Plans)", value: "life", checked: true },
         ],
         validate: (answer) => answer.length > 0 ? true : "Select at least one",
       },
@@ -825,6 +916,16 @@ async function main() {
     if (sections.includes("nyc")) {
       console.log("\nPulling NYC data...");
       await pullNycData(spinner);
+    }
+
+    if (sections.includes("retro")) {
+      console.log("\nPulling retro data...");
+      await pullRetroData(spinner);
+    }
+
+    if (sections.includes("life")) {
+      console.log("\nPulling life data...");
+      await pullLifeData(spinner);
     }
 
     // Generate HTML views

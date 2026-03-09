@@ -77,6 +77,10 @@ yarn nyc              # Open NYC guide viewer (localhost:8787/nyc/)
 # NYC
 yarn nyc:import       # One-time CSV → Notion import for NYC databases
 
+# Claude Code Skills
+# /retro              — Guided weekly retro conversation (reads data/*.json)
+# /reflect            — Guided monthly reflection conversation (reads data/*.json)
+
 # Utilities
 yarn plan             # Parse yarn plan data
 yarn sweep            # Move Apple Reminders → Notion Tasks
@@ -126,6 +130,8 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 | `data/summaries.json` | Weekly summaries, Monthly recaps | All |
 | `data/calendar.json` | All Google Calendar events | Last 30 days |
 | `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
+| `data/retro.json` | Personal & Work Week Retros | All |
+| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
 
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
 

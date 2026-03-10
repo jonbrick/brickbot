@@ -13,15 +13,14 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 3x/day via launchd.
 
 **Recently completed:**
+- 8 Claude Code skills for planning, retro, and reflection (`/plan-*`, `/retro-*`, `/reflect-*`)
 - `yarn pull` / `yarn push` — bidirectional Notion sync with hash-based delta detection
 - NYC databases (museums, restaurants, tattoos, venues) integrated into pull/push/view
 - `yarn nyc` — HTML viewer with dropdown, filters, search, sortable columns
-- `yarn pull --auto` — non-interactive mode for automation
-- launchd automation with iMessage failure notifications
+- launchd automation (3x/day) with iMessage failure notifications
+- 5 Minute Journal import (`yarn journal:import`)
 
 **Next steps:**
-- `yarn retro` — Claude-powered weekly retrospective
-- `yarn reflect` — Claude-powered monthly reflection
 - Resolve relation UUIDs to human-readable names in pulled data
 - `yarn overview` — Year at a Glance Notion page
 
@@ -33,8 +32,6 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - `[global]` Add Display columns to all Notion DBs (raw API data, calendar-formatted, human-readable) — follow Steam pattern
 - `[global]` Push property descriptions from config to Notion DB schema via API for all integrations
 - `[global]` Standardize timezone handling — convert in collectors, store UTC + Eastern in all Notion DBs
-- `[yarn retro]` Claude-powered weekly retrospective — DBs exist, needs CLI + workflow + prompts. Separate from `yarn reflect`
-- `[yarn reflect]` Claude-powered monthly reflection using all collected data
 
 ### Known Bugs
 - `BUG-LOW [yarn generate]` Add Habits DB rows + Summary→Recap relations

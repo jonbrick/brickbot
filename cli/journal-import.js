@@ -4,7 +4,7 @@
  * Imports 5 Minute Journal exports (JSON) into data/journal.json
  *
  * Usage: yarn journal:import [path-to-export-dir-or-json]
- * Default: looks for most recent export in ~/Downloads/
+ * Default: looks for most recent export in local/journal/
  * Output: data/journal.json (2026 entries only)
  */
 
@@ -14,16 +14,19 @@ const path = require("path");
 const DATA_DIR = path.join(__dirname, "..", "data");
 
 /**
- * Find the most recent 5 Minute Journal export in ~/Downloads/
+ * Find the most recent 5 Minute Journal export in local/journal/
  */
 function findExportPath() {
-  const downloadsDir = path.join(require("os").homedir(), "Downloads");
-  const entries = fs.readdirSync(downloadsDir);
+  const journalDir = path.join(__dirname, "..", "local", "journal");
+  if (!fs.existsSync(journalDir)) {
+    fs.mkdirSync(journalDir, { recursive: true });
+  }
+  const entries = fs.readdirSync(journalDir);
 
   // Look for export directories (d20260309-... pattern) or export.pdf siblings with index.json
   const exportDirs = entries
     .filter((e) => {
-      const fullPath = path.join(downloadsDir, e);
+      const fullPath = path.join(journalDir, e);
       return (
         fs.statSync(fullPath).isDirectory() &&
         fs.existsSync(path.join(fullPath, "index.json"))
@@ -33,12 +36,12 @@ function findExportPath() {
     .reverse();
 
   if (exportDirs.length > 0) {
-    return path.join(downloadsDir, exportDirs[0], "index.json");
+    return path.join(journalDir, exportDirs[0], "index.json");
   }
 
   // Also check for standalone index.json
-  if (fs.existsSync(path.join(downloadsDir, "index.json"))) {
-    return path.join(downloadsDir, "index.json");
+  if (fs.existsSync(path.join(journalDir, "index.json"))) {
+    return path.join(journalDir, "index.json");
   }
 
   return null;
@@ -92,8 +95,9 @@ function main() {
     inputPath = findExportPath();
     if (!inputPath) {
       console.error(
-        "No 5 Minute Journal export found in ~/Downloads/\n" +
-          "Usage: yarn journal:import [path-to-export-dir-or-json]"
+        "No 5 Minute Journal export found in local/journal/\n" +
+          "Usage: yarn journal:import [path-to-export-dir-or-json]\n" +
+          "Drop your 5MJ export (unzipped) into local/journal/ and re-run."
       );
       process.exit(1);
     }

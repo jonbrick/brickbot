@@ -684,6 +684,87 @@ DRY_RUN=false  # Set to true for testing without creating records
 
 ---
 
+## Command Reference
+
+### Data Pipeline (automated 3x/day)
+
+| Command | Purpose | Interactive |
+|---------|---------|-------------|
+| `yarn collect` | Fetch from external APIs → Notion | Yes (`--auto` for non-interactive) |
+| `yarn update` | Sync Notion → Google Calendar | Yes (`--auto` for non-interactive) |
+| `yarn pull` | Pull Notion + Calendar → `data/*.json` | Yes (`--auto` for non-interactive) |
+
+### Local Data Sync
+
+| Command | Purpose | Interactive |
+|---------|---------|-------------|
+| `yarn push` | Push local JSON edits → Notion (delta-only) | No |
+
+### Summaries & Reports
+
+| Command | Purpose | Interactive |
+|---------|---------|-------------|
+| `yarn summarize` | Generate weekly summaries from calendar data | Yes |
+| `yarn recap` | Generate monthly recaps from weekly summaries | Yes |
+| `yarn generate` | Generate yearly config | Yes |
+
+### Imports
+
+| Command | Purpose | Interactive |
+|---------|---------|-------------|
+| `yarn journal:import` | Import 5 Minute Journal export → `data/journal.json` | No |
+| `yarn nyc:import` | One-time CSV → Notion import for NYC databases | Yes |
+
+### Viewers
+
+| Command | Purpose | Interactive |
+|---------|---------|-------------|
+| `yarn view` | Open plan HTML viewer (localhost:8787) | No |
+| `yarn nyc` | Open NYC guide viewer (localhost:8787/nyc/) | No |
+
+### Utilities
+
+| Command | Purpose | Interactive |
+|---------|---------|-------------|
+| `yarn plan` | Parse yarn plan data | No |
+| `yarn sweep` | Move Apple Reminders → Notion Tasks | No |
+| `yarn logs` | View today's automation log | No |
+| `yarn tokens` | Check all token status, refresh expired OAuth | Yes |
+| `yarn tokens:setup` | Run OAuth setup wizard | Yes |
+| `yarn tokens:check` | Verify API credentials | No |
+| `yarn tokens:refresh` | Refresh expired tokens | No |
+| `yarn verify:config` | Verify config derivation consistency | No |
+
+### Claude Code Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/plan-personal-week` | Plan personal week (set rocks) |
+| `/plan-work-week` | Plan work week (set rocks) |
+| `/plan-personal-month` | Plan personal month |
+| `/plan-work-month` | Plan work month |
+| `/retro-personal-week` | Personal weekly retro |
+| `/retro-work-week` | Work weekly retro |
+| `/reflect-personal-month` | Personal monthly reflection |
+| `/reflect-work-month` | Work monthly reflection |
+
+Skills follow the pull/push cycle: `yarn pull` → run skill → `yarn push`
+
+### Local Data Files
+
+| File | Contents | Scope |
+|------|----------|-------|
+| `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
+| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | Last 30 days |
+| `data/summaries.json` | Weekly summaries, Monthly recaps | All |
+| `data/calendar.json` | All Google Calendar events | Last 30 days |
+| `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
+| `data/retro.json` | Personal & Work Week Retros | All |
+| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/journal.json` | 5 Minute Journal entries | 2026 |
+
+---
+
 ## Next Steps
 
 - **Need implementation help?** See [GUIDES.md](GUIDES.md)

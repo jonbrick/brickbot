@@ -415,6 +415,7 @@ async function pullCalendar(spinner, startDate, endDate) {
   // Pull from each calendar in CALENDARS registry
   // Skip non-calendar entries (tasks, workTasks are Notion databases, not Google Calendars)
   const SKIP_CALENDAR_IDS = new Set(["tasks", "workTasks"]);
+  let authErrors = 0;
 
   for (const [calId, calConfig] of Object.entries(CALENDARS)) {
     if (SKIP_CALENDAR_IDS.has(calId)) continue;
@@ -444,6 +445,9 @@ async function pullCalendar(spinner, startDate, endDate) {
     } catch (error) {
       spinner.stop(`  ✗ ${calConfig.name}: ${error.message}`);
       calendar[calId] = [];
+      if (error.message.includes("invalid_grant")) {
+        authErrors++;
+      }
     }
   }
 
@@ -454,7 +458,11 @@ async function pullCalendar(spinner, startDate, endDate) {
   );
   console.log("✅ data/calendar.json written");
 
-  return calendar;
+  if (authErrors > 0) {
+    console.log(`  ⚠️  ${authErrors} calendar(s) failed with invalid_grant — run: yarn tokens:setup`);
+  }
+
+  return { authErrors };
 }
 
 // --- HTML generation ---
@@ -908,9 +916,10 @@ async function main() {
       await pullSummaries(spinner);
     }
 
+    let calendarResult;
     if (sections.includes("calendar")) {
       console.log("\nPulling calendar events...");
-      await pullCalendar(spinner, startDate, endDate);
+      calendarResult = await pullCalendar(spinner, startDate, endDate);
     }
 
     if (sections.includes("nyc")) {
@@ -932,7 +941,12 @@ async function main() {
     console.log("");
     generateHtmlViews();
 
-    console.log("\n✅ Pull complete.\n");
+    if (calendarResult?.authErrors > 0) {
+      console.log("\n⚠️  Pull complete (calendar auth errors — run: yarn tokens:setup)\n");
+      if (autoMode) process.exit(1);
+    } else {
+      console.log("\n✅ Pull complete.\n");
+    }
   } catch (error) {
     spinner.stop();
     console.error("\n❌ Error:", error.message);

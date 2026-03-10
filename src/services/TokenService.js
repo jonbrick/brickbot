@@ -605,8 +605,7 @@ class TokenService {
         ? config.calendar.getWorkCredentials()
         : config.calendar.getPersonalCredentials();
 
-    // Use the standard OOB redirect URI for desktop apps
-    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+    const redirectUri = "http://localhost:8789/callback";
 
     const oauth2Client = new google.auth.OAuth2(
       credentials.clientId,
@@ -626,6 +625,73 @@ class TokenService {
   }
 
   /**
+   * Run local OAuth flow: open browser, capture callback, return tokens
+   * @param {string} accountType - "personal" or "work"
+   * @returns {Promise<Object>} Tokens
+   */
+  async runGoogleOAuthFlow(accountType = "personal") {
+    const { google } = require("googleapis");
+    const http = require("http");
+    const credentials =
+      accountType === "work"
+        ? config.calendar.getWorkCredentials()
+        : config.calendar.getPersonalCredentials();
+
+    const redirectUri = "http://localhost:8789/callback";
+
+    const oauth2Client = new google.auth.OAuth2(
+      credentials.clientId,
+      credentials.clientSecret,
+      redirectUri
+    );
+
+    return new Promise((resolve, reject) => {
+      const server = http.createServer(async (req, res) => {
+        try {
+          const url = new URL(req.url, "http://localhost:8789");
+          if (url.pathname !== "/callback") return;
+
+          const code = url.searchParams.get("code");
+          if (!code) {
+            res.writeHead(400, { "Content-Type": "text/html" });
+            res.end("<h1>Error: No authorization code received</h1>");
+            reject(new Error("No authorization code received"));
+            server.close();
+            return;
+          }
+
+          const { tokens } = await oauth2Client.getToken(code);
+
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end("<h1>Authorization successful!</h1><p>You can close this tab.</p>");
+
+          server.close();
+          resolve({
+            accessToken: tokens.access_token,
+            refreshToken: tokens.refresh_token,
+            expiryDate: tokens.expiry_date,
+          });
+        } catch (err) {
+          res.writeHead(500, { "Content-Type": "text/html" });
+          res.end("<h1>Error exchanging code</h1><p>" + err.message + "</p>");
+          server.close();
+          reject(err);
+        }
+      });
+
+      server.listen(8789, () => {
+        // Server ready, caller should open the auth URL
+      });
+
+      // Timeout after 2 minutes
+      setTimeout(() => {
+        server.close();
+        reject(new Error("OAuth flow timed out after 2 minutes"));
+      }, 120000);
+    });
+  }
+
+  /**
    * Exchange authorization code for Google Calendar tokens
    * @param {string} code - Authorization code from OAuth callback
    * @param {string} accountType - "personal" or "work"
@@ -638,8 +704,7 @@ class TokenService {
         ? config.calendar.getWorkCredentials()
         : config.calendar.getPersonalCredentials();
 
-    // Use the standard OOB redirect URI for desktop apps
-    const redirectUri = "urn:ietf:wg:oauth:2.0:oob";
+    const redirectUri = "http://localhost:8789/callback";
 
     const oauth2Client = new google.auth.OAuth2(
       credentials.clientId,

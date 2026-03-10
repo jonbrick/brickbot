@@ -589,6 +589,74 @@ Each formatter converts workflow result objects into display-ready data structur
 4. Generate AI summaries via OpenAI
 5. Create/update Personal Summary page in Notion
 
+## Local-First Data Layer
+
+### Pull/Push Architecture
+
+Brickbot follows a local-first pattern: all Notion data is pulled to local JSON files, and edits are pushed back with delta detection.
+
+```
+┌──────────────┐    yarn pull     ┌──────────────┐    yarn push     ┌──────────────┐
+│              │ ───────────────→ │              │ ───────────────→ │              │
+│    Notion    │                  │ data/*.json  │                  │    Notion    │
+│  (+ Google   │ ←─── automation  │  (local)     │  delta-only ──→ │  (updated)   │
+│   Calendar)  │     runs pull    │              │  (MD5 hashes)   │              │
+└──────────────┘                  └──────────────┘                  └──────────────┘
+                                        ↑
+                                  Claude Code reads
+                                  and edits locally
+```
+
+**Why local-first?**
+- Claude Code can read/analyze data without API calls
+- Edits are batched and only changed records are pushed (MD5 hash comparison)
+- Skills (`/retro-*`, `/plan-*`, `/reflect-*`) operate on local files
+
+**Local data files:**
+
+| File | Contents | Scope |
+|------|----------|-------|
+| `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
+| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | Last 30 days |
+| `data/summaries.json` | Weekly summaries, Monthly recaps | All |
+| `data/calendar.json` | All Google Calendar events | Last 30 days |
+| `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
+| `data/retro.json` | Personal & Work Week Retros | All |
+| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/journal.json` | 5 Minute Journal entries | 2026 |
+
+### Automation
+
+Runs 3x daily (8am, 10am, 7pm) via launchd (`infra/launchd/com.brickbot.daily.plist`):
+
+```
+tokens:refresh → collect → update → pull
+```
+
+Failures trigger iMessage notifications. Logs: `local/logs/daily-YYYY-MM-DD.log`.
+
+## Interaction Patterns
+
+Brickbot has four interaction patterns:
+
+### 1. CLI Commands
+Interactive commands for data pipeline operations (`yarn collect`, `yarn update`, `yarn summarize`, etc.).
+
+### 2. Automation
+Non-interactive launchd automation running `tokens:refresh → collect → update → pull` 3x/day with `--auto` flag.
+
+### 3. Claude Code Skills
+8 slash commands for planning, retros, and reflections. Skills read/edit `data/*.json` locally, then changes are pushed to Notion via `yarn push`.
+
+| Category | Skills |
+|----------|--------|
+| Planning | `/plan-personal-week`, `/plan-work-week`, `/plan-personal-month`, `/plan-work-month` |
+| Retros | `/retro-personal-week`, `/retro-work-week` |
+| Reflections | `/reflect-personal-month`, `/reflect-work-month` |
+
+### 4. HTML Viewers
+Static viewers for plan data (`yarn view`) and NYC guides (`yarn nyc`).
+
 ## Extension Points
 
 **Want to add a new integration?** See [GUIDES.md](GUIDES.md#adding-a-new-integration)

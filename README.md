@@ -542,64 +542,156 @@ Generate weekly summaries to test the summary pipeline.
 
 ### Main Workflows
 
-#### 1. Collect Data from External Sources
+#### Data Pipeline (automated 3x/day)
 
 ```bash
-yarn collect
+yarn collect        # Fetch data from external APIs → Notion
+yarn update         # Sync Notion records → Google Calendar events
+yarn pull           # Pull Notion + Calendar → local JSON (data/*.json)
 ```
 
-Fetches data from Oura, Strava, Steam, GitHub, and Withings for a selected date range and saves to Notion.
+All three support `--auto` for non-interactive use (used by launchd automation).
 
-#### 2. Sync to Google Calendar
+#### Local Data Sync
 
 ```bash
-yarn update
+yarn push           # Push local JSON edits → Notion (delta-only, hash-based)
 ```
 
-Creates calendar events from Notion records (PRs, workouts, sleep, body weight, video games, events, trips). Events and Trips with Status 🧊 Ice Box, ↗️ Next Year, or 🛑 Won't Do are skipped.
+Edit `data/*.json` locally, then `yarn push` to sync changes back. Only changed records are sent.
 
-#### 3. Generate Weekly Summaries
+#### Summaries & Reports
 
 ```bash
-yarn summarize
+yarn summarize      # Generate weekly summaries from calendar data
+yarn recap          # Generate monthly recaps from weekly summaries
+yarn generate       # Generate yearly config
 ```
 
-Pulls calendar data, aggregates metrics, generates AI summaries, and creates weekly summary pages in Notion.
-
-#### 4. Sweep Apple Reminders to Notion
+#### Imports
 
 ```bash
-yarn sweep
+yarn journal:import # Import 5 Minute Journal export → data/journal.json
+yarn nyc:import     # One-time CSV → Notion import for NYC databases
 ```
 
-Moves incomplete reminders from Apple Reminders into Notion Tasks database (Due Date = today, Status = 🔴 To Do), then deletes them from Reminders.
+#### Viewers
+
+```bash
+yarn view           # Open plan HTML viewer (localhost:8787)
+yarn nyc            # Open NYC guide viewer (localhost:8787/nyc/)
+```
+
+#### Other
+
+```bash
+yarn sweep          # Move Apple Reminders → Notion Tasks
+yarn plan           # Parse yarn plan data
+```
+
+### Claude Code Skills
+
+Brickbot includes 8 Claude Code skills for planning, retros, and reflections. Start a new Claude Code conversation and use these slash commands:
+
+| Skill | Purpose |
+|-------|---------|
+| `/plan-personal-week` | Plan personal week (set rocks) |
+| `/plan-work-week` | Plan work week (set rocks) |
+| `/plan-personal-month` | Plan personal month |
+| `/plan-work-month` | Plan work month |
+| `/retro-personal-week` | Personal weekly retro |
+| `/retro-work-week` | Work weekly retro |
+| `/reflect-personal-month` | Personal monthly reflection |
+| `/reflect-work-month` | Work monthly reflection |
+
+**Workflow:** `yarn pull` → run skill (edits `data/*.json`) → `yarn push`
 
 ### Token Management
 
 ```bash
 yarn tokens        # Check all tokens and refresh expired OAuth (except Google Calendar)
 yarn tokens:setup  # Run OAuth setup wizard (use for Google Calendar or re-auth)
+yarn tokens:check  # Verify API credentials
+yarn tokens:refresh # Refresh expired tokens
 ```
+
+### Local Data Files
+
+`yarn pull` creates local JSON snapshots that Claude Code can read without API calls:
+
+| File | Contents | Scope |
+|------|----------|-------|
+| `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
+| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | Last 30 days |
+| `data/summaries.json` | Weekly summaries, Monthly recaps | All |
+| `data/calendar.json` | All Google Calendar events | Last 30 days |
+| `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
+| `data/retro.json` | Personal & Work Week Retros | All |
+| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/journal.json` | 5 Minute Journal entries | 2026 |
+
+### Automation (launchd)
+
+Brickbot runs automatically 3x daily (8am, 10am, 7pm) via launchd:
+
+```
+tokens:refresh → collect → update → pull
+```
+
+- **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
+- **Failure alerts:** iMessage notification on any step failure
+- **View logs:** `yarn logs`
+
+#### Setup
+
+```bash
+# Symlink plist and load
+ln -s /Users/jonbrick/projects/brickbot/infra/launchd/com.brickbot.daily.plist ~/Library/LaunchAgents/
+launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
+
+# Verify it's loaded
+launchctl list | grep brickbot
+
+# Unload if needed
+launchctl unload ~/Library/LaunchAgents/com.brickbot.daily.plist
+```
+
+If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up.
 
 ## Common Workflows
 
-### Daily Data Collection
+### Daily (Automated)
+
+Automation handles `collect → update → pull` 3x/day. No manual action needed.
+
+### Weekly
 
 ```bash
-yarn collect        # Collect data from external sources
-yarn update         # Sync to calendar
+yarn summarize                 # Generate weekly summaries
+# In Claude Code:
+/retro-personal-week           # Personal weekly retro
+/retro-work-week               # Work weekly retro
+/plan-personal-week            # Plan next personal week
+/plan-work-week                # Plan next work week
+yarn push                      # Sync retros and plans to Notion
 ```
 
-### Weekly Review
+### Monthly
 
 ```bash
-yarn summarize # Generate weekly summaries and insights
+yarn recap                     # Generate monthly recaps
+# In Claude Code:
+/reflect-personal-month        # Personal monthly reflection
+/reflect-work-month            # Work monthly reflection
+/plan-personal-month           # Plan next personal month
+/plan-work-month               # Plan next work month
+yarn push                      # Sync reflections and plans to Notion
 ```
 
 ### Quick Task Capture
 
 ```bash
-yarn sweep  # Move reminders to Notion Tasks
+yarn sweep  # Move Apple Reminders → Notion Tasks
 ```
 
 ## Testing & Validation
@@ -701,8 +793,9 @@ Once setup is complete:
 
 1. Run a test collection: `yarn collect`
 2. Sync to calendar: `yarn update`
-3. Generate weekly insights: `yarn summarize`
-4. Set up a daily cron job or manual routine
+3. Pull data locally: `yarn pull`
+4. Generate weekly insights: `yarn summarize`
+5. Set up launchd automation (see [Automation](#automation-launchd) above)
 
 ### Example: Adding a New Calendar
 

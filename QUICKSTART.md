@@ -6,9 +6,142 @@
 
 Personal data pipeline that automatically collects data from external sources (GitHub, Oura, Strava, Steam, Withings), stores it in Notion, creates Google Calendar events, and generates AI-powered insights about your productivity, health, and habits.
 
-**In simple terms:** API data → Notion → Calendar → Weekly insights
+**In simple terms:** API data → Notion → Calendar → Weekly insights → Local JSON
+
+## How It Works
+
+### User-Facing Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    AUTOMATED (3x/day via launchd)                │
+│                     8am · 10am · 7pm                            │
+│                                                                 │
+│   tokens:refresh → collect → update → pull                      │
+│                                                                 │
+│   Refreshes tokens, fetches API data → Notion,                  │
+│   syncs Notion → Calendar, pulls everything to local JSON       │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    LOCAL DATA (data/*.json)                      │
+│                                                                 │
+│   plan.json · collected.json · summaries.json · calendar.json   │
+│   nyc.json · retro.json · life.json · journal.json              │
+│                                                                 │
+│   Claude Code reads these directly — no API calls needed        │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    MANUAL (run as needed)                        │
+│                                                                 │
+│   yarn summarize     Weekly summaries from calendar data        │
+│   yarn recap         Monthly recaps from weekly summaries       │
+│   yarn push          Sync local JSON edits back to Notion       │
+│   yarn sweep         Move Apple Reminders → Notion Tasks        │
+│                                                                 │
+│   Claude Code Skills (start a new conversation):                │
+│   /retro-*  /reflect-*  /plan-*                                 │
+│   (8 skills for weekly retros, monthly reflections, planning)   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Weekly Cadence
+
+1. **Sunday/Monday AM** — Write rocks for the week (`/plan-personal-week`, `/plan-work-week`)
+2. **During the week** — Work tasks, events, live life
+3. **Automation runs 3x/day** — `tokens:refresh → collect → update → pull`
+4. **End of week** — Run retros (`/retro-personal-week`, `/retro-work-week`)
+5. **Weekly** — `yarn summarize` to capture what happened
+6. **Monthly** — `yarn recap` for monthly rollup, then `/reflect-*-month` skills
+
+### The Pull/Push Cycle
+
+All Notion data is pulled to local `data/*.json` files so Claude Code can read and analyze without API calls:
+
+```bash
+yarn pull              # Pull Notion + Calendar → local JSON (runs in automation)
+# ... read/edit data/*.json locally (or use Claude Code skills) ...
+yarn push              # Push local edits → Notion (delta-only, hash-based)
+```
+
+## Commands
+
+### Data Pipeline (automated 3x/day)
+
+```bash
+yarn collect           # Fetch data from external APIs → Notion
+yarn update            # Sync Notion records → Google Calendar events
+yarn pull              # Pull Notion + Calendar → local JSON
+```
+
+### Summaries & Reports
+
+```bash
+yarn summarize         # Generate weekly summaries from calendar data
+yarn recap             # Generate monthly recaps from weekly summaries
+yarn generate          # Generate yearly config
+```
+
+### Local Data Sync
+
+```bash
+yarn push              # Push local JSON edits → Notion (delta-only)
+```
+
+### Viewers
+
+```bash
+yarn view              # Open plan HTML viewer (localhost:8787)
+yarn nyc               # Open NYC guide viewer (localhost:8787/nyc/)
+```
+
+### Imports
+
+```bash
+yarn journal:import    # Import 5 Minute Journal export → data/journal.json
+yarn nyc:import        # One-time CSV → Notion import for NYC databases
+```
+
+### Claude Code Skills
+
+Start a new conversation and use these slash commands:
+
+| Skill | Purpose |
+|-------|---------|
+| `/plan-personal-week` | Plan personal week (set rocks) |
+| `/plan-work-week` | Plan work week (set rocks) |
+| `/plan-personal-month` | Plan personal month |
+| `/plan-work-month` | Plan work month |
+| `/retro-personal-week` | Personal weekly retro |
+| `/retro-work-week` | Work weekly retro |
+| `/reflect-personal-month` | Personal monthly reflection |
+| `/reflect-work-month` | Work monthly reflection |
+
+Skills follow the pull/push cycle: `yarn pull` → run skill (edits `data/*.json`) → `yarn push`
+
+### Utilities
+
+```bash
+yarn plan              # Parse yarn plan data
+yarn sweep             # Move Apple Reminders → Notion Tasks
+yarn logs              # View today's automation log
+yarn tokens            # Check all token status, refresh expired OAuth
+yarn tokens:setup      # Run OAuth setup wizard
+yarn tokens:check      # Verify API credentials
+yarn tokens:refresh    # Refresh expired tokens
+yarn verify:config     # Verify config derivation consistency
+```
 
 ## Architecture Overview
+
+### Three-Layer Data Flow
+
+| Layer | Flow | Naming | Example |
+|-------|------|--------|---------|
+| **Layer 1** | API → Notion | Integration names (`oura`, `strava`) | Oura API → Notion Sleep DB |
+| **Layer 2** | Notion → Calendar | Domain names (`sleep`, `workouts`) | Notion → Google Calendar |
+| **Layer 3** | Calendar → Summary | Summary groups (`personalRecap`) | Calendar → Weekly Summary |
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -47,30 +180,6 @@ Personal data pipeline that automatically collects data from external sources (G
                    └────────────────────┘
 ```
 
-## Three-Layer Architecture
-
-### Layer 1: API → Notion (Integration Names)
-
-- External API data → Notion databases
-- Uses **integration names**: `oura`, `strava`, `githubPersonal`, `githubWork`, `withings`, `steam`
-- Each integration has its own Notion database
-- Example: Oura sleep data → Notion Sleep database
-
-### Layer 2: Notion → Calendar (Domain Abstraction)
-
-- Notion data → Google Calendar events
-- Transitions from integration names to **domain names**: `sleep`, `workouts`, `bodyWeight`, `prs`, `videoGames`
-- Multiple integrations can feed one domain (e.g., future: Oura + Apple Health → Sleep calendar)
-- Example: Notion Sleep records → Google Calendar sleep events
-
-### Layer 3: Calendar → Summary (Aggregation)
-
-- Calendar events → Weekly summaries in Notion
-- Aggregates domain data into insights
-- Example: All week's calendar events → Personal Summary page with stats
-
-## Key Concepts
-
 ### Config-Driven Everything
 
 Three registries in `src/config/unified-sources.js` drive the entire system:
@@ -79,71 +188,22 @@ Three registries in `src/config/unified-sources.js` drive the entire system:
 2. **SUMMARY_GROUPS**: How calendars combine for reporting
 3. **INTEGRATIONS**: API → Notion routing and metadata
 
-Add a calendar? Edit the config. Add an integration? Edit the config. No code changes needed.
+Most features can be added by editing this config file alone.
 
-### Generic Patterns
+### Local Data Files
 
-- **IntegrationDatabase**: One class handles all integrations via config
-- **BaseWorkflow**: Reusable batch processing logic
-- **Calendar Mapper**: Declarative routing rules
+`yarn pull` creates local JSON snapshots:
 
-## Four Main Commands
-
-### 1. Collect Data
-
-```bash
-yarn collect
-```
-
-Fetches data from external APIs (Oura, Strava, GitHub, Steam, Withings) and saves to Notion.
-
-### 2. Sync to Calendar
-
-```bash
-yarn update
-```
-
-Creates Google Calendar events from Notion records (sleep, workouts, PRs, body weight, video games).
-
-### 3. Generate Weekly Insights
-
-```bash
-yarn summarize
-```
-
-Pulls calendar data, aggregates metrics, generates AI summaries, creates weekly summary.
-
-### 4. Sweep Reminders
-
-```bash
-yarn sweep
-```
-
-Moves Apple Reminders into Notion Tasks for today, then deletes from Reminders.
-
-## Common Workflows
-
-**Daily:**
-
-```bash
-yarn collect  # Get yesterday's data
-yarn update   # Sync to calendar
-```
-
-**Weekly:**
-
-```bash
-yarn summarize  # Full analysis pipeline
-```
-
-**Setup:**
-
-```bash
-yarn tokens:check   # Verify API credentials
-yarn tokens:refresh # Refresh expired tokens
-yarn tokens        # Check and refresh tokens (Google Calendar: use tokens:setup)
-yarn tokens:setup   # Initial OAuth setup
-```
+| File | Contents | Scope |
+|------|----------|-------|
+| `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
+| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | Last 30 days |
+| `data/summaries.json` | Weekly summaries, Monthly recaps | All |
+| `data/calendar.json` | All Google Calendar events | Last 30 days |
+| `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
+| `data/retro.json` | Personal & Work Week Retros | All |
+| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/journal.json` | 5 Minute Journal entries | 2026 |
 
 ## Documentation Structure
 
@@ -157,12 +217,11 @@ yarn tokens:setup   # Initial OAuth setup
 - **Looking up conventions?** → [docs/REFERENCE.md](docs/REFERENCE.md) - Naming, APIs, env vars
 - **Understanding patterns?** → [docs/INTERNALS.md](docs/INTERNALS.md) - Design patterns and best practices
 
-**Why this structure?**
-
-- **Root level** = Entry points (QUICKSTART, README)
-- **docs/** = Detailed documentation (everything else)
-
 ## Quick Examples
+
+### Understanding a Data Flow
+
+- **Oura sleep**: API → collect-oura.js → oura-to-notion-oura.js → IntegrationDatabase("oura") → Notion → notion-oura-to-calendar-sleep.js → Google Calendar → calendar-to-notion-summaries.js → Personal Summary
 
 ### Adding a New Calendar
 
@@ -172,10 +231,6 @@ Just 4 steps in `unified-sources.js`:
 2. Add to SUMMARY_GROUPS registry (~5 lines)
 3. Add Notion columns (auto-generated from config)
 4. Done! Automatically available everywhere.
-
-### Understanding a Data Flow
-
-- **Oura sleep**: API → collect-oura.js → oura-to-notion-oura.js → IntegrationDatabase("oura") → Notion → notion-oura-to-calendar-sleep.js → Google Calendar → calendar-to-notion-summaries.js → Personal Summary
 
 ---
 

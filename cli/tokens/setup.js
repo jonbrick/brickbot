@@ -138,13 +138,14 @@ async function setupGooglePersonalCalendar(tokenService) {
   console.log(authUrl);
   console.log("\n1. Open this URL in your browser");
   console.log("2. Authorize the application");
-  console.log("3. Copy the authorization code\n");
+  console.log("3. Copy the authorization code from the redirect URL\n");
 
-  const code = await askQuestion("Enter the authorization code: ");
+  const codeInput = await askQuestion("Enter the authorization code: ");
+  const code = extractCodeFromInput(codeInput.trim());
 
   // Exchange code for tokens
   showInfo("Exchanging code for tokens...");
-  const tokens = await tokenService.exchangeGoogleCode(code.trim(), "personal");
+  const tokens = await tokenService.exchangeGoogleCode(code, "personal");
 
   // Update .env file
   updateEnvFile({
@@ -192,13 +193,14 @@ async function setupGoogleWorkCalendar(tokenService) {
   console.log(authUrl);
   console.log("\n1. Open this URL in your browser");
   console.log("2. Authorize the application");
-  console.log("3. Copy the authorization code\n");
+  console.log("3. Copy the authorization code from the redirect URL\n");
 
-  const code = await askQuestion("Enter the authorization code: ");
+  const codeInput = await askQuestion("Enter the authorization code: ");
+  const code = extractCodeFromInput(codeInput.trim());
 
   // Exchange code for tokens
   showInfo("Exchanging code for tokens...");
-  const tokens = await tokenService.exchangeGoogleCode(code.trim(), "work");
+  const tokens = await tokenService.exchangeGoogleCode(code, "work");
 
   // Update .env file
   updateEnvFile({

@@ -35,6 +35,8 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - `[yarn generate]` Year-end generation improvements (defer until end of year)
   - Add Habits DB rows + Summary→Recap relations
   - Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
+  - Pre-populate empty Rocks rows per category per week (so push/skills can update by UUID)
+  - Pre-populate empty Retro rows per week (Personal + Work) for same reason
 
 ### Known Bugs
 - `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026

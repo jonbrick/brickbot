@@ -2210,6 +2210,8 @@ const CONTENT_SPLITS = {
           "docs/",
           "skill:",
           "skill/",
+          "brickbot:",
+          "brickbot/",
         ],
         admin: [
           "journals",

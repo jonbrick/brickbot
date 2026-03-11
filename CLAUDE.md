@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Brickbot is a personal data pipeline that collects data from external APIs (GitHub, Oura, Strava, Steam, Withings), stores it in Notion databases, syncs to Google Calendar, and generates AI-powered weekly/monthly summaries. Built with Node.js (plain JavaScript, no TypeScript).
+Brickbot is a personal data pipeline that collects data from external APIs (GitHub, Oura, Strava, Steam, Withings), stores it in Notion databases, syncs to Google Calendar, and generates weekly/monthly summaries. Built with Node.js (plain JavaScript, no TypeScript).
 
 **Data flow:** External APIs → Notion → Google Calendar → Weekly/Monthly Summaries → Local JSON
 
 ## Current Focus
 
-Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 3x/day via launchd.
+Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 8x/day via launchd.
 
 **Recently completed:**
 - 8 Claude Code skills for planning, retro, and reflection (`/plan-*`, `/retro-*`, `/reflect-*`)
@@ -32,9 +32,11 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - `[global]` Add Display columns to all Notion DBs (raw API data, calendar-formatted, human-readable) — follow Steam pattern
 - `[global]` Push property descriptions from config to Notion DB schema via API for all integrations
 - `[global]` Standardize timezone handling — convert in collectors, store UTC + Eastern in all Notion DBs
+- `[yarn generate]` Year-end generation improvements (defer until end of year)
+  - Add Habits DB rows + Summary→Recap relations
+  - Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
 
 ### Known Bugs
-- `BUG-LOW [yarn generate]` Add Habits DB rows + Summary→Recap relations
 - `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
 
 ## Development Principles
@@ -98,7 +100,7 @@ yarn verify:config    # Verify config derivation consistency
 
 ### Automation (launchd)
 
-Runs 3x daily (8am, 10am, 7pm) via `infra/launchd/com.brickbot.daily.plist`:
+Runs every 2 hours (7am–9pm) via `infra/launchd/com.brickbot.daily.plist`:
 
 ```
 tokens:refresh → collect → update → pull
@@ -212,7 +214,7 @@ brickbot/
 │   ├── parsers/                  # Event parsing and categorization
 │   │   ├── calendar-parsers.js
 │   │   └── interpersonal-matcher.js
-│   ├── summarizers/              # AI summary generation
+│   ├── summarizers/              # Weekly/monthly summary generation
 │   │   ├── summarize-calendar.js
 │   │   ├── summarize-tasks.js
 │   │   └── index.js
@@ -312,7 +314,7 @@ All source files should include a `@layer` JSDoc annotation:
 |---------|---------|
 | `@notionhq/client` | Notion API client |
 | `googleapis` | Google Calendar API |
-| `@anthropic-ai/sdk` | Claude AI for summaries |
+| `@anthropic-ai/sdk` | Claude AI (installed, not currently used) |
 | `axios` | HTTP client for external APIs |
 | `dotenv` | Environment variable loading |
 | `inquirer` | Interactive CLI prompts |

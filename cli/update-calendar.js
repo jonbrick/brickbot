@@ -171,8 +171,12 @@ async function handleAllCalendarSyncs(startDate, endDate, action) {
   console.log(output.divider());
   const duration = Math.round((Date.now() - startTime) / 1000);
   const errorCount = aggregatedResults.errors.length;
-  const errorText = errorCount > 0 ? ` (${errorCount} error${errorCount !== 1 ? "s" : ""})` : "";
+  const failedCount = aggregatedResults.failed.length;
+  const problemCount = errorCount + failedCount;
+  const errorText = problemCount > 0 ? ` (${problemCount} error${problemCount !== 1 ? "s" : ""})` : "";
   output.done(`${aggregatedResults.successful.length} sources completed${errorText}`, `${duration}s`);
+
+  return aggregatedResults;
 }
 
 /**
@@ -312,7 +316,10 @@ async function main() {
 
     // Route to appropriate handler
     if (source === "all") {
-      await handleAllCalendarSyncs(startDate, endDate, action);
+      const results = await handleAllCalendarSyncs(startDate, endDate, action);
+      if (autoMode && (results.failed.length > 0 || results.errors.length > 0)) {
+        process.exit(1);
+      }
     } else {
       spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
       spinner.start();

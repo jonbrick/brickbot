@@ -2194,13 +2194,22 @@ const CONTENT_SPLITS = {
         // Categorize-by-title
         coding: [
           "plugin:",
+          "plugin/",
           "feat:",
+          "feat/",
+          "fix:",
+          "fix/",
           "bug:",
+          "bug/",
           "refactor:",
+          "refactor/",
           "spike:",
+          "spike/",
           "merge",
           "docs:",
+          "docs/",
           "skill:",
+          "skill/",
         ],
         admin: [
           "journals",

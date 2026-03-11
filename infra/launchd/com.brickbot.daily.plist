@@ -11,24 +11,54 @@
         <string>/Users/jonbrick/projects/brickbot/infra/launchd/brickbot-daily.sh</string>
     </array>
 
-    <!-- Run 3x daily: 8am, 10am, 7pm -->
+    <!-- Run every 2 hours: 7am, 9am, 11am, 1pm, 3pm, 5pm, 7pm, 9pm -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
             <key>Hour</key>
-            <integer>8</integer>
+            <integer>7</integer>
             <key>Minute</key>
             <integer>0</integer>
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>10</integer>
+            <integer>9</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>11</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>13</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>15</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>17</integer>
             <key>Minute</key>
             <integer>0</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>19</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>21</integer>
             <key>Minute</key>
             <integer>0</integer>
         </dict>

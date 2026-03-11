@@ -159,10 +159,14 @@ async function handleAllSources(startDate, endDate, action) {
   // Final summary
   console.log(output.divider());
   const duration = Math.round((Date.now() - startTime) / 1000);
+  const failedCount = aggregatedResults.failed.length;
+  const failedText = failedCount > 0 ? ` (${failedCount} failed)` : "";
   output.done(
-    `${aggregatedResults.successful.length} sources completed`,
+    `${aggregatedResults.successful.length} sources completed${failedText}`,
     `${duration}s`
   );
+
+  return aggregatedResults;
 }
 
 /**
@@ -265,7 +269,10 @@ async function main() {
 
     // Route to appropriate handler based on source
     if (source === "all") {
-      await handleAllSources(startDate, endDate, action);
+      const results = await handleAllSources(startDate, endDate, action);
+      if (autoMode && results.failed.length > 0) {
+        process.exit(1);
+      }
     } else {
       spinner = createSpinner(`Processing ${INTEGRATIONS[source].name}...`);
       spinner.start();

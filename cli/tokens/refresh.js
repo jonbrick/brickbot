@@ -183,6 +183,11 @@ async function main() {
     }
 
     console.log("\n");
+
+    // In auto mode, exit non-zero if any tokens failed to refresh
+    if (autoMode && failureCount > 0) {
+      process.exit(1);
+    }
   } catch (error) {
     showError("Fatal error", error);
     process.exit(1);

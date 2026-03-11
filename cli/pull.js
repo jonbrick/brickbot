@@ -899,6 +899,7 @@ async function main() {
   }
 
   const spinner = createSpinner("Pulling...");
+  let hasErrors = false;
 
   try {
     if (sections.includes("plan")) {
@@ -920,6 +921,7 @@ async function main() {
     if (sections.includes("calendar")) {
       console.log("\nPulling calendar events...");
       calendarResult = await pullCalendar(spinner, startDate, endDate);
+      if (calendarResult?.authErrors > 0) hasErrors = true;
     }
 
     if (sections.includes("nyc")) {
@@ -941,7 +943,7 @@ async function main() {
     console.log("");
     generateHtmlViews();
 
-    if (calendarResult?.authErrors > 0) {
+    if (hasErrors) {
       console.log("\n⚠️  Pull complete (calendar auth errors — run: yarn tokens:setup)\n");
       if (autoMode) process.exit(1);
     } else {

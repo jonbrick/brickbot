@@ -109,13 +109,16 @@ function convertGroupToActivity(repoGroup) {
   );
   const uniqueFiles = [...new Set(allFiles)];
 
-  // Format commit messages with timestamps
+  // Format commit messages with timestamps (Eastern time)
   const commitMessages = repoGroup.commits
     .map((commit) => {
-      const time = new Date(commit.date)
-        .toISOString()
-        .split("T")[1]
-        .split(".")[0];
+      const time = new Date(commit.date).toLocaleTimeString("en-US", {
+        timeZone: "America/New_York",
+        hour12: false,
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
       const message = commit.message.split("\n")[0]; // First line only
       return `${message} (${time})`;
     })

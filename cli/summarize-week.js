@@ -37,6 +37,7 @@ const {
 } = require("../src/utils/workflow-output");
 
 const dryRun = process.argv.includes("--dry-run");
+const autoMode = process.argv.includes("--auto");
 
 /**
  * Select action type (display only or update)
@@ -363,9 +364,6 @@ async function main() {
       "Summarizes data from Google Calendar events and Notion database records\n"
     );
 
-    // Select calendars and databases
-    const selectedSource = await selectCalendarsAndDatabases();
-
     // Get all summarizers organized by bucket
     const buckets = getAllSummarizersByBucket();
     const {
@@ -375,59 +373,84 @@ async function main() {
       workTasks: allWorkTasks,
     } = buckets;
 
-    // Expand selected sources into the four buckets
     let personalCalendars = [];
     let personalNotionSources = [];
     let workCalendars = [];
     let workNotionSources = [];
+    let displayOnly;
+    let weeks;
 
-    if (selectedSource === "all") {
-      // Use all available sources from buckets
+    if (autoMode) {
+      // Auto mode: all sources, update, current week + previous 3 weeks
       personalCalendars = allPersonalCalendars;
       personalNotionSources = allPersonalTasks;
       workCalendars = allWorkCalendars;
       workNotionSources = allWorkTasks;
+      displayOnly = false;
+
+      const { getWeekNumber } = require("../src/utils/date");
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      const currentWeek = getWeekNumber(today, currentYear);
+
+      weeks = [];
+      for (let i = 3; i >= 0; i--) {
+        let wk = currentWeek - i;
+        let yr = currentYear;
+        if (wk < 1) {
+          yr--;
+          wk += 52;
+        }
+        weeks.push({ weekNumber: wk, year: yr });
+      }
+
+      const weekRange = weeks.map((w) => `W${w.weekNumber}`).join(", ");
+      console.log(`Auto mode: all sources, ${weekRange} (${currentYear})\n`);
     } else {
-      // Single source selected - find which bucket it belongs to
-      const summarizer = getSummarizer(selectedSource);
-      if (!summarizer) {
-        throw new Error(`Unknown source: ${selectedSource}`);
-      }
+      // Interactive mode: select source, action, and weeks
+      const selectedSource = await selectCalendarsAndDatabases();
 
-      // Add to appropriate bucket
-      if (summarizer.recapType === "personal") {
-        if (summarizer.sourceOrigin === "calendar") {
-          personalCalendars = [selectedSource];
-        } else {
-          personalNotionSources = [selectedSource];
-        }
+      if (selectedSource === "all") {
+        personalCalendars = allPersonalCalendars;
+        personalNotionSources = allPersonalTasks;
+        workCalendars = allWorkCalendars;
+        workNotionSources = allWorkTasks;
       } else {
-        // recapType === "work"
-        if (summarizer.sourceOrigin === "calendar") {
-          workCalendars = [selectedSource];
+        const summarizer = getSummarizer(selectedSource);
+        if (!summarizer) {
+          throw new Error(`Unknown source: ${selectedSource}`);
+        }
+        if (summarizer.recapType === "personal") {
+          if (summarizer.sourceOrigin === "calendar") {
+            personalCalendars = [selectedSource];
+          } else {
+            personalNotionSources = [selectedSource];
+          }
         } else {
-          workNotionSources = [selectedSource];
+          if (summarizer.sourceOrigin === "calendar") {
+            workCalendars = [selectedSource];
+          } else {
+            workNotionSources = [selectedSource];
+          }
         }
       }
+
+      const sourceTypes = {
+        hasWork: workCalendars.length > 0 || workNotionSources.length > 0,
+        hasPersonal:
+          personalCalendars.length > 0 || personalNotionSources.length > 0,
+      };
+
+      const action = dryRun ? "display" : await selectAction(sourceTypes);
+      displayOnly = action === "display";
+      if (dryRun) {
+        console.log("ℹ️ Dry run: results will not be saved to Notion\n");
+      }
+
+      const dateResult = await selectDateRange({ minGranularity: "week" });
+      weeks = dateResult.weeks;
+      if (dateResult.displayText) console.log(dateResult.displayText);
     }
-
-    // Determine which source types are selected for dynamic action prompt
-    const sourceTypes = {
-      hasWork: workCalendars.length > 0 || workNotionSources.length > 0,
-      hasPersonal:
-        personalCalendars.length > 0 || personalNotionSources.length > 0,
-    };
-
-    // Select action
-    const action = dryRun ? "display" : await selectAction(sourceTypes);
-    const displayOnly = action === "display";
-    if (dryRun) {
-      console.log("ℹ️ Dry run: results will not be saved to Notion\n");
-    }
-
-    // Select week(s) - week granularity mode always returns weeks array
-    const { weeks, displayText } = await selectDateRange({ minGranularity: "week" });
-    if (displayText) console.log(displayText);
 
     if (displayOnly && !dryRun) {
       console.log("ℹ️ Display mode: Results will not be saved to Notion\n");

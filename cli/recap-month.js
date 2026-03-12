@@ -15,6 +15,7 @@ const output = require("../src/utils/output");
 const { formatMonthlyRecapResult } = require("../src/utils/workflow-output");
 
 const dryRun = process.argv.includes("--dry-run");
+const autoMode = process.argv.includes("--auto");
 
 /**
  * Select recap type
@@ -152,27 +153,64 @@ async function main() {
       "Generates monthly recaps by aggregating weekly recap text data\n"
     );
 
-    // Select recap type
-    const selectedRecapType = await selectRecapType();
+    let availableTypes;
+    let displayOnly;
+    let months;
 
-    // Check which types are actually available
-    const availableTypes = getAvailableRecapTypes(selectedRecapType);
+    if (autoMode) {
+      // Auto mode: all types, generate, current month + previous month
+      availableTypes = getAvailableRecapTypes("all");
+      displayOnly = false;
 
-    // Select action
-    const action = dryRun ? "display" : await selectAction();
-    const displayOnly = action === "display";
-    if (dryRun) {
-      console.log("ℹ️ Dry run: results will not be saved to Notion\n");
+      const { getWeeksForMonthFromNotion } = require("../src/utils/date-pickers");
+      const today = new Date();
+      const currentMonth = today.getMonth() + 1;
+      const currentYear = today.getFullYear();
+
+      // Previous month
+      let prevMonth = currentMonth - 1;
+      let prevYear = currentYear;
+      if (prevMonth < 1) {
+        prevMonth = 12;
+        prevYear--;
+      }
+
+      months = [];
+      for (const [m, y] of [[prevMonth, prevYear], [currentMonth, currentYear]]) {
+        const { weeks: notionWeeks } = await getWeeksForMonthFromNotion(y, m);
+        if (notionWeeks.length > 0) {
+          months.push({ month: m, year: y, weeks: notionWeeks });
+        }
+      }
+
+      if (months.length === 0) {
+        throw new Error("No months with weeks found");
+      }
+
+      const monthNames = months.map((m) =>
+        new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long" })
+      );
+      console.log(`Auto mode: all types, ${monthNames.join(" + ")} ${currentYear}\n`);
+    } else {
+      // Interactive mode
+      const selectedRecapType = await selectRecapType();
+      availableTypes = getAvailableRecapTypes(selectedRecapType);
+
+      const action = dryRun ? "display" : await selectAction();
+      displayOnly = action === "display";
+      if (dryRun) {
+        console.log("ℹ️ Dry run: results will not be saved to Notion\n");
+      }
+
+      const { months: selectedMonths, displayText } = await selectDateRange({
+        minGranularity: "month",
+      });
+      months = selectedMonths;
+      if (!months || months.length === 0) {
+        throw new Error("No months selected");
+      }
+      if (displayText) console.log(displayText);
     }
-
-    // Select month(s) - returns { months, displayText }
-    const { months, displayText } = await selectDateRange({
-      minGranularity: "month",
-    });
-    if (!months || months.length === 0) {
-      throw new Error("No months selected");
-    }
-    if (displayText) console.log(displayText);
 
     // Progress callback for workflows (suppresses workflow's default console.log)
     const showProgress = (message) => {

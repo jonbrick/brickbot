@@ -106,12 +106,15 @@ yarn verify:config    # Verify config derivation consistency
 Runs every 2 hours (7am–9pm) via `infra/launchd/com.brickbot.daily.plist`:
 
 ```
-tokens:refresh → collect → update → summarize → recap → pull
+yarn sync --auto
+# runs: tokens:refresh → collect → update → summarize → recap → pull
 ```
 
+- **Entry point:** `cli/sync.js` (Node, replaces old shell script)
 - **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
 - **Failure alerts:** iMessage notification on any step failure
 - **View logs:** `yarn logs` or check `local/logs/`
+- **Manual run:** `yarn sync` (interactive) or `yarn sync --auto` (non-interactive)
 
 **Setup:**
 ```bash
@@ -122,8 +125,9 @@ launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
 # Verify it's loaded
 launchctl list | grep brickbot
 
-# Unload if needed
+# Reload after changes
 launchctl unload ~/Library/LaunchAgents/com.brickbot.daily.plist
+launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
 ```
 
 If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up.

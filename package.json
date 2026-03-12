@@ -12,6 +12,7 @@
     "nyc:import": "node cli/nyc-import.js",
     "journal:import": "node cli/journal-import.js",
     "logs": "cat local/logs/daily-$(date +%Y-%m-%d).log 2>/dev/null || echo 'No log for today'",
+    "sync": "node cli/sync.js",
     "collect": "node cli/collect-data.js",
     "update": "node cli/update-calendar.js",
     "summarize": "node cli/summarize-week.js",
@@ -22,8 +23,7 @@
     "tokens:refresh": "node cli/tokens/refresh.js",
     "tokens": "node cli/tokens/tokens.js",
     "tokens:setup": "node cli/tokens/setup.js",
-    "verify:config": "node -e \"const m = require('./src/config/calendar/mappings'); const u = require('./src/config/unified-sources'); console.log(u.verifyDerivation(m.PERSONAL_RECAP_SOURCES, m.WORK_RECAP_SOURCES))\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "verify:config": "node -e \"const m = require('./src/config/calendar/mappings'); const u = require('./src/config/unified-sources'); console.log(u.verifyDerivation(m.PERSONAL_RECAP_SOURCES, m.WORK_RECAP_SOURCES))\""
   },
   "keywords": [
     "notion",

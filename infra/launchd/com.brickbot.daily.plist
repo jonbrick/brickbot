@@ -7,8 +7,9 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/bin/bash</string>
-        <string>/Users/jonbrick/projects/brickbot/infra/launchd/brickbot-daily.sh</string>
+        <string>/opt/homebrew/bin/node</string>
+        <string>/Users/jonbrick/projects/brickbot/cli/sync.js</string>
+        <string>--auto</string>
     </array>
 
     <!-- Run every 2 hours: 7:05am, 9:05am, 11:05am, 1:05pm, 3:05pm, 5:05pm, 7:05pm, 9:05pm -->

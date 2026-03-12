@@ -156,6 +156,7 @@ async function main() {
     let availableTypes;
     let displayOnly;
     let months;
+    let spinner;
 
     if (autoMode) {
       // Auto mode: all types, generate, current month + previous month
@@ -226,8 +227,6 @@ async function main() {
     let personalFailureCount = 0;
     let workSuccessCount = 0;
     let workFailureCount = 0;
-
-    let spinner;
 
     // Process each month
     for (let i = 0; i < months.length; i++) {

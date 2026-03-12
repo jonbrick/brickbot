@@ -1,6 +1,6 @@
 #!/bin/bash
 # Brickbot Daily Automation
-# Runs tokens:refresh, collect, update, pull
+# Runs tokens:refresh, collect, update, summarize, recap, pull
 # Called by launchd (com.brickbot.daily.plist)
 # Sends iMessage on failure
 
@@ -43,7 +43,19 @@ if ! node cli/update-calendar.js --auto >> "$LOG_FILE" 2>&1; then
   ERRORS="$ERRORS update"
 fi
 
-# Step 4: Pull Notion data to local JSON
+# Step 4: Summarize weekly data
+echo "--- summarize --auto ---" >> "$LOG_FILE"
+if ! node cli/summarize-week.js --auto >> "$LOG_FILE" 2>&1; then
+  ERRORS="$ERRORS summarize"
+fi
+
+# Step 5: Generate monthly recaps
+echo "--- recap --auto ---" >> "$LOG_FILE"
+if ! node cli/recap-month.js --auto >> "$LOG_FILE" 2>&1; then
+  ERRORS="$ERRORS recap"
+fi
+
+# Step 6: Pull Notion data to local JSON
 echo "--- pull --auto ---" >> "$LOG_FILE"
 if ! node cli/pull.js --auto >> "$LOG_FILE" 2>&1; then
   ERRORS="$ERRORS pull"

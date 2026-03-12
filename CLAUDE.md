@@ -69,6 +69,9 @@ yarn push             # Push local JSON edits → Notion (delta-only)
 # Summaries & reports
 yarn summarize        # Generate weekly summaries from calendar data
 yarn recap            # Generate monthly recaps from weekly summaries
+
+# All three support --auto for non-interactive use
+# yarn summarize --auto / yarn recap --auto
 yarn generate         # Generate yearly config
 
 # Viewers
@@ -105,7 +108,7 @@ yarn verify:config    # Verify config derivation consistency
 Runs every 2 hours (7am–9pm) via `infra/launchd/com.brickbot.daily.plist`:
 
 ```
-tokens:refresh → collect → update → pull
+tokens:refresh → collect → update → summarize → recap → pull
 ```
 
 - **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)

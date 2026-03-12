@@ -17,7 +17,8 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - `yarn pull` / `yarn push` — bidirectional Notion sync with hash-based delta detection
 - NYC databases (museums, restaurants, tattoos, venues) integrated into pull/push/view
 - `yarn nyc` — HTML viewer with dropdown, filters, search, sortable columns
-- launchd automation (3x/day) with iMessage failure notifications
+- launchd automation (8x/day) with iMessage failure notifications
+- Full pipeline automated: tokens:refresh → collect → update → summarize → recap → pull
 - 5 Minute Journal import (`yarn journal:import`)
 
 **Next steps:**
@@ -57,21 +58,18 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 ### Commands
 
 ```bash
-# Data pipeline (automated 3x/day via launchd)
+# Data pipeline (automated 8x/day via launchd)
 yarn collect          # Fetch data from external APIs → Notion
 yarn update           # Sync Notion records → Google Calendar events
+yarn summarize        # Generate weekly summaries from calendar data
+yarn recap            # Generate monthly recaps from weekly summaries
 yarn pull             # Pull Notion + Calendar → local JSON (data/*.json)
 yarn push             # Push local JSON edits → Notion (delta-only)
 
-# All three support --auto for non-interactive use
-# yarn collect --auto / yarn update --auto / yarn pull --auto
+# All support --auto for non-interactive use (used by launchd)
+# yarn collect --auto / yarn update --auto / yarn summarize --auto
+# yarn recap --auto / yarn pull --auto
 
-# Summaries & reports
-yarn summarize        # Generate weekly summaries from calendar data
-yarn recap            # Generate monthly recaps from weekly summaries
-
-# All three support --auto for non-interactive use
-# yarn summarize --auto / yarn recap --auto
 yarn generate         # Generate yearly config
 
 # Viewers

@@ -20,8 +20,6 @@ const projectDir = path.resolve(__dirname, "..");
 const logDir = path.join(projectDir, "local", "logs");
 const today = new Date().toISOString().slice(0, 10);
 const logFile = path.join(logDir, `daily-${today}.log`);
-const NOTIFY_PHONE = "+14432501647";
-
 // Use process.execPath so launchd child processes find node
 // (launchd's shell PATH doesn't include /opt/homebrew/bin)
 const NODE = process.execPath;
@@ -57,21 +55,6 @@ function cleanOldLogs() {
     }
   } catch {
     // Ignore cleanup errors
-  }
-}
-
-function sendIMessage(message) {
-  try {
-    execSync(
-      `osascript -e 'tell application "Messages"
-        set targetService to 1st account whose service type = iMessage
-        set targetBuddy to participant "${NOTIFY_PHONE}" of targetService
-        send "${message}" to targetBuddy
-      end tell'`,
-      { stdio: "ignore" }
-    );
-  } catch {
-    log("Warning: Failed to send iMessage notification");
   }
 }
 
@@ -115,9 +98,6 @@ function main() {
 
   if (errors.length > 0) {
     const failedSteps = errors.join(", ");
-    if (autoMode) {
-      sendIMessage(`Brickbot failed: ${failedSteps}. Check ${logFile}`);
-    }
     console.error(`Failed steps: ${failedSteps}`);
     process.exit(1);
   }

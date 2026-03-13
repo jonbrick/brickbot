@@ -22,13 +22,17 @@ const today = new Date().toISOString().slice(0, 10);
 const logFile = path.join(logDir, `daily-${today}.log`);
 const NOTIFY_PHONE = "+14432501647";
 
+// Use process.execPath so launchd child processes find node
+// (launchd's shell PATH doesn't include /opt/homebrew/bin)
+const NODE = process.execPath;
+
 const STEPS = [
-  { name: "tokens:refresh", cmd: "node cli/tokens/refresh.js --auto" },
-  { name: "collect", cmd: "node cli/collect-data.js --auto" },
-  { name: "update", cmd: "node cli/update-calendar.js --auto" },
-  { name: "summarize", cmd: "node cli/summarize-week.js --auto" },
-  { name: "recap", cmd: "node cli/recap-month.js --auto" },
-  { name: "pull", cmd: "node cli/pull.js --auto" },
+  { name: "tokens:refresh", cmd: `${NODE} cli/tokens/refresh.js --auto` },
+  { name: "collect", cmd: `${NODE} cli/collect-data.js --auto` },
+  { name: "update", cmd: `${NODE} cli/update-calendar.js --auto` },
+  { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto` },
+  { name: "recap", cmd: `${NODE} cli/recap-month.js --auto` },
+  { name: "pull", cmd: `${NODE} cli/pull.js --auto` },
 ];
 
 function log(message) {

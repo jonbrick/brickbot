@@ -48,7 +48,7 @@ const dryRun = process.argv.includes("--dry-run");
 
 // --- Hashing (must match pull.js) ---
 
-const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_calendarId", "_calendarName"]);
+const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName"]);
 
 /**
  * Recompute hash of a record's non-metadata fields.
@@ -80,50 +80,37 @@ function readDataFile(filename) {
   return JSON.parse(fs.readFileSync(filepath, "utf-8"));
 }
 
-/**
- * Get editableFields for a config key, if defined
- * @param {string|null} configKey
- * @returns {Set|null} Set of editable field names, or null if unrestricted
- */
-function getEditableFields(configKey) {
-  if (!configKey) return null;
-  // Look up the config module by matching against notion config exports
-  const notionConfigs = {
-    personalRetro: require("../src/config/notion/personal-retro"),
-    workRetro: require("../src/config/notion/work-retro"),
-  };
-  const cfg = notionConfigs[configKey];
-  if (cfg && cfg.editableFields) {
-    return new Set(cfg.editableFields);
-  }
-  return null;
-}
+// Notion property types that are safe to push back
+const PUSHABLE_TYPES = new Set([
+  "rich_text", "number", "select", "multi_select", "status",
+  "checkbox", "url", "email", "phone_number",
+]);
 
 /**
- * Build Notion properties from a local record's flat key-value pairs
- * Skips internal fields (_notionId, _lastPulled, etc.)
- * When editableFields is defined for a configKey, only those fields are included
- * Returns raw properties object suitable for NotionDatabase.updatePage()
+ * Build Notion properties from a local record's flat key-value pairs.
+ * Uses _propertyTypes from pull to know exactly which fields are pushable.
+ * Skips title, relations, rollups, formulas, dates, and synthetic fields.
  */
-function buildPropertiesFromRecord(record, configKey = null) {
+function buildPropertiesFromRecord(record) {
   const properties = {};
-  const editableFields = getEditableFields(configKey);
+  const types = record._propertyTypes || {};
 
   for (const [key, value] of Object.entries(record)) {
     // Skip internal/meta fields
     if (key.startsWith("_")) continue;
 
+    // Skip synthetic " End" fields created by pull for date ranges
+    if (key.endsWith(" End")) continue;
+
     // Skip null/undefined
     if (value === null || value === undefined) continue;
 
-    // Skip relation arrays (can't push relations easily)
-    if (Array.isArray(value) && value.length > 0 && typeof value[0] === "string" && value[0].includes("-")) {
-      // Looks like Notion IDs (UUID format) - skip relations
-      continue;
-    }
+    // If we have type info, only include pushable types
+    const type = types[key];
+    if (type && !PUSHABLE_TYPES.has(type)) continue;
 
-    // If editableFields defined, only include those fields
-    if (editableFields && !editableFields.has(key)) continue;
+    // If no type info (legacy data), skip arrays (likely relations)
+    if (!type && Array.isArray(value)) continue;
 
     properties[key] = value;
   }
@@ -155,7 +142,7 @@ async function pushRecords(records, label, spinner, configKey = null) {
     }
 
     const notionId = record._notionId;
-    const properties = buildPropertiesFromRecord(record, configKey);
+    const properties = buildPropertiesFromRecord(record);
 
     // Skip if no meaningful properties to push
     if (Object.keys(properties).length === 0) {

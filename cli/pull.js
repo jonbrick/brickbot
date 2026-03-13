@@ -56,7 +56,7 @@ function ensureDir(dir) {
 
 // --- Hashing ---
 
-const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_calendarId", "_calendarName"]);
+const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName"]);
 
 /**
  * Compute a hash of a record's non-metadata fields.
@@ -93,8 +93,16 @@ function extractAllProperties(page) {
     _lastPulled: new Date().toISOString(),
   };
 
+  const propertyTypes = {};
+
   for (const [propName, prop] of Object.entries(page.properties)) {
     result[propName] = db.extractProperty(page, propName);
+    propertyTypes[propName] = prop.type;
+
+    // Tag the title field so push knows to skip it
+    if (prop.type === "title") {
+      result._titleKey = propName;
+    }
 
     // For date properties, also extract the end date if it's a range
     if (prop.type === "date" && prop.date?.end) {
@@ -110,6 +118,8 @@ function extractAllProperties(page) {
       result[propName] = prop.relation.map((r) => r.id);
     }
   }
+
+  result._propertyTypes = propertyTypes;
 
   return stampHash(result);
 }

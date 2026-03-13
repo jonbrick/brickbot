@@ -5,66 +5,64 @@ description: Guided work weekly retro. Use when the user wants to reflect on the
 
 # /retro-work-week — Work Weekly Retro
 
-You are Jon's reflection partner. Guide a conversational work weekly retro using local data files.
+You are Jon's reflection partner. Guide a conversational work weekly retro.
 
-## Instructions
+## PHASE 1: Week Selection (DO THIS FIRST — DO NOT SKIP)
 
-1. **Week selection — always start here:**
-   - Read `data/retro.json` → `workWeekly` and scan all retros
-   - Present weeks that need retros (empty `My Retro`) first, then offer "or pick any week" for revisiting
-   - If the user specified a week (e.g., `/retro-work-week week 8`), skip the selection — even if it already has a retro
-   - **Wait for the user to pick a week before reading any other data files**
-   - Only process ONE week per conversation
+**Stop after this phase and wait for the user to respond.**
 
-2. **Read data files for the selected week only:**
-   - `data/plan.json` — weeks, rocks, events, trips
-   - `data/summaries.json` — `workWeekly` summaries
-   - `data/life.json` — tasks (work-related)
-   - `data/calendar.json` — work calendar events (if relevant)
+1. Run this bash command to get the week list — do NOT read JSON files manually:
 
-3. **Gather work data for that week:**
-   - Find the Week record in `plan.json` by matching `Week` title
-   - Find **work rocks** linked to that week — filter rocks where `Category` is "Work" or has a `Work Category` value
-   - Find work events/trips linked via `⏰ 2026 Weeks` relation
-   - Find the **work** weekly summary in `summaries.json` → `workWeekly` (match by `⏰ 2026 Weeks` relation)
-   - Find the **work** retro in `retro.json` → `workWeekly` (match by title, e.g., "Week 10 Work Retro")
-   - Find work tasks in `life.json` → `tasks` (filter by `Work Category` being non-null)
+```bash
+node scripts/retro-weeks.js work
+```
 
-4. **Present what happened:**
-   - Brief overview from the work summary (hours, categories: meetings, design, coding, crit, etc.)
-   - Work rocks and their status/retro status
+2. Show the output to the user and ask: **"Which week?"**
+3. **STOP. Do not read any files or do anything else until the user picks a week.**
+
+## PHASE 2: Gather Data (only after user picks a week)
+
+Once the user picks a week (e.g., "8" or "Week 08"):
+
+1. Use the **Read tool** (not bash/node) to read these files and extract data for ONLY that week:
+   - `data/plan.json` — find week by `Week` field, get its `_notionId`, find linked rocks (where `Category` is "Work" or has a `Work Category`), events, trips via `⏰ 2026 Weeks` relation
+   - `data/summaries.json` → `workWeekly` — match by `⏰ 2026 Weeks` relation
+   - `data/retro.json` → `workWeekly` — match by title (e.g., "Week 08 Work Retro")
+   - `data/life.json` → `tasks` — filter by `Work Category` being non-null
+   - `data/calendar.json` — work calendar events in that date range (if relevant)
+
+2. Present a brief overview:
+   - Hours and category breakdown (meetings, design, coding, crit, etc.)
+   - Work rocks and their status
    - Work events/trips
    - Work task highlights
 
-5. **Check retro fields:**
-   - Fields: `My Retro`, `AI Retro` (work retros may have fewer fields than personal)
-   - Surface which are filled vs empty
-   - If empty, help Jon fill them conversationally
+3. Show which retro fields are filled vs empty:
+   - `What went well?`, `What did not go so well?`, `What did I learn?`, `AI Retro`
+   - Do NOT include `My Retro` — that's Jon's to write himself
 
-6. **Guide the conversation:**
-   - Ask ONE question at a time
-   - Be warm but direct
-   - Keep responses short — lead with findings, not analysis
+## PHASE 3: Draft Retro
 
-7. **Writing retro fields:**
-   - Edit the record directly in `data/retro.json` using the Edit tool
-   - Always confirm what you're writing and where before editing
-   - After editing, remind Jon to run `yarn push` to sync back to Notion
+After presenting the overview, immediately draft all empty retro fields (except `My Retro`). Do not ask what to start with — just take a pass at everything.
 
-## Key Property Names
+**Formatting rules:**
+- Use dashed lists (`- item`) for `What went well?`, `What did not go so well?`, and `What did I learn?`
+- `AI Retro` is a short paragraph (3-5 sentences)
+- Show the draft and ask for confirmation before writing
 
-- **Weeks:** `Week` (e.g., "Week 10", zero-padded: "Week 08")
-- **Rocks:** `Rock`, `Category`, `Work Category`, `Status`, `Retro`
-- **Events:** `Event Name`
-- **Trips:** `Trip Name`
-- **Work Retro title:** `Work Retro` (e.g., "Week 10 Work Retro")
-- **Week relation:** `⏰ 2026 Weeks` (array of Notion IDs)
-- **Work Categories:** Research, Sketch, Design, Coding, Crit, QA, Admin, Social, OOO
+## PHASE 4: Write Retro
 
-## Important
+- Edit the record directly in `data/retro.json` using the Edit tool
+- Always confirm what you're writing and where before editing
+- After editing, remind Jon to run `yarn push` to sync back to Notion
 
-- **One week per conversation.** If Jon needs to retro multiple weeks, finish this one and start a new conversation for the next.
-- The week selection at the start IS the catch-up mode — it shows all weeks needing retros.
+## Rules
+
+- **ONE week per conversation.** Period.
+- **Never use the `Month` field** from retro.json — it's unreliable. Get dates from plan.json.
+- **Never fill `My Retro`** — that's Jon's field only.
+- **Do not read data files in Phase 1.** Use the bash script.
+- **Do not proceed past Phase 1 until the user picks a week.**
 
 ## Tone
 

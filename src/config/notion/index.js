@@ -22,6 +22,8 @@ const relationships = require("./relationships");
 const years = require("./years");
 const months = require("./months");
 const weeks = require("./weeks");
+const personalRetro = require("./personal-retro");
+const workRetro = require("./work-retro");
 const nycMuseums = require("./nyc-museums");
 const nycRestaurants = require("./nyc-restaurants");
 const nycTattoos = require("./nyc-tattoos");
@@ -48,6 +50,8 @@ const databases = {
   years: years.database,
   months: months.database,
   weeks: weeks.database,
+  personalRetro: personalRetro.database,
+  workRetro: workRetro.database,
   nycMuseums: nycMuseums.database,
   nycRestaurants: nycRestaurants.database,
   nycTattoos: nycTattoos.database,
@@ -75,6 +79,8 @@ const properties = {
   years: years.properties,
   months: months.properties,
   weeks: weeks.properties,
+  personalRetro: personalRetro.properties,
+  workRetro: workRetro.properties,
   nycMuseums: nycMuseums.properties,
   nycRestaurants: nycRestaurants.properties,
   nycTattoos: nycTattoos.properties,

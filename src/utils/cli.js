@@ -827,6 +827,7 @@ function createSpinner(message) {
   return {
     start() {
       if (!isTTY) return;
+      if (interval) clearInterval(interval);
       process.stdout.write(`${frames[currentFrame]} ${message}`);
       interval = setInterval(() => {
         currentFrame = (currentFrame + 1) % frames.length;

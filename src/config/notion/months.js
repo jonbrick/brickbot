@@ -7,8 +7,8 @@ module.exports = {
 
   properties: {
     month: { name: "Month", type: "title", enabled: true },
-    year: { name: "Year", type: "relation", enabled: true },
-    weeks: { name: "Weeks", type: "relation", enabled: true },
+    year: { name: "☀️ 2026 Year", type: "relation", enabled: true },
+    weeks: { name: "⏰ 2026 Weeks", type: "relation", enabled: true },
   },
 
   fieldMappings: {

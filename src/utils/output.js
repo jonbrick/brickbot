@@ -134,10 +134,15 @@ function syncResults(results, options = {}) {
   const { created = [], skipped = [], deleted = [], errors = [], total = 0 } =
     results;
 
+  // Split created into actual creates vs updates
+  const actualCreated = created.filter((item) => !item.updated);
+  const actualUpdated = created.filter((item) => item.updated);
+
   // Compact format (default)
   if (!showDetails) {
     const parts = [];
-    if (created.length > 0) parts.push(`${EMOJI.success} ${created.length} created`);
+    if (actualCreated.length > 0) parts.push(`${EMOJI.success} ${actualCreated.length} created`);
+    if (actualUpdated.length > 0) parts.push(`🔄 ${actualUpdated.length} updated`);
     if (skipped.length > 0) parts.push(`${EMOJI.skip} ${skipped.length} skipped`);
     if (deleted && deleted.length > 0)
       parts.push(`${EMOJI.delete} ${deleted.length} deleted`);
@@ -158,24 +163,36 @@ function syncResults(results, options = {}) {
     console.log(`${EMOJI.data} Total records processed: ${total}`);
   }
 
-  // Created section
-  if (created.length > 0) {
-    console.log(`${EMOJI.success} Created: ${created.length}`);
-    const itemsToShow = created.slice(0, detailLimit);
+  // Helper to print items in a section
+  const printItems = (items, emoji) => {
+    const itemsToShow = items.slice(0, detailLimit);
     itemsToShow.forEach((item) => {
       if (formatItem) {
-        console.log(`   ${EMOJI.success} ${formatItem(item, sourceType)}`);
+        console.log(`   ${emoji} ${formatItem(item, sourceType)}`);
       } else if (item.displayName) {
-        console.log(`   ${EMOJI.success} ${item.displayName}`);
+        console.log(`   ${emoji} ${item.displayName}`);
       } else if (item.summary) {
-        console.log(`   ${EMOJI.success} ${item.summary}`);
+        console.log(`   ${emoji} ${item.summary}`);
       } else {
-        console.log(`   ${EMOJI.success} ${JSON.stringify(item)}`);
+        console.log(`   ${emoji} ${JSON.stringify(item)}`);
       }
     });
-    if (created.length > detailLimit) {
-      console.log(`   ... and ${created.length - detailLimit} more`);
+    if (items.length > detailLimit) {
+      console.log(`   ... and ${items.length - detailLimit} more`);
     }
+  };
+
+  // Created section
+  if (actualCreated.length > 0) {
+    console.log(`${EMOJI.success} Created: ${actualCreated.length}`);
+    printItems(actualCreated, EMOJI.success);
+    console.log();
+  }
+
+  // Updated section
+  if (actualUpdated.length > 0) {
+    console.log(`🔄 Updated: ${actualUpdated.length}`);
+    printItems(actualUpdated, "🔄");
     console.log();
   }
 

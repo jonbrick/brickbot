@@ -212,11 +212,11 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     repo.databaseConfig.calendarCreatedProperty !== undefined &&
     repo.databaseConfig.calendarCreatedProperty !== null;
 
-  // Get unsynced records based on pattern
+  // Get records based on pattern
   let records;
   if (useHybridPattern) {
-    // Use hybrid pattern: query by checkbox (includes records with/without event ID)
-    records = await repo.getUnsyncedByCheckbox(startDate, endDate);
+    // Hybrid pattern: fetch ALL records so existing ones can be updated
+    records = await repo.getAllInDateRange(startDate, endDate);
   } else if (useEventIdPattern) {
     // Use new event ID pattern
     records = await repo.getUnsyncedByEventId(startDate, endDate);

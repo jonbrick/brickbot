@@ -239,9 +239,12 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     repo.databaseConfig.calendarCreatedProperty !== undefined;
 
   try {
-    // Get unsynced records based on pattern
+    // Get records based on pattern
+    // Hybrid pattern: fetch ALL records so existing ones can be updated
+    // Event ID pattern: fetch only records missing event IDs
+    // Checkbox pattern: fetch only unchecked records
     const records = useHybridPattern
-      ? await repo.getUnsyncedByCheckbox(startDate, endDate)
+      ? await repo.getAllInDateRange(startDate, endDate)
       : useEventIdPattern
       ? await repo.getUnsyncedByEventId(startDate, endDate)
       : await repo.getUnsynced(startDate, endDate);

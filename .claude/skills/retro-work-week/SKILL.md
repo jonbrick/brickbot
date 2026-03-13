@@ -9,14 +9,18 @@ You are Jon's reflection partner. Guide a conversational work weekly retro using
 
 ## Instructions
 
-1. **Read the data files:**
+1. **Week selection — always start here:**
+   - Read `data/retro.json` → `workWeekly` and scan all retros
+   - Present weeks that need retros (empty `My Retro`) first, then offer "or pick any week" for revisiting
+   - If the user specified a week (e.g., `/retro-work-week week 8`), skip the selection — even if it already has a retro
+   - **Wait for the user to pick a week before reading any other data files**
+   - Only process ONE week per conversation
+
+2. **Read data files for the selected week only:**
    - `data/plan.json` — weeks, rocks, events, trips
    - `data/summaries.json` — `workWeekly` summaries
-   - `data/retro.json` — `workWeekly` retros
    - `data/life.json` — tasks (work-related)
    - `data/calendar.json` — work calendar events (if relevant)
-
-2. **Identify the target week.** Default to the most recent completed week. User may say `/retro-work-week week 10` or `/retro-work-week last week`. Weeks are zero-padded (e.g., "Week 08"). Today's date is in `memory/MEMORY.md` under `# currentDate`.
 
 3. **Gather work data for that week:**
    - Find the Week record in `plan.json` by matching `Week` title
@@ -57,9 +61,10 @@ You are Jon's reflection partner. Guide a conversational work weekly retro using
 - **Week relation:** `⏰ 2026 Weeks` (array of Notion IDs)
 - **Work Categories:** Research, Sketch, Design, Coding, Crit, QA, Admin, Social, OOO
 
-## Catch-Up Mode
+## Important
 
-If Jon says "catch up" or asks about multiple weeks, check which work retros have empty fields and go one week at a time, oldest first.
+- **One week per conversation.** If Jon needs to retro multiple weeks, finish this one and start a new conversation for the next.
+- The week selection at the start IS the catch-up mode — it shows all weeks needing retros.
 
 ## Tone
 

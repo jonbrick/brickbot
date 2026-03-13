@@ -81,12 +81,33 @@ function readDataFile(filename) {
 }
 
 /**
+ * Get editableFields for a config key, if defined
+ * @param {string|null} configKey
+ * @returns {Set|null} Set of editable field names, or null if unrestricted
+ */
+function getEditableFields(configKey) {
+  if (!configKey) return null;
+  // Look up the config module by matching against notion config exports
+  const notionConfigs = {
+    personalRetro: require("../src/config/notion/personal-retro"),
+    workRetro: require("../src/config/notion/work-retro"),
+  };
+  const cfg = notionConfigs[configKey];
+  if (cfg && cfg.editableFields) {
+    return new Set(cfg.editableFields);
+  }
+  return null;
+}
+
+/**
  * Build Notion properties from a local record's flat key-value pairs
  * Skips internal fields (_notionId, _lastPulled, etc.)
+ * When editableFields is defined for a configKey, only those fields are included
  * Returns raw properties object suitable for NotionDatabase.updatePage()
  */
-function buildPropertiesFromRecord(record) {
+function buildPropertiesFromRecord(record, configKey = null) {
   const properties = {};
+  const editableFields = getEditableFields(configKey);
 
   for (const [key, value] of Object.entries(record)) {
     // Skip internal/meta fields
@@ -100,6 +121,9 @@ function buildPropertiesFromRecord(record) {
       // Looks like Notion IDs (UUID format) - skip relations
       continue;
     }
+
+    // If editableFields defined, only include those fields
+    if (editableFields && !editableFields.has(key)) continue;
 
     properties[key] = value;
   }
@@ -131,7 +155,7 @@ async function pushRecords(records, label, spinner, configKey = null) {
     }
 
     const notionId = record._notionId;
-    const properties = buildPropertiesFromRecord(record);
+    const properties = buildPropertiesFromRecord(record, configKey);
 
     // Skip if no meaningful properties to push
     if (Object.keys(properties).length === 0) {
@@ -364,12 +388,12 @@ async function main() {
       message: "What would you like to push?",
       choices: [
         { name: "Plan data", value: "plan", checked: true },
-        { name: "Collected data", value: "collected" },
-        { name: "Summaries & Recaps", value: "summaries" },
-        { name: "Calendar events", value: "calendar" },
-        { name: "NYC data", value: "nyc" },
-        { name: "Retro data", value: "retro" },
-        { name: "Life data", value: "life" },
+        { name: "Collected data", value: "collected", checked: true },
+        { name: "Summaries & Recaps", value: "summaries", checked: true },
+        { name: "Calendar events", value: "calendar", checked: true },
+        { name: "NYC data", value: "nyc", checked: true },
+        { name: "Retro data", value: "retro", checked: true },
+        { name: "Life data", value: "life", checked: true },
       ],
       validate: (answer) => answer.length > 0 ? true : "Select at least one",
     },

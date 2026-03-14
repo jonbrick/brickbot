@@ -10,14 +10,14 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 ## Current Focus
 
-Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 8x/day via launchd.
+Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 3x/day via launchd (morning/afternoon/evening blocks).
 
 **Recently completed:**
 - 8 Claude Code skills for planning, retro, and reflection (`/plan-*`, `/retro-*`, `/reflect-*`)
 - `yarn pull` / `yarn push` — bidirectional Notion sync with hash-based delta detection
 - NYC databases (museums, restaurants, tattoos, venues) integrated into pull/push/view
 - `yarn nyc` — HTML viewer with dropdown, filters, search, sortable columns
-- launchd automation (8x/day) with iMessage failure notifications
+- launchd automation (3 blocks/day) with macOS notifications
 - Full pipeline automated: tokens:refresh → collect → update → summarize → recap → pull
 - 5 Minute Journal import (`yarn journal:import`)
 
@@ -58,7 +58,7 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 ### Commands
 
 ```bash
-# Data pipeline (automated 8x/day via launchd)
+# Data pipeline (automated 3x/day via launchd, 3 blocks)
 yarn collect          # Fetch data from external APIs → Notion
 yarn update           # Sync Notion records → Google Calendar events
 yarn summarize        # Generate weekly summaries from calendar data
@@ -103,16 +103,22 @@ yarn verify:config    # Verify config derivation consistency
 
 ### Automation (launchd)
 
-Runs every 2 hours (7am–9pm) via `infra/launchd/com.brickbot.daily.plist`:
+Runs 3x/day in blocks via `infra/launchd/com.brickbot.daily.plist`:
+
+- **Morning:** 7:05, 9:05, 10:05
+- **Afternoon:** 3:55pm, 4:55pm
+- **Evening:** 8:00pm, 9:00pm
+
+Multiple attempts per block — script skips if already succeeded in that block today (marker file dedup).
 
 ```
 yarn sync --auto
 # runs: tokens:refresh → collect → update → summarize → recap → pull
 ```
 
-- **Entry point:** `cli/sync.js` (Node, replaces old shell script)
+- **Entry point:** `cli/sync.js`
 - **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
-- **Failure alerts:** iMessage notification on any step failure
+- **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs` or check `local/logs/`
 - **Manual run:** `yarn sync` (interactive) or `yarn sync --auto` (non-interactive)
 

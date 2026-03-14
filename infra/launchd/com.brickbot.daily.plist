@@ -12,7 +12,10 @@
         <string>--auto</string>
     </array>
 
-    <!-- Run every 2 hours: 7:05am, 9:05am, 11:05am, 1:05pm, 3:05pm, 5:05pm, 7:05pm, 9:05pm -->
+    <!-- 3 blocks with multiple attempts each (skips if already succeeded in block) -->
+    <!-- Morning: 7:05, 9:05, 10:05 -->
+    <!-- Afternoon: 15:55, 16:55 -->
+    <!-- Evening: 20:00, 21:00 -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
@@ -29,13 +32,7 @@
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>11</integer>
-            <key>Minute</key>
-            <integer>5</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>13</integer>
+            <integer>10</integer>
             <key>Minute</key>
             <integer>5</integer>
         </dict>
@@ -43,25 +40,25 @@
             <key>Hour</key>
             <integer>15</integer>
             <key>Minute</key>
-            <integer>5</integer>
+            <integer>55</integer>
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>17</integer>
+            <integer>16</integer>
             <key>Minute</key>
-            <integer>5</integer>
+            <integer>55</integer>
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>19</integer>
+            <integer>20</integer>
             <key>Minute</key>
-            <integer>5</integer>
+            <integer>0</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>21</integer>
             <key>Minute</key>
-            <integer>5</integer>
+            <integer>0</integer>
         </dict>
     </array>
 

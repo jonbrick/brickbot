@@ -639,7 +639,7 @@ tokens:refresh → collect → update → pull
 ```
 
 - **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
-- **Failure alerts:** iMessage notification on any step failure
+- **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs`
 
 #### Setup

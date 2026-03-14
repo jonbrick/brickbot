@@ -2,7 +2,7 @@
 
 /**
  * Sync CLI
- * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → recap → pull
+ * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → recap → push → pull
  * Called by launchd or manually via `yarn sync`
  *
  * Usage:
@@ -31,6 +31,7 @@ const STEPS = [
   { name: "update", cmd: `${NODE} cli/update-calendar.js --auto` },
   { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto` },
   { name: "recap", cmd: `${NODE} cli/recap-month.js --auto` },
+  { name: "push", cmd: `${NODE} cli/push.js --auto` },
   { name: "pull", cmd: `${NODE} cli/pull.js --auto` },
 ];
 

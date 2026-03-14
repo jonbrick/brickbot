@@ -633,7 +633,7 @@ Runs 3x daily (8am, 10am, 7pm) via launchd (`infra/launchd/com.brickbot.daily.pl
 tokens:refresh → collect → update → pull
 ```
 
-Failures trigger iMessage notifications. Logs: `local/logs/daily-YYYY-MM-DD.log`.
+macOS banner notifications on success/failure. Logs: `local/logs/daily-YYYY-MM-DD.log`.
 
 ## Interaction Patterns
 

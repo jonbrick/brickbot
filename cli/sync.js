@@ -3,7 +3,7 @@
 /**
  * Sync CLI
  * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → recap → pull
- * Replaces brickbot-daily.sh — called by launchd or manually via `yarn sync`
+ * Called by launchd or manually via `yarn sync`
  *
  * Usage:
  *   yarn sync          # Run full pipeline (interactive where applicable)
@@ -20,6 +20,7 @@ const projectDir = path.resolve(__dirname, "..");
 const logDir = path.join(projectDir, "local", "logs");
 const today = new Date().toISOString().slice(0, 10);
 const logFile = path.join(logDir, `daily-${today}.log`);
+
 // Use process.execPath so launchd child processes find node
 // (launchd's shell PATH doesn't include /opt/homebrew/bin)
 const NODE = process.execPath;
@@ -58,12 +59,52 @@ function cleanOldLogs() {
   }
 }
 
+function getBlock() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+  return "evening";
+}
+
+function getMarkerPath(block) {
+  return path.join(logDir, `sync-success-${today}-${block}`);
+}
+
+function cleanStaleMarkers() {
+  try {
+    const files = fs.readdirSync(logDir).filter((f) => f.startsWith("sync-success-") && !f.includes(today));
+    for (const file of files) {
+      fs.unlinkSync(path.join(logDir, file));
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
+function sendNotification(title, message) {
+  try {
+    execSync(
+      `osascript -e 'display notification "${message}" with title "${title}"'`,
+      { stdio: "ignore" }
+    );
+  } catch {
+    log("Warning: Failed to send notification");
+  }
+}
+
 function main() {
   // Ensure log directory exists
   fs.mkdirSync(logDir, { recursive: true });
 
   if (autoMode) {
     cleanOldLogs();
+    cleanStaleMarkers();
+
+    const block = getBlock();
+    if (fs.existsSync(getMarkerPath(block))) {
+      log(`Skipping — already succeeded in ${block} block today`);
+      process.exit(0);
+    }
   }
 
   log(`=== Brickbot Run: ${new Date().toLocaleString()} ===`);
@@ -98,8 +139,14 @@ function main() {
 
   if (errors.length > 0) {
     const failedSteps = errors.join(", ");
+    if (autoMode) {
+      sendNotification("Brickbot", `Sync failed: ${failedSteps}. Check logs.`);
+    }
     console.error(`Failed steps: ${failedSteps}`);
     process.exit(1);
+  } else if (autoMode) {
+    fs.writeFileSync(getMarkerPath(getBlock()), "");
+    sendNotification("Brickbot", "Sync complete");
   }
 }
 

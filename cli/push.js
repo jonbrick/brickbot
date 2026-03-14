@@ -4,6 +4,7 @@
  * Reads local JSON files and syncs changes back to Notion + Google Calendar
  *
  * Usage: yarn push
+ *        yarn push --auto   # Non-interactive, pushes all sections
  * Input: data/*.json
  */
 
@@ -45,6 +46,7 @@ const LIFE_CONFIG_KEYS = {
 };
 
 const dryRun = process.argv.includes("--dry-run");
+const autoMode = process.argv.includes("--auto");
 
 // --- Hashing (must match pull.js) ---
 
@@ -368,36 +370,43 @@ async function main() {
     console.log("ℹ️  Dry run mode: showing what would change, no API calls\n");
   }
 
-  const { sections } = await inquirer.prompt([
-    {
-      type: "checkbox",
-      name: "sections",
-      message: "What would you like to push?",
-      choices: [
-        { name: "Plan data", value: "plan", checked: true },
-        { name: "Collected data", value: "collected", checked: true },
-        { name: "Summaries & Recaps", value: "summaries", checked: true },
-        { name: "Calendar events", value: "calendar", checked: true },
-        { name: "NYC data", value: "nyc", checked: true },
-        { name: "Retro data", value: "retro", checked: true },
-        { name: "Life data", value: "life", checked: true },
-      ],
-      validate: (answer) => answer.length > 0 ? true : "Select at least one",
-    },
-  ]);
+  let sections;
 
-  if (!dryRun) {
-    const { confirmed } = await inquirer.prompt([
+  if (autoMode) {
+    sections = ["plan", "collected", "summaries", "calendar", "nyc", "retro", "life"];
+  } else {
+    const answer = await inquirer.prompt([
       {
-        type: "confirm",
-        name: "confirmed",
-        message: `Push ${sections.join(", ")} to Notion/Calendar?`,
-        default: true,
+        type: "checkbox",
+        name: "sections",
+        message: "What would you like to push?",
+        choices: [
+          { name: "Plan data", value: "plan", checked: true },
+          { name: "Collected data", value: "collected", checked: true },
+          { name: "Summaries & Recaps", value: "summaries", checked: true },
+          { name: "Calendar events", value: "calendar", checked: true },
+          { name: "NYC data", value: "nyc", checked: true },
+          { name: "Retro data", value: "retro", checked: true },
+          { name: "Life data", value: "life", checked: true },
+        ],
+        validate: (answer) => answer.length > 0 ? true : "Select at least one",
       },
     ]);
-    if (!confirmed) {
-      console.log("Cancelled.");
-      return;
+    sections = answer.sections;
+
+    if (!dryRun) {
+      const { confirmed } = await inquirer.prompt([
+        {
+          type: "confirm",
+          name: "confirmed",
+          message: `Push ${sections.join(", ")} to Notion/Calendar?`,
+          default: true,
+        },
+      ]);
+      if (!confirmed) {
+        console.log("Cancelled.");
+        return;
+      }
     }
   }
 

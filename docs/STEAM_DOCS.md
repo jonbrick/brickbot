@@ -15,7 +15,7 @@ Steam API (cumulative playtime only — no session history)
 │      └─► Checker Lambda                                  │
 │              └─► DynamoDB (raw session deltas + LATEST_) │
 │                                                          │
-│  EventBridge (12:01 AM ET daily)                         │
+│  EventBridge (5:45 AM ET daily)                          │
 │      └─► Summarizer Lambda                               │
 │              └─► DynamoDB (DAILY_ period records)        │
 │                                                          │
@@ -99,18 +99,27 @@ Latest pointer (always updated):
 
 ### 2. Summarizer (`steam-daily-summary-midnight`)
 
-**Trigger:** EventBridge cron `1 0 * * ? *` — 12:01 AM Eastern daily
+**Trigger:** EventBridge cron `45 10 * * ? *` — 5:45 AM Eastern daily (10:45 AM UTC)
 
 **What it does:**
 
-1. Scans DynamoDB for all raw session records matching a given UTC date (filters by `date_utc` field)
-2. Groups sessions by game
-3. Sorts each game's sessions by timestamp
-4. Snaps each check timestamp to a 30-min block boundary
-5. Detects play periods: consecutive blocks within 90 minutes = same period, gap > 90 min = new period
-6. Writes one `DAILY_` record per period
+1. When no explicit date is provided, processes **two** UTC dates: yesterday and today
+   - Yesterday UTC catches early-to-mid evening ET sessions
+   - Today UTC catches late-night ET sessions that cross the UTC date boundary (e.g., playing at 9:30 PM ET = next day UTC)
+2. For each date: scans DynamoDB for all raw session records matching that UTC date (filters by `date_utc` field)
+3. Groups sessions by game
+4. Sorts each game's sessions by timestamp
+5. Snaps each check timestamp to a 30-min block boundary
+6. Detects play periods: consecutive blocks within 90 minutes = same period, gap > 90 min = new period
+7. Writes one `DAILY_` record per period (uses PutCommand, so re-runs are idempotent)
 
-**Why it scans on `date_utc`:** The Summarizer runs at 12:01 AM ET and processes "yesterday" as a UTC date. Because the Checker writes `date_utc` as the UTC date of when the check ran, the Summarizer can find all records from a given UTC day regardless of which Eastern day they fall on. The per-period Eastern date derivation then correctly assigns the human-readable date.
+When invoked with an explicit `{"date": "YYYY-MM-DD"}` event, processes only that single date (useful for backfills).
+
+**Why two dates:** Late-night ET sessions (e.g., 9:30 PM - 2:34 AM ET) produce Checker records with today's UTC date, not yesterday's. Processing only yesterday UTC would miss these sessions until the following night's run — a 24-36 hour delay. By processing both dates, overnight sessions are picked up the same morning.
+
+**Why 5:45 AM ET:** The schedule runs after all overnight Checker records exist (last possible check ~5:24 AM UTC for a session ending before 1 AM ET) and 1h20m before the first morning `yarn sync` at 7:05 AM ET. The previous 12:01 AM ET schedule was too early to catch late-night sessions on today's UTC date.
+
+**Why it scans on `date_utc`:** The Checker writes `date_utc` as the UTC date of when the check ran. The Summarizer finds all records from a given UTC day regardless of which Eastern day they fall on. The per-period Eastern date derivation then correctly assigns the human-readable date.
 
 **30-min block snapping:**
 

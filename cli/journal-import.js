@@ -4,7 +4,7 @@
  * Imports 5 Minute Journal exports (JSON) into data/journal.json
  *
  * Usage: yarn journal:import [path-to-export-dir-or-json]
- * Default: looks for most recent export in local/journal/
+ * Default: imports all exports found in local/journal/
  * Output: data/journal.json (2026 entries only)
  */
 
@@ -14,16 +14,18 @@ const path = require("path");
 const DATA_DIR = path.join(__dirname, "..", "data");
 
 /**
- * Find the most recent 5 Minute Journal export in local/journal/
+ * Find all 5 Minute Journal exports in local/journal/
+ * Returns array of paths to index.json files, sorted oldest-first
  */
-function findExportPath() {
+function findExportPaths() {
   const journalDir = path.join(__dirname, "..", "local", "journal");
   if (!fs.existsSync(journalDir)) {
     fs.mkdirSync(journalDir, { recursive: true });
   }
   const entries = fs.readdirSync(journalDir);
+  const paths = [];
 
-  // Look for export directories (d20260309-... pattern) or export.pdf siblings with index.json
+  // Look for export directories (d20260309-... pattern) with index.json
   const exportDirs = entries
     .filter((e) => {
       const fullPath = path.join(journalDir, e);
@@ -32,19 +34,18 @@ function findExportPath() {
         fs.existsSync(path.join(fullPath, "index.json"))
       );
     })
-    .sort()
-    .reverse();
+    .sort();
 
-  if (exportDirs.length > 0) {
-    return path.join(journalDir, exportDirs[0], "index.json");
+  for (const dir of exportDirs) {
+    paths.push(path.join(journalDir, dir, "index.json"));
   }
 
   // Also check for standalone index.json
   if (fs.existsSync(path.join(journalDir, "index.json"))) {
-    return path.join(journalDir, "index.json");
+    paths.push(path.join(journalDir, "index.json"));
   }
 
-  return null;
+  return paths;
 }
 
 /**
@@ -89,11 +90,25 @@ function transformRecords(rawRecords) {
 // --- Main ---
 
 function main() {
-  let inputPath = process.argv[2];
+  let inputPaths = [];
 
-  if (!inputPath) {
-    inputPath = findExportPath();
-    if (!inputPath) {
+  if (process.argv[2]) {
+    // Explicit path provided
+    let inputPath = process.argv[2];
+    if (
+      fs.existsSync(inputPath) &&
+      fs.statSync(inputPath).isDirectory()
+    ) {
+      inputPath = path.join(inputPath, "index.json");
+    }
+    if (!fs.existsSync(inputPath)) {
+      console.error(`File not found: ${inputPath}`);
+      process.exit(1);
+    }
+    inputPaths = [inputPath];
+  } else {
+    inputPaths = findExportPaths();
+    if (inputPaths.length === 0) {
       console.error(
         "No 5 Minute Journal export found in local/journal/\n" +
           "Usage: yarn journal:import [path-to-export-dir-or-json]\n" +
@@ -101,26 +116,25 @@ function main() {
       );
       process.exit(1);
     }
-    console.log(`Found export: ${inputPath}`);
-  } else {
-    // If given a directory, look for index.json inside
-    if (
-      fs.existsSync(inputPath) &&
-      fs.statSync(inputPath).isDirectory()
-    ) {
-      inputPath = path.join(inputPath, "index.json");
-    }
+    console.log(`Found ${inputPaths.length} export(s)`);
   }
 
-  if (!fs.existsSync(inputPath)) {
-    console.error(`File not found: ${inputPath}`);
-    process.exit(1);
+  // Merge records from all exports
+  let newRecords = [];
+  for (const inputPath of inputPaths) {
+    console.log(`\nImporting from: ${inputPath}`);
+    const raw = JSON.parse(fs.readFileSync(inputPath, "utf-8"));
+    const records = transformRecords(raw.records);
+    console.log(`   ${records.length} entries from this export`);
+    newRecords.push(...records);
   }
 
-  console.log(`\nImporting from: ${inputPath}`);
-
-  const raw = JSON.parse(fs.readFileSync(inputPath, "utf-8"));
-  const newRecords = transformRecords(raw.records);
+  // Deduplicate across exports (later exports win for same date)
+  const deduped = new Map();
+  for (const r of newRecords) {
+    deduped.set(r.date, r);
+  }
+  newRecords = Array.from(deduped.values());
 
   // Merge with existing journal data (record-level idempotency)
   const journalPath = path.join(DATA_DIR, "journal.json");

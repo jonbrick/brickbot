@@ -75,161 +75,178 @@ function snapToBlock(isoTimestamp) {
   };
 }
 
+// Process a single UTC date: scan Checker records, group by game, detect periods, write DAILY_ records
+async function processDate(targetDate, dryRun) {
+  console.log(`Processing date: ${targetDate}${dryRun ? " [DRY RUN]" : ""}`);
+
+  const scanCommand = new ScanCommand({
+    TableName: "steam-playtime",
+    FilterExpression:
+      "#date_utc = :date AND attribute_exists(session_minutes) AND session_minutes > :zero",
+    ExpressionAttributeNames: {
+      "#date_utc": "date_utc",
+    },
+    ExpressionAttributeValues: {
+      ":date": targetDate,
+      ":zero": 0,
+    },
+  });
+
+  const response = await docClient.send(scanCommand);
+  console.log(`Found ${response.Items.length} gaming sessions for ${targetDate}`);
+
+  if (response.Items.length === 0) {
+    return { targetDate, summariesCreated: 0 };
+  }
+
+  // Group sessions by game
+  const gameData = {};
+
+  response.Items.forEach((item) => {
+    const gameId = item.game_id;
+    if (!gameData[gameId]) {
+      gameData[gameId] = {
+        game_name: item.game_name,
+        sessions: [],
+        total_minutes: 0,
+      };
+    }
+
+    gameData[gameId].sessions.push({
+      timestamp: item.timestamp,
+      minutes: item.session_minutes,
+    });
+    gameData[gameId].total_minutes += item.session_minutes;
+  });
+
+  // Process each game
+  let summariesCreated = 0;
+
+  for (const [gameId, data] of Object.entries(gameData)) {
+    // Sort sessions by timestamp
+    data.sessions.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+    // Snap each check to a 30-min block
+    const blocks = data.sessions.map((session) => ({
+      ...snapToBlock(session.timestamp),
+      checkTime: session.timestamp,
+    }));
+
+    // Detect play periods (consecutive blocks within 90 min = same period)
+    const playPeriods = [];
+    let currentPeriod = null;
+
+    blocks.forEach((block, index) => {
+      if (!currentPeriod) {
+        currentPeriod = {
+          start: block.blockStart,
+          end: block.blockEnd,
+          blockCount: 1,
+        };
+      } else {
+        // Gap = time between previous block end and this block start
+        const gap =
+          (new Date(block.blockStart) - new Date(currentPeriod.end)) /
+          1000 /
+          60;
+
+        if (gap <= 90) {
+          // Same period — extend to this block's end
+          currentPeriod.end = block.blockEnd;
+          currentPeriod.blockCount++;
+        } else {
+          // New period
+          playPeriods.push(currentPeriod);
+          currentPeriod = {
+            start: block.blockStart,
+            end: block.blockEnd,
+            blockCount: 1,
+          };
+        }
+      }
+    });
+
+    if (currentPeriod) playPeriods.push(currentPeriod);
+
+    // Write one record per period
+    // record_id uses UTC date (targetDate) — just a unique key
+    // date field uses Eastern date per-period — what brickbot queries on
+    for (let i = 0; i < playPeriods.length; i++) {
+      const period = playPeriods[i];
+      const easternDate = getEasternDate(period.start);
+      const durationMinutes = period.blockCount * 30;
+
+      const item = {
+        record_id: `DAILY_${targetDate}_${gameId}_PERIOD_${i + 1}`,
+        date: easternDate,
+        date_utc: targetDate,
+        game_id: gameId,
+        game_name: data.game_name,
+        start_time: toEasternISO(period.start),
+        start_time_utc: period.start,
+        end_time: toEasternISO(period.end),
+        end_time_utc: period.end,
+        duration_minutes: durationMinutes,
+      };
+
+      if (dryRun) {
+        console.log(`[DRY RUN] Would write:`, JSON.stringify(item));
+      } else {
+        await docClient.send(
+          new PutCommand({ TableName: "steam-playtime", Item: item }),
+        );
+      }
+      summariesCreated++;
+    }
+
+    console.log(
+      `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${playPeriods.length} period(s), ${blocks.length} blocks (UTC date: ${targetDate})`,
+    );
+  }
+
+  return { targetDate, summariesCreated };
+}
+
 export const handler = async (event) => {
   console.log("Starting daily summary generation...");
 
   try {
     const dryRun = event.dryRun || false;
 
-    // Get date from event or use yesterday
-    let targetDate;
+    // Determine which UTC dates to process
+    let dates;
     if (event.date) {
-      targetDate = event.date;
+      // Explicit date — process only that one
+      dates = [event.date];
     } else {
-      const yesterday = new Date();
+      // No explicit date — process both yesterday and today UTC
+      // Yesterday catches early evening ET sessions, today catches late-night
+      // ET sessions that cross the UTC date boundary
+      const now = new Date();
+      const todayUTC = now.toISOString().split("T")[0];
+      const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
-      targetDate = yesterday.toISOString().split("T")[0];
+      const yesterdayUTC = yesterday.toISOString().split("T")[0];
+      dates = [yesterdayUTC, todayUTC];
     }
 
-    console.log(`Processing date: ${targetDate}${dryRun ? " [DRY RUN]" : ""}`);
+    console.log(`Dates to process: ${dates.join(", ")}${dryRun ? " [DRY RUN]" : ""}`);
 
-    // Scan for all Checker records from target UTC date with session_minutes
-    const scanCommand = new ScanCommand({
-      TableName: "steam-playtime",
-      FilterExpression:
-        "#date_utc = :date AND attribute_exists(session_minutes) AND session_minutes > :zero",
-      ExpressionAttributeNames: {
-        "#date_utc": "date_utc",
-      },
-      ExpressionAttributeValues: {
-        ":date": targetDate,
-        ":zero": 0,
-      },
-    });
+    let totalSummaries = 0;
+    const results = [];
 
-    const response = await docClient.send(scanCommand);
-    console.log(`Found ${response.Items.length} gaming sessions`);
-
-    if (response.Items.length === 0) {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: `No gaming sessions found for ${targetDate}`,
-        }),
-      };
-    }
-
-    // Group sessions by game
-    const gameData = {};
-
-    response.Items.forEach((item) => {
-      const gameId = item.game_id;
-      if (!gameData[gameId]) {
-        gameData[gameId] = {
-          game_name: item.game_name,
-          sessions: [],
-          total_minutes: 0,
-        };
-      }
-
-      gameData[gameId].sessions.push({
-        timestamp: item.timestamp,
-        minutes: item.session_minutes,
-      });
-      gameData[gameId].total_minutes += item.session_minutes;
-    });
-
-    // Process each game
-    let summariesCreated = 0;
-
-    for (const [gameId, data] of Object.entries(gameData)) {
-      // Sort sessions by timestamp
-      data.sessions.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-
-      // Snap each check to a 30-min block
-      const blocks = data.sessions.map((session) => ({
-        ...snapToBlock(session.timestamp),
-        checkTime: session.timestamp,
-      }));
-
-      // Detect play periods (consecutive blocks within 90 min = same period)
-      const playPeriods = [];
-      let currentPeriod = null;
-
-      blocks.forEach((block, index) => {
-        if (!currentPeriod) {
-          currentPeriod = {
-            start: block.blockStart,
-            end: block.blockEnd,
-            blockCount: 1,
-          };
-        } else {
-          // Gap = time between previous block end and this block start
-          const gap =
-            (new Date(block.blockStart) - new Date(currentPeriod.end)) /
-            1000 /
-            60;
-
-          if (gap <= 90) {
-            // Same period — extend to this block's end
-            currentPeriod.end = block.blockEnd;
-            currentPeriod.blockCount++;
-          } else {
-            // New period
-            playPeriods.push(currentPeriod);
-            currentPeriod = {
-              start: block.blockStart,
-              end: block.blockEnd,
-              blockCount: 1,
-            };
-          }
-        }
-      });
-
-      if (currentPeriod) playPeriods.push(currentPeriod);
-
-      // Write one record per period
-      // record_id uses UTC date (targetDate) — just a unique key
-      // date field uses Eastern date per-period — what brickbot queries on
-      for (let i = 0; i < playPeriods.length; i++) {
-        const period = playPeriods[i];
-        const easternDate = getEasternDate(period.start);
-        const durationMinutes = period.blockCount * 30;
-
-        const item = {
-          record_id: `DAILY_${targetDate}_${gameId}_PERIOD_${i + 1}`,
-          date: easternDate,
-          date_utc: targetDate,
-          game_id: gameId,
-          game_name: data.game_name,
-          start_time: toEasternISO(period.start),
-          start_time_utc: period.start,
-          end_time: toEasternISO(period.end),
-          end_time_utc: period.end,
-          duration_minutes: durationMinutes,
-        };
-
-        if (dryRun) {
-          console.log(`[DRY RUN] Would write:`, JSON.stringify(item));
-        } else {
-          await docClient.send(
-            new PutCommand({ TableName: "steam-playtime", Item: item }),
-          );
-        }
-        summariesCreated++;
-      }
-
-      console.log(
-        `${dryRun ? "[DRY RUN] " : ""}${data.game_name}: ${playPeriods.length} period(s), ${blocks.length} blocks (UTC date: ${targetDate})`,
-      );
+    for (const date of dates) {
+      const result = await processDate(date, dryRun);
+      totalSummaries += result.summariesCreated;
+      results.push(result);
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify({
-        message: `${dryRun ? "[DRY RUN] " : ""}Created ${summariesCreated} period summaries for ${targetDate}`,
-        summariesCreated,
-        targetDate,
+        message: `${dryRun ? "[DRY RUN] " : ""}Created ${totalSummaries} period summaries for ${dates.join(", ")}`,
+        totalSummaries,
+        results,
       }),
     };
   } catch (error) {

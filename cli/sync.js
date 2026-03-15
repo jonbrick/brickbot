@@ -132,7 +132,7 @@ function main() {
       if (autoMode && err.stderr) {
         fs.appendFileSync(logFile, err.stderr);
       }
-      log(`ERROR: ${step.name} failed (exit code ${err.status})`);
+      log(`ERROR: ${step.name} failed (${err.signal ? `signal ${err.signal}` : `exit code ${err.status}`})`);
     }
   }
 

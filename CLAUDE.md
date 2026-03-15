@@ -41,6 +41,7 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 
 ### Known Bugs
 - `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
+- `BUG-MED [yarn sync]` Token refresh not picked up by collect — .env updated by refresh but collect loads stale token from same process. Need to reload env or pass tokens between steps.
 
 ## Development Principles
 
@@ -142,18 +143,20 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 `yarn pull` creates local JSON snapshots that Claude Code can read without API calls:
 
-| File | Contents | Scoped |
-|------|----------|--------|
-| `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
-| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings, etc. | Last 30 days |
-| `data/summaries.json` | Weekly summaries, Monthly recaps | All |
-| `data/calendar.json` | All Google Calendar events | Last 30 days |
-| `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
-| `data/retro.json` | Personal & Work Week Retros | All |
-| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
-| `data/journal.json` | 5 Minute Journal entries (gratitude, amazingness, improvements) | 2026 |
+| File | Pull Source | Push Target | Contents | Scoped |
+|------|------------|-------------|----------|--------|
+| `data/plan.json` | Notion | Notion | Weeks, Months, Rocks, Events, Trips | All |
+| `data/collected.json` | Notion | Notion | Oura, Strava, GitHub, Steam, Withings, etc. | Last 30 days |
+| `data/summaries.json` | Notion | Notion | Weekly summaries, Monthly recaps | All |
+| `data/calendar.json` | Google Calendar | Google Calendar | All calendar events | Last 30 days |
+| `data/nyc.json` | Notion | Notion | Museums, Restaurants, Tattoos, Venues | All |
+| `data/retro.json` | Notion | Notion | Personal & Work Week Retros | All |
+| `data/life.json` | Notion | Notion | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 2026 |
 
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
+
+**Conflict model:** Push is last-write-wins with no merge. If the same record is edited both locally (via a skill) and in Notion between syncs, push overwrites the Notion edit. Notion-only edits are safe — push skips unchanged local records, and pull brings Notion changes down.
 
 ### No Test Suite
 

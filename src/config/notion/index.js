@@ -22,6 +22,7 @@ const relationships = require("./relationships");
 const years = require("./years");
 const months = require("./months");
 const weeks = require("./weeks");
+const rocks = require("./rocks");
 const nycMuseums = require("./nyc-museums");
 const nycRestaurants = require("./nyc-restaurants");
 const nycTattoos = require("./nyc-tattoos");
@@ -48,6 +49,7 @@ const databases = {
   years: years.database,
   months: months.database,
   weeks: weeks.database,
+  rocks: rocks.database,
   nycMuseums: nycMuseums.database,
   nycRestaurants: nycRestaurants.database,
   nycTattoos: nycTattoos.database,
@@ -75,6 +77,7 @@ const properties = {
   years: years.properties,
   months: months.properties,
   weeks: weeks.properties,
+  rocks: rocks.properties,
   nycMuseums: nycMuseums.properties,
   nycRestaurants: nycRestaurants.properties,
   nycTattoos: nycTattoos.properties,
@@ -100,6 +103,7 @@ const fieldMappings = {
   years: years.fieldMappings,
   months: months.fieldMappings,
   weeks: weeks.fieldMappings || {},
+  rocks: rocks.fieldMappings || {},
 };
 
 // Color mappings (for categorization and display)

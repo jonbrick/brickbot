@@ -201,7 +201,7 @@ async function pushPlanData(spinner) {
 
   await pushRecords(data.weeks, "Weeks", spinner, "weeks");
   await pushRecords(data.months, "Months", spinner, "months");
-  await pushRecords(data.rocks, "Rocks", spinner);
+  await pushRecords(data.rocks, "Rocks", spinner, "rocks");
   await pushRecords(data.events, "Events", spinner, "events");
   await pushRecords(data.trips, "Trips", spinner, "trips");
 }

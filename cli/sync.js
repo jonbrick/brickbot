@@ -10,7 +10,9 @@
  *   yarn sync --auto   # Non-interactive (used by launchd)
  */
 
-require("dotenv").config();
+// NOTE: Do NOT load dotenv here. Each step runs as a child process that inherits
+// this process's env. dotenv won't override existing vars, so if we load .env here,
+// child processes get stale tokens even after tokens:refresh updates .env.
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");

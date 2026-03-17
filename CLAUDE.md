@@ -41,7 +41,7 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 
 ### Known Bugs
 - `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
-- `BUG-MED [yarn sync]` Token refresh not picked up by collect — .env updated by refresh but collect loads stale token from same process. Need to reload env or pass tokens between steps.
+- `BUG-MED [yarn sync]` ~~Token refresh not picked up by collect~~ **FIXED** — sync.js loaded dotenv, poisoning child process env. dotenv doesn't override existing vars, so children inherited stale tokens. Fix: removed dotenv from sync.js.
 
 ## Development Principles
 

@@ -18,6 +18,7 @@ const path = require("path");
 const autoMode = process.argv.includes("--auto");
 const projectDir = path.resolve(__dirname, "..");
 const logDir = path.join(projectDir, "local", "logs");
+const lockFile = path.join(projectDir, "local", "sync.lock");
 const today = new Date().toISOString().slice(0, 10);
 const logFile = path.join(logDir, `daily-${today}.log`);
 
@@ -72,9 +73,53 @@ function sendNotification(title, message) {
   }
 }
 
+function isProcessRunning(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function acquireLock() {
+  try {
+    const content = fs.readFileSync(lockFile, "utf8").trim();
+    const pid = parseInt(content, 10);
+    if (pid && isProcessRunning(pid)) {
+      return pid; // Another sync is running
+    }
+    // Stale lock — process is gone, clean up and continue
+  } catch {
+    // No lock file — good to go
+  }
+  fs.writeFileSync(lockFile, String(process.pid));
+  return null;
+}
+
+function releaseLock() {
+  try {
+    fs.unlinkSync(lockFile);
+  } catch {
+    // Ignore — file may already be gone
+  }
+}
+
 function main() {
   // Ensure log directory exists
   fs.mkdirSync(logDir, { recursive: true });
+
+  // Prevent concurrent syncs
+  const runningPid = acquireLock();
+  if (runningPid) {
+    const msg = `Sync already running (PID ${runningPid}), skipping.`;
+    if (autoMode) {
+      fs.appendFileSync(logFile, msg + "\n");
+    } else {
+      console.log(msg);
+    }
+    process.exit(0);
+  }
 
   if (autoMode) {
     cleanOldLogs();
@@ -110,6 +155,8 @@ function main() {
 
   log(`=== Done: ${new Date().toLocaleString()} ===\n`);
 
+  releaseLock();
+
   if (errors.length > 0) {
     const failedSteps = errors.join(", ");
     if (autoMode) {
@@ -121,5 +168,9 @@ function main() {
     sendNotification("Brickbot", "Sync complete");
   }
 }
+
+// Clean up lock on unexpected exit (Ctrl+C, kill, etc.)
+process.on("SIGINT", () => { releaseLock(); process.exit(130); });
+process.on("SIGTERM", () => { releaseLock(); process.exit(143); });
 
 main();

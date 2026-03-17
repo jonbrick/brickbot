@@ -60,27 +60,6 @@ function cleanOldLogs() {
   }
 }
 
-function getBlock() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "morning";
-  if (hour < 18) return "afternoon";
-  return "evening";
-}
-
-function getMarkerPath(block) {
-  return path.join(logDir, `sync-success-${today}-${block}`);
-}
-
-function cleanStaleMarkers() {
-  try {
-    const files = fs.readdirSync(logDir).filter((f) => f.startsWith("sync-success-") && !f.includes(today));
-    for (const file of files) {
-      fs.unlinkSync(path.join(logDir, file));
-    }
-  } catch {
-    // Ignore cleanup errors
-  }
-}
 
 function sendNotification(title, message) {
   try {
@@ -99,13 +78,6 @@ function main() {
 
   if (autoMode) {
     cleanOldLogs();
-    cleanStaleMarkers();
-
-    const block = getBlock();
-    if (fs.existsSync(getMarkerPath(block))) {
-      log(`Skipping — already succeeded in ${block} block today`);
-      process.exit(0);
-    }
   }
 
   log(`=== Brickbot Run: ${new Date().toLocaleString()} ===`);
@@ -117,7 +89,7 @@ function main() {
     try {
       const output = execSync(step.cmd, {
         cwd: projectDir,
-        timeout: 5 * 60 * 1000,
+        timeout: 8 * 60 * 1000,
         encoding: "utf8",
         stdio: autoMode ? "pipe" : "inherit",
       });
@@ -146,7 +118,6 @@ function main() {
     console.error(`Failed steps: ${failedSteps}`);
     process.exit(1);
   } else if (autoMode) {
-    fs.writeFileSync(getMarkerPath(getBlock()), "");
     sendNotification("Brickbot", "Sync complete");
   }
 }

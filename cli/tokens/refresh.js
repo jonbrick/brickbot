@@ -28,36 +28,19 @@ async function main() {
     const tokenService = new TokenService();
     const results = [];
 
-    // Check which tokens need refresh
-    showInfo("Checking OAuth tokens that can be refreshed...");
-
-    const tokensToRefresh = [];
     const refreshableServices = tokenConfig.getRefreshableServices();
-
-    for (const serviceKey of refreshableServices) {
-      const serviceConfig = tokenConfig.getService(serviceKey);
-
-      try {
-        const status = await tokenService.checkServiceByKey(serviceKey);
-        if (status.needsRefresh) {
-          tokensToRefresh.push(serviceKey);
-        }
-      } catch (error) {
-        // Skip if service is not configured
-        console.log(
-          `   Skipping ${serviceConfig.name} (not configured or error)`
-        );
-      }
-    }
+    const tokensToRefresh = refreshableServices.filter(
+      (key) => tokenConfig.getService(key).getCredentials?.()
+    );
 
     if (tokensToRefresh.length === 0) {
-      showSuccess("All OAuth tokens are valid - no refresh needed!");
+      showSuccess("No refreshable tokens configured!");
       console.log("\n");
       process.exit(0);
     }
 
     console.log(
-      `\nTokens that need refresh: ${tokensToRefresh
+      `\nRefreshing: ${tokensToRefresh
         .map((key) => tokenConfig.getService(key).name)
         .join(", ")}\n`
     );

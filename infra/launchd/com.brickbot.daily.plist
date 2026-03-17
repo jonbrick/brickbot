@@ -12,51 +12,41 @@
         <string>--auto</string>
     </array>
 
-    <!-- 3 blocks with multiple attempts each (skips if already succeeded in block) -->
-    <!-- Morning: 7:05, 9:05, 10:05 -->
-    <!-- Afternoon: 15:55, 16:55 -->
-    <!-- Evening: 20:00, 21:00 -->
+    <!-- 5 runs/day — launchd catch-up handles missed runs on wake -->
+    <!-- 6:30 AM — sleep data ready -->
+    <!-- 9:00 AM — morning workouts -->
+    <!-- 1:00 PM — lunch workouts + morning activity -->
+    <!-- 6:00 PM — afternoon workouts + end of work -->
+    <!-- 8:00 PM — evening workouts + end of day -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
             <key>Hour</key>
-            <integer>7</integer>
+            <integer>6</integer>
             <key>Minute</key>
-            <integer>5</integer>
+            <integer>30</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>9</integer>
             <key>Minute</key>
-            <integer>5</integer>
+            <integer>0</integer>
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>10</integer>
-            <key>Minute</key>
-            <integer>5</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>15</integer>
-            <key>Minute</key>
-            <integer>55</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>16</integer>
-            <key>Minute</key>
-            <integer>55</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>20</integer>
+            <integer>13</integer>
             <key>Minute</key>
             <integer>0</integer>
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>21</integer>
+            <integer>18</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>20</integer>
             <key>Minute</key>
             <integer>0</integer>
         </dict>

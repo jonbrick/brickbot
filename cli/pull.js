@@ -774,6 +774,13 @@ function generateNycViewerHtml() {
 }
 
 function generateHtmlViews() {
+  // Plan viewer (source template in src/viewers/plan.html)
+  ensureDir(path.join(LOCAL_DIR, "plan"));
+  fs.copyFileSync(
+    path.join(__dirname, "..", "src", "viewers", "plan.html"),
+    path.join(LOCAL_DIR, "plan", "index.html")
+  );
+
   // Collected data viewer
   ensureDir(path.join(LOCAL_DIR, "collected"));
   fs.writeFileSync(

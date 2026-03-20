@@ -136,7 +136,7 @@ function main() {
     try {
       const output = execSync(step.cmd, {
         cwd: projectDir,
-        timeout: 8 * 60 * 1000,
+        timeout: 3 * 60 * 1000,
         encoding: "utf8",
         stdio: autoMode ? "pipe" : "inherit",
       });
@@ -152,6 +152,10 @@ function main() {
         fs.appendFileSync(logFile, err.stderr);
       }
       log(`ERROR: ${step.name} failed (${err.signal ? `signal ${err.signal}` : `exit code ${err.status}`})`);
+      if (step.name === "tokens:refresh") {
+        log("Bailing: tokens:refresh failed — network or API likely down");
+        break;
+      }
     }
   }
 

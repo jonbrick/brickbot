@@ -25,7 +25,8 @@ node scripts/retro-weeks.js work
 Once the user picks a week (e.g., "8" or "Week 08"):
 
 1. Use the **Read tool** (not bash/node) to read these files and extract data for ONLY that week:
-   - `data/plan.json` — find week by `Week` field, get its `_notionId`, find linked rocks (where `Category` is "Work" or has a `Work Category`), events, trips via `⏰ 2026 Weeks` relation
+   - `data/plan.json` — find week by `Week` field, get its `_notionId`, find linked rocks via `🪨 2026 Rocks` relation, events, trips via `⏰ 2026 Weeks` relation
+   - **For each rock:** look up the rock record in `data/plan.json` → `rocks` by `_notionId`. Read its `Category`, `Work Category`, `Retro` (status), `Retro Reflection`, and `Description` fields. **Only include rocks where `Category` IS `💼 Work`.**
    - `data/summaries.json` → `workWeekly` — match by `⏰ 2026 Weeks` relation
    - `data/retro.json` → `workWeekly` — match by title (e.g., "Week 08 Work Retro")
    - `data/life.json` → `tasks` — filter by `Work Category` being non-null
@@ -33,7 +34,7 @@ Once the user picks a week (e.g., "8" or "Week 08"):
 
 2. Present a brief overview:
    - Hours and category breakdown (meetings, design, coding, crit, etc.)
-   - Work rocks and their status
+   - Work rocks: status, retro status, work category, and Jon's retro reflection for each (this is key context for drafting)
    - Work events/trips
    - Work task highlights
 

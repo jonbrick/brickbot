@@ -14,6 +14,7 @@ module.exports = {
     workCategory: { name: "Work Category", type: "select", enabled: true },
     status: { name: "Status", type: "status", enabled: true },
     retro: { name: "Retro", type: "status", enabled: true },
+    retroReflection: { name: "Retro Reflection", type: "rich_text", enabled: true },
     description: { name: "Description", type: "rich_text", enabled: true },
     date: { name: "Date", type: "date", enabled: true },
   },

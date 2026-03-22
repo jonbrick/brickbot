@@ -25,7 +25,8 @@ node scripts/retro-weeks.js personal
 Once the user picks a week (e.g., "8" or "Week 08"):
 
 1. Use the **Read tool** (not bash/node) to read these files and extract data for ONLY that week:
-   - `data/plan.json` — find week by `Week` field, get its `_notionId`, find linked rocks (where `Category` is NOT "Work"), events, trips via `⏰ 2026 Weeks` relation
+   - `data/plan.json` — find week by `Week` field, get its `_notionId`, find linked rocks via `🪨 2026 Rocks` relation, events, trips via `⏰ 2026 Weeks` relation
+   - **For each rock:** look up the rock record in `data/plan.json` → `rocks` by `_notionId`. Read its `Category`, `Retro` (status), `Retro Reflection`, and `Description` fields. **Only include rocks where `Category` is NOT `💼 Work`.**
    - `data/summaries.json` → `personalWeekly` — match by `⏰ 2026 Weeks` relation
    - `data/retro.json` → `personalWeekly` — match by title (e.g., "Week 08 Personal Retro")
    - `data/life.json` → `habits` — match by `⏰ 2026 Weeks` relation
@@ -34,9 +35,9 @@ Once the user picks a week (e.g., "8" or "Week 08"):
 
 2. Present a brief overview:
    - Hours and category breakdown from the summary
-   - Personal rocks and their status
+   - Personal rocks: status, retro status, and Jon's retro reflection for each (this is key context for drafting)
    - Events/trips
-   - Habits (workouts, sleep, cooking, hobbies)
+   - Habits (workouts, sleep, cooking, hobbies) — **note: Oura data may count naps as "early mornings," so confirm sleep numbers with Jon if they look off**
    - Journal highlights (gratitude, amazingness, improvements)
 
 3. Show which retro fields are filled vs empty:

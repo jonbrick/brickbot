@@ -124,6 +124,7 @@ yarn sync --auto
 - **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs` or check `local/logs/`
 - **Manual run:** `yarn sync` (interactive) or `yarn sync --auto` (non-interactive)
+- **Resilience:** 3-min per-step timeout (healthy steps: 30–110s). Bails on token refresh failure (network/API down). Laptop sleep mid-run causes SIGTERM noise in logs but is harmless — next run recovers.
 
 **Setup:**
 ```bash

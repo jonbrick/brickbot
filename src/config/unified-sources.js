@@ -1116,6 +1116,7 @@ const INTEGRATIONS = {
       dateProperty: "date",
       uniqueIdProperty: null,
       uniqueIdType: null,
+      calendarEventIdProperty: "Calendar Event ID",
       calendarCreatedProperty: "calendarCreated",
     },
   },

@@ -114,6 +114,12 @@ function buildPropertiesFromRecord(record) {
     // If no type info (legacy data), skip arrays (likely relations)
     if (!type && Array.isArray(value)) continue;
 
+    // Pre-format status types so _formatProperties doesn't treat them as rich_text
+    if (type === "status") {
+      properties[key] = { status: { name: value } };
+      continue;
+    }
+
     properties[key] = value;
   }
 

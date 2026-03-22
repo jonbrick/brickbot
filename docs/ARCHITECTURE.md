@@ -627,13 +627,21 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 
 ### Automation
 
-Runs 3x daily (8am, 10am, 7pm) via launchd (`infra/launchd/com.brickbot.daily.plist`):
+Runs 5x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
 
 ```
-tokens:refresh → collect → update → pull
+tokens:refresh → collect → update → summarize → recap → push → pull
 ```
 
-macOS banner notifications on success/failure. Logs: `local/logs/daily-YYYY-MM-DD.log`.
+**Schedule:** 6:30 AM, 9:00 AM, 1:00 PM, 6:00 PM, 8:00 PM
+
+**Resilience:**
+- **3-minute per-step timeout** — healthy steps complete in 30–110s; if a step hasn't finished in 3 min, Notion/API is likely down. Fail fast and let the next run catch up.
+- **Bail on token refresh failure** — `tokens:refresh` is the first step and hits OAuth endpoints. If it fails, network or APIs are unreachable, so the pipeline skips all remaining steps immediately.
+- **Sleep tolerance** — if the Mac sleeps mid-run, in-flight requests expire and steps SIGTERM on wake. This produces noisy logs but is harmless; the next run recovers cleanly.
+- **Lock file** (`local/sync.lock`) prevents concurrent runs. Stale locks are auto-cleaned.
+
+macOS banner notifications on success/failure. Logs: `local/logs/daily-YYYY-MM-DD.log` (30-day retention).
 
 ## Interaction Patterns
 
@@ -643,7 +651,7 @@ Brickbot has four interaction patterns:
 Interactive commands for data pipeline operations (`yarn collect`, `yarn update`, `yarn summarize`, etc.).
 
 ### 2. Automation
-Non-interactive launchd automation running `tokens:refresh → collect → update → pull` 3x/day with `--auto` flag.
+Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull` 5x/day with `--auto` flag. Fails fast on transient errors (3-min step timeout, bail on token refresh failure).
 
 ### 3. Claude Code Skills
 8 slash commands for planning, retros, and reflections. Skills read/edit `data/*.json` locally, then changes are pushed to Notion via `yarn push`.

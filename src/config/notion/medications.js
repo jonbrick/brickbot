@@ -33,6 +33,11 @@ const database = process.env.NOTION_MEDICATIONS_DATABASE_ID;
 const properties = {
   name: { name: "Name", type: "title", enabled: true },
   date: { name: "Date", type: "date", enabled: true },
+  calendarEventId: {
+    name: "Calendar Event ID",
+    type: "rich_text",
+    enabled: true,
+  },
   calendarCreated: {
     name: "Calendar Created",
     type: "checkbox",
@@ -49,6 +54,7 @@ const properties = {
 const fieldMappings = {
   name: "name",
   date: "date",
+  calendarEventId: "calendarEventId",
   calendarCreated: "calendarCreated",
   supplements: "supplements",
   gabapentin: "gabapentin",

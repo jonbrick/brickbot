@@ -25,22 +25,36 @@ for (const r of retros) {
   const week = weeks.find((w) => w["Week"] === "Week " + weekNum);
   const start = week ? week["Date Range (SET)"] : "?";
   const end = week ? week["Date Range (SET) End"] : "?";
-  const hasRetro = (r["My Retro"] || "").trim() !== "";
+  // Check if retro is done: My Retro filled OR AI Retro filled OR Status is Done
+  const hasMyRetro = (r["My Retro"] || "").trim() !== "";
+  const hasAIRetro = (r["AI Retro"] || "").trim() !== "";
+  const isDone = (r["Status"] || "").trim().toLowerCase() === "done";
+
+  // Determine status: fully done (both) vs AI done vs empty
+  let status = "EMPTY";
+  if (hasMyRetro && hasAIRetro) {
+    status = "fully done";
+  } else if (hasAIRetro || isDone) {
+    status = "AI done, needs My Retro";
+  } else if (hasMyRetro) {
+    status = "done";
+  }
+
   results.push({
     week: "Week " + weekNum,
     start,
     end,
-    status: hasRetro ? "done" : "EMPTY",
+    status,
   });
 }
 
-const empty = results
-  .filter((r) => r.status === "EMPTY" && r.start !== "?")
+const needsWork = results
+  .filter((r) => r.status.includes("EMPTY") || r.status.includes("needs") || r.status === "done")
   .sort((a, b) => a.week.localeCompare(b.week));
 
-console.log("Weeks needing retros:");
-for (const r of empty) {
-  console.log("  " + r.week + " (" + r.start + " to " + r.end + ")");
+console.log("Weeks needing retro work:");
+for (const r of needsWork) {
+  console.log("  " + r.week + " (" + r.start + " to " + r.end + ") — " + r.status);
 }
-if (empty.length === 0) console.log("  All retros complete!");
+if (needsWork.length === 0) console.log("  All retros complete!");
 console.log("Or pick any week number to revisit.");

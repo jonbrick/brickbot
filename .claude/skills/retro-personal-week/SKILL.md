@@ -57,7 +57,7 @@ After presenting the overview, immediately draft all empty retro fields (except 
 
 - Edit the record directly in `data/retro.json` using the Edit tool
 - Always confirm what you're writing and where before editing
-- After writing the retro fields, also set `"Status": "Done"` on the same record
+- After writing the retro fields, also set `"Status": "AI Done"` on the same record (reserve "Done" for when Jon writes My Retro)
 - After editing, remind Jon to run `yarn push` to sync back to Notion
 
 ## Rules

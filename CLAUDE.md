@@ -160,11 +160,28 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 | `data/life.json` | Notion | Notion | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
 | `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 2026 |
 
+**Task content:** Tasks in `data/life.json` include a `_content` field with the Notion page body as markdown (checkboxes, paragraphs, headings, etc.). Edit `_content` locally and `yarn push` syncs it back. Separate `_contentHash` tracks content-specific changes.
+
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
 
 **Vault sync:** `yarn vault-sync` reads `data/retro.json` and `data/life.json`, transforms to markdown, and writes to `~/Documents/Brickocampus/personal/` (retros, goals, themes). Hash-based diff detection — only writes changed files. Zero AI tokens. Runs automatically as the last step in the pipeline.
 
 **Conflict model:** Push is last-write-wins with no merge. If the same record is edited both locally (via a skill) and in Notion between syncs, push overwrites the Notion edit. Notion-only edits are safe — push skips unchanged local records, and pull brings Notion changes down.
+
+### Brickocampus (Obsidian Vault)
+
+Brickocampus is the personal knowledge vault at `~/Documents/Brickocampus/`. The three systems work together: **Vault = memory/knowledge**, **Notion = input interface**, **Brickbot = plumbing**.
+
+Brickbot's `vault-sync` writes to the vault, but the vault has its own automation (Cowork) and structure independent of brickbot.
+
+**Key entry points (read these to learn more):**
+- `personal/_projects/brickocampus-setup.md` — master checklist, decisions, progress
+- `_automation/cowork.md` — Cowork automation overview, task configs, prompts
+- `_automation/meeting-processor.md` — meeting processing pipeline
+- `_automation/morning-brief.md` — daily note generator
+- `personal/_projects/brickbot-vault-bridge.md` — vision for how brickbot and vault connect
+
+**Structure:** `work/` (meetings, people, projects) + `personal/` (retros, goals, themes, projects) + `_automation/` + `_reference/` + `_templates/`
 
 ### No Test Suite
 

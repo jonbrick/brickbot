@@ -20,6 +20,7 @@ const GoogleCalendarService = require("../src/services/GoogleCalendarService");
 const { INTEGRATIONS, CALENDARS } = require("../src/config/unified-sources");
 const { delay } = require("../src/utils/async");
 const { createSpinner } = require("../src/utils/cli");
+const { blocksToMarkdown } = require("../src/utils/notion-content");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const LOCAL_DIR = path.join(__dirname, "..", "local");
@@ -56,7 +57,7 @@ function ensureDir(dir) {
 
 // --- Hashing ---
 
-const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName"]);
+const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName", "_contentHash"]);
 
 /**
  * Compute a hash of a record's non-metadata fields.
@@ -278,6 +279,34 @@ async function pullLifeData(spinner) {
       spinner.stop(`  ✗ ${dbConfig.label}: ${error.message}`);
       life[key] = [];
     }
+  }
+
+  // Fetch page content for tasks
+  if (life.tasks && life.tasks.length > 0) {
+    spinner.start();
+    let fetched = 0;
+    let withContent = 0;
+    for (const task of life.tasks) {
+      try {
+        const blocks = await db.getPageBlocks(task._notionId);
+        const markdown = blocksToMarkdown(blocks);
+        task._content = markdown || "";
+        task._contentHash = crypto.createHash("md5").update(task._content).digest("hex");
+        // Re-stamp the hash now that _content is included
+        task._hash = computeHash(task);
+        fetched++;
+        if (markdown) withContent++;
+        await delay(config.sources.rateLimits.notion.backoffMs);
+      } catch (error) {
+        task._content = "";
+        task._contentHash = crypto.createHash("md5").update("").digest("hex");
+        task._hash = computeHash(task);
+        if (process.env.DEBUG) {
+          console.error(`  ⚠ Failed to fetch content for ${task._notionId}: ${error.message}`);
+        }
+      }
+    }
+    spinner.stop(`  ✓ Task content: ${fetched} fetched, ${withContent} with content`);
   }
 
   ensureDir(DATA_DIR);

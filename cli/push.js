@@ -19,6 +19,7 @@ const GoogleCalendarService = require("../src/services/GoogleCalendarService");
 const { CALENDARS } = require("../src/config/unified-sources");
 const { delay } = require("../src/utils/async");
 const { createSpinner } = require("../src/utils/cli");
+const { markdownToBlocks } = require("../src/utils/notion-content");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 const db = new NotionDatabase();
@@ -50,7 +51,7 @@ const autoMode = process.argv.includes("--auto");
 
 // --- Hashing (must match pull.js) ---
 
-const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName"]);
+const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName", "_contentHash"]);
 
 /**
  * Recompute hash of a record's non-metadata fields.
@@ -353,6 +354,16 @@ async function pushRetroData(spinner) {
   }
 }
 
+/**
+ * Check if a task's page content has changed since pull.
+ * Compares current _content against stored _contentHash.
+ */
+function isContentChanged(record) {
+  if (!record._contentHash) return !!record._content;
+  const currentHash = crypto.createHash("md5").update(record._content || "").digest("hex");
+  return currentHash !== record._contentHash;
+}
+
 async function pushLifeData(spinner) {
   const data = readDataFile("life.json");
   if (!data) return;
@@ -364,6 +375,41 @@ async function pushLifeData(spinner) {
     if (!Array.isArray(records)) continue;
     const configKey = LIFE_CONFIG_KEYS[key] || null;
     await pushRecords(records, key, spinner, configKey);
+  }
+
+  // Push task content changes
+  if (data.tasks) {
+    const contentChanges = data.tasks.filter(
+      (t) => t._notionId && t._content !== undefined && isContentChanged(t)
+    );
+
+    if (contentChanges.length > 0) {
+      console.log(`\n  Pushing task content (${contentChanges.length} changed)...`);
+      let contentUpdated = 0;
+      let contentErrors = 0;
+
+      for (const task of contentChanges) {
+        if (dryRun) {
+          const name = task[task._titleKey] || task._notionId;
+          console.log(`  ~ Would update content: ${name}`);
+          contentUpdated++;
+          continue;
+        }
+
+        try {
+          spinner.start();
+          const blocks = markdownToBlocks(task._content || "");
+          await db.replacePageContent(task._notionId, blocks);
+          contentUpdated++;
+        } catch (error) {
+          contentErrors++;
+          spinner.stop(`  ✗ Content update failed for ${task._notionId}: ${error.message}`);
+        }
+      }
+
+      spinner.stop();
+      console.log(`  ✓ Task content: ${contentUpdated} updated, ${contentErrors} errors`);
+    }
   }
 }
 

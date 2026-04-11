@@ -224,6 +224,104 @@ class NotionDatabase {
   }
 
   /**
+   * Fetch all block children of a page, with one level of nesting.
+   *
+   * @param {string} pageId - Page or block ID
+   * @returns {Promise<Array>} Block objects (with nested children populated)
+   */
+  async getPageBlocks(pageId) {
+    try {
+      let blocks = [];
+      let hasMore = true;
+      let startCursor = undefined;
+
+      while (hasMore) {
+        const response = await this.client.blocks.children.list({
+          block_id: pageId,
+          start_cursor: startCursor,
+        });
+
+        blocks = blocks.concat(response.results);
+        hasMore = response.has_more;
+        startCursor = response.next_cursor;
+
+        if (hasMore) {
+          await delay(config.sources.rateLimits.notion.backoffMs);
+        }
+      }
+
+      // Fetch one level of nested children
+      for (const block of blocks) {
+        if (block.has_children) {
+          await delay(config.sources.rateLimits.notion.backoffMs);
+          block.children = await this.getPageBlocks(block.id);
+        }
+      }
+
+      return blocks;
+    } catch (error) {
+      throw new Error(`Failed to fetch page blocks: ${error.message}`);
+    }
+  }
+
+  /**
+   * Replace all content blocks on a page.
+   * Deletes existing blocks then appends new ones.
+   *
+   * @param {string} pageId - Page ID
+   * @param {Array} newBlocks - Notion block objects to write
+   * @returns {Promise<Object>} { deleted: number, created: number }
+   */
+  async replacePageContent(pageId, newBlocks) {
+    // 1. List existing blocks
+    const existing = await this.client.blocks.children.list({
+      block_id: pageId,
+    });
+
+    // 2. Delete each existing block
+    let deleted = 0;
+    for (const block of existing.results) {
+      await delay(config.sources.rateLimits.notion.backoffMs);
+      await this.client.blocks.delete({ block_id: block.id });
+      deleted++;
+    }
+
+    // Handle pagination — delete remaining blocks
+    let hasMore = existing.has_more;
+    let cursor = existing.next_cursor;
+    while (hasMore) {
+      await delay(config.sources.rateLimits.notion.backoffMs);
+      const more = await this.client.blocks.children.list({
+        block_id: pageId,
+        start_cursor: cursor,
+      });
+      for (const block of more.results) {
+        await delay(config.sources.rateLimits.notion.backoffMs);
+        await this.client.blocks.delete({ block_id: block.id });
+        deleted++;
+      }
+      hasMore = more.has_more;
+      cursor = more.next_cursor;
+    }
+
+    // 3. Append new blocks (Notion allows max 100 children per append)
+    let created = 0;
+    if (newBlocks.length > 0) {
+      for (let i = 0; i < newBlocks.length; i += 100) {
+        const batch = newBlocks.slice(i, i + 100);
+        await delay(config.sources.rateLimits.notion.backoffMs);
+        await this.client.blocks.children.append({
+          block_id: pageId,
+          children: batch,
+        });
+        created += batch.length;
+      }
+    }
+
+    return { deleted, created };
+  }
+
+  /**
    * Filter pages by date range
    *
    * @param {string} databaseId - Database ID

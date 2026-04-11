@@ -7,6 +7,7 @@
     "plan": "node cli/plan-parse.js",
     "pull": "node cli/pull.js",
     "push": "node cli/push.js",
+    "vault-sync": "node cli/vault-sync.js",
     "view": "node cli/view.js",
     "nyc": "node cli/view.js /nyc/",
     "nyc:import": "node cli/nyc-import.js",

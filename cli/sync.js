@@ -36,6 +36,7 @@ const STEPS = [
   { name: "recap", cmd: `${NODE} cli/recap-month.js --auto` },
   { name: "push", cmd: `${NODE} cli/push.js --auto` },
   { name: "pull", cmd: `${NODE} cli/pull.js --auto` },
+  { name: "vault-sync", cmd: `${NODE} cli/vault-sync.js --auto` },
 ];
 
 function log(message) {

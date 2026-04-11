@@ -18,7 +18,8 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - NYC databases (museums, restaurants, tattoos, venues) integrated into pull/push/view
 - `yarn nyc` — HTML viewer with dropdown, filters, search, sortable columns
 - launchd automation (5x/day) with macOS notifications
-- Full pipeline automated: tokens:refresh → collect → update → summarize → recap → push → pull
+- Full pipeline automated: tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
+- `yarn vault-sync` — sync retros, goals, themes to Brickocampus vault (diff-only, zero AI)
 - 5 Minute Journal import (`yarn journal:import`)
 
 **Next steps:**
@@ -66,10 +67,11 @@ yarn summarize        # Generate weekly summaries from calendar data
 yarn recap            # Generate monthly recaps from weekly summaries
 yarn push             # Push local JSON edits → Notion (delta-only)
 yarn pull             # Pull Notion + Calendar → local JSON (data/*.json)
+yarn vault-sync       # Sync data/*.json → Brickocampus vault (diff-only, zero AI)
 
 # All support --auto for non-interactive use (used by launchd)
 # yarn collect --auto / yarn update --auto / yarn summarize --auto
-# yarn recap --auto / yarn push --auto / yarn pull --auto
+# yarn recap --auto / yarn push --auto / yarn pull --auto / yarn vault-sync --auto
 
 yarn generate         # Generate yearly config
 
@@ -116,10 +118,11 @@ Runs 5x/day via `infra/launchd/com.brickbot.daily.plist`:
 
 ```
 yarn sync --auto
-# runs: tokens:refresh → collect → update → summarize → recap → push → pull
+# runs: tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
 ```
 
 - **Entry point:** `cli/sync.js`
+- **Pipeline:** tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
 - **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
 - **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs` or check `local/logs/`
@@ -158,6 +161,8 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 | `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 2026 |
 
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
+
+**Vault sync:** `yarn vault-sync` reads `data/retro.json` and `data/life.json`, transforms to markdown, and writes to `~/Documents/Brickocampus/personal/` (retros, goals, themes). Hash-based diff detection — only writes changed files. Zero AI tokens. Runs automatically as the last step in the pipeline.
 
 **Conflict model:** Push is last-write-wins with no merge. If the same record is edited both locally (via a skill) and in Notion between syncs, push overwrites the Notion edit. Notion-only edits are safe — push skips unchanged local records, and pull brings Notion changes down.
 

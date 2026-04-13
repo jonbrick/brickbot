@@ -123,8 +123,7 @@ yarn nyc:import       # One-time CSV → Notion import for NYC databases
 yarn journal:import   # Import 5 Minute Journal export → data/journal.json
 
 # Claude Code Skills (start a new conversation to use)
-# /retro-personal-week    — Personal weekly retro
-# /retro-work-week        — Work weekly retro
+# /retro                  — Weekly retro (personal, work, or both — adapts to catch-up)
 # /reflect-personal-month — Personal monthly reflection
 # /reflect-work-month     — Work monthly reflection
 # /plan-personal-week     — Plan personal week (set rocks)

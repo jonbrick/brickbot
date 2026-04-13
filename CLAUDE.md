@@ -26,6 +26,44 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - Resolve relation UUIDs to human-readable names in pulled data
 - `yarn overview` — Year at a Glance Notion page
 
+## System Scope
+
+### Ecosystem
+
+- **Notion** = input interface (89 databases total; brickbot actively manages ~31)
+- **Brickocampus vault** = memory/knowledge (~800 markdown files; brickbot syncs retros/goals/themes via vault-sync)
+- **Brickbot** = integrations (collect from APIs, sync to Notion/Calendar, pull/push, vault-sync)
+- **Google Calendar** = time tracking layer (20 calendars derived from Notion data)
+
+Full ecosystem doc: `~/Documents/Brickocampus/personal/_projects/brickosystem.md`
+
+### Notion Databases Brickbot Manages (~31 DBs)
+
+| Group | Databases | data file | ~Records |
+|-------|-----------|-----------|----------|
+| Integrations | oura, strava, githubPersonal, githubWork, steam, withings, bloodPressure, medications | collected.json | 110 |
+| Planning | weeks, months, rocks, events, trips | plan.json | 590 |
+| Life OS | goals, themes, relationships, tasks, habits, personalMonthlyPlans, workMonthlyPlans | life.json | 720 |
+| Summaries | personalWeekly, workWeekly, personalMonthlyRecap, workMonthlyRecap | summaries.json | 130 |
+| Retros | personalWeekly, workWeekly | retro.json | 106 |
+| NYC | museums, restaurants, tattoos, venues | nyc.json | 190 |
+
+### Notion Databases Brickbot Does NOT Touch (~58 DBs)
+
+- **Lists/Reference** (~20 DBs) — Recipes, Cocktails, Books, Movies, TV Shows, Documentaries, Courses, Exercises, Workouts, Phish Songs/Shows, Snowboarding, Running/Biking, Climbing, Sporting Events, National Parks/Monuments, World Sites, Tattoos, Cities, Countries. This is the planned expansion area.
+- **2025 Life OS + Archives** (~23 DBs) — previous year, same schema as 2026
+- **Raw Data/Dev** (~7 DBs), **Geography** (2), **Projects** (1) — staging/reference
+
+### Task Systems (Three Separate Systems)
+
+| System | ~Count | Purpose | Location |
+|--------|--------|---------|----------|
+| Notion Tasks | 613 | Intentional, goal-linked personal tasks (Life OS) | data/life.json |
+| Vault Tasks | 693 | Tactical work tasks extracted from meetings (Cowork) | Brickocampus vault checkboxes |
+| Linear/Jira | external | Engineering & design tickets (Cortex) | linear.app, cortex1.atlassian.net |
+
+These serve different purposes: Notion Tasks = personal reflection/planning, Vault Tasks = work execution, Linear/Jira = team engineering. Don't conflate them.
+
 ## Active Work
 
 ### EPICs
@@ -53,6 +91,7 @@ Local-first data workflow — all Notion data is pulled to `data/*.json` so Clau
 - **Errors must always be visible** in CLI output — hidden errors make debugging impossible
 - **All batch operations must be idempotent** and safe for multi-week runs
 - **Output at the edges** — only CLI files print to console; everything else returns structured data
+- **Plan before building** — for non-trivial work, design the approach and get alignment before writing code. Use plan mode.
 - **No assumptions** — verify before implementing; stress test assumptions before writing code
 
 ## Quick Reference
@@ -149,16 +188,16 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 `yarn pull` creates local JSON snapshots that Claude Code can read without API calls:
 
-| File | Pull Source | Push Target | Contents | Scoped |
-|------|------------|-------------|----------|--------|
-| `data/plan.json` | Notion | Notion | Weeks, Months, Rocks, Events, Trips | All |
-| `data/collected.json` | Notion | Notion | Oura, Strava, GitHub, Steam, Withings, etc. | Last 30 days |
-| `data/summaries.json` | Notion | Notion | Weekly summaries, Monthly recaps | All |
-| `data/calendar.json` | Google Calendar | Google Calendar | All calendar events | Last 30 days |
-| `data/nyc.json` | Notion | Notion | Museums, Restaurants, Tattoos, Venues | All |
-| `data/retro.json` | Notion | Notion | Personal & Work Week Retros | All |
-| `data/life.json` | Notion | Notion | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
-| `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 2026 |
+| File | Pull Source | Push Target | Contents | ~Records | Scoped |
+|------|------------|-------------|----------|----------|--------|
+| `data/plan.json` | Notion | Notion | Weeks (53), Months (12), Rocks (~470), Events (~42), Trips (~10) | 590 | All |
+| `data/collected.json` | Notion | Notion | Oura, Strava, GitHub, Steam, Withings, etc. | 110 | Last 30 days |
+| `data/summaries.json` | Notion | Notion | Personal/Work Weekly Summaries, Personal/Work Monthly Recaps | 130 | All |
+| `data/calendar.json` | Google Calendar | — | All calendar events across 20 calendars | varies | Last 30 days |
+| `data/nyc.json` | Notion | Notion | Museums (18), Restaurants (119), Tattoos (10), Venues (43) | 190 | All |
+| `data/retro.json` | Notion | Notion | Personal & Work Week Retros | 106 | All |
+| `data/life.json` | Notion | Notion | Goals (20), Themes (8), Relationships, Tasks (~613), Habits (53), Monthly Plans (24) | 720 | All |
+| `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 81 | 2026 |
 
 **Task content:** Tasks in `data/life.json` include a `_content` field with the Notion page body as markdown (checkboxes, paragraphs, headings, etc.). Edit `_content` locally and `yarn push` syncs it back. Separate `_contentHash` tracks content-specific changes.
 
@@ -170,7 +209,7 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 ### Brickocampus (Obsidian Vault)
 
-Brickocampus is the personal knowledge vault at `~/Documents/Brickocampus/`. The three systems work together: **Vault = memory/knowledge**, **Notion = input interface**, **Brickbot = plumbing**.
+Brickocampus is the personal knowledge vault at `~/Documents/Brickocampus/`. The three systems work together: **Vault = memory/knowledge**, **Notion = input interface**, **Brickbot = integrations**.
 
 Brickbot's `vault-sync` writes to the vault, but the vault has its own automation (Cowork) and structure independent of brickbot.
 

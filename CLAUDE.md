@@ -165,7 +165,7 @@ yarn sync --auto
 - **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs` or check `local/logs/`
 - **Manual run:** `yarn sync` (interactive) or `yarn sync --auto` (non-interactive)
-- **Resilience:** 3-min per-step timeout (healthy steps: 30–110s). Bails on token refresh failure (network/API down). Laptop sleep mid-run causes SIGTERM noise in logs but is harmless — next run recovers.
+- **Resilience:** 3-min default per-step timeout (pull: 8-min). Bails on token refresh failure (network/API down). Laptop sleep mid-run causes SIGTERM noise in logs but is harmless — next run recovers.
 
 **Setup:**
 ```bash
@@ -198,7 +198,7 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 | `data/life.json` | Notion | Notion | Goals (20), Themes (8), Relationships, Tasks (~613), Habits (53), Monthly Plans (24) | 720 | All |
 | `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 81 | 2026 |
 
-**Task content:** Tasks in `data/life.json` include a `_content` field with the Notion page body as markdown (checkboxes, paragraphs, headings, etc.). Edit `_content` locally and `yarn push` syncs it back. Separate `_contentHash` tracks content-specific changes.
+**Task content:** Tasks in `data/life.json` include a `_content` field with the Notion page body as markdown (checkboxes, paragraphs, headings, etc.). Edit `_content` locally and `yarn push` syncs it back. Separate `_contentHash` tracks content-specific changes. Delta detection uses `_notionEditedTime` (from Notion's `page.last_edited_time`) to skip re-fetching unchanged tasks — on a typical run, ~5 content fetches instead of ~617.
 
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
 

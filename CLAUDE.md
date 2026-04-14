@@ -130,6 +130,7 @@ yarn journal:import   # Import 5 Minute Journal export → data/journal.json
 # /plan-work-week         — Plan work week (set rocks)
 # /plan-personal-month    — Plan personal month
 # /plan-work-month        — Plan work month
+# /coding-tasks-week      — Weekly coding task breakdown from GitHub activity
 
 # Utilities
 yarn plan             # Parse yarn plan data

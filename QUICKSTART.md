@@ -14,13 +14,15 @@ Personal data pipeline that automatically collects data from external sources (G
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    AUTOMATED (3x/day via launchd)                │
-│                     8am · 10am · 7pm                            │
+│                    AUTOMATED (5x/day via launchd)                │
+│              6:30am · 9am · 1pm · 6pm · 8pm                    │
 │                                                                 │
-│   tokens:refresh → collect → update → pull                      │
+│   tokens:refresh → collect → update → summarize →               │
+│   recap → push → pull → vault-sync                              │
 │                                                                 │
-│   Refreshes tokens, fetches API data → Notion,                  │
-│   syncs Notion → Calendar, pulls everything to local JSON       │
+│   Full pipeline: refresh tokens, fetch API data → Notion,       │
+│   sync to Calendar, summarize, push/pull local JSON,            │
+│   sync to Brickocampus vault                                    │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -35,14 +37,11 @@ Personal data pipeline that automatically collects data from external sources (G
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MANUAL (run as needed)                        │
 │                                                                 │
-│   yarn summarize     Weekly summaries from calendar data        │
-│   yarn recap         Monthly recaps from weekly summaries       │
-│   yarn push          Sync local JSON edits back to Notion       │
 │   yarn sweep         Move Apple Reminders → Notion Tasks        │
 │                                                                 │
 │   Claude Code Skills (start a new conversation):                │
-│   /retro-*  /reflect-*  /plan-*                                 │
-│   (8 skills for weekly retros, monthly reflections, planning)   │
+│   /retro  /reflect-*  /plan-*  /coding-tasks-week               │
+│   (8 skills for retros, reflections, planning, task review)     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -50,10 +49,9 @@ Personal data pipeline that automatically collects data from external sources (G
 
 1. **Sunday/Monday AM** — Write rocks for the week (`/plan-personal-week`, `/plan-work-week`)
 2. **During the week** — Work tasks, events, live life
-3. **Automation runs 3x/day** — `tokens:refresh → collect → update → pull`
-4. **End of week** — Run retros (`/retro-personal-week`, `/retro-work-week`)
-5. **Weekly** — `yarn summarize` to capture what happened
-6. **Monthly** — `yarn recap` for monthly rollup, then `/reflect-*-month` skills
+3. **Automation runs 5x/day** — full pipeline (tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync)
+4. **End of week** — Run retro (`/retro`)
+5. **Monthly** — `/reflect-personal-month`, `/reflect-work-month`
 
 ### The Pull/Push Cycle
 
@@ -67,12 +65,16 @@ yarn push              # Push local edits → Notion (delta-only, hash-based)
 
 ## Commands
 
-### Data Pipeline (automated 3x/day)
+### Data Pipeline (automated 5x/day)
 
 ```bash
 yarn collect           # Fetch data from external APIs → Notion
 yarn update            # Sync Notion records → Google Calendar events
+yarn summarize         # Generate weekly summaries from calendar data
+yarn recap             # Generate monthly recaps from weekly summaries
+yarn push              # Push local JSON edits → Notion (delta-only)
 yarn pull              # Pull Notion + Calendar → local JSON
+yarn vault-sync        # Sync data to Brickocampus vault (diff-only)
 ```
 
 ### Summaries & Reports
@@ -113,10 +115,10 @@ Start a new conversation and use these slash commands:
 | `/plan-work-week` | Plan work week (set rocks) |
 | `/plan-personal-month` | Plan personal month |
 | `/plan-work-month` | Plan work month |
-| `/retro-personal-week` | Personal weekly retro |
-| `/retro-work-week` | Work weekly retro |
+| `/retro` | Weekly retro (personal, work, or both) |
 | `/reflect-personal-month` | Personal monthly reflection |
 | `/reflect-work-month` | Work monthly reflection |
+| `/coding-tasks-week` | Weekly coding task breakdown from GitHub |
 
 Skills follow the pull/push cycle: `yarn pull` → run skill (edits `data/*.json`) → `yarn push`
 

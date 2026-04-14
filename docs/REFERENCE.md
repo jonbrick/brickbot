@@ -686,26 +686,24 @@ DRY_RUN=false  # Set to true for testing without creating records
 
 ## Command Reference
 
-### Data Pipeline (automated 3x/day)
+### Data Pipeline (automated 5x/day)
+
+Full pipeline runs automatically via launchd: `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync`
 
 | Command | Purpose | Interactive |
 |---------|---------|-------------|
 | `yarn collect` | Fetch from external APIs → Notion | Yes (`--auto` for non-interactive) |
 | `yarn update` | Sync Notion → Google Calendar | Yes (`--auto` for non-interactive) |
+| `yarn summarize` | Generate weekly summaries from calendar data | Yes (`--auto` for non-interactive) |
+| `yarn recap` | Generate monthly recaps from weekly summaries | Yes (`--auto` for non-interactive) |
+| `yarn push` | Push local JSON edits → Notion (delta-only) | Yes (`--auto` for non-interactive) |
 | `yarn pull` | Pull Notion + Calendar → `data/*.json` | Yes (`--auto` for non-interactive) |
+| `yarn vault-sync` | Sync data to Brickocampus vault (diff-only) | Yes (`--auto` for non-interactive) |
 
-### Local Data Sync
-
-| Command | Purpose | Interactive |
-|---------|---------|-------------|
-| `yarn push` | Push local JSON edits → Notion (delta-only) | No |
-
-### Summaries & Reports
+### Year Generation
 
 | Command | Purpose | Interactive |
 |---------|---------|-------------|
-| `yarn summarize` | Generate weekly summaries from calendar data | Yes |
-| `yarn recap` | Generate monthly recaps from weekly summaries | Yes |
 | `yarn generate` | Generate yearly config | Yes |
 
 ### Imports
@@ -743,10 +741,10 @@ DRY_RUN=false  # Set to true for testing without creating records
 | `/plan-work-week` | Plan work week (set rocks) |
 | `/plan-personal-month` | Plan personal month |
 | `/plan-work-month` | Plan work month |
-| `/retro-personal-week` | Personal weekly retro |
-| `/retro-work-week` | Work weekly retro |
+| `/retro` | Weekly retro (personal, work, or both) |
 | `/reflect-personal-month` | Personal monthly reflection |
 | `/reflect-work-month` | Work monthly reflection |
+| `/coding-tasks-week` | Weekly coding task breakdown from GitHub |
 
 Skills follow the pull/push cycle: `yarn pull` → run skill → `yarn push`
 

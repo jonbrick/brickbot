@@ -542,15 +542,19 @@ Generate weekly summaries to test the summary pipeline.
 
 ### Main Workflows
 
-#### Data Pipeline (automated 3x/day)
+#### Data Pipeline (automated 5x/day)
 
 ```bash
 yarn collect        # Fetch data from external APIs → Notion
 yarn update         # Sync Notion records → Google Calendar events
+yarn summarize      # Generate weekly summaries from calendar data
+yarn recap          # Generate monthly recaps from weekly summaries
+yarn push           # Push local JSON edits → Notion (delta-only)
 yarn pull           # Pull Notion + Calendar → local JSON (data/*.json)
+yarn vault-sync     # Sync data to Brickocampus vault (diff-only)
 ```
 
-All three support `--auto` for non-interactive use (used by launchd automation).
+All support `--auto` for non-interactive use (used by launchd automation).
 
 #### Local Data Sync
 
@@ -599,10 +603,10 @@ Brickbot includes 8 Claude Code skills for planning, retros, and reflections. St
 | `/plan-work-week` | Plan work week (set rocks) |
 | `/plan-personal-month` | Plan personal month |
 | `/plan-work-month` | Plan work month |
-| `/retro-personal-week` | Personal weekly retro |
-| `/retro-work-week` | Work weekly retro |
+| `/retro` | Weekly retro (personal, work, or both) |
 | `/reflect-personal-month` | Personal monthly reflection |
 | `/reflect-work-month` | Work monthly reflection |
+| `/coding-tasks-week` | Weekly coding task breakdown from GitHub |
 
 **Workflow:** `yarn pull` → run skill (edits `data/*.json`) → `yarn push`
 
@@ -632,12 +636,13 @@ yarn tokens:refresh # Refresh expired tokens
 
 ### Automation (launchd)
 
-Brickbot runs automatically 3x daily (8am, 10am, 7pm) via launchd:
+Brickbot runs automatically 5x daily (6:30 AM, 9:00 AM, 1:00 PM, 6:00 PM, 8:00 PM) via launchd:
 
 ```
-tokens:refresh → collect → update → pull
+tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
 ```
 
+- **Resilience:** 3-min default per-step timeout (pull: 8-min). Bails on token refresh failure.
 - **Logs:** `local/logs/daily-YYYY-MM-DD.log` (auto-cleaned after 30 days)
 - **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs`
@@ -662,18 +667,15 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 ### Daily (Automated)
 
-Automation handles `collect → update → pull` 3x/day. No manual action needed.
+Automation handles the full pipeline 5x/day. No manual action needed.
 
 ### Weekly
 
 ```bash
-yarn summarize                 # Generate weekly summaries
 # In Claude Code:
-/retro-personal-week           # Personal weekly retro
-/retro-work-week               # Work weekly retro
+/retro                         # Weekly retro (personal, work, or both)
 /plan-personal-week            # Plan next personal week
 /plan-work-week                # Plan next work week
-yarn push                      # Sync retros and plans to Notion
 ```
 
 ### Monthly

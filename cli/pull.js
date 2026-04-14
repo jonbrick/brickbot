@@ -57,7 +57,7 @@ function ensureDir(dir) {
 
 // --- Hashing ---
 
-const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName", "_contentHash"]);
+const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName", "_contentHash", "_notionEditedTime"]);
 
 /**
  * Compute a hash of a record's non-metadata fields.
@@ -92,6 +92,7 @@ function extractAllProperties(page) {
   const result = {
     _notionId: page.id,
     _lastPulled: new Date().toISOString(),
+    _notionEditedTime: page.last_edited_time || null,
   };
 
   const propertyTypes = {};
@@ -281,32 +282,65 @@ async function pullLifeData(spinner) {
     }
   }
 
-  // Fetch page content for tasks
+  // Fetch page content for tasks (delta: only re-fetch changed tasks)
   if (life.tasks && life.tasks.length > 0) {
+    // Build lookup from existing life.json for delta detection
+    const existingLifePath = path.join(DATA_DIR, "life.json");
+    const previousTasks = {};
+    try {
+      if (fs.existsSync(existingLifePath)) {
+        const existing = JSON.parse(fs.readFileSync(existingLifePath, "utf-8"));
+        if (existing.tasks) {
+          for (const t of existing.tasks) {
+            if (t._notionId) previousTasks[t._notionId] = t;
+          }
+        }
+      }
+    } catch {
+      // If we can't read existing data, fetch everything
+    }
+
     spinner.start();
     let fetched = 0;
+    let skipped = 0;
     let withContent = 0;
     for (const task of life.tasks) {
+      const prev = previousTasks[task._notionId];
+
+      // Delta: skip content fetch if task hasn't been edited since last pull
+      if (prev && prev._notionEditedTime && task._notionEditedTime === prev._notionEditedTime) {
+        task._content = prev._content || "";
+        task._contentHash = prev._contentHash || crypto.createHash("md5").update("").digest("hex");
+        task._hash = computeHash(task);
+        skipped++;
+        if (task._content) withContent++;
+        continue;
+      }
+
       try {
         const blocks = await db.getPageBlocks(task._notionId);
         const markdown = blocksToMarkdown(blocks);
         task._content = markdown || "";
         task._contentHash = crypto.createHash("md5").update(task._content).digest("hex");
-        // Re-stamp the hash now that _content is included
         task._hash = computeHash(task);
         fetched++;
         if (markdown) withContent++;
         await delay(config.sources.rateLimits.notion.backoffMs);
       } catch (error) {
-        task._content = "";
-        task._contentHash = crypto.createHash("md5").update("").digest("hex");
+        if (prev) {
+          task._content = prev._content || "";
+          task._contentHash = prev._contentHash || crypto.createHash("md5").update("").digest("hex");
+        } else {
+          task._content = "";
+          task._contentHash = crypto.createHash("md5").update("").digest("hex");
+        }
         task._hash = computeHash(task);
         if (process.env.DEBUG) {
           console.error(`  ⚠ Failed to fetch content for ${task._notionId}: ${error.message}`);
         }
       }
     }
-    spinner.stop(`  ✓ Task content: ${fetched} fetched, ${withContent} with content`);
+    spinner.stop(`  ✓ Task content: ${fetched} fetched, ${skipped} unchanged, ${withContent} with content`);
   }
 
   ensureDir(DATA_DIR);

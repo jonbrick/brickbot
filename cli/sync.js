@@ -28,6 +28,8 @@ const logFile = path.join(logDir, `daily-${today}.log`);
 // (launchd's shell PATH doesn't include /opt/homebrew/bin)
 const NODE = process.execPath;
 
+const DEFAULT_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+
 const STEPS = [
   { name: "tokens:refresh", cmd: `${NODE} cli/tokens/refresh.js --auto` },
   { name: "collect", cmd: `${NODE} cli/collect-data.js --auto` },
@@ -35,7 +37,7 @@ const STEPS = [
   { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto` },
   { name: "recap", cmd: `${NODE} cli/recap-month.js --auto` },
   { name: "push", cmd: `${NODE} cli/push.js --auto` },
-  { name: "pull", cmd: `${NODE} cli/pull.js --auto` },
+  { name: "pull", cmd: `${NODE} cli/pull.js --auto`, timeout: 8 * 60 * 1000 },
   { name: "vault-sync", cmd: `${NODE} cli/vault-sync.js --auto` },
 ];
 
@@ -137,7 +139,7 @@ function main() {
     try {
       const output = execSync(step.cmd, {
         cwd: projectDir,
-        timeout: 3 * 60 * 1000,
+        timeout: step.timeout || DEFAULT_TIMEOUT,
         encoding: "utf8",
         stdio: autoMode ? "pipe" : "inherit",
       });

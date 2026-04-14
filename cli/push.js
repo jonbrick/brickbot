@@ -51,7 +51,7 @@ const autoMode = process.argv.includes("--auto");
 
 // --- Hashing (must match pull.js) ---
 
-const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName", "_contentHash"]);
+const META_KEYS = new Set(["_notionId", "_lastPulled", "_hash", "_titleKey", "_propertyTypes", "_calendarId", "_calendarName", "_contentHash", "_notionEditedTime"]);
 
 /**
  * Recompute hash of a record's non-metadata fields.

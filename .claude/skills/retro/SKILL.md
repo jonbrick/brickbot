@@ -54,7 +54,7 @@ Once the user picks a scope (week + personal/work/both):
    - `data/retro.json` → match by title (e.g., "Week 08 Personal Retro")
    - `data/life.json` → `habits` (match by `⏰ 2026 Weeks` relation), `tasks` (filter by `Due Date` in week range)
    - `data/journal.json` → filter entries by date range
-   - For **work retros**: also check vault meeting notes at `~/Documents/Brickocampus/work/_meetings/processed/` (YYYY-MM directories)
+   - For **work retros**: also check vault meeting notes at `~/Documents/Brickocampus/_work/meetings/processed/` (YYYY-MM directories)
 
 2. Present a brief overview per week:
 

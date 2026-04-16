@@ -20,7 +20,7 @@ const VAULT_DIR = path.join(
   process.env.HOME,
   "Documents",
   "Brickocampus",
-  "personal"
+  "_personal"
 );
 const DATA_DIR = path.join(__dirname, "..", "data");
 
@@ -222,7 +222,7 @@ function transformTheme(record, goalLookup) {
 // --- Sync functions ---
 
 function syncRetros(records) {
-  const dir = path.join(VAULT_DIR, "_retros");
+  const dir = path.join(VAULT_DIR, "retros");
   ensureDir(dir);
   const results = { written: 0, skipped: 0, errors: [] };
 
@@ -246,7 +246,7 @@ function syncRetros(records) {
 }
 
 function syncGoals(goals, themes) {
-  const dir = path.join(VAULT_DIR, "_goals");
+  const dir = path.join(VAULT_DIR, "goals");
   ensureDir(dir);
   const results = { written: 0, skipped: 0, errors: [] };
 
@@ -283,7 +283,7 @@ function syncGoals(goals, themes) {
 }
 
 function syncThemes(themes, goals) {
-  const dir = path.join(VAULT_DIR, "_themes");
+  const dir = path.join(VAULT_DIR, "themes");
   ensureDir(dir);
   const results = { written: 0, skipped: 0, errors: [] };
 

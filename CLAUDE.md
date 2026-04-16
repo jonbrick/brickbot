@@ -8,36 +8,11 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 **Data flow:** External APIs → Notion → Google Calendar → Weekly/Monthly Summaries → Local JSON
 
-## Current Focus
+**Brickosystem = Brickbot + Brickocampus.** They're separate repos because brickbot (`~/projects/brickbot/`) is a git repo with node_modules — iCloud corrupts git and causes churn with node_modules. Brickocampus (`~/Documents/Brickocampus/`) is an iCloud-synced Obsidian vault, accessible to Cowork/Claude Desktop. Full ecosystem doc: `~/Documents/Brickocampus/settings/admin/brickosystem.md`
 
-Local-first data workflow — all Notion data is pulled to `data/*.json` so Claude Code can read/analyze without API calls. Automation runs 5x/day via launchd.
+When working in brickbot, you can and should read files from the vault at `~/Documents/Brickocampus/` — especially `settings/admin/brickosystem.md` (ecosystem doc), `_daily/` (daily notes), `_work/meetings/processed/` (meeting notes), and `CLAUDE.md`. Use Read, Glob, Grep freely across both directories.
 
-**Recently completed:**
-- 8 Claude Code skills for planning, retro, and reflection (`/plan-*`, `/retro-*`, `/reflect-*`)
-- `yarn pull` / `yarn push` — bidirectional Notion sync with hash-based delta detection
-- NYC databases (museums, restaurants, tattoos, venues) integrated into pull/push/view
-- `yarn nyc` — HTML viewer with dropdown, filters, search, sortable columns
-- launchd automation (5x/day) with macOS notifications
-- Full pipeline automated: tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
-- `yarn vault-sync` — sync retros, goals, themes to Brickocampus vault (diff-only, zero AI)
-- 5 Minute Journal import (`yarn journal:import`)
-
-**Next steps:**
-- Resolve relation UUIDs to human-readable names in pulled data
-- `yarn overview` — Year at a Glance Notion page
-
-## System Scope
-
-### Ecosystem
-
-- **Notion** = input interface (89 databases total; brickbot actively manages ~31)
-- **Brickocampus vault** = memory/knowledge (~800 markdown files; brickbot syncs retros/goals/themes via vault-sync)
-- **Brickbot** = integrations (collect from APIs, sync to Notion/Calendar, pull/push, vault-sync)
-- **Google Calendar** = time tracking layer (20 calendars derived from Notion data)
-
-Full ecosystem doc: `~/Documents/Brickocampus/personal/_projects/brickosystem.md`
-
-### Notion Databases Brickbot Manages (~31 DBs)
+## Notion Databases Brickbot Manages (~31 of 89 DBs)
 
 | Group | Databases | data file | ~Records |
 |-------|-----------|-----------|----------|
@@ -48,21 +23,12 @@ Full ecosystem doc: `~/Documents/Brickocampus/personal/_projects/brickosystem.md
 | Retros | personalWeekly, workWeekly | retro.json | 106 |
 | NYC | museums, restaurants, tattoos, venues | nyc.json | 190 |
 
-### Notion Databases Brickbot Does NOT Touch (~58 DBs)
+See `brickosystem.md` for the full Notion database inventory (~58 unmanaged DBs), task systems, and automation schedule.
 
-- **Lists/Reference** (~20 DBs) — Recipes, Cocktails, Books, Movies, TV Shows, Documentaries, Courses, Exercises, Workouts, Phish Songs/Shows, Snowboarding, Running/Biking, Climbing, Sporting Events, National Parks/Monuments, World Sites, Tattoos, Cities, Countries. This is the planned expansion area.
-- **2025 Life OS + Archives** (~23 DBs) — previous year, same schema as 2026
-- **Raw Data/Dev** (~7 DBs), **Geography** (2), **Projects** (1) — staging/reference
+## Next Steps
 
-### Task Systems (Three Separate Systems)
-
-| System | ~Count | Purpose | Location |
-|--------|--------|---------|----------|
-| Notion Tasks | 613 | Intentional, goal-linked personal tasks (Life OS) | data/life.json |
-| Vault Tasks | 693 | Tactical work tasks extracted from meetings (Cowork) | Brickocampus vault checkboxes |
-| Linear/Jira | external | Engineering & design tickets (Cortex) | linear.app, cortex1.atlassian.net |
-
-These serve different purposes: Notion Tasks = personal reflection/planning, Vault Tasks = work execution, Linear/Jira = team engineering. Don't conflate them.
+- Resolve relation UUIDs to human-readable names in pulled data
+- `yarn overview` — Year at a Glance Notion page
 
 ## Active Work
 
@@ -80,19 +46,16 @@ These serve different purposes: Notion Tasks = personal reflection/planning, Vau
 
 ### Known Bugs
 - `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
-- `BUG-MED [yarn sync]` ~~Token refresh not picked up by collect~~ **FIXED** — sync.js loaded dotenv, poisoning child process env. dotenv doesn't override existing vars, so children inherited stale tokens. Fix: removed dotenv from sync.js.
 
 ## Development Principles
 
-- **Enhance existing patterns** before creating new code paths
-- **Eliminate redundant code entirely** — don't keep code "for future use" (trust git history)
+Core brickosystem principles in `brickosystem.md`. Brickbot-specific:
+
 - **Config-driven first** — if a feature can be added via config, it should be
 - **Collectors never touch sync state fields** — separation of concerns is strict
-- **Errors must always be visible** in CLI output — hidden errors make debugging impossible
 - **All batch operations must be idempotent** and safe for multi-week runs
 - **Output at the edges** — only CLI files print to console; everything else returns structured data
-- **Plan before building** — for non-trivial work, design the approach and get alignment before writing code. Use plan mode.
-- **No assumptions** — verify before implementing; stress test assumptions before writing code
+- **Three-layer naming is strict** — never use domain names in Layer 1, never use integration names in Layer 2
 
 ## Quick Reference
 
@@ -209,18 +172,7 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 ### Brickocampus (Obsidian Vault)
 
-Brickocampus is the personal knowledge vault at `~/Documents/Brickocampus/`. The three systems work together: **Vault = memory/knowledge**, **Notion = input interface**, **Brickbot = integrations**.
-
-Brickbot's `vault-sync` writes to the vault, but the vault has its own automation (Cowork) and structure independent of brickbot.
-
-**Key entry points (read these to learn more):**
-- `personal/_projects/brickocampus-setup.md` — master checklist, decisions, progress
-- `_automation/cowork.md` — Cowork automation overview, task configs, prompts
-- `_automation/meeting-processor.md` — meeting processing pipeline
-- `_automation/morning-brief.md` — daily note generator
-- `personal/_projects/brickbot-vault-bridge.md` — vision for how brickbot and vault connect
-
-**Structure:** `work/` (meetings, people, projects) + `personal/` (retros, goals, themes, projects) + `_automation/` + `_reference/` + `_templates/`
+Brickbot writes to the vault via `vault-sync` (retros, goals, themes). The vault has its own automation (Cowork) and structure. See `~/Documents/Brickocampus/CLAUDE.md` for vault details, or `brickosystem.md` for how the systems connect.
 
 ### No Test Suite
 

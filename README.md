@@ -650,9 +650,8 @@ tokens:refresh → collect → update → summarize → recap → push → pull 
 #### Setup
 
 ```bash
-# Symlink plist and load
-ln -s /Users/jonbrick/projects/brickbot/infra/launchd/com.brickbot.daily.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
+# Install (substitutes $HOME for the current machine; safe to re-run on either MacBook or Mac mini)
+./scripts/install-launchd.sh
 
 # Verify it's loaded
 launchctl list | grep brickbot

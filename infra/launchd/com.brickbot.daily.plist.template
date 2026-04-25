@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/opt/homebrew/bin/node</string>
-        <string>/Users/jonbrick/projects/brickbot/cli/sync.js</string>
+        <string>__HOME__/projects/brickbot/cli/sync.js</string>
         <string>--auto</string>
     </array>
 
@@ -53,12 +53,12 @@
     </array>
 
     <key>StandardOutPath</key>
-    <string>/Users/jonbrick/projects/brickbot/local/logs/launchd-stdout.log</string>
+    <string>__HOME__/projects/brickbot/local/logs/launchd-stdout.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/jonbrick/projects/brickbot/local/logs/launchd-stderr.log</string>
+    <string>__HOME__/projects/brickbot/local/logs/launchd-stderr.log</string>
 
     <key>WorkingDirectory</key>
-    <string>/Users/jonbrick/projects/brickbot</string>
+    <string>__HOME__/projects/brickbot</string>
 </dict>
 </plist>

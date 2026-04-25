@@ -10,6 +10,8 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 **Brickosystem = Brickbot + Brickocampus.** They're separate repos because brickbot (`~/projects/brickbot/`) is a git repo with node_modules — iCloud corrupts git and causes churn with node_modules. Brickocampus (`~/Documents/Brickocampus/`) is an iCloud-synced Obsidian vault, accessible to Cowork/Claude Desktop. Full ecosystem doc: `~/Documents/Brickocampus/settings/admin/brickosystem.md`
 
+**Two machines.** Brickbot runs on both Jon's work MacBook (`/Users/jonbrick/`) and his personal Mac Mini (`/Users/jonathanbrick/`). The repo syncs via git; the vault syncs via iCloud. See vault `settings/admin/brickosystem.md` Machines section for details.
+
 When working in brickbot, you can and should read files from the vault at `~/Documents/Brickocampus/` — especially `settings/admin/brickosystem.md` (ecosystem doc), `_daily/` (daily notes), `_work/meetings/processed/` (meeting notes), and `CLAUDE.md`. Use Read, Glob, Grep freely across both directories.
 
 ## Notion Databases Brickbot Manages (~31 of 89 DBs)

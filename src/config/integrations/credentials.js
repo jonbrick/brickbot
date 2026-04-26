@@ -4,11 +4,22 @@ const { execSync } = require("child_process");
 
 // GitHub token via `gh auth token` (OAuth, stored in macOS Keychain by gh CLI).
 // Avoids long-lived PATs in .env. Cached per-process.
+//
+// Full path used because launchd jobs have a minimal PATH that doesn't
+// include /opt/homebrew/bin where Homebrew puts `gh`. Falls back to bare
+// `gh` if the Homebrew path isn't there (e.g., Intel Macs at /usr/local).
+const fs = require("fs");
+const GH_BIN = fs.existsSync("/opt/homebrew/bin/gh")
+  ? "/opt/homebrew/bin/gh"
+  : fs.existsSync("/usr/local/bin/gh")
+    ? "/usr/local/bin/gh"
+    : "gh";
+
 let _ghTokenCache = null;
 function getGitHubToken() {
   if (_ghTokenCache !== null) return _ghTokenCache;
   try {
-    _ghTokenCache = execSync("gh auth token", {
+    _ghTokenCache = execSync(`${GH_BIN} auth token`, {
       encoding: "utf8",
       stdio: ["pipe", "pipe", "ignore"],
     }).trim();

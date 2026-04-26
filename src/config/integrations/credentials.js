@@ -1,5 +1,23 @@
 // API settings and credentials for external data sources
 
+const { execSync } = require("child_process");
+
+// GitHub token via `gh auth token` (OAuth, stored in macOS Keychain by gh CLI).
+// Avoids long-lived PATs in .env. Cached per-process.
+let _ghTokenCache = null;
+function getGitHubToken() {
+  if (_ghTokenCache !== null) return _ghTokenCache;
+  try {
+    _ghTokenCache = execSync("gh auth token", {
+      encoding: "utf8",
+      stdio: ["pipe", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    _ghTokenCache = undefined;
+  }
+  return _ghTokenCache;
+}
+
 // Oura Ring configuration
 const oura = {
   token: process.env.OURA_TOKEN,
@@ -40,7 +58,7 @@ const steam = {
 
 // GitHub configuration
 const github = {
-  token: process.env.GITHUB_TOKEN,
+  token: getGitHubToken(),
   username: process.env.GITHUB_USERNAME,
   apiBaseUrl: "https://api.github.com",
   workOrg: process.env.GITHUB_WORK_ORG,

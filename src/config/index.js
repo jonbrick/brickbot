@@ -52,9 +52,9 @@ function validateConfig() {
 
   // GitHub Personal validation
   if (notion.databases.githubPersonal) {
-    if (!process.env.GITHUB_TOKEN) {
+    if (!sources.github.token) {
       errors.push(
-        "GITHUB_TOKEN is required (NOTION_PERSONAL_PRS_DATABASE_ID is configured)"
+        "GitHub token unavailable from `gh auth token` (NOTION_PERSONAL_PRS_DATABASE_ID is configured). Run `gh auth login`."
       );
     }
     if (!process.env.GITHUB_USERNAME) {
@@ -66,9 +66,9 @@ function validateConfig() {
 
   // GitHub Work validation
   if (notion.databases.githubWork) {
-    if (!process.env.GITHUB_TOKEN) {
+    if (!sources.github.token) {
       errors.push(
-        "GITHUB_TOKEN is required (NOTION_WORK_PRS_DATABASE_ID is configured)"
+        "GitHub token unavailable from `gh auth token` (NOTION_WORK_PRS_DATABASE_ID is configured). Run `gh auth login`."
       );
     }
     if (!process.env.GITHUB_USERNAME) {

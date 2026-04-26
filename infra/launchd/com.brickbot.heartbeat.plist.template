@@ -3,67 +3,65 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.brickbot.daily</string>
+    <string>com.brickbot.heartbeat</string>
 
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/node</string>
-        <string>__HOME__/projects/brickbot/cli/sync.js</string>
-        <string>--auto</string>
+        <string>__HOME__/projects/brickbot/scripts/heartbeat-check.sh</string>
     </array>
 
-    <!-- 6 runs/day — paired with pmset wake schedule (5 min before each) -->
-    <!-- 7:00 AM — kickoff + morning-brief (Cowork) -->
-    <!-- 9:00 AM — post-morning-gym workouts -->
-    <!-- 11:00 AM — late sleep capture (weekend sleep-ins) -->
-    <!-- 1:00 PM — lunch + morning activity -->
-    <!-- 5:00 PM — afternoon work + pre-evening-gym -->
-    <!-- 9:00 PM — end of day + meeting-processor (Cowork) -->
+    <!-- Runs 15 min after each scheduled task — same wake window, before sleep -->
+    <!-- 7:15 AM — verify 7:00 brickbot + Cowork morning-brief -->
+    <!-- 9:15 AM — verify 9:00 brickbot -->
+    <!-- 11:15 AM — verify 11:00 brickbot -->
+    <!-- 1:15 PM — verify 1:00 brickbot -->
+    <!-- 5:15 PM — verify 5:00 brickbot -->
+    <!-- 9:15 PM — verify 9:00 brickbot + Cowork meeting-processor -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
             <key>Hour</key>
             <integer>7</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>15</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>9</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>15</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>11</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>15</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>13</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>15</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>17</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>15</integer>
         </dict>
         <dict>
             <key>Hour</key>
             <integer>21</integer>
             <key>Minute</key>
-            <integer>0</integer>
+            <integer>15</integer>
         </dict>
     </array>
 
     <key>StandardOutPath</key>
-    <string>__HOME__/projects/brickbot/local/logs/launchd-stdout.log</string>
+    <string>__HOME__/projects/brickbot/local/logs/heartbeat-stdout.log</string>
 
     <key>StandardErrorPath</key>
-    <string>__HOME__/projects/brickbot/local/logs/launchd-stderr.log</string>
+    <string>__HOME__/projects/brickbot/local/logs/heartbeat-stderr.log</string>
 
     <key>WorkingDirectory</key>
     <string>__HOME__/projects/brickbot</string>

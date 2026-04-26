@@ -1,32 +1,44 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# install-launchd.sh — install com.brickbot.daily on the current machine.
-# Substitutes $HOME into the plist template and (re)loads via launchctl.
-# Safe to re-run; unloads any existing plist before reloading.
+# install-launchd.sh — install/refresh brickbot's launchd jobs on this machine.
+# Substitutes $HOME into each plist template and (re)loads via launchctl.
+# Safe to re-run; unloads any existing plists before reloading.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TEMPLATE="$REPO_ROOT/infra/launchd/com.brickbot.daily.plist.template"
-DEST="$HOME/Library/LaunchAgents/com.brickbot.daily.plist"
+LAUNCHAGENTS_DIR="$HOME/Library/LaunchAgents"
 
-if [ ! -f "$TEMPLATE" ]; then
-  echo "Error: template not found at $TEMPLATE" >&2
-  exit 1
-fi
+mkdir -p "$LAUNCHAGENTS_DIR"
+# Ensure log dir exists — launchd's StandardOut/ErrorPath crashes if missing.
+mkdir -p "$REPO_ROOT/local/logs"
 
-mkdir -p "$(dirname "$DEST")"
+install_one() {
+  local label="$1"
+  local template="$REPO_ROOT/infra/launchd/${label}.plist.template"
+  local dest="$LAUNCHAGENTS_DIR/${label}.plist"
 
-if [ -f "$DEST" ]; then
-  echo "Unloading existing $DEST"
-  launchctl unload "$DEST" 2>/dev/null || true
-fi
+  if [ ! -f "$template" ]; then
+    echo "Error: template not found at $template" >&2
+    exit 1
+  fi
 
-sed "s|__HOME__|$HOME|g" "$TEMPLATE" > "$DEST"
-chmod 644 "$DEST"
+  if [ -f "$dest" ]; then
+    echo "Unloading existing $dest"
+    launchctl unload "$dest" 2>/dev/null || true
+  fi
 
-launchctl load "$DEST"
+  sed "s|__HOME__|$HOME|g" "$template" > "$dest"
+  chmod 644 "$dest"
 
-echo "Installed and loaded com.brickbot.daily"
+  launchctl load "$dest"
+  echo "Installed and loaded $label"
+  echo "  plist: $dest"
+}
+
+install_one "com.brickbot.daily"
+install_one "com.brickbot.heartbeat"
+
+echo ""
+echo "Done."
 echo "  user: $(whoami)"
 echo "  host: $(hostname -s)"
-echo "  plist: $DEST"

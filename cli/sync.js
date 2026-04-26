@@ -173,8 +173,6 @@ function main() {
     }
     console.error(`Failed steps: ${failedSteps}`);
     process.exit(1);
-  } else if (autoMode) {
-    sendNotification("Brickbot", "Sync complete");
   }
 }
 

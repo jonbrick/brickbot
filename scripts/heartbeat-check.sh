@@ -99,7 +99,7 @@ check_morning_brief() {
 
 check_meeting_processor() {
   # Today's run logs an entry like "- **YYYY-MM-DD HH:MM** | meeting-processor | ..."
-  if ! grep -q "^- \*\*$TODAY .*meeting-processor" "$VAULT/_settings/automation/log.md" 2>/dev/null; then
+  if ! grep -q "^- \*\*$TODAY .*meeting-processor" "$VAULT/_automation/cowork/log.md" 2>/dev/null; then
     ALERTS+=("[brickbot] meeting-processor: no log entry for $TODAY by 21:15")
   fi
 }

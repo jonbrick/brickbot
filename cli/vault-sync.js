@@ -6,8 +6,13 @@
  * Zero AI tokens — pure JS transformation with hash-based diff detection.
  *
  * Usage:
- *   yarn vault-sync          # Run sync
- *   yarn vault-sync --auto   # Non-interactive (used by launchd via sync.js)
+ *   yarn vault-sync                      # Run sync
+ *   yarn vault-sync --auto               # Non-interactive (used by launchd via sync.js)
+ *   yarn vault-sync --prune              # Sync, then delete vault files whose notion_id
+ *                                        # is not in the canonical record set (orphans
+ *                                        # from Notion deletes / status reverts / renames
+ *                                        # that changed the slug)
+ *   yarn vault-sync --prune --dry-run    # Report orphans without deleting
  *
  * @layer 0 - Local (Vault)
  */
@@ -309,9 +314,78 @@ function syncThemes(themes, goals) {
   return results;
 }
 
+// --- Prune ---
+
+/**
+ * Delete vault files whose notion_id is not in the canonical record set
+ * (deleted in Notion / retro status reverted from Done) OR whose slug doesn't
+ * match the expected slug for that record's current title (stale rename).
+ * Files without a notion_id frontmatter (manual notes) are left untouched.
+ */
+function pruneOrphans({ retroData, lifeData, dryRun }) {
+  const expected = {
+    goals: new Map(
+      (lifeData?.goals || []).map((g) => [
+        g._notionId,
+        transformGoal(g, {}).slug,
+      ])
+    ),
+    themes: new Map(
+      (lifeData?.themes || []).map((t) => [
+        t._notionId,
+        transformTheme(t, {}).slug,
+      ])
+    ),
+    retros: new Map(
+      (retroData?.personalWeekly || [])
+        .filter((r) => r.Status === "Done")
+        .map((r) => [r._notionId, transformRetro(r).slug])
+    ),
+  };
+
+  const results = { pruned: [], unmanaged: 0, kept: 0 };
+
+  for (const type of Object.keys(expected)) {
+    const dir = path.join(VAULT_DIR, type);
+    if (!fs.existsSync(dir)) continue;
+
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+    for (const file of files) {
+      const fullPath = path.join(dir, file);
+      const content = fs.readFileSync(fullPath, "utf8");
+      const match = content.match(/^notion_id:\s*"([^"]+)"/m);
+
+      if (!match) {
+        results.unmanaged++;
+        continue;
+      }
+
+      const notionId = match[1];
+      const fileSlug = file.replace(/\.md$/, "");
+      const expectedSlug = expected[type].get(notionId);
+
+      if (expectedSlug === undefined) {
+        results.pruned.push({ type, file, notionId, reason: "deleted" });
+        if (!dryRun) fs.unlinkSync(fullPath);
+      } else if (expectedSlug !== fileSlug) {
+        results.pruned.push({ type, file, notionId, reason: "renamed" });
+        if (!dryRun) fs.unlinkSync(fullPath);
+      } else {
+        results.kept++;
+      }
+    }
+  }
+
+  return results;
+}
+
 // --- Main ---
 
 async function main() {
+  const args = process.argv.slice(2);
+  const PRUNE = args.includes("--prune");
+  const DRY_RUN = args.includes("--dry-run");
+
   console.log("Vault Sync — syncing personal data to Brickocampus...\n");
 
   const retroData = readJsonSafe("retro.json");
@@ -364,6 +438,26 @@ async function main() {
   for (const r of allResults) {
     for (const err of r.errors) {
       console.error(`  Error [${r.name}]: ${err}`);
+    }
+  }
+
+  if (PRUNE) {
+    console.log(DRY_RUN ? "\nPrune (dry-run):" : "\nPrune:");
+    const pruneResults = pruneOrphans({ retroData, lifeData, dryRun: DRY_RUN });
+
+    if (pruneResults.pruned.length === 0) {
+      console.log("  No orphans found");
+    } else {
+      for (const o of pruneResults.pruned) {
+        const verb = DRY_RUN ? "would delete" : "deleted";
+        console.log(
+          `  ${verb}: ${o.type}/${o.file} [${o.reason}] (notion_id: ${o.notionId})`
+        );
+      }
+      const verb = DRY_RUN ? "Would prune" : "Pruned";
+      console.log(
+        `\n  ${verb} ${pruneResults.pruned.length} orphan(s), kept ${pruneResults.kept} valid, ignored ${pruneResults.unmanaged} unmanaged`
+      );
     }
   }
 

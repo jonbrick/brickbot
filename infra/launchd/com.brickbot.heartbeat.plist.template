@@ -10,13 +10,17 @@
         <string>__HOME__/projects/brickbot/scripts/heartbeat-check.sh</string>
     </array>
 
-    <!-- Runs 15 min after each scheduled task — same wake window, before sleep -->
-    <!-- 7:15 AM — verify 7:00 brickbot + Cowork morning-brief -->
-    <!-- 9:15 AM — verify 9:00 brickbot -->
-    <!-- 11:15 AM — verify 11:00 brickbot -->
-    <!-- 1:15 PM — verify 1:00 brickbot -->
-    <!-- 5:15 PM — verify 5:00 brickbot -->
-    <!-- 9:15 PM — verify 9:00 brickbot + Cowork meeting-processor -->
+    <!-- HH:15 fires verify the HH:00 brickbot pipeline (instant local log).    -->
+    <!-- 07:30 and 21:30 verify Cowork output — 30-min cushion absorbs Cowork's -->
+    <!-- randomized launch delay + multi-minute runtime.                        -->
+    <!--  7:15 AM — brickbot                                                    -->
+    <!--  7:30 AM — Cowork morning-brief                                        -->
+    <!--  9:15 AM — brickbot                                                    -->
+    <!-- 11:15 AM — brickbot                                                    -->
+    <!--  1:15 PM — brickbot                                                    -->
+    <!--  5:15 PM — brickbot                                                    -->
+    <!--  9:15 PM — brickbot                                                    -->
+    <!--  9:30 PM — Cowork meeting-processor                                    -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
@@ -24,6 +28,12 @@
             <integer>7</integer>
             <key>Minute</key>
             <integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>7</integer>
+            <key>Minute</key>
+            <integer>30</integer>
         </dict>
         <dict>
             <key>Hour</key>
@@ -54,6 +64,12 @@
             <integer>21</integer>
             <key>Minute</key>
             <integer>15</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>21</integer>
+            <key>Minute</key>
+            <integer>30</integer>
         </dict>
     </array>
 

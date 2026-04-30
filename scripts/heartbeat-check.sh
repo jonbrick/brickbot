@@ -2,12 +2,23 @@
 set -uo pipefail
 
 # heartbeat-check.sh — verify scheduled tasks landed expected output.
-# Run by launchd at HH:15 (15 min after each scheduled task fires) — same
-# wake window, well before sleep timer. Sends an iMessage to
-# ALERT_IMESSAGE_TARGET on miss; silent on success.
+# Run by launchd. Sends an iMessage to ALERT_IMESSAGE_TARGET on miss;
+# silent on success.
 #
-# Time-specific extras: 7:15 also checks Cowork's morning-brief output;
-# 21:15 also checks Cowork's meeting-processor log entry.
+# Schedule:
+#   HH:15  — verify the HH:00 brickbot pipeline run (instant local log).
+#   07:30  — verify Cowork's morning-brief output landed in today's daily note.
+#   21:30  — verify Cowork's meeting-processor wrote a log.md entry.
+#
+# Cowork checks use HH:30 (not HH:15) to absorb Cowork's randomized launch
+# delay + multi-minute runtime — output can land anywhere from HH:00 to ~HH:16.
+#
+# Design intent: existence-only checks. We verify that expected outputs *exist*
+# (today's daily note, ## Brief heading, log.md entry) — never their content.
+# Cheap, no false negatives on quality, escalates on miss. Don't extend this
+# script to validate output correctness (semantic checks, mtime windows,
+# quality scoring) — content-validation expands surface area without enough
+# payoff. New checks are fine if they follow the existence pattern.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VAULT="$HOME/Documents/Brickocampus"
@@ -89,7 +100,7 @@ check_morning_brief() {
   local NOTE
   NOTE=$(ls "$VAULT/_daily/$TODAY"*.md 2>/dev/null | head -1)
   if [ -z "$NOTE" ]; then
-    ALERTS+=("[brickbot] morning-brief: no daily note for $TODAY by 7:15")
+    ALERTS+=("[brickbot] morning-brief: no daily note for $TODAY by 7:30")
     return
   fi
   if ! grep -q "^## Brief" "$NOTE"; then
@@ -100,21 +111,31 @@ check_morning_brief() {
 check_meeting_processor() {
   # Today's run logs an entry like "- **YYYY-MM-DD HH:MM** | meeting-processor | ..."
   if ! grep -q "^- \*\*$TODAY .*meeting-processor" "$VAULT/_automation/cowork/log.md" 2>/dev/null; then
-    ALERTS+=("[brickbot] meeting-processor: no log entry for $TODAY by 21:15")
+    ALERTS+=("[brickbot] meeting-processor: no log entry for $TODAY by 21:30")
   fi
 }
 
-# brickbot pipeline runs at every check time.
-check_brickbot_recent
+MINUTE=$(date +%M)
 
-# Cowork checks: only at the slot following each Cowork task.
-case "$HOUR" in
-  07) check_morning_brief ;;
-  21) check_meeting_processor ;;
-esac
+# Brickbot pipeline check runs at every HH:15 fire (15 min after the HH:00
+# brickbot run; brickbot writes its log on completion, so HH:15 is plenty).
+if [ "$MINUTE" = "15" ]; then
+  check_brickbot_recent
+fi
+
+# Cowork checks run 30 min after each scheduled Cowork task to absorb
+# Cowork's randomized launch delay + runtime.
+if [ "$HOUR" = "07" ] && [ "$MINUTE" = "30" ]; then
+  check_morning_brief
+fi
+
+if [ "$HOUR" = "21" ] && [ "$MINUTE" = "30" ]; then
+  check_meeting_processor
+fi
 
 # One iMessage per failure; phone notifications stay short and scannable.
-for alert in "${ALERTS[@]}"; do
+# Guard the for-loop: bash 3.2 + set -u errors on "${ALERTS[@]}" when empty.
+for alert in "${ALERTS[@]+"${ALERTS[@]}"}"; do
   send_imessage "$alert"
 done
 

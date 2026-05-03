@@ -74,9 +74,9 @@ function buildDataProperties(summaryData, props, selectedSources = []) {
     }
   });
   
-  // Check for missing property configurations and warn (don't throw)
-  // Missing props may be intentionally removed from DB (e.g., Sessions fields)
-  if (missingProps.length > 0) {
+  // The same `summary` object is written to multiple DBs with different schemas,
+  // so missing props are expected in normal operation. DEBUG surfaces real drift.
+  if (missingProps.length > 0 && process.env.DEBUG) {
     console.warn(
       `[buildDataProperties] Skipping fields not in DB config: ${missingProps.join(', ')}`
     );

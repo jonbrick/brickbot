@@ -478,33 +478,37 @@ async function main() {
 
       const spinner = createSpinner(`Processing Week ${weekNumber}, ${year}...`);
       spinner.start();
+      let weekResult;
       try {
-        const weekResult = await processWeek(
+        weekResult = await processWeek(
           weekNumber,
           year,
           buckets,
           displayOnly
         );
-        weekResults.push(weekResult);
+      } finally {
+        spinner.stop();
+      }
+      weekResults.push(weekResult);
 
-        // Debug logging - check summary immediately after processWeek
-        if (process.env.DEBUG || displayOnly) {
-          console.log(`\n[DEBUG cli] After processWeek - Week ${weekNumber}, ${year}`);
-          if (weekResult.work) {
-            console.log(`[DEBUG cli] weekResult.work.summary exists:`, !!weekResult.work.summary);
-            console.log(`[DEBUG cli] weekResult.work.summary keys:`, weekResult.work.summary ? Object.keys(weekResult.work.summary) : 'N/A');
-            console.log(`[DEBUG cli] weekResult.work.summary count:`, weekResult.work.summary ? Object.keys(weekResult.work.summary).length : 0);
-          } else {
-            console.log(`[DEBUG cli] weekResult.work: null`);
-          }
-          if (weekResult.personal) {
-            console.log(`[DEBUG cli] weekResult.personal.summary exists:`, !!weekResult.personal.summary);
-            console.log(`[DEBUG cli] weekResult.personal.summary keys:`, weekResult.personal.summary ? Object.keys(weekResult.personal.summary) : 'N/A');
-            console.log(`[DEBUG cli] weekResult.personal.summary count:`, weekResult.personal.summary ? Object.keys(weekResult.personal.summary).length : 0);
-          } else {
-            console.log(`[DEBUG cli] weekResult.personal: null`);
-          }
+      // Debug logging - check summary immediately after processWeek
+      if (process.env.DEBUG || displayOnly) {
+        console.log(`\n[DEBUG cli] After processWeek - Week ${weekNumber}, ${year}`);
+        if (weekResult.work) {
+          console.log(`[DEBUG cli] weekResult.work.summary exists:`, !!weekResult.work.summary);
+          console.log(`[DEBUG cli] weekResult.work.summary keys:`, weekResult.work.summary ? Object.keys(weekResult.work.summary) : 'N/A');
+          console.log(`[DEBUG cli] weekResult.work.summary count:`, weekResult.work.summary ? Object.keys(weekResult.work.summary).length : 0);
+        } else {
+          console.log(`[DEBUG cli] weekResult.work: null`);
         }
+        if (weekResult.personal) {
+          console.log(`[DEBUG cli] weekResult.personal.summary exists:`, !!weekResult.personal.summary);
+          console.log(`[DEBUG cli] weekResult.personal.summary keys:`, weekResult.personal.summary ? Object.keys(weekResult.personal.summary) : 'N/A');
+          console.log(`[DEBUG cli] weekResult.personal.summary count:`, weekResult.personal.summary ? Object.keys(weekResult.personal.summary).length : 0);
+        } else {
+          console.log(`[DEBUG cli] weekResult.personal: null`);
+        }
+      }
 
       // Update counts
       if (weekResult.work) {
@@ -615,9 +619,6 @@ async function main() {
         if (statuses.length > 0) {
           console.log(statuses.join(" | ") + "\n");
         }
-      }
-      } finally {
-        spinner.stop();
       }
     }
 

@@ -19,7 +19,7 @@
 // NOTE: Do NOT load dotenv here. Each step runs as a child process that inherits
 // this process's env. dotenv won't override existing vars, so if we load .env here,
 // child processes get stale tokens even after tokens:refresh updates .env.
-const { execSync } = require("child_process");
+const { execSync, execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const { parseDateRangeFromArgv, dateRangeFlags } = require("../src/utils/cli");
@@ -198,6 +198,19 @@ function main() {
   log(`=== Done: ${new Date().toLocaleString()} ===\n`);
 
   releaseLock();
+
+  // Write heartbeat ping. Watchdog (com.brickbot.watchdog) reads this and alerts
+  // via iMessage if the file is stale or status=failed. Silent on success.
+  // See _automation/_automation-readme.md "Heartbeat design".
+  const pingScript = path.join(projectDir, "scripts", "heartbeat-ping.sh");
+  const pingStatus = errors.length > 0 ? "failed" : "ok";
+  const pingArgs = ["yarn-sync", pingStatus];
+  if (errors.length > 0) pingArgs.push(`Failed: ${errors.join(", ")}`);
+  try {
+    execFileSync(pingScript, pingArgs, { stdio: "ignore" });
+  } catch {
+    log("Warning: heartbeat ping failed");
+  }
 
   if (errors.length > 0) {
     const failedSteps = errors.join(", ");

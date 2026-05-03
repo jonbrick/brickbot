@@ -980,6 +980,121 @@ async function promptMultiSelect(message, choices) {
   return values;
 }
 
+/**
+ * Parse date-range flags from process.argv. Shared across all date-aware CLIs
+ * (sync, collect, update, summarize, recap) so they all accept the same surface.
+ *
+ * Accepts:
+ *   --date=YYYY-MM-DD               (single-day shortcut for --from=X --to=X)
+ *   --from=YYYY-MM-DD --to=YYYY-MM-DD
+ *
+ * Returns one of:
+ *   { range: null, error: null }                                 — no flags passed; caller falls back to its existing default behavior
+ *   { range: null, error: "..." }                                — bad input (mixed flags, bad format, future date, etc.)
+ *   { range: { from, to, fromDate, toDate, weeks, months }, error: null }
+ *
+ * `weeks` and `months` are deduped, sorted arrays so summarize/recap iterate
+ * each unique period once even when the range spans multiple days in one week.
+ *
+ * Order independence: if from > to, the values are swapped silently.
+ */
+function parseDateRangeFromArgv(argv) {
+  const get = (flag) => {
+    for (const arg of argv) {
+      if (arg.startsWith(`${flag}=`)) return arg.slice(flag.length + 1);
+    }
+    return null;
+  };
+
+  const dateFlag = get("--date");
+  let fromFlag = get("--from");
+  let toFlag = get("--to");
+
+  // Nothing passed
+  if (dateFlag === null && fromFlag === null && toFlag === null) {
+    return { range: null, error: null };
+  }
+
+  // Can't combine --date with --from/--to
+  if (dateFlag !== null && (fromFlag !== null || toFlag !== null)) {
+    return { range: null, error: "Cannot combine --date with --from/--to. Use one or the other." };
+  }
+
+  // Partial range
+  if (dateFlag === null && (fromFlag === null || toFlag === null)) {
+    return { range: null, error: "Both --from and --to are required (or use --date for a single day)." };
+  }
+
+  // Resolve --date shorthand
+  let from = dateFlag !== null ? dateFlag : fromFlag;
+  let to = dateFlag !== null ? dateFlag : toFlag;
+
+  // Validate format and parseability
+  for (const [name, val] of [
+    [dateFlag !== null ? "--date" : "--from", from],
+    [dateFlag !== null ? "--date" : "--to", to],
+  ]) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      return { range: null, error: `Invalid ${name} format: "${val}". Expected YYYY-MM-DD.` };
+    }
+    const d = new Date(val + "T00:00:00");
+    if (isNaN(d.getTime())) {
+      return { range: null, error: `Invalid ${name} value: "${val}".` };
+    }
+  }
+
+  let fromDate = new Date(from + "T00:00:00");
+  let toDate = new Date(to + "T23:59:59.999");
+
+  // Auto-swap if reversed
+  if (fromDate > toDate) {
+    [from, to] = [to, from];
+    fromDate = new Date(from + "T00:00:00");
+    toDate = new Date(to + "T23:59:59.999");
+  }
+
+  // Reject future dates
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  if (fromDate > todayStart) {
+    return { range: null, error: `${dateFlag !== null ? "--date" : "--from"} "${from}" is in the future. Backfill only makes sense for past days.` };
+  }
+
+  // Derive unique weeks and months covered by the range
+  const weekKeys = new Set();
+  const weeks = [];
+  const monthKeys = new Set();
+  const months = [];
+  for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+    const yr = d.getFullYear();
+    const wk = getWeekNumber(d, yr);
+    const wKey = `${yr}-W${wk}`;
+    if (!weekKeys.has(wKey)) {
+      weekKeys.add(wKey);
+      weeks.push({ weekNumber: wk, year: yr });
+    }
+    const mKey = `${yr}-${d.getMonth() + 1}`;
+    if (!monthKeys.has(mKey)) {
+      monthKeys.add(mKey);
+      months.push({ month: d.getMonth() + 1, year: yr });
+    }
+  }
+
+  return {
+    range: { from, to, fromDate, toDate, weeks, months },
+    error: null,
+  };
+}
+
+/**
+ * Build the `--from=X --to=Y` flag string for passing a range to a child CLI.
+ * Returns "" when range is null. Use leading-space form so it appends cleanly.
+ */
+function dateRangeFlags(range) {
+  if (!range) return "";
+  return ` --from=${range.from} --to=${range.to}`;
+}
+
 module.exports = {
   selectDateRange,
   selectMonthForWeeks,
@@ -997,4 +1112,6 @@ module.exports = {
   promptText,
   promptSelect,
   promptMultiSelect,
+  parseDateRangeFromArgv,
+  dateRangeFlags,
 };

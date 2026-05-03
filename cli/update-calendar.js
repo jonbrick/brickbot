@@ -8,7 +8,7 @@ require("dotenv").config();
 const inquirer = require("inquirer");
 const NotionDatabase = require("../src/databases/NotionDatabase");
 const IntegrationDatabase = require("../src/databases/IntegrationDatabase");
-const { selectDateRange, createSpinner } = require("../src/utils/cli");
+const { selectDateRange, createSpinner, parseDateRangeFromArgv } = require("../src/utils/cli");
 const { formatDate } = require("../src/utils/date");
 const output = require("../src/utils/output");
 const { formatRecordForLogging } = require("../src/utils/display-names");
@@ -25,6 +25,12 @@ const { INTEGRATIONS } = require("../src/config/unified-sources");
 
 const dryRun = process.argv.includes("--dry-run");
 const autoMode = process.argv.includes("--auto");
+
+const { range: cliDateRange, error: cliDateRangeError } = parseDateRangeFromArgv(process.argv);
+if (cliDateRangeError) {
+  console.error(cliDateRangeError);
+  process.exit(1);
+}
 
 /**
  * Select source and action type (display only or sync to calendar)
@@ -288,17 +294,24 @@ async function main() {
     let source, action, startDate, endDate;
 
     if (autoMode) {
-      // Auto mode: all sources, sync, +/- 3 days
+      // Auto mode: all sources, sync.
+      // Default range is ±3 days from today; --date/--from/--to override (used by `yarn sync --date=...` backfill).
       source = "all";
       action = "sync";
-      const today = new Date();
-      startDate = new Date(today);
-      startDate.setDate(today.getDate() - 3);
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date(today);
-      endDate.setDate(today.getDate() + 3);
-      endDate.setHours(23, 59, 59, 999);
-      console.log(`Auto mode: all sources, +/- 3 days (${formatDate(startDate)} to ${formatDate(endDate)})\n`);
+      if (cliDateRange) {
+        startDate = cliDateRange.fromDate;
+        endDate = cliDateRange.toDate;
+        console.log(`Auto mode: all sources, ${formatDate(startDate)} to ${formatDate(endDate)}\n`);
+      } else {
+        const today = new Date();
+        startDate = new Date(today);
+        startDate.setDate(today.getDate() - 3);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(today);
+        endDate.setDate(today.getDate() + 3);
+        endDate.setHours(23, 59, 59, 999);
+        console.log(`Auto mode: all sources, +/- 3 days (${formatDate(startDate)} to ${formatDate(endDate)})\n`);
+      }
     } else {
       // Interactive mode
       const selected = await selectSourceAndAction({ dryRun });

@@ -2,12 +2,18 @@
 
 /**
  * Sync CLI
- * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → recap → push → pull
+ * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
  * Called by launchd or manually via `yarn sync`
  *
  * Usage:
- *   yarn sync          # Run full pipeline (interactive where applicable)
- *   yarn sync --auto   # Non-interactive (used by launchd)
+ *   yarn sync                                       # Run full pipeline for today (interactive where applicable)
+ *   yarn sync --auto                                # Non-interactive (used by launchd) — default ±3 day window
+ *   yarn sync --date=YYYY-MM-DD                     # Backfill a single past day end-to-end
+ *   yarn sync --from=YYYY-MM-DD --to=YYYY-MM-DD     # Backfill a date range; summarize/recap fire once per unique week/month touched
+ *
+ * `--date` and `--from`/`--to` are forwarded to every date-aware child step so
+ * each child applies the range at its own granularity (day/week/month).
+ * Range backfills bypass the 15-min wall-clock cap (manual run, not on the wakelock).
  */
 
 // NOTE: Do NOT load dotenv here. Each step runs as a child process that inherits
@@ -16,27 +22,41 @@
 const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
+const { parseDateRangeFromArgv, dateRangeFlags } = require("../src/utils/cli");
 
 const autoMode = process.argv.includes("--auto");
+
+const { range, error: rangeError } = parseDateRangeFromArgv(process.argv);
+if (rangeError) {
+  console.error(rangeError);
+  process.exit(1);
+}
+const isBackfill = !!range;
+
 const projectDir = path.resolve(__dirname, "..");
 const logDir = path.join(projectDir, "local", "logs");
 const lockFile = path.join(projectDir, "local", "sync.lock");
 const today = new Date().toISOString().slice(0, 10);
-const logFile = path.join(logDir, `daily-${today}.log`);
+const logFile = path.join(
+  logDir,
+  isBackfill ? `daily-${today}-backfill-${range.from}_to_${range.to}.log` : `daily-${today}.log`
+);
 
 // Use process.execPath so launchd child processes find node
 // (launchd's shell PATH doesn't include /opt/homebrew/bin)
 const NODE = process.execPath;
 
 const DEFAULT_TIMEOUT = 3 * 60 * 1000; // 3 minutes per step
-const WALL_CLOCK_TIMEOUT = 15 * 60 * 1000; // 15 minutes total — caps the caffeinate wakelock so a runaway pipeline can't hold the mini awake forever. See _automation/_automation-readme.md "Wakelock and timeout contract".
+const WALL_CLOCK_TIMEOUT = 15 * 60 * 1000; // 15 minutes total — caps the caffeinate wakelock so a runaway pipeline can't hold the mini awake forever. See _automation/_automation-readme.md "Wakelock and timeout contract". Bypassed for --date/--from/--to backfills (manual runs, not on the wakelock).
+
+const rangeFlag = dateRangeFlags(range);
 
 const STEPS = [
   { name: "tokens:refresh", cmd: `${NODE} cli/tokens/refresh.js --auto` },
-  { name: "collect", cmd: `${NODE} cli/collect-data.js --auto` },
-  { name: "update", cmd: `${NODE} cli/update-calendar.js --auto` },
-  { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto` },
-  { name: "recap", cmd: `${NODE} cli/recap-month.js --auto` },
+  { name: "collect", cmd: `${NODE} cli/collect-data.js --auto${rangeFlag}` },
+  { name: "update", cmd: `${NODE} cli/update-calendar.js --auto${rangeFlag}` },
+  { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto${rangeFlag}` },
+  { name: "recap", cmd: `${NODE} cli/recap-month.js --auto${rangeFlag}` },
   { name: "push", cmd: `${NODE} cli/push.js --auto` },
   { name: "pull", cmd: `${NODE} cli/pull.js --auto`, timeout: 8 * 60 * 1000 },
   { name: "vault-sync", cmd: `${NODE} cli/vault-sync.js --auto` },
@@ -131,13 +151,19 @@ function main() {
     cleanOldLogs();
   }
 
-  log(`=== Brickbot Run: ${new Date().toLocaleString()} ===`);
+  if (isBackfill) {
+    const weekDesc = range.weeks.map((w) => `W${w.weekNumber}/${w.year}`).join(", ");
+    const monthDesc = range.months.map((m) => `${m.month}/${m.year}`).join(", ");
+    log(`=== Brickbot Run: ${new Date().toLocaleString()} [backfill ${range.from} → ${range.to}; weeks ${weekDesc}; months ${monthDesc}] ===`);
+  } else {
+    log(`=== Brickbot Run: ${new Date().toLocaleString()} ===`);
+  }
 
   const errors = [];
   const startTime = Date.now();
 
   for (const step of STEPS) {
-    if (Date.now() - startTime > WALL_CLOCK_TIMEOUT) {
+    if (!isBackfill && Date.now() - startTime > WALL_CLOCK_TIMEOUT) {
       log(`ABORT: Wall-clock timeout (${WALL_CLOCK_TIMEOUT / 60000} min) exceeded before ${step.name}`);
       errors.push("wall-clock-timeout");
       break;

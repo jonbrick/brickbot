@@ -7,7 +7,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { selectDateRange, createSpinner } = require("../src/utils/cli");
+const { selectDateRange, createSpinner, parseDateRangeFromArgv } = require("../src/utils/cli");
 const {
   generateMonthlyRecap,
 } = require("../src/workflows/weekly-summary-to-monthly-recap");
@@ -16,6 +16,12 @@ const { formatMonthlyRecapResult } = require("../src/utils/workflow-output");
 
 const dryRun = process.argv.includes("--dry-run");
 const autoMode = process.argv.includes("--auto");
+
+const { range: cliDateRange, error: cliDateRangeError } = parseDateRangeFromArgv(process.argv);
+if (cliDateRangeError) {
+  console.error(cliDateRangeError);
+  process.exit(1);
+}
 
 /**
  * Select recap type
@@ -159,39 +165,58 @@ async function main() {
     let spinner;
 
     if (autoMode) {
-      // Auto mode: all types, generate, current month + previous month
+      // Auto mode: all types, generate.
+      // Default: current month + previous month.
+      // --date/--from/--to override → iterate the unique months the range covers
+      // (deduped by the helper, so a multi-day range within one month recaps once).
       availableTypes = getAvailableRecapTypes("all");
       displayOnly = false;
 
       const { getWeeksForMonthFromNotion } = require("../src/utils/date-pickers");
-      const today = new Date();
-      const currentMonth = today.getMonth() + 1;
-      const currentYear = today.getFullYear();
 
-      // Previous month
-      let prevMonth = currentMonth - 1;
-      let prevYear = currentYear;
-      if (prevMonth < 1) {
-        prevMonth = 12;
-        prevYear--;
-      }
-
-      months = [];
-      for (const [m, y] of [[prevMonth, prevYear], [currentMonth, currentYear]]) {
-        const { weeks: notionWeeks } = await getWeeksForMonthFromNotion(y, m);
-        if (notionWeeks.length > 0) {
+      if (cliDateRange) {
+        months = [];
+        for (const { month: m, year: y } of cliDateRange.months) {
+          const { weeks: notionWeeks } = await getWeeksForMonthFromNotion(y, m);
+          if (notionWeeks.length === 0) {
+            throw new Error(`No weeks found for ${y}-${String(m).padStart(2, "0")}`);
+          }
           months.push({ month: m, year: y, weeks: notionWeeks });
         }
-      }
+        const monthDesc = months.map((m) =>
+          `${new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long" })} ${m.year}`
+        ).join(", ");
+        console.log(`Auto mode: all types, ${monthDesc}\n`);
+      } else {
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentYear = today.getFullYear();
 
-      if (months.length === 0) {
-        throw new Error("No months with weeks found");
-      }
+        // Previous month
+        let prevMonth = currentMonth - 1;
+        let prevYear = currentYear;
+        if (prevMonth < 1) {
+          prevMonth = 12;
+          prevYear--;
+        }
 
-      const monthNames = months.map((m) =>
-        new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long" })
-      );
-      console.log(`Auto mode: all types, ${monthNames.join(" + ")} ${currentYear}\n`);
+        months = [];
+        for (const [m, y] of [[prevMonth, prevYear], [currentMonth, currentYear]]) {
+          const { weeks: notionWeeks } = await getWeeksForMonthFromNotion(y, m);
+          if (notionWeeks.length > 0) {
+            months.push({ month: m, year: y, weeks: notionWeeks });
+          }
+        }
+
+        if (months.length === 0) {
+          throw new Error("No months with weeks found");
+        }
+
+        const monthNames = months.map((m) =>
+          new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long" })
+        );
+        console.log(`Auto mode: all types, ${monthNames.join(" + ")} ${currentYear}\n`);
+      }
     } else {
       // Interactive mode
       const selectedRecapType = await selectRecapType();

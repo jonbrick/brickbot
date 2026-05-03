@@ -18,7 +18,7 @@
 
 require("dotenv").config();
 const inquirer = require("inquirer");
-const { selectDateRange, createSpinner } = require("../src/utils/cli");
+const { selectDateRange, createSpinner, parseDateRangeFromArgv } = require("../src/utils/cli");
 const {
   displaySourceData,
   collectSourceData,
@@ -38,6 +38,12 @@ const {
 
 const dryRun = process.argv.includes("--dry-run");
 const autoMode = process.argv.includes("--auto");
+
+const { range: cliDateRange, error: cliDateRangeError } = parseDateRangeFromArgv(process.argv);
+if (cliDateRangeError) {
+  console.error(cliDateRangeError);
+  process.exit(1);
+}
 
 /**
  * Select action type (display only or update)
@@ -381,31 +387,40 @@ async function main() {
     let weeks;
 
     if (autoMode) {
-      // Auto mode: all sources, update, current week + previous 3 weeks
+      // Auto mode: all sources, update.
+      // Default: current week + previous 3 weeks.
+      // --date/--from/--to override → iterate the unique weeks the range covers
+      // (deduped by the helper, so a multi-day range within one week summarizes once).
       personalCalendars = allPersonalCalendars;
       personalNotionSources = allPersonalTasks;
       workCalendars = allWorkCalendars;
       workNotionSources = allWorkTasks;
       displayOnly = false;
 
-      const { getWeekNumber } = require("../src/utils/date");
-      const today = new Date();
-      const currentYear = today.getFullYear();
-      const currentWeek = getWeekNumber(today, currentYear);
+      if (cliDateRange) {
+        weeks = cliDateRange.weeks;
+        const weekDesc = weeks.map((w) => `W${w.weekNumber}/${w.year}`).join(", ");
+        console.log(`Auto mode: all sources, ${weekDesc}\n`);
+      } else {
+        const { getWeekNumber } = require("../src/utils/date");
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentWeek = getWeekNumber(today, currentYear);
 
-      weeks = [];
-      for (let i = 3; i >= 0; i--) {
-        let wk = currentWeek - i;
-        let yr = currentYear;
-        if (wk < 1) {
-          yr--;
-          wk += 52;
+        weeks = [];
+        for (let i = 3; i >= 0; i--) {
+          let wk = currentWeek - i;
+          let yr = currentYear;
+          if (wk < 1) {
+            yr--;
+            wk += 52;
+          }
+          weeks.push({ weekNumber: wk, year: yr });
         }
-        weeks.push({ weekNumber: wk, year: yr });
-      }
 
-      const weekRange = weeks.map((w) => `W${w.weekNumber}`).join(", ");
-      console.log(`Auto mode: all sources, ${weekRange} (${currentYear})\n`);
+        const weekRange = weeks.map((w) => `W${w.weekNumber}`).join(", ");
+        console.log(`Auto mode: all sources, ${weekRange} (${currentYear})\n`);
+      }
     } else {
       // Interactive mode: select source, action, and weeks
       const selectedSource = await selectCalendarsAndDatabases();

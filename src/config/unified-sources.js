@@ -483,6 +483,10 @@ const CALENDARS = {
         emoji: "🔎",
         dataFields: FIELD_TEMPLATES.taskCategory("qa", "QA"),
       },
+      hiring: {
+        emoji: "🤝",
+        dataFields: FIELD_TEMPLATES.taskCategory("hiring", "Hiring"),
+      },
       admin: {
         emoji: "📝",
         dataFields: FIELD_TEMPLATES.taskCategory("admin", "Admin"),
@@ -2020,6 +2024,7 @@ const MONTHLY_RECAP_CATEGORIES = {
       admin: ["adminTaskDetails"],
       coding: ["codingTaskDetails"],
       qa: ["qaTaskDetails"],
+      hiring: ["hiringTaskDetails"],
       sketch: ["sketchTaskDetails"],
     },
   },
@@ -2117,6 +2122,7 @@ const CONTENT_FILTERS = {
       // codingTaskDetails: [],
       // critTaskDetails: [],
       // qaTaskDetails: [],
+      // hiringTaskDetails: [],
       // adminTaskDetails: [],
       // socialTaskDetails: [],
       // oooTaskDetails: [],
@@ -2181,6 +2187,7 @@ const CONTENT_FILTERS = {
       // workAdminTasks: [],
       // workCodingTasks: [],
       // workQATasks: [],
+      // workHiringTasks: [],
     },
   },
 };
@@ -2295,6 +2302,7 @@ const MONTHLY_RECAP_TASK_PROPERTIES = {
     admin: { key: "workAdminTasks", name: "Admin Task Details" },
     coding: { key: "workCodingTasks", name: "Coding Task Details" },
     qa: { key: "workQATasks", name: "QA Task Details" },
+    hiring: { key: "workHiringTasks", name: "Hiring Task Details" },
     sketch: { key: "workSketchTasks", name: "Sketch Task Details" },
   },
 };

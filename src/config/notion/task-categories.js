@@ -19,6 +19,7 @@ const WORK_TASK_CATEGORY_MAPPING = {
   "🖥️ Coding": "coding",
   "⚠️ Crit": "crit",
   "🔎 QA": "qa",
+  "🤝 Hiring": "hiring",
   "📝 Admin": "admin",
   "🍸 Social": "social",
   "🏝️ OOO": "ooo",

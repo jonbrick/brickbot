@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brickbot.app-launcher</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/projects/brickbot/scripts/ensure-apps-running.sh</string>
+    </array>
+
+    <!-- Fires before each Cowork event so Claude Desktop is up. `open -a` is -->
+    <!-- idempotent so we can safely fire both apps each time.                -->
+    <!--  7:55 AM — before 8 AM Cowork morning-brief                          -->
+    <!--  8:55 PM — before 9 PM Cowork meeting-processor                      -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>7</integer>
+            <key>Minute</key>
+            <integer>55</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>20</integer>
+            <key>Minute</key>
+            <integer>55</integer>
+        </dict>
+    </array>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/projects/brickbot/local/logs/app-launcher-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/projects/brickbot/local/logs/app-launcher-stderr.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/projects/brickbot</string>
+</dict>
+</plist>

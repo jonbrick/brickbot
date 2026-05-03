@@ -28,7 +28,8 @@ const logFile = path.join(logDir, `daily-${today}.log`);
 // (launchd's shell PATH doesn't include /opt/homebrew/bin)
 const NODE = process.execPath;
 
-const DEFAULT_TIMEOUT = 3 * 60 * 1000; // 3 minutes
+const DEFAULT_TIMEOUT = 3 * 60 * 1000; // 3 minutes per step
+const WALL_CLOCK_TIMEOUT = 15 * 60 * 1000; // 15 minutes total — caps the caffeinate wakelock so a runaway pipeline can't hold the mini awake forever. See _automation/_automation-readme.md "Wakelock and timeout contract".
 
 const STEPS = [
   { name: "tokens:refresh", cmd: `${NODE} cli/tokens/refresh.js --auto` },
@@ -133,8 +134,14 @@ function main() {
   log(`=== Brickbot Run: ${new Date().toLocaleString()} ===`);
 
   const errors = [];
+  const startTime = Date.now();
 
   for (const step of STEPS) {
+    if (Date.now() - startTime > WALL_CLOCK_TIMEOUT) {
+      log(`ABORT: Wall-clock timeout (${WALL_CLOCK_TIMEOUT / 60000} min) exceeded before ${step.name}`);
+      errors.push("wall-clock-timeout");
+      break;
+    }
     log(`--- ${step.name} ---`);
     try {
       const output = execSync(step.cmd, {

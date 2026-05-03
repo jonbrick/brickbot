@@ -37,6 +37,7 @@ install_one() {
 
 install_one "com.brickbot.daily"
 install_one "com.brickbot.heartbeat"
+install_one "com.brickbot.app-launcher"
 
 echo ""
 echo "Done."

@@ -5,58 +5,37 @@
     <key>Label</key>
     <string>com.brickbot.daily</string>
 
+    <!-- Wraps `node cli/sync.js --auto` in caffeinate so the system holds awake -->
+    <!-- for exactly the script's lifetime. Wakelock releases on script exit.   -->
     <key>ProgramArguments</key>
     <array>
+        <string>__HOME__/projects/brickbot/scripts/run-with-wakelock.sh</string>
         <string>/opt/homebrew/bin/node</string>
         <string>__HOME__/projects/brickbot/cli/sync.js</string>
         <string>--auto</string>
     </array>
 
-    <!-- 6 runs/day — paired with pmset wake schedule (5 min before each) -->
-    <!-- 7:00 AM — kickoff + morning-brief (Cowork) -->
-    <!-- 9:00 AM — post-morning-gym workouts -->
-    <!-- 11:00 AM — late sleep capture (weekend sleep-ins) -->
-    <!-- 1:00 PM — lunch + morning activity -->
-    <!-- 5:00 PM — afternoon work + pre-evening-gym -->
-    <!-- 9:00 PM — end of day + meeting-processor (Cowork) -->
+    <!-- 12 runs/day — paired with pmset wake schedule (5 min before each).        -->
+    <!--  7 AM — kickoff + feeds 8 AM Cowork morning-brief                         -->
+    <!--  9, 11 AM, 12 PM, 1 PM — morning + midday                                 -->
+    <!--  (gap 1–5 PM — mini idle-sleeps)                                          -->
+    <!--  5, 6, 7, 8 PM — afternoon + evening                                      -->
+    <!--  9 PM — end of day + feeds 9 PM Cowork meeting-processor                  -->
+    <!--  10, 11 PM — late evening (tmux awake windows)                            -->
     <key>StartCalendarInterval</key>
     <array>
-        <dict>
-            <key>Hour</key>
-            <integer>7</integer>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>9</integer>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>11</integer>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>13</integer>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>17</integer>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
-        <dict>
-            <key>Hour</key>
-            <integer>21</integer>
-            <key>Minute</key>
-            <integer>0</integer>
-        </dict>
+        <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>23</integer><key>Minute</key><integer>0</integer></dict>
     </array>
 
     <key>StandardOutPath</key>

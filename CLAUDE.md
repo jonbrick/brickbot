@@ -8,11 +8,11 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 **Data flow:** External APIs → Notion → Google Calendar → Weekly/Monthly Summaries → Local JSON
 
-**Brickosystem = Brickbot + Brickocampus.** They're separate repos because brickbot (`~/projects/brickbot/`) is a git repo with node_modules — iCloud corrupts git and causes churn with node_modules. Brickocampus (`~/Documents/Brickocampus/`) is an iCloud-synced Obsidian vault, accessible to Cowork/Claude Desktop. Full ecosystem doc: `~/Documents/Brickocampus/_settings/admin/brickosystem.md`
+**Brickosystem = Brickbot + Brickocampus.** They're separate repos because brickbot (`~/projects/brickbot/`) is a git repo with node_modules — iCloud corrupts git and causes churn with node_modules. Brickocampus (`~/Documents/Brickocampus/`) is an iCloud-synced Obsidian vault, accessible to Cowork/Claude Desktop. Full ecosystem doc: `~/Documents/Brickocampus/_settings/admin/brickosystem-overview.md`
 
-**Two machines.** Brickbot runs on both Jon's work MacBook (`/Users/jonbrick/`) and his personal Mac Mini (`/Users/jonathanbrick/`). The repo syncs via git; the vault syncs via iCloud. See vault `_settings/admin/brickosystem.md` Machines section for details.
+**Two machines.** Brickbot runs on both Jon's work MacBook (`/Users/jonbrick/`) and his personal Mac Mini (`/Users/jonathanbrick/`). The repo syncs via git; the vault syncs via iCloud. See vault `_settings/admin/brickosystem-overview.md` Machines section for details.
 
-When working in brickbot, you can and should read files from the vault at `~/Documents/Brickocampus/` — especially `_settings/admin/brickosystem.md` (ecosystem doc), `_daily/` (daily notes), `work/cortex/meetings/processed/` (meeting notes), and `CLAUDE.md`. Use Read, Glob, Grep freely across both directories.
+When working in brickbot, you can and should read files from the vault at `~/Documents/Brickocampus/` — especially `_settings/admin/brickosystem-overview.md` (ecosystem doc), `_daily/` (daily notes), `work/cortex/meetings/processed/` (meeting notes), and `CLAUDE.md`. Use Read, Glob, Grep freely across both directories.
 
 ## Notion Databases Brickbot Manages (~31 of 89 DBs)
 
@@ -25,7 +25,7 @@ When working in brickbot, you can and should read files from the vault at `~/Doc
 | Retros | personalWeekly, workWeekly | retro.json | 106 |
 | NYC | museums, restaurants, tattoos, venues | nyc.json | 190 |
 
-See `brickosystem.md` for the full Notion database inventory (~58 unmanaged DBs), task systems, and automation schedule.
+See `brickosystem-overview.md` for the full Notion database inventory (~58 unmanaged DBs), task systems, and automation schedule.
 
 ## Next Steps
 
@@ -51,13 +51,15 @@ See `brickosystem.md` for the full Notion database inventory (~58 unmanaged DBs)
 
 ## Development Principles
 
-Core brickosystem principles in `brickosystem.md`. Brickbot-specific:
+Core brickosystem principles in `brickosystem-overview.md`. Brickbot-specific:
 
 - **Config-driven first** — if a feature can be added via config, it should be
 - **Collectors never touch sync state fields** — separation of concerns is strict
 - **All batch operations must be idempotent** and safe for multi-week runs
 - **Output at the edges** — only CLI files print to console; everything else returns structured data
 - **Three-layer naming is strict** — never use domain names in Layer 1, never use integration names in Layer 2
+- **Pre-stage data for LLMs** — agents reading flat markdown don't burn API tokens; the script pays for itself the first time it runs
+- **Bounded runtime** — every scheduled job has a hard wall-clock timeout. Per-step timeouts already exist (3 min default, 8 min for `pull`); the whole `yarn sync` pipeline gets a 30-min hard cap on top. On timeout: SIGTERM → grace → SIGKILL. The vault doc `_automation/_automation-readme.md` ("Wakelock and timeout contract" section) explains why this is load-bearing — scheduled jobs hold a `caffeinate` wakelock for their entire lifetime, so an unbounded script would hold the mini awake forever.
 
 ## Quick Reference
 
@@ -174,7 +176,7 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 ### Brickocampus (Obsidian Vault)
 
-Brickbot writes to the vault via `vault-sync` (retros, goals, themes). The vault has its own automation (Cowork) and structure. See `~/Documents/Brickocampus/CLAUDE.md` for vault details, or `brickosystem.md` for how the systems connect.
+Brickbot writes to the vault via `vault-sync` (retros, goals, themes). The vault has its own automation (Cowork) and structure. See `~/Documents/Brickocampus/CLAUDE.md` for vault details, or `brickosystem-overview.md` for how the systems connect.
 
 ### No Test Suite
 

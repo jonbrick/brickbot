@@ -153,6 +153,10 @@ async function processRecaps(
 }
 
 async function main() {
+  // spinner is declared at function scope so the catch handler can access it
+  // for cleanup. Putting it inside the try block (where it used to be) caused
+  // the catch handler to throw a ReferenceError, masking the real failure.
+  let spinner;
   try {
     output.header("Monthly Recap Generation");
     console.log(
@@ -162,7 +166,6 @@ async function main() {
     let availableTypes;
     let displayOnly;
     let months;
-    let spinner;
 
     if (autoMode) {
       // Auto mode: all types, generate.

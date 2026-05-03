@@ -36,8 +36,9 @@ install_one() {
 }
 
 install_one "com.brickbot.daily"
-install_one "com.brickbot.heartbeat"
+install_one "com.brickbot.heartbeat"     # legacy poll-based; remove after watchdog parallel-run validates
 install_one "com.brickbot.app-launcher"
+install_one "com.brickbot.watchdog"      # push-based heartbeat; reads ping files
 
 echo ""
 echo "Done."

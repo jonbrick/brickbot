@@ -10,7 +10,7 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 **Brickosystem = Brickbot + Brickocampus.** They're separate repos because brickbot (`~/projects/brickbot/`) is a git repo with node_modules — iCloud corrupts git and causes churn with node_modules. Brickocampus (`~/Documents/Brickocampus/`) is an iCloud-synced Obsidian vault, accessible to Cowork/Claude Desktop. Full ecosystem doc: `~/Documents/Brickocampus/_settings/admin/brickosystem-overview.md`
 
-**Two machines.** Brickbot runs on both Jon's work MacBook (`/Users/jonbrick/`) and his personal Mac Mini (`/Users/jonathanbrick/`). The repo syncs via git; the vault syncs via iCloud. See vault `_settings/admin/brickosystem-overview.md` Machines section for details.
+**One host, one dev machine.** The Mac mini (`/Users/jonathanbrick/`) is the host — all scheduled automation (launchd, Cowork, pmset wakes) runs there. The work MacBook (`/Users/jonbrick/`) has the brickbot repo cloned for dev/edit but runs no automation. See vault `_settings/admin/brickosystem-overview.md` Machines section for details.
 
 When working in brickbot, you can and should read files from the vault at `~/Documents/Brickocampus/` — especially `_settings/admin/brickosystem-overview.md` (ecosystem doc), `_daily/` (daily notes), `work/cortex/meetings/processed/` (meeting notes), and `CLAUDE.md`. Use Read, Glob, Grep freely across both directories.
 
@@ -59,7 +59,7 @@ Core brickosystem principles in `brickosystem-overview.md`. Brickbot-specific:
 - **Output at the edges** — only CLI files print to console; everything else returns structured data
 - **Three-layer naming is strict** — never use domain names in Layer 1, never use integration names in Layer 2
 - **Pre-stage data for LLMs** — agents reading flat markdown don't burn API tokens; the script pays for itself the first time it runs
-- **Bounded runtime** — every scheduled job has a hard wall-clock timeout. Per-step timeouts already exist (3 min default, 8 min for `pull`); the whole `yarn sync` pipeline gets a 30-min hard cap on top. On timeout: SIGTERM → grace → SIGKILL. The vault doc `_automation/_automation-readme.md` ("Wakelock and timeout contract" section) explains why this is load-bearing — scheduled jobs hold a `caffeinate` wakelock for their entire lifetime, so an unbounded script would hold the mini awake forever.
+- **Bounded runtime** — every scheduled job has a hard wall-clock timeout. Per-step timeouts already exist (3 min default, 8 min for `pull`); the whole `yarn sync` pipeline has a 15-min hard cap on top (in `cli/sync.js`). On timeout: SIGTERM → grace → SIGKILL. The vault doc `_automation/_automation-readme.md` ("Wakelock and timeout contract" section) explains why this is load-bearing — scheduled jobs hold a `caffeinate` wakelock for their entire lifetime, so an unbounded script would hold the mini awake forever.
 
 ## Quick Reference
 
@@ -133,7 +133,7 @@ yarn sync --auto
 - **Notifications:** macOS banner notification on success/failure
 - **View logs:** `yarn logs` or check `local/logs/`
 - **Manual run:** `yarn sync` (interactive) or `yarn sync --auto` (non-interactive)
-- **Resilience:** 3-min default per-step timeout (pull: 8-min). Bails on token refresh failure (network/API down). Laptop sleep mid-run causes SIGTERM noise in logs but is harmless — next run recovers.
+- **Resilience:** 3-min default per-step timeout (pull: 8-min) + 15-min wall-clock cap on the full pipeline. Bails on token refresh failure (network/API down). Sleep mid-run is no longer an issue — `caffeinate` (via `scripts/run-with-wakelock.sh`) holds the mini awake for the script's lifetime; idle sleep resumes when it exits.
 
 **Setup:**
 ```bash

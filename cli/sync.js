@@ -88,6 +88,22 @@ function cleanOldLogs() {
 }
 
 
+// Pull a one-line summary out of a failed step's output so failures surface
+// without log-grepping. Prefers lines marked with ❌ or "Error:/Failed:";
+// falls back to the last few non-empty lines.
+function extractErrorDetail(err) {
+  const text = (err.stderr || err.stdout || err.message || "").toString();
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+  const failures = lines.filter(
+    (l) => l.includes("❌") || /^(Error:|Failed:|TypeError:|ReferenceError:)/.test(l)
+  );
+  const picked = failures.length > 0 ? failures : lines.slice(-3);
+  // Cap to keep heartbeat iMessages and console output readable.
+  const joined = picked.join(" | ");
+  return joined.length > 240 ? joined.slice(0, 237) + "..." : joined;
+}
+
 function sendNotification(title, message) {
   try {
     execSync(
@@ -160,6 +176,7 @@ function main() {
   }
 
   const errors = [];
+  const errorDetails = {}; // step name → one-line failure summary
   const startTime = Date.now();
 
   for (const step of STEPS) {
@@ -187,7 +204,10 @@ function main() {
       if (autoMode && err.stderr) {
         fs.appendFileSync(logFile, err.stderr);
       }
-      log(`ERROR: ${step.name} failed (${err.signal ? `signal ${err.signal}` : `exit code ${err.status}`})`);
+      const detail = extractErrorDetail(err);
+      if (detail) errorDetails[step.name] = detail;
+      const exitInfo = err.signal ? `signal ${err.signal}` : `exit code ${err.status}`;
+      log(`ERROR: ${step.name} failed (${exitInfo})${detail ? ` — ${detail}` : ""}`);
       if (step.name === "tokens:refresh") {
         log("Bailing: tokens:refresh failed — network or API likely down");
         break;
@@ -205,7 +225,12 @@ function main() {
   const pingScript = path.join(projectDir, "scripts", "heartbeat-ping.sh");
   const pingStatus = errors.length > 0 ? "failed" : "ok";
   const pingArgs = ["yarn-sync", pingStatus];
-  if (errors.length > 0) pingArgs.push(`Failed: ${errors.join(", ")}`);
+  if (errors.length > 0) {
+    const failedDescription = errors
+      .map((s) => (errorDetails[s] ? `${s}: ${errorDetails[s]}` : s))
+      .join("; ");
+    pingArgs.push(`Failed: ${failedDescription}`);
+  }
   try {
     execFileSync(pingScript, pingArgs, { stdio: "ignore" });
   } catch {
@@ -213,7 +238,9 @@ function main() {
   }
 
   if (errors.length > 0) {
-    const failedSteps = errors.join(", ");
+    const failedSteps = errors
+      .map((s) => (errorDetails[s] ? `${s} (${errorDetails[s]})` : s))
+      .join(", ");
     if (autoMode) {
       sendNotification("Brickbot", `Sync failed: ${failedSteps}. Check logs.`);
     }

@@ -29,6 +29,7 @@ const WORK_COLOR_MAPPING = {
   7: { category: "research", displayName: "Research" }, // Lavender
   8: { category: "personalAndSocial", displayName: "Personal & Social" }, // Graphite
   9: { category: "admin", displayName: "Admin" }, // Blueberry
+  10: { category: "hiring", displayName: "Hiring" }, // Basil
   11: { category: "qa", displayName: "QA" }, // Tomato
 };
 

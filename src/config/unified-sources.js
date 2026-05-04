@@ -393,6 +393,14 @@ const CALENDARS = {
         emoji: "🔎",
         dataFields: FIELD_TEMPLATES.categoryActivity("qa", "QA"),
       },
+      hiring: {
+        emoji: "🤝",
+        dataFields: FIELD_TEMPLATES.categoryActivity("hiring", "Hiring"),
+      },
+      admin: {
+        emoji: "📝",
+        dataFields: FIELD_TEMPLATES.categoryActivity("admin", "Admin"),
+      },
     },
   },
   tasks: {

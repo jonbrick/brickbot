@@ -74,7 +74,7 @@ alert() {
     return
   fi
 
-  send_imessage "[brickbot] ${job}: ${detail}"
+  send_imessage "[brickbot $(date +%Y-%m-%d)] ${job}: ${detail}"
   echo "$key" > "$marker"
 }
 
@@ -119,7 +119,7 @@ check_job() {
 
   if [ ! -f "$ping_file" ]; then
     local key="missed-${most_recent}"
-    alert "$job" "no ping (expected by $(date -r "$most_recent" +%H:%M))" "$key"
+    alert "$job" "no ping (expected by $(date -r "$most_recent" +%H:%M:%S))" "$key"
     return
   fi
 
@@ -137,7 +137,7 @@ check_job() {
   if [ "$ping_epoch" -lt "$most_recent" ]; then
     local key="missed-${most_recent}"
     alert "$job" \
-      "stale ping (last $(date -r "$ping_epoch" +%H:%M), expected after $(date -r "$most_recent" +%H:%M))" \
+      "stale ping (last $(date -r "$ping_epoch" +%H:%M:%S), expected after $(date -r "$most_recent" +%H:%M:%S))" \
       "$key"
     return
   fi

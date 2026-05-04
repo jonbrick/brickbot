@@ -6,6 +6,5 @@ node_modules/
 .claude/*
 !.claude/skills/
 local/
-data/
 briefs/
 _docs/

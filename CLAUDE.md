@@ -153,7 +153,11 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 ### Local Data Files
 
-`yarn pull` creates local JSON snapshots that Claude Code can read without API calls:
+`yarn pull` creates local JSON snapshots that Claude Code can read without API calls.
+
+**Location: `~/Documents/Brickocampus/_brickbot/data/` (iCloud).** The repo's `data/` is a relative symlink (`../../Documents/Brickocampus/_brickbot/data`) so the same path resolves on both the Mac mini (`/Users/jonathanbrick/`) and the work MacBook (`/Users/jonbrick/`). iCloud is the redundancy mechanism: the mini writes via `yarn pull`, the MacBook reads through the same symlink. Skills and code keep using `data/foo.json` — node dereferences the symlink transparently.
+
+**Writer/reader rule:** the mini owns `yarn pull` (writes `data/`); the MacBook reads. If you run `yarn pull` on the MacBook, you've momentarily made it a writer — push or revert before the mini's next pull, or you'll race iCloud sync.
 
 | File | Pull Source | Push Target | Contents | ~Records | Scoped |
 |------|------------|-------------|----------|----------|--------|

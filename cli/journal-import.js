@@ -173,7 +173,6 @@ function main() {
 
   const journal = {
     _meta: {
-      importedAt: new Date().toISOString(),
       source: "5 Minute Journal",
       totalEntries: allEntries.length,
       dateRange: allEntries.length > 0

@@ -66,7 +66,7 @@ Core brickosystem principles in `brickosystem-overview.md`. Brickbot-specific:
 ### Commands
 
 ```bash
-# Data pipeline (automated 5x/day via launchd)
+# Data pipeline (automated 12x/day via launchd)
 yarn collect          # Fetch data from external APIs → Notion
 yarn update           # Sync Notion records → Google Calendar events
 yarn summarize        # Generate weekly summaries from calendar data
@@ -112,15 +112,7 @@ yarn verify:config    # Verify config derivation consistency
 
 ### Automation (launchd)
 
-Runs 5x/day via `infra/launchd/com.brickbot.daily.plist`:
-
-- **6:30 AM** — sleep data ready
-- **9:00 AM** — morning workouts
-- **1:00 PM** — lunch workouts + morning activity
-- **6:00 PM** — afternoon workouts + end of work
-- **8:00 PM** — evening workouts + end of day
-
-5 runs/day, one per time slot. Launchd catch-up handles missed runs on wake.
+Runs 12x/day via `infra/launchd/com.brickbot.daily.plist.template` — fires at 7, 9, 11, 12, 13, 17, 18, 19, 20, 21, 22, 23 (24-hour). Source-of-truth schedule (including Cowork tasks, watchdog, app-launcher, and pmset wakes) lives in `~/Documents/Brickocampus/_automation/_automation-readme.md`. Launchd catch-up handles missed runs on wake.
 
 ```
 yarn sync --auto
@@ -137,8 +129,8 @@ yarn sync --auto
 
 **Setup:**
 ```bash
-# Symlink plist and load
-ln -s /Users/jonbrick/projects/brickbot/infra/launchd/com.brickbot.daily.plist ~/Library/LaunchAgents/
+# Symlink plist and load (use ~/ — works on either machine)
+ln -s ~/projects/brickbot/infra/launchd/com.brickbot.daily.plist ~/Library/LaunchAgents/
 launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
 
 # Verify it's loaded

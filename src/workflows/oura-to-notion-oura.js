@@ -11,9 +11,13 @@ const { formatDate } = require("../utils/date");
  * @returns {Promise<Object>} Sync results
  */
 async function syncOuraToNotion(sessions, options = {}) {
+  // Only main night sleep enters Notion + Calendar tracking.
+  // type === "sleep" covers naps, fragments, and brief drowsy detections.
+  const mainSleeps = sessions.filter((s) => s.type === "long_sleep");
+
   return syncIntegrationToNotion(
     "oura",
-    sessions,
+    mainSleeps,
     (item) => item.sleepId,
     (item) => formatDate(item.nightOf),
     options

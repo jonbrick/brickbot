@@ -87,7 +87,7 @@ most_recent_expected_passed() {
   local most_recent=0
   for time in $schedule_times; do
     local ts
-    ts=$(date -j -f "%Y-%m-%d %H:%M" "$TODAY $time" +%s 2>/dev/null || echo 0)
+    ts=$(date -j -f "%Y-%m-%d %H:%M:%S" "$TODAY $time:00" +%s 2>/dev/null || echo 0)
     if [ "$ts" -gt 0 ] && [ "$ts" -le "$cutoff" ]; then
       if [ "$ts" -gt "$most_recent" ]; then
         most_recent=$ts

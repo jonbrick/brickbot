@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.brickbot.pmset-refresh</string>
+
+    <!-- Weekly top-up of the pmset wake queue. The queue holds N days of one-shot   -->
+    <!-- wake events (queued by schedule-pmset-wakes.sh, default 30 days). Without   -->
+    <!-- a periodic refresh the queue eventually empties and scheduled jobs miss     -->
+    <!-- their wake windows.                                                          -->
+    <!--                                                                              -->
+    <!-- Requires NOPASSWD for /usr/bin/pmset in sudoers — see                        -->
+    <!-- Brickocampus/_automation/pmset/pmset.md → "Auto-refresh setup". Without it,  -->
+    <!-- the sudo calls inside the script fail (the script's preflight guard exits    -->
+    <!-- loud with a sudoers fix-it message; check pmset-refresh-stderr.log).         -->
+    <!--                                                                              -->
+    <!-- Sunday 3 AM — quiet hour, mini will catch up on next wake if asleep.        -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__HOME__/projects/brickbot/scripts/schedule-pmset-wakes.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Weekday</key>
+        <integer>0</integer>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>__HOME__/projects/brickbot/local/logs/pmset-refresh-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>__HOME__/projects/brickbot/local/logs/pmset-refresh-stderr.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>__HOME__/projects/brickbot</string>
+</dict>
+</plist>

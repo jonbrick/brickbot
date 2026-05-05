@@ -7,13 +7,25 @@
 #   - One `pmset repeat` for the daily 6 AM personal wake (recurring)
 #   - One `pmset schedule` per pre-job wake per day (one-shot, queued)
 #
-# Re-run periodically to top up the queue. Idempotent — cancels existing
-# schedule before scheduling fresh.
+# Idempotent — cancels existing schedule before scheduling fresh.
+# Auto-refreshed weekly by com.brickbot.pmset-refresh.plist (Sunday 3 AM).
+# Manual run also fine; both flow through the NOPASSWD-pmset sudoers entry.
 #
 # Usage: schedule-pmset-wakes.sh [days]
 #   days: number of days to queue (default 30, max ~60 before pmset's queue
-#         starts feeling crowded with our 13 daily events)
+#         starts feeling crowded with our 12 daily events)
 set -euo pipefail
+
+# Preflight: refuse to run if sudo would prompt for a password. The launchd
+# auto-refresh runs unattended and would hang silently waiting for input.
+# See Brickocampus/_automation/pmset/pmset.md for the sudoers fix.
+if ! sudo -n /usr/bin/pmset -g sched > /dev/null 2>&1; then
+  echo "Error: cannot run 'sudo pmset' without a password prompt." >&2
+  echo "Add this line via 'sudo visudo':" >&2
+  echo "  $(whoami) ALL=(ALL) NOPASSWD: /usr/bin/pmset" >&2
+  echo "Then re-run this script." >&2
+  exit 1
+fi
 
 DAYS="${1:-30}"
 

@@ -129,17 +129,19 @@ yarn sync --auto
 
 **Setup:**
 ```bash
-# Symlink plist and load (use ~/ — works on either machine)
-ln -s ~/projects/brickbot/infra/launchd/com.brickbot.daily.plist ~/Library/LaunchAgents/
-launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
+# Install all four brickbot plists. Substitutes $HOME into the templates and
+# (re)loads each via launchctl. Idempotent — safe to re-run after edits.
+./scripts/install-launchd.sh
 
-# Verify it's loaded
+# Verify they're loaded (should list daily, app-launcher, watchdog, pmset-refresh)
 launchctl list | grep brickbot
 
-# Reload after changes
+# Reload one plist after editing its template
 launchctl unload ~/Library/LaunchAgents/com.brickbot.daily.plist
 launchctl load ~/Library/LaunchAgents/com.brickbot.daily.plist
 ```
+
+The plist templates contain `__HOME__` placeholders — `install-launchd.sh` substitutes `$HOME` at install time, so the same template works on both the mini (`/Users/jonathanbrick/`) and the MacBook (`/Users/jonbrick/`). Don't symlink the templates directly into LaunchAgents; launchd reads the literal placeholder and the job will fail.
 
 If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up.
 

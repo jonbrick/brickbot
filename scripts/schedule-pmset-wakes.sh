@@ -21,8 +21,7 @@ DAYS="${1:-30}"
 # Keep this list in sync with the Schedule table in
 # Brickocampus/_automation/_automation-readme.md
 WAKE_TIMES=(
-  "06:55:00"  # before 7 AM yarn sync
-  "07:55:00"  # before 8 AM Cowork morning-brief + ensure-apps-running
+  "06:50:00"  # before 6:55 AM ensure-apps-running + 7 AM yarn sync + 7 AM Cowork morning-brief
   "08:55:00"  # before 9 AM yarn sync
   "10:55:00"  # before 11 AM yarn sync
   "11:55:00"  # before 12 PM yarn sync

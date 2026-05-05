@@ -627,18 +627,19 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 
 ### Automation
 
-Runs 5x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
+Runs 12x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
 
 ```
 tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
 ```
 
-**Schedule:** 6:30 AM, 9:00 AM, 1:00 PM, 6:00 PM, 8:00 PM
+**Schedule:** 7, 9, 11 AM, 12, 1, 5, 6, 7, 8, 9, 10, 11 PM (24-hour)
 
 **Resilience:**
 - **3-minute default per-step timeout** (pull: 8-min) — healthy steps complete in 30–110s; if a step hasn't finished in 3 min, Notion/API is likely down. Fail fast and let the next run catch up. Pull gets extra time for first-run task content fetching (delta detection makes subsequent runs fast).
+- **15-minute wall-clock cap on the full pipeline** — `cli/sync.js` SIGTERM/SIGKILL after 15 min, regardless of where it's stuck. Required because the launchd job wraps in `caffeinate`, so an unbounded pipeline would hold the mini awake forever.
 - **Bail on token refresh failure** — `tokens:refresh` is the first step and hits OAuth endpoints. If it fails, network or APIs are unreachable, so the pipeline skips all remaining steps immediately.
-- **Sleep tolerance** — if the Mac sleeps mid-run, in-flight requests expire and steps SIGTERM on wake. This produces noisy logs but is harmless; the next run recovers cleanly.
+- **Caffeinate wakelock** — each run is wrapped in `caffeinate -i` (via `scripts/run-with-wakelock.sh`), so the mini stays awake for the script's lifetime. Idle sleep resumes when the script exits.
 - **Lock file** (`local/sync.lock`) prevents concurrent runs. Stale locks are auto-cleaned.
 
 macOS banner notifications on success/failure. Logs: `local/logs/daily-YYYY-MM-DD.log` (30-day retention).
@@ -651,7 +652,7 @@ Brickbot has four interaction patterns:
 Interactive commands for data pipeline operations (`yarn collect`, `yarn update`, `yarn summarize`, etc.).
 
 ### 2. Automation
-Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync` 5x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure).
+Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync` 12x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
 
 ### 3. Claude Code Skills
 8 slash commands for planning, retros, and reflections. Skills read/edit `data/*.json` locally, then changes are pushed to Notion via `yarn push`.

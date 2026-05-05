@@ -16,11 +16,11 @@
     </array>
 
     <!-- 12 runs/day — paired with pmset wake schedule (5 min before each).        -->
-    <!--  7 AM — kickoff + feeds 8 AM Cowork morning-brief                         -->
+    <!--  7 AM — kickoff (concurrent with 7 AM Cowork morning-brief)               -->
     <!--  9, 11 AM, 12 PM, 1 PM — morning + midday                                 -->
     <!--  (gap 1–5 PM — mini idle-sleeps)                                          -->
     <!--  5, 6, 7, 8 PM — afternoon + evening                                      -->
-    <!--  9 PM — end of day + feeds 9 PM Cowork meeting-processor                  -->
+    <!--  9 PM — end of day (concurrent with 9 PM Cowork meeting-processor)        -->
     <!--  10, 11 PM — late evening (tmux awake windows)                            -->
     <key>StartCalendarInterval</key>
     <array>

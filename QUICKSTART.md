@@ -14,8 +14,8 @@ Personal data pipeline that automatically collects data from external sources (G
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                   AUTOMATED (12x/day via launchd)                │
-│         7, 9, 11am · 12, 1, 5, 6, 7, 8, 9, 10, 11pm             │
+│                   AUTOMATED (9x/day via launchd)                 │
+│            7, 9, 11am · 1, 3, 5, 7, 9, 11pm (every 2hr)         │
 │                                                                 │
 │   tokens:refresh → collect → update → summarize →               │
 │   recap → push → pull → vault-sync                              │
@@ -47,7 +47,7 @@ Personal data pipeline that automatically collects data from external sources (G
 
 1. **Sunday/Monday AM** — Write rocks for the week (`/plan-personal-week`, `/plan-work-week`)
 2. **During the week** — Work tasks, events, live life
-3. **Automation runs 12x/day** — full pipeline (tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync)
+3. **Automation runs 9x/day** — full pipeline (tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync)
 4. **End of week** — Run retro (`/retro`)
 5. **Monthly** — `/reflect-personal-month`, `/reflect-work-month`
 
@@ -63,7 +63,7 @@ yarn push              # Push local edits → Notion (delta-only, hash-based)
 
 ## Commands
 
-### Data Pipeline (automated 12x/day)
+### Data Pipeline (automated 9x/day)
 
 ```bash
 yarn collect           # Fetch data from external APIs → Notion

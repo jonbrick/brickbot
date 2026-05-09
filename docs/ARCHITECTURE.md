@@ -627,13 +627,13 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 
 ### Automation
 
-Runs 12x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
+Runs 9x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
 
 ```
 tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
 ```
 
-**Schedule:** 7, 9, 11 AM, 12, 1, 5, 6, 7, 8, 9, 10, 11 PM (24-hour)
+**Schedule:** every 2 hours, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM)
 
 **Resilience:**
 - **3-minute default per-step timeout** (pull: 8-min) — healthy steps complete in 30–110s; if a step hasn't finished in 3 min, Notion/API is likely down. Fail fast and let the next run catch up. Pull gets extra time for first-run task content fetching (delta detection makes subsequent runs fast).
@@ -652,7 +652,7 @@ Brickbot has four interaction patterns:
 Interactive commands for data pipeline operations (`yarn collect`, `yarn update`, `yarn summarize`, etc.).
 
 ### 2. Automation
-Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync` 12x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
+Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync` 9x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
 
 ### 3. Claude Code Skills
 8 slash commands for planning, retros, and reflections. Skills read/edit `data/*.json` locally, then changes are pushed to Notion via `yarn push`.

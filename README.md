@@ -589,7 +589,6 @@ yarn nyc            # Open NYC guide viewer (localhost:8787/nyc/)
 #### Other
 
 ```bash
-yarn sweep          # Move Apple Reminders → Notion Tasks
 yarn plan           # Parse yarn plan data
 ```
 
@@ -687,12 +686,6 @@ yarn recap                     # Generate monthly recaps
 /plan-personal-month           # Plan next personal month
 /plan-work-month               # Plan next work month
 yarn push                      # Sync reflections and plans to Notion
-```
-
-### Quick Task Capture
-
-```bash
-yarn sweep  # Move Apple Reminders → Notion Tasks
 ```
 
 ## Testing & Validation

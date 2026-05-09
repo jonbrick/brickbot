@@ -19,7 +19,6 @@
     "summarize": "node cli/summarize-week.js",
     "recap": "node cli/recap-month.js",
     "generate": "node cli/generate-year.js",
-    "sweep": "node cli/sweep-reminders.js",
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",
     "tokens": "node cli/tokens/tokens.js",
@@ -38,7 +37,6 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.53.0",
     "@notionhq/client": "^3.1.3",
-    "applescript": "^1.0.0",
     "axios": "^1.12.2",
     "csv-parse": "^6.1.0",
     "dotenv": "^16.5.0",

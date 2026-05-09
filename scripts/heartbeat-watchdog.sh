@@ -11,7 +11,7 @@
 # (next missed cycle, or new failure timestamp).
 #
 # Schedule (keep in sync with _automation/_automation-readme.md Schedule table):
-#   yarn-sync                   — 7, 9, 11 AM, 12, 1, 5, 6, 7, 8, 9, 10, 11 PM
+#   yarn-sync                   — every 2 hr, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM)
 #   cowork-morning-brief        — 7 AM
 #   cowork-meeting-processor    — 9 PM
 set -uo pipefail
@@ -166,7 +166,7 @@ check_job() {
 }
 
 check_job "yarn-sync" \
-  "07:00 09:00 11:00 12:00 13:00 17:00 18:00 19:00 20:00 21:00 22:00 23:00" \
+  "07:00 09:00 11:00 13:00 15:00 17:00 19:00 21:00 23:00" \
   900
 
 check_job "cowork-morning-brief" "07:00" 1800

@@ -66,7 +66,7 @@ Core brickosystem principles in `brickosystem-overview.md`. Brickbot-specific:
 ### Commands
 
 ```bash
-# Data pipeline (automated 12x/day via launchd)
+# Data pipeline (automated 9x/day via launchd)
 yarn collect          # Fetch data from external APIs → Notion
 yarn update           # Sync Notion records → Google Calendar events
 yarn summarize        # Generate weekly summaries from calendar data
@@ -111,7 +111,7 @@ yarn verify:config    # Verify config derivation consistency
 
 ### Automation (launchd)
 
-Runs 12x/day via `infra/launchd/com.brickbot.daily.plist.template` — fires at 7, 9, 11, 12, 13, 17, 18, 19, 20, 21, 22, 23 (24-hour). Source-of-truth schedule (including Cowork tasks, watchdog, app-launcher, and pmset wakes) lives in `~/Documents/Brickocampus/_automation/_automation-readme.md`. Launchd catch-up handles missed runs on wake.
+Runs 9x/day via `infra/launchd/com.brickbot.daily.plist.template` — every 2 hours, 7 AM–11 PM (7, 9, 11, 13, 15, 17, 19, 21, 23 in 24-hour). Source-of-truth schedule (including Cowork tasks, watchdog, app-launcher, and pmset wakes) lives in `~/Documents/Brickocampus/_automation/_automation-readme.md`. Launchd catch-up handles missed runs on wake.
 
 ```
 yarn sync --auto

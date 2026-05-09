@@ -15,26 +15,22 @@
         <string>--auto</string>
     </array>
 
-    <!-- 12 runs/day — paired with pmset wake schedule (5 min before each).        -->
+    <!-- 9 runs/day — every 2 hours, 7 AM–11 PM (wake to sleep).                   -->
+    <!-- Paired with pmset wake schedule (5 min before each).                       -->
     <!--  7 AM — kickoff (concurrent with 7 AM Cowork morning-brief)               -->
-    <!--  9, 11 AM, 12 PM, 1 PM — morning + midday                                 -->
-    <!--  (gap 1–5 PM — mini idle-sleeps)                                          -->
-    <!--  5, 6, 7, 8 PM — afternoon + evening                                      -->
-    <!--  9 PM — end of day (concurrent with 9 PM Cowork meeting-processor)        -->
-    <!--  10, 11 PM — late evening (tmux awake windows)                            -->
+    <!--  9, 11 AM, 1, 3, 5, 7 PM — daytime cadence                                -->
+    <!--  9 PM — concurrent with 9 PM Cowork meeting-processor                     -->
+    <!--  11 PM — end of day                                                       -->
     <key>StartCalendarInterval</key>
     <array>
         <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>11</integer><key>Minute</key><integer>0</integer></dict>
-        <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>13</integer><key>Minute</key><integer>0</integer></dict>
+        <dict><key>Hour</key><integer>15</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>17</integer><key>Minute</key><integer>0</integer></dict>
-        <dict><key>Hour</key><integer>18</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>19</integer><key>Minute</key><integer>0</integer></dict>
-        <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>21</integer><key>Minute</key><integer>0</integer></dict>
-        <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>0</integer></dict>
         <dict><key>Hour</key><integer>23</integer><key>Minute</key><integer>0</integer></dict>
     </array>
 

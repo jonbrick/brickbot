@@ -542,7 +542,7 @@ Generate weekly summaries to test the summary pipeline.
 
 ### Main Workflows
 
-#### Data Pipeline (automated 12x/day)
+#### Data Pipeline (automated 9x/day)
 
 ```bash
 yarn collect        # Fetch data from external APIs → Notion
@@ -635,7 +635,7 @@ yarn tokens:refresh # Refresh expired tokens
 
 ### Automation (launchd)
 
-Brickbot runs automatically 12x daily (7, 9, 11 AM, 12, 1, 5, 6, 7, 8, 9, 10, 11 PM) via launchd. The full automation surface (Cowork morning-brief, meeting-processor, watchdog, app-launcher, pmset wakes) lives in `~/Documents/Brickocampus/_automation/_automation-readme.md`. This section covers `com.brickbot.daily` only:
+Brickbot runs automatically 9x daily — every 2 hours, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM) via launchd. The full automation surface (Cowork morning-brief, meeting-processor, watchdog, app-launcher, pmset wakes) lives in `~/Documents/Brickocampus/_automation/_automation-readme.md`. This section covers `com.brickbot.daily` only:
 
 ```
 tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
@@ -665,7 +665,7 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 
 ### Daily (Automated)
 
-Automation handles the full pipeline 12x/day. No manual action needed.
+Automation handles the full pipeline 9x/day. No manual action needed.
 
 ### Weekly
 

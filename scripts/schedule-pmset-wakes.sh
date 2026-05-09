@@ -13,7 +13,7 @@
 #
 # Usage: schedule-pmset-wakes.sh [days]
 #   days: number of days to queue (default 30, max ~60 before pmset's queue
-#         starts feeling crowded with our 12 daily events)
+#         starts feeling crowded with our 9 daily events)
 set -euo pipefail
 
 # Preflight: refuse to run if sudo would prompt for a password. The launchd
@@ -36,14 +36,11 @@ WAKE_TIMES=(
   "06:50:00"  # before 6:55 AM ensure-apps-running + 7 AM yarn sync + 7 AM Cowork morning-brief
   "08:55:00"  # before 9 AM yarn sync
   "10:55:00"  # before 11 AM yarn sync
-  "11:55:00"  # before 12 PM yarn sync
   "12:55:00"  # before 1 PM yarn sync
+  "14:55:00"  # before 3 PM yarn sync
   "16:55:00"  # before 5 PM yarn sync
-  "17:55:00"  # before 6 PM yarn sync
   "18:55:00"  # before 7 PM yarn sync
-  "19:55:00"  # before 8 PM yarn sync
   "20:55:00"  # before 9 PM yarn sync + Cowork meeting-processor + ensure-apps-running
-  "21:55:00"  # before 10 PM yarn sync
   "22:55:00"  # before 11 PM yarn sync
 )
 

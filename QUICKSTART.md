@@ -37,8 +37,6 @@ Personal data pipeline that automatically collects data from external sources (G
 ┌─────────────────────────────────────────────────────────────────┐
 │                    MANUAL (run as needed)                        │
 │                                                                 │
-│   yarn sweep         Move Apple Reminders → Notion Tasks        │
-│                                                                 │
 │   Claude Code Skills (start a new conversation):                │
 │   /retro  /reflect-*  /plan-*  /coding-tasks-week               │
 │   (8 skills for retros, reflections, planning, task review)     │
@@ -126,7 +124,6 @@ Skills follow the pull/push cycle: `yarn pull` → run skill (edits `data/*.json
 
 ```bash
 yarn plan              # Parse yarn plan data
-yarn sweep             # Move Apple Reminders → Notion Tasks
 yarn logs              # View today's automation log
 yarn tokens            # Check all token status, refresh expired OAuth
 yarn tokens:setup      # Run OAuth setup wizard

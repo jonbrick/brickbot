@@ -101,7 +101,6 @@ yarn journal:import   # Import 5 Minute Journal export → data/journal.json
 
 # Utilities
 yarn plan             # Parse yarn plan data
-yarn sweep            # Move Apple Reminders → Notion Tasks
 yarn logs             # View today's automation log
 yarn tokens           # Check all token status, refresh expired OAuth
 yarn tokens:setup     # Run OAuth setup wizard
@@ -204,7 +203,6 @@ brickbot/
 │   ├── summarize-week.js         # yarn summarize
 │   ├── recap-month.js            # yarn recap
 │   ├── generate-year.js          # yarn generate
-│   ├── sweep-reminders.js        # yarn sweep
 │   └── tokens/                   # Token management CLIs
 ├── src/
 │   ├── collectors/               # Layer 1: Fetch from external APIs
@@ -236,7 +234,6 @@ brickbot/
 │   │   ├── GitHubService.js
 │   │   ├── SteamService.js
 │   │   ├── WithingsService.js
-│   │   ├── AppleRemindersService.js
 │   │   └── TokenService.js
 │   ├── config/                   # All configuration
 │   │   ├── unified-sources.js    # MAIN CONFIG: CALENDARS, SUMMARY_GROUPS, INTEGRATIONS
@@ -353,7 +350,6 @@ All source files should include a `@layer` JSDoc annotation:
 | `dotenv` | Environment variable loading |
 | `inquirer` | Interactive CLI prompts |
 | `xml2js` | XML parsing |
-| `applescript` | macOS Apple Reminders integration |
 
 ## Environment
 

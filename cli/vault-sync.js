@@ -85,6 +85,79 @@ function writeIfChanged(filePath, markdown) {
   return true;
 }
 
+/** Strip dashes and lowercase a Notion ID for normalized comparison */
+function normalizeNotionId(input) {
+  if (!input) return "";
+  return String(input).replace(/-/g, "").toLowerCase();
+}
+
+/** Extract the 32-char Notion ID from a notion.so URL */
+function extractNotionIdFromUrl(url) {
+  if (!url) return "";
+  const match = String(url).match(/([0-9a-f]{32})/i);
+  return match ? match[1].toLowerCase() : "";
+}
+
+/**
+ * Parse YAML-style frontmatter from a markdown file.
+ * Returns { hasFM, frontmatter (key→unquotedValue), lines (preserved order), body }.
+ * Tokenizes line-by-line — handles flat scalar values only (sufficient for project schema).
+ * Preserves comments, unknown keys, and ordering.
+ */
+function parseFrontmatter(content) {
+  const result = { hasFM: false, frontmatter: {}, lines: [], body: content };
+
+  const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+  if (!fmMatch) return result;
+
+  result.hasFM = true;
+  result.body = fmMatch[2];
+
+  for (const rawLine of fmMatch[1].split("\n")) {
+    const m = rawLine.match(/^([a-z_][a-z0-9_]*)\s*:\s*(.*)$/i);
+    if (m) {
+      const key = m[1];
+      const valueRaw = m[2];
+      const qm = valueRaw.match(/^"(.*)"$/);
+      const value = qm ? qm[1] : valueRaw;
+      result.frontmatter[key] = value;
+      result.lines.push({ rawLine, key, valueRaw });
+    } else {
+      result.lines.push({ rawLine, key: null, valueRaw: null });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Serialize updated frontmatter back to a string, preserving line order,
+ * comments, and unknown keys. Updates is a map of key → fully-formed YAML
+ * value (e.g. '"Doing"' for a quoted string, 'now' for a bare select).
+ * New keys not in original frontmatter are appended at end of FM block.
+ */
+function serializeFrontmatter(parsed, updates) {
+  const newLines = [];
+  const used = new Set();
+
+  for (const line of parsed.lines) {
+    if (line.key && Object.prototype.hasOwnProperty.call(updates, line.key)) {
+      newLines.push(`${line.key}: ${updates[line.key]}`);
+      used.add(line.key);
+    } else {
+      newLines.push(line.rawLine);
+    }
+  }
+
+  for (const [key, val] of Object.entries(updates)) {
+    if (!used.has(key)) {
+      newLines.push(`${key}: ${val}`);
+    }
+  }
+
+  return `---\n${newLines.join("\n")}\n---\n${parsed.body}`;
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -314,6 +387,129 @@ function syncThemes(themes, goals) {
   return results;
 }
 
+function syncPersonalProjects(projects, goals) {
+  const dir = path.join(VAULT_DIR, "projects");
+  if (!fs.existsSync(dir)) {
+    return { written: 0, skipped: 0, warnings: [], errors: [] };
+  }
+
+  const goalLookup = {};
+  for (const goal of goals) {
+    goalLookup[normalizeNotionId(goal._notionId)] = slugify(goal["Goal"] || "");
+  }
+
+  const projectLookup = {};
+  for (const p of projects) {
+    projectLookup[normalizeNotionId(p._notionId)] = p;
+  }
+
+  const results = { written: 0, skipped: 0, warnings: [], errors: [] };
+  const matchedNotionIds = new Set();
+
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    let content;
+    try {
+      content = fs.readFileSync(filePath, "utf8");
+    } catch (err) {
+      results.errors.push(`${file}: ${err.message}`);
+      continue;
+    }
+
+    const parsed = parseFrontmatter(content);
+    if (!parsed.hasFM) {
+      results.warnings.push(`${file}: no frontmatter — skipped`);
+      continue;
+    }
+
+    const notionUrl = parsed.frontmatter.notion_url;
+    if (!notionUrl) {
+      results.warnings.push(`${file}: no notion_url — skipped`);
+      continue;
+    }
+
+    const id = extractNotionIdFromUrl(notionUrl);
+    if (!id) {
+      results.warnings.push(`${file}: notion_url has no 32-char id — skipped`);
+      continue;
+    }
+
+    const record = projectLookup[id];
+    if (!record) {
+      results.warnings.push(
+        `${file}: notion_url has no matching record (deleted in Notion?) — skipped`
+      );
+      continue;
+    }
+
+    matchedNotionIds.add(id);
+
+    // Build desired frontmatter values (fully-formed YAML strings)
+    const desired = {};
+    desired.status = `"${stripEmoji(record.Status || "")}"`;
+    desired.start_date = record.Date || "";
+    desired.end_date = record["Date End"] || record.Date || "";
+    desired.priority = (record.Priority || "").toLowerCase();
+
+    const goalIds = record["🏆 Goal"] || [];
+    if (goalIds.length > 0) {
+      const slug = goalLookup[normalizeNotionId(goalIds[0])];
+      desired.goal = slug ? `"[[${slug}]]"` : '""';
+    } else {
+      desired.goal = '""';
+    }
+
+    // notion_name: only if Notion title diverges from filename slug
+    const fileSlug = file.replace(/\.md$/, "");
+    const notionTitleSlug = slugify(record.Project || "");
+    if (notionTitleSlug && notionTitleSlug !== fileSlug) {
+      desired.notion_name = `"${yamlEscape(record.Project)}"`;
+    }
+
+    // Diff: compare unquoted values
+    const unquote = (s) => {
+      if (s === undefined || s === null) return "";
+      const m = String(s).match(/^"(.*)"$/);
+      return m ? m[1] : String(s);
+    };
+
+    const updates = {};
+    for (const [key, valQuoted] of Object.entries(desired)) {
+      const currentUnq = unquote(parsed.frontmatter[key]);
+      const desiredUnq = unquote(valQuoted);
+      if (currentUnq !== desiredUnq) {
+        updates[key] = valQuoted;
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      results.skipped++;
+      continue;
+    }
+
+    try {
+      const newContent = serializeFrontmatter(parsed, updates);
+      fs.writeFileSync(filePath, newContent);
+      results.written++;
+    } catch (err) {
+      results.errors.push(`${file}: ${err.message}`);
+    }
+  }
+
+  // Notion records that have no matching vault file
+  for (const [id, record] of Object.entries(projectLookup)) {
+    if (!matchedNotionIds.has(id)) {
+      results.warnings.push(
+        `Notion project "${record.Project}" has no vault file (auto-create not implemented v1)`
+      );
+    }
+  }
+
+  return results;
+}
+
 // --- Prune ---
 
 /**
@@ -356,6 +552,8 @@ function pruneOrphans({ retroData, lifeData, dryRun }) {
       const match = content.match(/^notion_id:\s*"([^"]+)"/m);
 
       if (!match) {
+        // Files without notion_id are unmanaged (manual notes OR personal-project
+        // files that use notion_url instead — both are intentionally skipped).
         results.unmanaged++;
         continue;
       }
@@ -425,6 +623,22 @@ async function main() {
           ? `, ${themeResults.errors.length} errors`
           : "")
     );
+  }
+
+  if (lifeData?.personalProjects) {
+    const r = syncPersonalProjects(
+      lifeData.personalProjects,
+      lifeData.goals || []
+    );
+    allResults.push({ name: "Personal Projects", ...r });
+    console.log(
+      `Personal Projects: ${r.written} written, ${r.skipped} unchanged` +
+        (r.warnings.length ? `, ${r.warnings.length} warnings` : "") +
+        (r.errors.length ? `, ${r.errors.length} errors` : "")
+    );
+    if (r.warnings.length > 0) {
+      for (const w of r.warnings) console.log(`  ⚠ ${w}`);
+    }
   }
 
   const totalWritten = allResults.reduce((sum, r) => sum + r.written, 0);

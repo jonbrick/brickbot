@@ -46,6 +46,7 @@ const LIFE_DATABASES = {
   habits: { envVar: "HABITS_WEEK_SUMMARY_DATABASE_ID", label: "Habits" },
   personalMonthlyPlans: { envVar: "PERSONAL_MONTHLY_PLAN_DATABASE_ID", label: "Personal Monthly Plans" },
   workMonthlyPlans: { envVar: "WORK_MONTHLY_PLAN_DATABASE_ID", label: "Work Monthly Plans" },
+  personalProjects: { envVar: "NOTION_PERSONAL_PROJECTS_DATABASE_ID", label: "Personal Projects" },
 };
 
 // Ensure directories exist

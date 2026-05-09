@@ -14,13 +14,13 @@ Brickbot is a personal data pipeline that collects data from external APIs (GitH
 
 When working in brickbot, you can and should read files from the vault at `~/Documents/Brickocampus/` — especially `_settings/admin/brickosystem-overview.md` (ecosystem doc), `_daily/` (daily notes), `work/cortex/meetings/processed/` (meeting notes), and `CLAUDE.md`. Use Read, Glob, Grep freely across both directories.
 
-## Notion Databases Brickbot Manages (~31 of 89 DBs)
+## Notion Databases Brickbot Manages (~32 of 90 DBs)
 
 | Group | Databases | data file | ~Records |
 |-------|-----------|-----------|----------|
 | Integrations | oura, strava, githubPersonal, githubWork, steam, withings, bloodPressure, medications | collected.json | 110 |
 | Planning | weeks, months, rocks, events, trips | plan.json | 590 |
-| Life OS | goals, themes, relationships, tasks, habits, personalMonthlyPlans, workMonthlyPlans | life.json | 720 |
+| Life OS | goals, themes, relationships, tasks, habits, personalMonthlyPlans, workMonthlyPlans, personalProjects | life.json | 723 |
 | Summaries | personalWeekly, workWeekly, personalMonthlyRecap, workMonthlyRecap | summaries.json | 130 |
 | Retros | personalWeekly, workWeekly | retro.json | 106 |
 | NYC | museums, restaurants, tattoos, venues | nyc.json | 190 |
@@ -160,20 +160,20 @@ If Mac is asleep at scheduled time, launchd runs the missed job when it wakes up
 | `data/calendar.json` | Google Calendar | — | All calendar events across 20 calendars | varies | Last 30 days |
 | `data/nyc.json` | Notion | Notion | Museums (18), Restaurants (119), Tattoos (10), Venues (43) | 190 | All |
 | `data/retro.json` | Notion | Notion | Personal & Work Week Retros | 106 | All |
-| `data/life.json` | Notion | Notion | Goals (20), Themes (8), Relationships, Tasks (~613), Habits (53), Monthly Plans (24) | 720 | All |
+| `data/life.json` | Notion | Notion | Goals (20), Themes (8), Relationships, Tasks (~613), Habits (53), Monthly Plans (24), Personal Projects (3) | 723 | All |
 | `data/journal.json` | Local import | — | 5 Minute Journal entries (gratitude, amazingness, improvements) | 81 | 2026 |
 
 **Task content:** Tasks in `data/life.json` include a `_content` field with the Notion page body as markdown (checkboxes, paragraphs, headings, etc.). Edit `_content` locally and `yarn push` syncs it back. Separate `_contentHash` tracks content-specific changes. Delta detection uses `_notionEditedTime` (from Notion's `page.last_edited_time`) to skip re-fetching unchanged tasks — on a typical run, ~5 content fetches instead of ~617.
 
 **Workflow:** `yarn pull` → read/edit `data/*.json` locally → `yarn push` to sync changes back. Push uses MD5 hashes to detect and only send changed records.
 
-**Vault sync:** `yarn vault-sync` reads `data/retro.json` and `data/life.json`, transforms to markdown, and writes to `~/Documents/Brickocampus/personal/` (retros, goals, themes). Hash-based diff detection — only writes changed files. Zero AI tokens. Runs automatically as the last step in the pipeline.
+**Vault sync:** `yarn vault-sync` reads `data/retro.json` and `data/life.json`, transforms to markdown, and writes to `~/Documents/Brickocampus/personal/` (retros, goals, themes — full overwrite; personal projects — frontmatter merged from Notion, body preserved). Hash-based diff detection for full-overwrite types; field-equality diff for personal projects. Zero AI tokens. Runs automatically as the last step in the pipeline.
 
 **Conflict model:** Push is last-write-wins with no merge. If the same record is edited both locally (via a skill) and in Notion between syncs, push overwrites the Notion edit. Notion-only edits are safe — push skips unchanged local records, and pull brings Notion changes down.
 
 ### Brickocampus (Obsidian Vault)
 
-Brickbot writes to the vault via `vault-sync` (retros, goals, themes). The vault has its own automation (Cowork) and structure. See `~/Documents/Brickocampus/CLAUDE.md` for vault details, or `brickosystem-overview.md` for how the systems connect.
+Brickbot writes to the vault via `vault-sync` (retros, goals, themes, personal projects). The vault has its own automation (Cowork) and structure. See `~/Documents/Brickocampus/CLAUDE.md` for vault details, or `brickosystem-overview.md` for how the systems connect.
 
 ### No Test Suite
 

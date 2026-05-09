@@ -25,6 +25,11 @@ const WORK_TASK_CATEGORY_MAPPING = {
   "🏝️ OOO": "ooo",
 };
 
+const PERSONAL_TASK_CATEGORY_MAPPING = {
+  "💻 Coding": "coding",
+  "📝 Admin": "admin",
+};
+
 const TASK_STATUS_MAPPING = {
   "🟢 Done": "done",
   "🔵 In Progress": "inProgress",
@@ -60,11 +65,26 @@ function getWorkCategoryKey(workCategory) {
   return WORK_TASK_CATEGORY_MAPPING[workCategory] || null;
 }
 
+/**
+ * Get personal sub-category key from Personal Category property value
+ * @param {string|null|undefined} personalCategory - Personal Category property value (e.g., "💻 Coding", "📝 Admin")
+ * @returns {string|null} Category key (e.g., "coding", "admin") or null if unmapped
+ */
+function getPersonalCategoryKey(personalCategory) {
+  if (!personalCategory) {
+    return null;
+  }
+
+  return PERSONAL_TASK_CATEGORY_MAPPING[personalCategory] || null;
+}
+
 module.exports = {
   TASK_CATEGORY_MAPPING,
   WORK_TASK_CATEGORY_MAPPING,
+  PERSONAL_TASK_CATEGORY_MAPPING,
   TASK_STATUS_MAPPING,
   CALENDAR_SKIP_STATUSES,
   getCategoryKey,
   getWorkCategoryKey,
+  getPersonalCategoryKey,
 };

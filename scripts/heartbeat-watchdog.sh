@@ -132,8 +132,16 @@ check_job() {
     return
   fi
 
+  # BSD date's %z accepts only ±HHMM. ISO 8601 also allows Z (UTC) and ±HH:MM
+  # (with colon). Normalize before parse so any legal form succeeds — otherwise
+  # parse fails, ping_epoch=0, and we false-alert "stale ping (last 19:00:00)"
+  # (epoch 0 in EDT). Canonical producer format is ±HHMM (heartbeat-ping.sh).
+  local ping_ts_normalized
+  ping_ts_normalized=$(printf '%s' "$ping_ts_iso" \
+    | sed -E 's/Z$/+0000/; s/([+-][0-9]{2}):([0-9]{2})$/\1\2/')
+
   local ping_epoch
-  ping_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "$ping_ts_iso" +%s 2>/dev/null || echo 0)
+  ping_epoch=$(date -j -f "%Y-%m-%dT%H:%M:%S%z" "$ping_ts_normalized" +%s 2>/dev/null || echo 0)
   if [ "$ping_epoch" -lt "$most_recent" ]; then
     local key="missed-${most_recent}"
     alert "$job" \

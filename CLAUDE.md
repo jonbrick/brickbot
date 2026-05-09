@@ -27,6 +27,8 @@ When working in brickbot, you can and should read files from the vault at `~/Doc
 
 See `brickosystem-overview.md` for the full Notion database inventory (~58 unmanaged DBs), task systems, and automation schedule.
 
+**Env var IDs are database IDs, not data source IDs.** `NOTION_*_DATABASE_ID` env vars hold the 32-char database UUID (the one in the `notion.so/<id>` URL), not the `collection://<id>` data source UUID that Notion's API surfaces in some tooling. `queryDatabaseAll(databaseId)` takes a database ID. When adding a new DB, copy the URL slug ID — not the data source UUID.
+
 ## Next Steps
 
 - Resolve relation UUIDs to human-readable names in pulled data
@@ -60,6 +62,11 @@ Core brickosystem principles in `brickosystem-overview.md`. Brickbot-specific:
 - **Three-layer naming is strict** — never use domain names in Layer 1, never use integration names in Layer 2
 - **Pre-stage data for LLMs** — agents reading flat markdown don't burn API tokens; the script pays for itself the first time it runs
 - **Bounded runtime** — every scheduled job has a hard wall-clock timeout. Per-step timeouts already exist (3 min default, 8 min for `pull`); the whole `yarn sync` pipeline has a 15-min hard cap on top (in `cli/sync.js`). On timeout: SIGTERM → grace → SIGKILL. The vault doc `_automation/_automation-readme.md` ("Wakelock and timeout contract" section) explains why this is load-bearing — scheduled jobs hold a `caffeinate` wakelock for their entire lifetime, so an unbounded script would hold the mini awake forever.
+- **Fail loud, never partial success** — when a sync stage errors (token refresh, collect, push, etc.), the whole `yarn sync` pipeline bails rather than skip-and-continue. Stale data is harder to notice than a missing run; a pipeline that dies forces investigation immediately via the heartbeat watchdog. Don't propose "exit 0 if at least one succeeded" or "log + skip the broken source" patterns. Better-diagnostics fixes are welcome; partial-success fallbacks are not.
+
+## Workflow
+
+- **Changes go through PRs, never direct to main.** Branch off main (`git checkout -b <topic>`), commit on the branch, push (`git push -u origin <topic>`), open via `gh pr create`. Wait for Jon to merge before starting main-dependent follow-up work. The vault (`~/Documents/Brickocampus/`) is the only exception — it's not a git repo.
 
 ## Quick Reference
 

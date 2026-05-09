@@ -711,17 +711,33 @@ yarn recap-month
 
 ---
 
-## Adding a Personal Task Category with Content Splitting
+## Adding a Personal Task Sub-Category
 
-**Goal**: Add a new task category that captures tasks based on title keywords (e.g., tasks starting with "Feat:", "Bug:", "Spike:" go to a "Coding" category).
+**Goal**: Add a new sub-category under `🌱 Personal` (e.g., `💻 Coding`, `📝 Admin`) so tasks tagged with it roll up under that bucket in weekly/monthly recaps.
 
 **Time estimate**: 15-20 minutes
 
 ### Overview
 
-Content splitting redirects tasks from one category to another based on keywords in the task title. This happens BEFORE counting, so the task appears in the target category's count and details.
+The Tasks DB has a `Personal Category` select that mirrors `Work Category`. When a task is `🌱 Personal` and `Personal Category` is set, the personal summary transformer uses the sub-category as the bucket key. No keyword-matching against task titles.
 
-### Step 1: Add Task Category to CALENDARS.tasks.categories
+### Step 1: Add the option to the Notion `Personal Category` select
+
+In the Notion Tasks DB, add the new emoji-prefixed option to the `Personal Category` property (e.g., `📚 Reading`).
+
+### Step 2: Add the mapping in `task-categories.js`
+
+**File**: `src/config/notion/task-categories.js`
+
+```javascript
+const PERSONAL_TASK_CATEGORY_MAPPING = {
+  "💻 Coding": "coding",
+  "📝 Admin": "admin",
+  "📚 Reading": "reading", // ADD THIS
+};
+```
+
+### Step 3: Add Task Category to CALENDARS.tasks.categories
 
 **File**: `src/config/unified-sources.js`
 
@@ -731,36 +747,15 @@ Add your new category to `CALENDARS.tasks.categories`:
 tasks: {
   categories: {
     // ... existing categories (personal, family, home, etc.)
-    coding: {
-      emoji: "🖥️",
-      dataFields: FIELD_TEMPLATES.taskCategory("coding", "Coding"),
+    reading: {
+      emoji: "📚",
+      dataFields: FIELD_TEMPLATES.taskCategory("reading", "Reading"),
     },
   },
 },
 ```
 
-### Step 2: Add Split Keywords to CONTENT_SPLITS
-
-**File**: `src/config/unified-sources.js`
-
-Add your keywords to `CONTENT_SPLITS.summarize.personal.personal`:
-
-```javascript
-CONTENT_SPLITS: {
-  summarize: {
-    personal: {
-      personal: {
-        admin: ["journals", "retro", "plan", "recap"],  // existing
-        coding: ["feat:", "bug:", "spike:", "merge", "docs:", "skill:", "plugin:", "refactor:"],         // ADD THIS
-      },
-    },
-  },
-},
-```
-
-**Note**: Keywords ending in non-word characters (like `:`) use prefix matching. Regular words use word-boundary matching (case-insensitive).
-
-### Step 3: Add to MONTHLY_RECAP_CATEGORIES
+### Step 4: Add to MONTHLY_RECAP_CATEGORIES
 
 **File**: `src/config/unified-sources.js`
 
@@ -769,13 +764,13 @@ MONTHLY_RECAP_CATEGORIES: {
   personal: {
     tasks: {
       // ... existing categories
-      coding: ["codingTaskDetails"],  // ADD THIS
+      reading: ["readingTaskDetails"],  // ADD THIS
     },
   },
 },
 ```
 
-### Step 4: Add to MONTHLY_RECAP_TASK_PROPERTIES
+### Step 5: Add to MONTHLY_RECAP_TASK_PROPERTIES
 
 **File**: `src/config/unified-sources.js`
 
@@ -783,24 +778,24 @@ MONTHLY_RECAP_CATEGORIES: {
 MONTHLY_RECAP_TASK_PROPERTIES: {
   personal: {
     // ... existing categories
-    coding: { key: "personalCodingTasks", name: "Coding - Task Details" },  // ADD THIS
+    reading: { key: "personalReadingTasks", name: "Reading - Task Details" },  // ADD THIS
   },
 },
 ```
 
-### Step 5: Update Monthly Recap Transformer
+### Step 6: Update Monthly Recap Transformer
 
 **File**: `src/transformers/transform-weekly-to-monthly-recap.js`
 
 In `combinePersonalTasksByCategory()`, add after the `admin` variable:
 
 ```javascript
-const coding = combineWeeklyTasksByCategory(
+const reading = combineWeeklyTasksByCategory(
   weeklySummaries,
   "personal",
   summaryDb,
-  categories.coding,
-  MONTHLY_RECAP_TASK_PROPERTIES.personal.coding.key,
+  categories.reading,
+  MONTHLY_RECAP_TASK_PROPERTIES.personal.reading.key,
 );
 ```
 
@@ -809,26 +804,26 @@ And add to the return object:
 ```javascript
 return {
   // ... existing fields
-  personalCodingTasks: coding || "", // ADD THIS
+  personalReadingTasks: reading || "", // ADD THIS
 };
 ```
 
-### Step 6: Add Notion Properties
+### Step 7: Add Notion Properties
 
 Manually add these properties to your Notion databases:
 
 **Weekly Summary Database**:
 
-- `Coding Tasks Complete` (Number)
-- `Coding - Task Details` (Text)
+- `Reading Tasks Complete` (Number)
+- `Reading - Task Details` (Text)
 
 **Monthly Recap Database**:
 
-- `Coding - Task Details` (Text)
+- `Reading - Task Details` (Text)
 
 ### Testing
 
-Run `yarn summarize` and verify tasks with your keywords appear in the new category instead of "Personal".
+Tag a few tasks with the new `Personal Category` option in Notion, then run `yarn summarize` and verify they appear in the new bucket instead of `Personal`.
 
 ---
 

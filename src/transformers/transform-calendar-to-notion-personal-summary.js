@@ -16,7 +16,6 @@ const {
   stripKnownCalendarSummaryEmoji,
   filterEventsByContentFilters,
   filterTasksByContentFilters,
-  getSplitTargetCategory,
 } = require("../utils/calendar-data-helpers");
 const {
   matchInterpersonalCategory,
@@ -500,7 +499,10 @@ function transformCalendarEventsToRecapData(
 
   // Task data (only if "tasks" is selected)
   if (shouldCalculate("tasks") && tasks.length > 0) {
-    const { getCategoryKey } = require("../config/notion/task-categories");
+    const {
+      getCategoryKey,
+      getPersonalCategoryKey,
+    } = require("../config/notion/task-categories");
 
     // Extract relationship context for interpersonal category splitting
     const currentWeekNumber = relationshipsContext?.currentWeekNumber || null;
@@ -521,11 +523,11 @@ function transformCalendarEventsToRecapData(
         );
       }
 
-      // Split personal tasks to admin based on keywords (before grouping)
+      // Personal sub-category (Coding, Admin) overrides the top-level Personal bucket
       if (categoryKey === "personal") {
-        const splitTarget = getSplitTargetCategory(task.title, "personal", "personal");
-        if (splitTarget) {
-          categoryKey = splitTarget;
+        const personalSubKey = getPersonalCategoryKey(task.personalCategory);
+        if (personalSubKey) {
+          categoryKey = personalSubKey;
         }
       }
 

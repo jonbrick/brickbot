@@ -36,17 +36,7 @@ See `brickosystem-overview.md` for the full Notion database inventory (~58 unman
 
 ## Active Work
 
-### EPICs
-- `[global]` Centralize `process.env.DEBUG` checks into utility function
-- `[global]` TypeScript migration (start with stripping JSDoc prose headers)
-- `[global]` Add Display columns to all Notion DBs (raw API data, calendar-formatted, human-readable) — follow Steam pattern
-- `[global]` Push property descriptions from config to Notion DB schema via API for all integrations
-- `[global]` Standardize timezone handling — convert in collectors, store UTC + Eastern in all Notion DBs
-- `[yarn generate]` Year-end generation improvements (defer until end of year)
-  - Add Habits DB rows + Summary→Recap relations
-  - Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
-  - Pre-populate empty Rocks rows per category per week (so push/skills can update by UUID)
-  - Pre-populate empty Retro rows per week (Personal + Work) for same reason
+Brickbot improvements are tracked as personal projects in Notion's `2026 Projects` DB (parented to the `design-build-brickbot` goal), with vault stubs at `~/Documents/Brickocampus/personal/projects/`. No EPIC list here — the projects are the source of truth.
 
 ### Known Bugs
 - `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026

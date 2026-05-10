@@ -201,7 +201,7 @@ Most features can be added by editing this config file alone.
 | `data/calendar.json` | All Google Calendar events | Last 30 days |
 | `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
 | `data/retro.json` | Personal & Work Week Retros | All |
-| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans | All |
+| `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans, Personal Projects | All |
 | `data/journal.json` | 5 Minute Journal entries | 2026 |
 
 ## Documentation Structure

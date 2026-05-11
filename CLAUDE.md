@@ -31,10 +31,7 @@ See `brickosystem-overview.md` for the full Notion database inventory (~58 unman
 
 ## Active Work
 
-Brickbot improvements are tracked as personal projects in Notion's `2026 Projects` DB (parented to the `design-build-brickbot` goal), with vault stubs at `~/Documents/Brickocampus/personal/projects/`. No EPIC list here — the projects are the source of truth.
-
-### Known Bugs
-- `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
+Brickbot improvements and bugs are tracked as personal projects in Notion's `2026 Projects` DB (parented to the `design-build-brickbot` goal), with vault stubs at `~/Documents/Brickocampus/personal/projects/`. CLAUDE.md holds no project or bug lists — that'd churn the repo with PRs every time tracking changed.
 
 ## Development Principles
 

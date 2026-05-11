@@ -594,20 +594,7 @@ yarn plan           # Parse yarn plan data
 
 ### Claude Code Skills
 
-Brickbot includes 8 Claude Code skills for planning, retros, and reflections. Start a new Claude Code conversation and use these slash commands:
-
-| Skill | Purpose |
-|-------|---------|
-| `/plan-personal-week` | Plan personal week (set rocks) |
-| `/plan-work-week` | Plan work week (set rocks) |
-| `/plan-personal-month` | Plan personal month |
-| `/plan-work-month` | Plan work month |
-| `/retro` | Weekly retro (personal, work, or both) |
-| `/reflect-personal-month` | Personal monthly reflection |
-| `/reflect-work-month` | Work monthly reflection |
-| `/coding-tasks-week` | Weekly coding task breakdown from GitHub |
-
-**Workflow:** `yarn pull` → run skill (edits `data/*.json`) → `yarn push`
+Reflection/planning skills (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
 
 ### Token Management
 

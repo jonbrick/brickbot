@@ -734,18 +734,7 @@ Full pipeline runs automatically via launchd: `tokens:refresh → collect → up
 
 ### Claude Code Skills
 
-| Skill | Purpose |
-|-------|---------|
-| `/plan-personal-week` | Plan personal week (set rocks) |
-| `/plan-work-week` | Plan work week (set rocks) |
-| `/plan-personal-month` | Plan personal month |
-| `/plan-work-month` | Plan work month |
-| `/retro` | Weekly retro (personal, work, or both) |
-| `/reflect-personal-month` | Personal monthly reflection |
-| `/reflect-work-month` | Work monthly reflection |
-| `/coding-tasks-week` | Weekly coding task breakdown from GitHub |
-
-Skills follow the pull/push cycle: `yarn pull` → run skill → `yarn push`
+Reflection/planning skills (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. Skills follow the pull/push cycle: `yarn pull` → run skill → `yarn push`.
 
 ### Local Data Files
 

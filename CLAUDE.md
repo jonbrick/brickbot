@@ -29,17 +29,9 @@ See `brickosystem-overview.md` for the full Notion database inventory (~58 unman
 
 **Env var IDs are database IDs, not data source IDs.** `NOTION_*_DATABASE_ID` env vars hold the 32-char database UUID (the one in the `notion.so/<id>` URL), not the `collection://<id>` data source UUID that Notion's API surfaces in some tooling. `queryDatabaseAll(databaseId)` takes a database ID. When adding a new DB, copy the URL slug ID — not the data source UUID.
 
-## Next Steps
-
-- Resolve relation UUIDs to human-readable names in pulled data
-- `yarn overview` — Year at a Glance Notion page
-
 ## Active Work
 
-Brickbot improvements are tracked as personal projects in Notion's `2026 Projects` DB (parented to the `design-build-brickbot` goal), with vault stubs at `~/Documents/Brickocampus/personal/projects/`. No EPIC list here — the projects are the source of truth.
-
-### Known Bugs
-- `BUG-LOW [yarn summarize]` Year-boundary week mismatch — Week 53/2025 vs Week 01/2026
+Brickbot improvements and bugs are tracked as personal projects in Notion's `2026 Projects` DB (parented to the `design-build-brickbot` goal), with vault stubs at `~/Documents/Brickocampus/personal/projects/`. CLAUDE.md holds no project or bug lists — that'd churn the repo with PRs every time tracking changed.
 
 ## Development Principles
 

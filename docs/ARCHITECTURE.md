@@ -610,7 +610,7 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 **Why local-first?**
 - Claude Code can read/analyze data without API calls
 - Edits are batched and only changed records are pushed (MD5 hash comparison)
-- Skills (`/retro-*`, `/plan-*`, `/reflect-*`) operate on local files
+- Vault skills (`/retro`, `/plan-*`, `/reflect-*`) operate on local files
 
 **Local data files:**
 
@@ -654,15 +654,8 @@ Interactive commands for data pipeline operations (`yarn collect`, `yarn update`
 ### 2. Automation
 Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync` 9x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
 
-### 3. Claude Code Skills
-8 slash commands for planning, retros, and reflections. Skills read/edit `data/*.json` locally, then changes are pushed to Notion via `yarn push`.
-
-| Category | Skills |
-|----------|--------|
-| Planning | `/plan-personal-week`, `/plan-work-week`, `/plan-personal-month`, `/plan-work-month` |
-| Retros | `/retro` (personal, work, or both) |
-| Reflections | `/reflect-personal-month`, `/reflect-work-month` |
-| Task Review | `/coding-tasks-week` |
+### 3. Vault Skills
+Reflection/planning slash commands (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault, not in brickbot. They read/edit `data/*.json` and push back via `yarn push` — brickbot is the plumbing, the vault hosts the user-facing skills.
 
 ### 4. HTML Viewers
 Static viewers for plan data (`yarn view`) and NYC guides (`yarn nyc`).

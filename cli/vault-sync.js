@@ -452,6 +452,13 @@ function syncPersonalProjects(projects, goals) {
     desired.start_date = record.Date || "";
     desired.end_date = record["Date End"] || record.Date || "";
     desired.priority = (record.Priority || "").toLowerCase();
+    desired.description = record.Description
+      ? `"${yamlEscape(record.Description)}"`
+      : '""';
+    desired.problem = record.Problem
+      ? `"${yamlEscape(record.Problem)}"`
+      : '""';
+    desired.bucket = record.Bucket === true ? "true" : "false";
 
     const goalIds = record["🏆 Goal"] || [];
     if (goalIds.length > 0) {

@@ -459,6 +459,9 @@ function syncPersonalProjects(projects, goals) {
       ? `"${yamlEscape(record.Problem)}"`
       : '""';
     desired.bucket = record.Bucket === true ? "true" : "false";
+    desired.lead = record.Lead
+      ? `"[[${yamlEscape(record.Lead)}]]"`
+      : '""';
 
     const goalIds = record["🏆 Goal"] || [];
     if (goalIds.length > 0) {

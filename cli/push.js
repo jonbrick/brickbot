@@ -85,14 +85,14 @@ function readDataFile(filename) {
 
 // Notion property types that are safe to push back
 const PUSHABLE_TYPES = new Set([
-  "rich_text", "number", "select", "multi_select", "status",
+  "title", "rich_text", "number", "select", "multi_select", "status",
   "checkbox", "url", "email", "phone_number",
 ]);
 
 /**
  * Build Notion properties from a local record's flat key-value pairs.
  * Uses _propertyTypes from pull to know exactly which fields are pushable.
- * Skips title, relations, rollups, formulas, dates, and synthetic fields.
+ * Skips relations, rollups, formulas, dates, and synthetic fields.
  */
 function buildPropertiesFromRecord(record) {
   const properties = {};

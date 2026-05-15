@@ -458,7 +458,6 @@ function syncPersonalProjects(projects, goals) {
     desired.problem = record.Problem
       ? `"${yamlEscape(record.Problem)}"`
       : '""';
-    desired.bucket = record.Bucket === true ? "true" : "false";
     desired.lead = record.Lead
       ? `"[[${yamlEscape(record.Lead)}]]"`
       : '""';

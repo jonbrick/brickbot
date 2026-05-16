@@ -4,6 +4,7 @@ const { Client } = require("@notionhq/client");
 const config = require("../config");
 const { formatDate, formatDateOnly } = require("../utils/date");
 const { delay } = require("../utils/async");
+const { chunkRichText } = require("../utils/notion-content");
 
 class NotionDatabase {
   constructor() {
@@ -458,7 +459,9 @@ class NotionDatabase {
         return property.title[0]?.plain_text || "";
 
       case "rich_text":
-        return property.rich_text[0]?.plain_text || "";
+        return (property.rich_text || [])
+          .map((s) => s.plain_text || "")
+          .join("");
 
       case "number":
         return property.number;
@@ -595,9 +598,11 @@ class NotionDatabase {
                 };
               } else {
                 // Allow empty strings for rich_text to enable clearing fields
-                // Notion API accepts empty rich_text arrays to clear fields
+                // Notion API accepts empty rich_text arrays to clear fields.
+                // Long values are split across multiple elements — Notion caps
+                // each element at 2000 chars but concatenates them on display.
                 formatted[key] = {
-                  rich_text: value === "" ? [] : [{ text: { content: value } }],
+                  rich_text: chunkRichText(value),
                 };
               }
             }

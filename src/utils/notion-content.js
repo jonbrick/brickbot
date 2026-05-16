@@ -11,6 +11,32 @@
 // --- Rich text helpers ---
 
 /**
+ * Split a string into Notion rich_text elements ≤ maxLen chars each.
+ * Notion caps each rich_text element's content at 2000 chars but accepts an
+ * array of many elements per property (concatenated on display).
+ *
+ * Prefers `\n` then space boundaries for readability when inspecting the
+ * raw API response; falls back to a hard cut.
+ */
+function chunkRichText(value, maxLen = 2000) {
+  if (value === "" || value == null) return [];
+  if (value.length <= maxLen) return [{ text: { content: value } }];
+
+  const chunks = [];
+  let remaining = value;
+  while (remaining.length > maxLen) {
+    const window = remaining.slice(0, maxLen);
+    const nl = window.lastIndexOf("\n");
+    const sp = window.lastIndexOf(" ");
+    const cut = nl > 0 ? nl + 1 : sp > 0 ? sp + 1 : maxLen;
+    chunks.push({ text: { content: remaining.slice(0, cut) } });
+    remaining = remaining.slice(cut);
+  }
+  if (remaining.length > 0) chunks.push({ text: { content: remaining } });
+  return chunks;
+}
+
+/**
  * Convert Notion rich_text array to markdown string
  */
 function richTextToMarkdown(richText) {
@@ -336,4 +362,5 @@ module.exports = {
   markdownToBlocks,
   richTextToMarkdown,
   markdownToRichText,
+  chunkRichText,
 };

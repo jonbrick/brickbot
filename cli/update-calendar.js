@@ -212,11 +212,9 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
     repo.databaseConfig.calendarEventIdProperty !== undefined &&
     repo.databaseConfig.calendarEventIdProperty !== null;
 
-  // Detect hybrid pattern: both event ID and checkbox properties exist
+  // Detect hybrid pattern via explicit databaseConfig flag.
   const useHybridPattern =
-    useEventIdPattern &&
-    repo.databaseConfig.calendarCreatedProperty !== undefined &&
-    repo.databaseConfig.calendarCreatedProperty !== null;
+    useEventIdPattern && repo.databaseConfig.useHybridPattern === true;
 
   // Get records based on pattern
   let records;

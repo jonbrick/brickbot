@@ -251,10 +251,9 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     repo.databaseConfig.calendarEventIdProperty !== undefined &&
     repo.databaseConfig.calendarEventIdProperty !== null;
 
-  // Detect hybrid pattern: both event ID and checkbox properties exist
+  // Detect hybrid pattern via explicit databaseConfig flag.
   const useHybridPattern =
-    useEventIdPattern &&
-    repo.databaseConfig.calendarCreatedProperty !== undefined;
+    useEventIdPattern && repo.databaseConfig.useHybridPattern === true;
 
   try {
     // Get records based on pattern
@@ -343,12 +342,7 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
           }
 
           // Mark as synced in Notion (use appropriate pattern)
-          if (useHybridPattern) {
-            await repo.markSyncedWithEventIdAndCheckbox(
-              record.id,
-              createdEvent.id
-            );
-          } else if (useEventIdPattern) {
+          if (useEventIdPattern) {
             await repo.markSyncedWithEventId(record.id, createdEvent.id);
           } else {
             await repo.markSynced(record.id);

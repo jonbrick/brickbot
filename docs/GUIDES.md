@@ -50,17 +50,20 @@ INTEGRATIONS: {
 
     databaseConfig: {
       // Database behavior config
-      dateProperty: "date",                    // Property name for date filtering
-      uniqueIdProperty: "itemId",              // Property name for unique ID
-      calendarEventIdProperty: "Calendar Event ID",  // For calendar sync
-      calendarCreatedProperty: "Calendar Created",    // Checkbox for sync status
+      dateProperty: "date",                          // Property name for date filtering
+      uniqueIdProperty: "itemId",                    // Property name for unique ID
+      // Pick ONE calendar sync pattern below — not both:
+      calendarCreatedProperty: "Calendar Created",   // Checkbox pattern (one-way)
+      // OR:
+      // calendarEventIdProperty: "Calendar Event ID",
+      // useHybridPattern: true,                     // Hybrid pattern (bidirectional)
     },
 ```
 
 **Note**: Choose the appropriate calendar sync pattern based on your data:
 
-- **Checkbox pattern** (one-way sync): Use only `calendarCreatedProperty` for API-sourced data that doesn't change after creation
-- **Hybrid pattern** (bidirectional sync): Use both `calendarEventIdProperty` and `calendarCreatedProperty` for user-managed data that may be edited or deleted
+- **Checkbox pattern** (one-way sync): Set `calendarCreatedProperty` for API-sourced data that doesn't change after creation.
+- **Hybrid pattern** (bidirectional sync): Set `calendarEventIdProperty` + `useHybridPattern: true` for user-managed data that may be edited or deleted.
 
 See [Calendar Sync Patterns](ARCHITECTURE.md#calendar-sync-patterns) in ARCHITECTURE.md for details.
 

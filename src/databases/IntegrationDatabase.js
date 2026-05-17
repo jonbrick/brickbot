@@ -458,63 +458,6 @@ class IntegrationDatabase extends NotionDatabase {
   }
 
   /**
-   * Mark record as synced with both Google Calendar event ID and checkbox
-   * Updates both calendarEventIdProperty (rich_text) and calendarCreatedProperty (checkbox)
-   * in a single updatePage() call
-   *
-   * @param {string} pageId - Notion page ID
-   * @param {string} eventId - Google Calendar event ID
-   * @returns {Promise<Object>} Updated page
-   */
-  async markSyncedWithEventIdAndCheckbox(pageId, eventId) {
-    try {
-      // Validate both properties exist
-      if (!this.databaseConfig.calendarEventIdProperty) {
-        throw new Error(
-          `calendarEventIdProperty not configured for ${this.configKey}. Required for event ID pattern.`
-        );
-      }
-      if (!this.databaseConfig.calendarCreatedProperty) {
-        throw new Error(
-          `calendarCreatedProperty not configured for ${this.configKey}. Required for checkbox pattern.`
-        );
-      }
-
-      // Resolve calendarEventIdProperty name
-      let eventIdPropertyName;
-      const eventIdPropertyConfigKey =
-        this.databaseConfig.calendarEventIdProperty;
-
-      if (this.props[eventIdPropertyConfigKey]) {
-        // Old pattern: config key exists in props, resolve through getPropertyName
-        eventIdPropertyName = config.notion.getPropertyName(
-          this.props[eventIdPropertyConfigKey]
-        );
-      } else {
-        // New pattern: databaseConfig contains actual Notion property name, use directly
-        eventIdPropertyName = eventIdPropertyConfigKey;
-      }
-
-      // Resolve calendarCreatedProperty name
-      const calendarCreatedPropertyName = config.notion.getPropertyName(
-        this.props[this.databaseConfig.calendarCreatedProperty]
-      );
-
-      // Update both properties in a single call
-      const properties = {
-        [eventIdPropertyName]: eventId, // rich_text property
-        [calendarCreatedPropertyName]: true, // checkbox property
-      };
-
-      return await this.updatePage(pageId, properties);
-    } catch (error) {
-      throw new Error(
-        `Failed to mark ${this.configKey} record as synced with event ID and checkbox: ${error.message}`
-      );
-    }
-  }
-
-  /**
    * Extract existing Google Calendar event ID from a record
    * Helper method to get the event ID stored in calendarEventIdProperty
    *

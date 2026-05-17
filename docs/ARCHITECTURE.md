@@ -191,10 +191,10 @@ INTEGRATIONS: {
 
 Brickbot supports different sync patterns based on data characteristics:
 
-| Pattern      | Properties                                                 | Behavior                     | Use For                        |
-| ------------ | ---------------------------------------------------------- | ---------------------------- | ------------------------------ |
-| **Checkbox** | `calendarCreatedProperty` only                             | One-way, create-only         | API-sourced data (append-only) |
-| **Hybrid**   | Both `calendarEventIdProperty` + `calendarCreatedProperty` | Bidirectional, update/delete | User-managed data              |
+| Pattern      | Properties                                              | Behavior                     | Use For                        |
+| ------------ | ------------------------------------------------------- | ---------------------------- | ------------------------------ |
+| **Checkbox** | `calendarCreatedProperty` only                          | One-way, create-only         | API-sourced data (append-only) |
+| **Hybrid**   | `calendarEventIdProperty` + `useHybridPattern: true`    | Bidirectional, update/delete | User-managed data              |
 
 #### Checkbox Pattern (One-Way Sync)
 
@@ -225,7 +225,7 @@ Used by: events, trips
 databaseConfig: {
   dateProperty: "Date",
   calendarEventIdProperty: "Calendar Event ID",
-  calendarCreatedProperty: "calendarCreated",
+  useHybridPattern: true,
 }
 ```
 

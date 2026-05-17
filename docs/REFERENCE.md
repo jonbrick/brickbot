@@ -424,8 +424,9 @@ INTEGRATIONS: {
     databaseConfig: {
       dateProperty: string,        // Property name for date
       uniqueIdProperty: string,    // Property name for unique ID
-      calendarEventIdProperty: string,    // Property for event ID (optional)
-      calendarCreatedProperty: string,    // Property for sync status (optional)
+      calendarEventIdProperty: string,    // Property for event ID (hybrid pattern)
+      useHybridPattern: boolean,          // Enables fetch-all + update/delete (hybrid)
+      calendarCreatedProperty: string,    // Checkbox property (checkbox pattern only)
     },
     apiConfig: {
       baseUrl: string,             // API base URL
@@ -447,7 +448,6 @@ oura: {
   databaseConfig: {
     dateProperty: "date",
     uniqueIdProperty: "sleepId",
-    calendarEventIdProperty: "Calendar Event ID",
     calendarCreatedProperty: "Calendar Created",
   },
   apiConfig: {

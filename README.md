@@ -612,7 +612,7 @@ yarn tokens:refresh # Refresh expired tokens
 | File | Contents | Scope |
 |------|----------|-------|
 | `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
-| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | Last 30 days |
+| `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | All (30-day rolling refresh) |
 | `data/summaries.json` | Weekly summaries, Monthly recaps | All |
 | `data/calendar.json` | All Google Calendar events | All (30-day rolling refresh) |
 | `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |

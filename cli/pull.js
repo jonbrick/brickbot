@@ -354,13 +354,88 @@ async function pullLifeData(spinner) {
   return life;
 }
 
+/**
+ * Resolve an IntegrationDatabase instance's date property to the actual Notion
+ * property name used in extractAllProperties output. Mirrors the resolution
+ * logic in IntegrationDatabase.getAllInDateRange so the same key works on both
+ * sides.
+ */
+function resolveDatePropertyName(integrationDb) {
+  const key = integrationDb.databaseConfig?.dateProperty;
+  if (!key) return null;
+  if (integrationDb.props?.[key]) {
+    return config.notion.getPropertyName(integrationDb.props[key]);
+  }
+  return key;
+}
+
+/**
+ * Merge a freshly-pulled integration bucket against the existing bucket. Same
+ * five rules as mergeCalendarBucket, keyed by _notionId. Window membership is
+ * the record's date in the integration-specific date property, compared as a
+ * YYYY-MM-DD prefix.
+ */
+function mergeCollectedBucket(existingRecords, pulledRecords, datePropertyName, windowStartDay, windowEndDay) {
+  const existingById = new Map();
+  for (const r of existingRecords) {
+    if (r._notionId) existingById.set(r._notionId, r);
+  }
+  const pulledIds = new Set(pulledRecords.map((r) => r._notionId));
+
+  const result = [];
+
+  for (const newRec of pulledRecords) {
+    const prev = existingById.get(newRec._notionId);
+    if (prev && prev._hash === newRec._hash) {
+      result.push(prev);
+    } else {
+      result.push(newRec);
+    }
+  }
+
+  for (const rec of existingRecords) {
+    if (pulledIds.has(rec._notionId)) continue;
+    const raw = datePropertyName ? rec[datePropertyName] : null;
+    const day = typeof raw === "string" ? raw.slice(0, 10) : null;
+    if (day && day >= windowStartDay && day <= windowEndDay) continue;
+    result.push(rec);
+  }
+
+  if (datePropertyName) {
+    result.sort((a, b) => {
+      const av = typeof a[datePropertyName] === "string" ? a[datePropertyName] : "";
+      const bv = typeof b[datePropertyName] === "string" ? b[datePropertyName] : "";
+      return av.localeCompare(bv);
+    });
+  }
+
+  return result;
+}
+
 async function pullCollectedData(spinner, startDate, endDate) {
   const now = new Date().toISOString();
+  const windowStartDay = startDate.toISOString().split("T")[0];
+  const windowEndDay = endDate.toISOString().split("T")[0];
+
+  // Load existing collected.json so we can merge — historical records outside
+  // this pull's window must survive the rolling auto-sync.
+  const collectedPath = path.join(DATA_DIR, "collected.json");
+  let existing = null;
+  try {
+    if (fs.existsSync(collectedPath)) {
+      existing = JSON.parse(fs.readFileSync(collectedPath, "utf-8"));
+    }
+  } catch {
+    existing = null;
+  }
+
+  const prevStart = existing?._meta?.startDate;
+  const prevEnd = existing?._meta?.endDate;
   const collected = {
     _meta: {
       pulledAt: now,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
+      startDate: prevStart && prevStart < windowStartDay ? prevStart : windowStartDay,
+      endDate: prevEnd && prevEnd > windowEndDay ? prevEnd : windowEndDay,
     },
   };
 
@@ -371,16 +446,21 @@ async function pullCollectedData(spinner, startDate, endDate) {
   });
 
   for (const id of integrationIds) {
+    const existingBucket = Array.isArray(existing?.[id]) ? existing[id] : [];
     try {
       spinner.start();
       const integrationDb = new IntegrationDatabase(id);
       const pages = await integrationDb.getAllInDateRange(startDate, endDate);
-      collected[id] = pages.map(extractAllProperties);
-      spinner.stop(`  ✓ ${collected[id].length} ${INTEGRATIONS[id].name} records`);
+      const pulled = pages.map(extractAllProperties);
+      const datePropertyName = resolveDatePropertyName(integrationDb);
+      collected[id] = mergeCollectedBucket(existingBucket, pulled, datePropertyName, windowStartDay, windowEndDay);
+      spinner.stop(`  ✓ ${pulled.length} pulled / ${collected[id].length} total ${INTEGRATIONS[id].name}`);
       await delay(config.sources.rateLimits.notion.backoffMs);
     } catch (error) {
-      spinner.stop(`  ✗ ${INTEGRATIONS[id].name}: ${error.message}`);
-      collected[id] = [];
+      // On error preserve the existing bucket rather than wiping it — a
+      // transient API failure shouldn't drop historical data.
+      spinner.stop(`  ✗ ${INTEGRATIONS[id].name}: ${error.message} (kept ${existingBucket.length} existing)`);
+      collected[id] = existingBucket;
     }
   }
 

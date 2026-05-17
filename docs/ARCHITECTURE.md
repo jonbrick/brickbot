@@ -619,7 +619,7 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 | `data/plan.json` | Weeks, Months, Rocks, Events, Trips | All |
 | `data/collected.json` | Oura, Strava, GitHub, Steam, Withings | Last 30 days |
 | `data/summaries.json` | Weekly summaries, Monthly recaps | All |
-| `data/calendar.json` | All Google Calendar events | Last 30 days |
+| `data/calendar.json` | All Google Calendar events | All (30-day rolling refresh) |
 | `data/nyc.json` | Museums, Restaurants, Tattoos, Venues | All |
 | `data/retro.json` | Personal & Work Week Retros | All |
 | `data/life.json` | Goals, Themes, Relationships, Tasks, Habits, Monthly Plans, Personal Projects | All |

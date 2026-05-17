@@ -7,6 +7,7 @@ const { delay } = require("../utils/async");
 const { formatDate, formatDateOnly } = require("../utils/date");
 const GoogleCalendarService = require("../services/GoogleCalendarService");
 const IntegrationDatabase = require("../databases/IntegrationDatabase");
+const { CALENDAR_SKIP_STATUSES } = require("../config/notion/task-categories");
 
 /**
  * Get display name for a record based on integration config
@@ -114,16 +115,33 @@ async function cleanupOrphanedEvents(
     // Get ALL Notion records in date range (including synced ones)
     const allRecords = await repo.getAllInDateRange(startDate, endDate);
 
+    // Skip-status records are intentionally excluded so their stranded
+    // calendar events fall through to the orphan delete below.
+    const integrationProps = config.notion.properties[integrationId];
+    const statusPropName = integrationProps?.status
+      ? config.notion.getPropertyName(integrationProps.status)
+      : null;
+
     // Build Set of valid Calendar Event IDs from Notion
     const validEventIds = new Set();
+    let skippedDueToStatus = 0;
     for (const record of allRecords) {
       const eventId = repo.extractEventId(record);
-      if (eventId) {
-        validEventIds.add(eventId);
+      if (!eventId) continue;
+
+      if (statusPropName) {
+        const status = repo.extractProperty(record, statusPropName);
+        if (status && CALENDAR_SKIP_STATUSES.includes(status)) {
+          skippedDueToStatus++;
+          continue;
+        }
       }
+
+      validEventIds.add(eventId);
     }
 
     results.cleanup.validEventIds = validEventIds.size;
+    results.cleanup.skippedDueToStatus = skippedDueToStatus;
 
     // List Calendar events in the same date range
     const calendarEvents = await calendarService.listEvents(

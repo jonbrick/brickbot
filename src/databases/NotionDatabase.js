@@ -5,6 +5,7 @@ const config = require("../config");
 const { formatDate, formatDateOnly } = require("../utils/date");
 const { delay } = require("../utils/async");
 const { chunkRichText } = require("../utils/notion-content");
+const { pick } = require("../utils/property-lookup");
 
 class NotionDatabase {
   constructor() {
@@ -448,7 +449,7 @@ class NotionDatabase {
    * @returns {any} Property value
    */
   extractProperty(page, propertyName) {
-    const property = page.properties[propertyName];
+    const property = pick(page.properties, propertyName);
 
     if (!property) {
       return null;

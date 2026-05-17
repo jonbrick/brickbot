@@ -460,13 +460,75 @@ async function pullSummaries(spinner) {
   return summaries;
 }
 
+/**
+ * Merge a freshly-pulled calendar bucket against the existing bucket.
+ *
+ * Per-event rules (keyed by Google event id = _calendarId):
+ *   - In pulled + not in existing            → insert (new event)
+ *   - In pulled + existing._hash matches     → keep existing (no-op, preserves _lastPulled)
+ *   - In pulled + existing._hash differs     → replace with pulled (Google-side edit)
+ *   - In existing + not in pulled, start IN  window → drop (deleted/cancelled in Google)
+ *   - In existing + not in pulled, start OUT window → keep (we have no info on it this run)
+ *
+ * The window is the pull's date range. Deletion is only inferred inside the window —
+ * outside the window, absence is the expected case and doesn't imply deletion.
+ *
+ * Compares window membership as `YYYY-MM-DD` strings to dodge TZ ambiguity in
+ * all-day events (whose `start` is a bare date string).
+ */
+function mergeCalendarBucket(existingEvents, pulledEvents, windowStartDay, windowEndDay) {
+  const existingById = new Map();
+  for (const evt of existingEvents) {
+    if (evt._calendarId) existingById.set(evt._calendarId, evt);
+  }
+  const pulledIds = new Set(pulledEvents.map((e) => e._calendarId));
+
+  const result = [];
+
+  for (const newEvt of pulledEvents) {
+    const prev = existingById.get(newEvt._calendarId);
+    if (prev && prev._hash === newEvt._hash) {
+      result.push(prev);
+    } else {
+      result.push(newEvt);
+    }
+  }
+
+  for (const evt of existingEvents) {
+    if (pulledIds.has(evt._calendarId)) continue;
+    const day = (evt.start || "").slice(0, 10);
+    if (day && day >= windowStartDay && day <= windowEndDay) continue;
+    result.push(evt);
+  }
+
+  result.sort((a, b) => (a.start || "").localeCompare(b.start || ""));
+  return result;
+}
+
 async function pullCalendar(spinner, startDate, endDate) {
   const now = new Date().toISOString();
+  const windowStartDay = startDate.toISOString().split("T")[0];
+  const windowEndDay = endDate.toISOString().split("T")[0];
+
+  // Load existing calendar.json so we can merge — historical events outside this
+  // pull's window must survive the rolling auto-sync.
+  const calendarPath = path.join(DATA_DIR, "calendar.json");
+  let existing = null;
+  try {
+    if (fs.existsSync(calendarPath)) {
+      existing = JSON.parse(fs.readFileSync(calendarPath, "utf-8"));
+    }
+  } catch {
+    existing = null;
+  }
+
+  const prevStart = existing?._meta?.startDate;
+  const prevEnd = existing?._meta?.endDate;
   const calendar = {
     _meta: {
       pulledAt: now,
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: endDate.toISOString().split("T")[0],
+      startDate: prevStart && prevStart < windowStartDay ? prevStart : windowStartDay,
+      endDate: prevEnd && prevEnd > windowEndDay ? prevEnd : windowEndDay,
     },
   };
 
@@ -501,10 +563,12 @@ async function pullCalendar(spinner, startDate, endDate) {
     const service = isWorkCalendar ? workService : personalService;
     if (!service) continue;
 
+    const existingBucket = Array.isArray(existing?.[calId]) ? existing[calId] : [];
+
     try {
       spinner.start();
       const events = await service.listEvents(calendarId, startDate, endDate);
-      calendar[calId] = events.map((event) => stampHash({
+      const pulled = events.map((event) => stampHash({
         _calendarId: event.id,
         _calendarName: calConfig.name,
         _lastPulled: now,
@@ -515,10 +579,13 @@ async function pullCalendar(spinner, startDate, endDate) {
         location: event.location || "",
         status: event.status || "",
       }));
-      spinner.stop(`  ✓ ${calendar[calId].length} ${calConfig.name} events`);
+      calendar[calId] = mergeCalendarBucket(existingBucket, pulled, windowStartDay, windowEndDay);
+      spinner.stop(`  ✓ ${pulled.length} pulled / ${calendar[calId].length} total ${calConfig.name}`);
     } catch (error) {
-      spinner.stop(`  ✗ ${calConfig.name}: ${error.message}`);
-      calendar[calId] = [];
+      // On error preserve the existing bucket rather than wiping it — a transient
+      // API failure shouldn't drop historical data.
+      spinner.stop(`  ✗ ${calConfig.name}: ${error.message} (kept ${existingBucket.length} existing)`);
+      calendar[calId] = existingBucket;
       if (error.message.includes("invalid_grant")) {
         authErrors++;
       }

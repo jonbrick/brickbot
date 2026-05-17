@@ -11,6 +11,7 @@
 const fs = require("fs");
 const path = require("path");
 const { parse } = require("csv-parse/sync");
+const { pick } = require("../src/utils/property-lookup");
 
 // --- Paths ---
 const CSV_DIR = path.join(__dirname, "..", "local", "plan", "csv");
@@ -147,8 +148,8 @@ function extractMonthNumber(title) {
 function parseWeeks(rows) {
   return rows
     .map((row) => {
-      const name = row["Week"];
-      const { start, end } = parseNotionDate(row["Date Range (SET)"]);
+      const name = pick(row, "Week");
+      const { start, end } = parseNotionDate(pick(row, "Date Range (SET)"));
       if (!name || !start || !end) return null;
       return {
         id: weekNameToId(name),
@@ -163,14 +164,14 @@ function parseWeeks(rows) {
 function parsePersonalPlanMonths(rows) {
   const plans = {};
   for (const row of rows) {
-    const monthNum = extractMonthNumber(row["Month Plan"]);
+    const monthNum = extractMonthNumber(pick(row, "Month Plan"));
     if (!monthNum) continue;
     plans[monthNum] = {
-      health: row["Health Plan"]?.trim() || "",
-      home: row["Home Plan"]?.trim() || "",
-      personal: row["Personal Plan"]?.trim() || "",
-      interpersonal: row["Interpersonal Plan"]?.trim() || "",
-      mental: row["Mental Health Plan"]?.trim() || "",
+      health: pick(row, "Health Plan")?.trim() || "",
+      home: pick(row, "Home Plan")?.trim() || "",
+      personal: pick(row, "Personal Plan")?.trim() || "",
+      interpersonal: pick(row, "Interpersonal Plan")?.trim() || "",
+      mental: pick(row, "Mental Health Plan")?.trim() || "",
     };
   }
   return plans;
@@ -179,10 +180,10 @@ function parsePersonalPlanMonths(rows) {
 function parseWorkPlanMonths(rows) {
   const plans = {};
   for (const row of rows) {
-    const monthNum = extractMonthNumber(row["Month Plan"]);
+    const monthNum = extractMonthNumber(pick(row, "Month Plan"));
     if (!monthNum) continue;
     plans[monthNum] = {
-      work: row["Work Plan"]?.trim() || "",
+      work: pick(row, "Work Plan")?.trim() || "",
     };
   }
   return plans;
@@ -234,18 +235,18 @@ function parseRocks(rows) {
   let id = 0;
   return rows
     .map((row) => {
-      const weekName = extractWeekName(row["⏰ 2026 Weeks"]);
+      const weekName = extractWeekName(pick(row, "⏰ 2026 Weeks"));
       if (!weekName) return null; // Skip rocks without a week (e.g., backlog items)
 
       id++;
       return {
         id: `rock-${String(id).padStart(3, "0")}`,
-        name: row["Rock"]?.replace(/^\d+\.\s*/, "").trim() || "", // Strip "06. " prefix
-        category: row["Category"]?.trim() || "",
-        workCategory: row["Work Category"]?.trim() || null,
-        retro: row["Retro"]?.trim() || "",
-        status: row["Status"]?.trim() || "",
-        description: row["Description"]?.trim() || "",
+        name: pick(row, "Rock")?.replace(/^\d+\.\s*/, "").trim() || "", // Strip "06. " prefix
+        category: pick(row, "Category")?.trim() || "",
+        workCategory: pick(row, "Work Category")?.trim() || null,
+        retro: pick(row, "Retro")?.trim() || "",
+        status: pick(row, "Status")?.trim() || "",
+        description: pick(row, "Description")?.trim() || "",
         weekId: weekNameToId(weekName),
       };
     })
@@ -256,19 +257,19 @@ function parseEvents(rows) {
   let id = 0;
   return rows
     .map((row) => {
-      const { start, end } = parseNotionDate(row["Date"]);
+      const { start, end } = parseNotionDate(pick(row, "Date"));
       if (!start) return null;
 
       id++;
       return {
         id: `event-${String(id).padStart(3, "0")}`,
-        name: row["Event Name"]?.trim() || "",
-        category: row["Category"]?.trim() || "",
-        subcategory: row["Subcategory"]?.trim() || "",
+        name: pick(row, "Event Name")?.trim() || "",
+        category: pick(row, "Category")?.trim() || "",
+        subcategory: pick(row, "Subcategory")?.trim() || "",
         startDate: start,
         endDate: end || start,
-        status: row["Status"]?.trim() || "",
-        notes: row["Notes"]?.trim() || "",
+        status: pick(row, "Status")?.trim() || "",
+        notes: pick(row, "Notes")?.trim() || "",
       };
     })
     .filter(Boolean);
@@ -278,19 +279,19 @@ function parseTrips(rows) {
   let id = 0;
   return rows
     .map((row) => {
-      const { start, end } = parseNotionDate(row["Date"]);
+      const { start, end } = parseNotionDate(pick(row, "Date"));
       if (!start) return null; // Skip trips without dates (e.g., "2026 Italy" with no date)
 
       id++;
       return {
         id: `trip-${String(id).padStart(3, "0")}`,
-        name: row["Trip Name"]?.trim() || "",
-        category: row["Category"]?.trim() || "",
-        subcategory: row["Subcategory"]?.trim() || "",
+        name: pick(row, "Trip Name")?.trim() || "",
+        category: pick(row, "Category")?.trim() || "",
+        subcategory: pick(row, "Subcategory")?.trim() || "",
         startDate: start,
         endDate: end || start,
-        status: row["Status"]?.trim() || "",
-        notes: row["Notes"]?.trim() || "",
+        status: pick(row, "Status")?.trim() || "",
+        notes: pick(row, "Notes")?.trim() || "",
       };
     })
     .filter(Boolean);

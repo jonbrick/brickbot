@@ -175,15 +175,22 @@ class GoogleCalendarService {
    */
   async listEvents(calendarId, timeMin, timeMax) {
     try {
-      const response = await this.calendar.events.list({
-        calendarId: calendarId,
-        timeMin: timeMin.toISOString(),
-        timeMax: timeMax.toISOString(),
-        singleEvents: true,
-        orderBy: "startTime",
-      });
-
-      return response.data.items || [];
+      const items = [];
+      let pageToken;
+      do {
+        const response = await this.calendar.events.list({
+          calendarId: calendarId,
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
+          singleEvents: true,
+          orderBy: "startTime",
+          maxResults: 2500,
+          pageToken,
+        });
+        if (response.data.items) items.push(...response.data.items);
+        pageToken = response.data.nextPageToken;
+      } while (pageToken);
+      return items;
     } catch (error) {
       throw new Error(
         `Failed to list calendar events: ${

@@ -406,10 +406,21 @@ function syncPersonalProjects(projects, goals) {
   const results = { written: 0, skipped: 0, warnings: [], errors: [] };
   const matchedNotionIds = new Set();
 
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+  // Recursively find .md files under personal/projects/<Project Name>/<slug>.md.
+  // Skip the _personal-project-triage/ folder (pre-Notion staging, flat layout).
+  const files = [];
+  const walk = (subdir) => {
+    for (const entry of fs.readdirSync(subdir, { withFileTypes: true })) {
+      if (entry.name.startsWith(".") || entry.name === "_personal-project-triage") continue;
+      const full = path.join(subdir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.isFile() && entry.name.endsWith(".md")) files.push(full);
+    }
+  };
+  walk(dir);
 
-  for (const file of files) {
-    const filePath = path.join(dir, file);
+  for (const filePath of files) {
+    const file = path.basename(filePath);
     let content;
     try {
       content = fs.readFileSync(filePath, "utf8");

@@ -52,6 +52,7 @@ This document contains the exact property names, types, and allowed values for e
 | Status | status | "🧊 Ice Box", "🔴 To Do", "🟡 Scheduled", "🔵 Doing", "🟢 Done" |
 | Category | select | "💼 Work", "🌱 Personal", "🍻 Interpersonal", "🏠 Home", "💪 Physical Health", "❤️ Mental Health" |
 | Work Category | select | "🧪 Research", "💡 Sketch", "🎨 Design", "🖥️ Coding", "⚠️ Crit", "🔎 QA", "📝 Admin", "🍸 Social", "🏝️ OOO" |
+| Personal Category | select | "💻 Coding", "📝 Admin" |
 | Due Date | date | **Use this to filter tasks by date** |
 | Notes | text | |
 | Priority | text | |

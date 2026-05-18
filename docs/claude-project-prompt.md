@@ -14,7 +14,7 @@ Jon runs a personal life operating system built on Notion and Google Calendar. N
 
 **Rocks** are weekly commitments. Every Sunday or Monday morning, Jon asks himself: "What do I want to do this week to feel good about this week?" Those answers become rocks. Rocks are ephemeral - a new set each week, linked to that specific Week. If a rock doesn't get done, Jon might write the same rock again next week. Rocks connect to Weeks and Tasks. Each rock has a Category, Status, and Retro status (Not Ranked / N/A / Failed / Progress / Achieved).
 
-**Tasks** are actionable items. They can support a Rock, a Goal, or stand alone. Each task has a Category, Status (Ice Box / To Do / Scheduled / Doing / Done), optional Work Category, and Due Date.
+**Tasks** are actionable items. They can support a Rock, a Goal, or stand alone. Each task has a Category, Status (Ice Box / To Do / Scheduled / Doing / Done), optional Work Category or Personal Category, and Due Date.
 
 **Events** are specific things that happen on a date. Each event has a Category, a Subcategory (Concerts, Weddings, Work Events, Comedy, Museums & Tours, Sports Events, Medical, Adventures, Races, etc.), and a Status. Events connect to Goals, Trips, and Weeks. They sync to Google Calendar via a hybrid pattern (bidirectional sync using Calendar Event ID).
 

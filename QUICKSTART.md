@@ -44,11 +44,11 @@ Personal data pipeline that automatically collects data from external sources (G
 
 ### Weekly Cadence
 
-1. **Sunday/Monday AM** — Write rocks for the week (`/plan-personal-week`, `/plan-work-week`)
+1. **Sunday/Monday AM** — Write rocks for the week (`/plan-week`)
 2. **During the week** — Work tasks, events, live life
 3. **Automation runs 9x/day** — full pipeline (tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync)
 4. **End of week** — Run retro (`/retro`)
-5. **Monthly** — `/reflect-personal-month`, `/reflect-work-month`
+5. **Monthly** — `/reflect-month`
 
 ### The Pull/Push Cycle
 

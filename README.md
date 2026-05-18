@@ -659,8 +659,7 @@ Automation handles the full pipeline 9x/day. No manual action needed.
 ```bash
 # In Claude Code:
 /retro                         # Weekly retro (personal, work, or both)
-/plan-personal-week            # Plan next personal week
-/plan-work-week                # Plan next work week
+/plan-week                     # Plan next week (personal + work in one session)
 ```
 
 ### Monthly
@@ -668,10 +667,8 @@ Automation handles the full pipeline 9x/day. No manual action needed.
 ```bash
 yarn recap                     # Generate monthly recaps
 # In Claude Code:
-/reflect-personal-month        # Personal monthly reflection
-/reflect-work-month            # Work monthly reflection
-/plan-personal-month           # Plan next personal month
-/plan-work-month               # Plan next work month
+/reflect-month                 # Monthly reflection (personal + work in one session)
+/plan-month                    # Plan next month (personal + work in one session)
 yarn push                      # Sync reflections and plans to Notion
 ```
 

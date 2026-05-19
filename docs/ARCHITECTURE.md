@@ -294,7 +294,7 @@ MONTHLY_RECAP_CATEGORIES: {
 
 **CLI Usage**:
 
-The `yarn recap` command now includes type selection:
+The `yarn aggregate` command now includes type selection:
 
 - "All (Personal + Work)" - Processes both recap types
 - "Personal only" - Processes only personal recap
@@ -312,7 +312,7 @@ CONTENT_FILTERS: {
     personal: { columnName: ["word1", "word2"] },
     work: { columnName: ["word1"] },
   },
-  recap: {  // yarn recap: weekly summaries → monthly recap
+  recap: {  // yarn aggregate: weekly summaries → monthly recap (config key kept as "recap" since it describes the destination)
     personal: { columnName: ["word1"] },
     work: { columnName: ["word1"] },
   },
@@ -321,7 +321,7 @@ CONTENT_FILTERS: {
 
 Keys are column names (e.g., `workoutBlocks`, `personalFamilyBlocks`, `workCodingTasks`).
 
-**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_PROPERTIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). `CONTENT_FILTERS` defines words to filter out from specific output columns using word-boundary matching (case-insensitive) for both `yarn summarize` and `yarn recap` commands.
+**Relationship**: Category groupings in `MONTHLY_RECAP_CATEGORIES` define how weekly block fields are combined into monthly recap properties. `MONTHLY_RECAP_TASK_PROPERTIES` defines how work task fields are grouped (personal tasks remain in a single `tasksDetails` field). `CONTENT_FILTERS` defines words to filter out from specific output columns using word-boundary matching (case-insensitive) for both `yarn summarize` and `yarn aggregate` commands.
 
 **Helper Functions**:
 
@@ -335,7 +335,7 @@ Keys are column names (e.g., `workoutBlocks`, `personalFamilyBlocks`, `workCodin
 - User interaction and prompts
 - Display formatted results
 - **Spinners for async feedback** (Output at Edges principle)
-- Entry points: `collect-data.js`, `update-calendar.js`, `summarize-week.js`, `recap-month.js`
+- Entry points: `collect-data.js`, `update-calendar.js`, `summarize-week.js`, `aggregate-month.js`
 
 **Pattern:** CLI files own all console output. Data layer returns structured results.
 
@@ -610,7 +610,7 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 **Why local-first?**
 - Claude Code can read/analyze data without API calls
 - Edits are batched and only changed records are pushed (MD5 hash comparison)
-- Vault skills (`/retro`, `/plan-*`, `/reflect-*`) operate on local files
+- Vault skills (`/retro-week`, `/plan-*`, `/recap-month`) operate on local files
 
 **Local data files:**
 
@@ -630,7 +630,7 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 Runs 9x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
 
 ```
-tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
+tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync
 ```
 
 **Schedule:** every 2 hours, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM)
@@ -652,10 +652,10 @@ Brickbot has four interaction patterns:
 Interactive commands for data pipeline operations (`yarn collect`, `yarn update`, `yarn summarize`, etc.).
 
 ### 2. Automation
-Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync` 9x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
+Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync` 9x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
 
 ### 3. Vault Skills
-Reflection/planning slash commands (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault, not in brickbot. They read/edit `data/*.json` and push back via `yarn push` — brickbot is the plumbing, the vault hosts the user-facing skills.
+Reflection/planning slash commands (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault, not in brickbot. They read/edit `data/*.json` and push back via `yarn push` — brickbot is the plumbing, the vault hosts the user-facing skills.
 
 ### 4. HTML Viewers
 Static viewers for plan data (`yarn view`) and NYC guides (`yarn nyc`).

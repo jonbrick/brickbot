@@ -2,14 +2,14 @@
 
 /**
  * Sync CLI
- * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
+ * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync
  * Called by launchd or manually via `yarn sync`
  *
  * Usage:
  *   yarn sync                                       # Run full pipeline for today (interactive where applicable)
  *   yarn sync --auto                                # Non-interactive (used by launchd) — default ±3 day window
  *   yarn sync --date=YYYY-MM-DD                     # Backfill a single past day end-to-end
- *   yarn sync --from=YYYY-MM-DD --to=YYYY-MM-DD     # Backfill a date range; summarize/recap fire once per unique week/month touched
+ *   yarn sync --from=YYYY-MM-DD --to=YYYY-MM-DD     # Backfill a date range; summarize/aggregate fire once per unique week/month touched
  *
  * `--date` and `--from`/`--to` are forwarded to every date-aware child step so
  * each child applies the range at its own granularity (day/week/month).
@@ -56,7 +56,7 @@ const STEPS = [
   { name: "collect", cmd: `${NODE} cli/collect-data.js --auto${rangeFlag}` },
   { name: "update", cmd: `${NODE} cli/update-calendar.js --auto${rangeFlag}` },
   { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto${rangeFlag}` },
-  { name: "recap", cmd: `${NODE} cli/recap-month.js --auto${rangeFlag}` },
+  { name: "aggregate", cmd: `${NODE} cli/aggregate-month.js --auto${rangeFlag}` },
   { name: "push", cmd: `${NODE} cli/push.js --auto` },
   { name: "pull", cmd: `${NODE} cli/pull.js --auto`, timeout: 8 * 60 * 1000 },
   { name: "vault-sync", cmd: `${NODE} cli/vault-sync.js --auto` },

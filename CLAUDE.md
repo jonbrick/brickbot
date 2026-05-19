@@ -6,7 +6,7 @@ Brickbot is a personal data pipeline: external APIs (GitHub, Oura, Strava, Steam
 
 Brickbot is one half of the Brickosystem; the other is the Brickocampus vault at `~/Documents/Brickocampus/` (Obsidian, iCloud-synced). They're separate because brickbot has node_modules and a git history that iCloud would corrupt. `data/` is a symlink into the vault — the Mac mini writes (`yarn pull`), the work MacBook reads. Don't run `yarn pull` from the MacBook — it races iCloud sync.
 
-Reflection/planning skills (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the vault's `.claude/skills/`, not here. Launch Claude Code from the vault to use them.
+Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in the vault's `.claude/skills/`, not here. Launch Claude Code from the vault to use them.
 
 ## Gotchas
 

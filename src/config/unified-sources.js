@@ -2137,7 +2137,7 @@ const CONTENT_FILTERS = {
     },
   },
   /**
-   * yarn recap: weekly summaries → monthly recap
+   * yarn aggregate: weekly summaries → monthly recap
    * Keys are column names (from MONTHLY_RECAP_BLOCK_PROPERTIES and MONTHLY_RECAP_TASK_PROPERTIES)
    */
   recap: {

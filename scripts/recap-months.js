@@ -50,17 +50,21 @@ for (const r of recaps) {
   const title = r["Month Recap"] || "";
   const aiRecap = (r["AI Recap"] || "").trim();
   const myRecap = (r["My Recap"] || "").trim();
-  const q1 = (r["What went well?"] || "").trim();
-  const q2 = (r["What didn't go so well?"] || "").trim();
-  const q3 = (r["What did I learn?"] || "").trim();
+  const myQ1 = (r["My What went well?"] || "").trim();
+  const myQ2 = (r["My What did not go so well?"] || "").trim();
+  const myQ3 = (r["My What did I learn?"] || "").trim();
+  const aiQ1 = (r["AI What went well?"] || "").trim();
+  const aiQ2 = (r["AI What did not go so well?"] || "").trim();
+  const aiQ3 = (r["AI What did I learn?"] || "").trim();
   const status = (r["Status"] || "Not started").trim();
-  const qsFilled = [q1, q2, q3].filter(Boolean).length;
+  const myQs = [myQ1, myQ2, myQ3].filter(Boolean).length;
+  const aiQs = [aiQ1, aiQ2, aiQ3].filter(Boolean).length;
   const aggBytes = aggFields.reduce(
     (sum, f) => sum + (r[f] || "").length,
     0
   );
 
-  results.push({ title, status, aiRecap, myRecap, qsFilled, aggBytes });
+  results.push({ title, status, aiRecap, myRecap, myQs, aiQs, aggBytes });
 }
 
 const needsWork = results
@@ -73,7 +77,7 @@ for (const r of needsWork) {
   const my = r.myRecap ? "✓" : "◯";
   const agg = r.aggBytes > 100 ? "ready" : `THIN (${r.aggBytes}b)`;
   console.log(
-    `  ${r.title} — ${r.status} — AI:${ai} My:${my} Qs:${r.qsFilled}/3 | brickbot agg: ${agg}`
+    `  ${r.title} — ${r.status} — AI:${ai} My:${my} Qs(AI):${r.aiQs}/3 Qs(My):${r.myQs}/3 | brickbot agg: ${agg}`
   );
 }
 if (needsWork.length === 0) console.log("  All monthly recaps complete!");

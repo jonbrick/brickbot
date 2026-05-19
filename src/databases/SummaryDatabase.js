@@ -9,23 +9,32 @@ const {
 } = require("../config/unified-sources");
 const { delay } = require("../utils/async");
 
-/** Formula property name → Values text property name (Personal monthly recap) */
+// Formula → free-text snapshot map (Personal monthly recap).
+// Convention: aggregate formula columns end in " Roll Up"; the paired free-text
+// column drops the suffix. Stragglers still using "Values" suffix are kept
+// until Jon renames them in Notion.
 const PERSONAL_FORMULA_TO_VALUES = {
-  "Personal Rocks": "Personal Rocks Values",
-  "Monthly Habits": "Monthly Habits Values",
-  "Personal Trips & Events": "Personal Trips & Events Values",
-  "What went well?": "What went well? Values",
-  "What didn't go so well?": "What didn't go so well? Values",
-  "What did I learn?": "What did I learn? Values",
+  "Personal Rocks Roll Up": "Personal Rocks",
+  "Monthly Habits Roll Up": "Monthly Habits Values",
+  "Personal Trips & Events Roll Up": "Personal Trips & Events Values",
+  "My What went well? Roll Up": "My What went well?",
+  "My What did not go so well? Roll Up": "My What did not go so well?",
+  "My What did I learn? Roll Up": "My What did I learn?",
+  "AI What went well? Roll Up": "AI What went well?",
+  "AI What did not go so well? Roll Up": "AI What did not go so well?",
+  "AI What did I learn? Roll Up": "AI What did I learn?",
 };
 
-/** Formula property name → Values text property name (Work monthly recap) */
+// Formula → free-text snapshot map (Work monthly recap).
 const WORK_FORMULA_TO_VALUES = {
-  "Work Rocks": "Work Rocks Values",
-  "Work Trips & Events": "Work Trips & Events Values",
-  "What went well?": "What went well? Values",
-  "What didn't go so well?": "What didn't go so well? Values",
-  "What did I learn?": "What did I learn? Values",
+  "Work Rocks Roll Up": "Work Rocks Values",
+  "Work Trips & Events Roll Up": "Work Trips & Events Values",
+  "My What went well? Roll Up": "My What went well?",
+  "My What did not go so well? Roll Up": "My What did not go so well?",
+  "My What did I learn? Roll Up": "My What did I learn?",
+  "AI What went well? Roll Up": "AI What went well?",
+  "AI What did not go so well? Roll Up": "AI What did not go so well?",
+  "AI What did I learn? Roll Up": "AI What did I learn?",
 };
 
 /**

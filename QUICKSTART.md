@@ -18,7 +18,7 @@ Personal data pipeline that automatically collects data from external sources (G
 │            7, 9, 11am · 1, 3, 5, 7, 9, 11pm (every 2hr)         │
 │                                                                 │
 │   tokens:refresh → collect → update → summarize →               │
-│   recap → push → pull → vault-sync                              │
+│   aggregate → push → pull → vault-sync                          │
 │                                                                 │
 │   Full pipeline: refresh tokens, fetch API data → Notion,       │
 │   sync to Calendar, summarize, push/pull local JSON,            │
@@ -38,17 +38,17 @@ Personal data pipeline that automatically collects data from external sources (G
 │                    MANUAL (run as needed)                        │
 │                                                                 │
 │   Reflection/planning skills live in the Brickocampus vault —   │
-│   launch Claude Code from there to use /retro, /plan-*, etc.    │
+│   launch Claude Code from there to use /retro-week, /plan-*.    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Weekly Cadence
 
-1. **Sunday/Monday AM** — Write rocks for the week (`/plan-personal-week`, `/plan-work-week`)
+1. **Sunday/Monday AM** — Write rocks for the week (`/plan-week`)
 2. **During the week** — Work tasks, events, live life
-3. **Automation runs 9x/day** — full pipeline (tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync)
-4. **End of week** — Run retro (`/retro`)
-5. **Monthly** — `/reflect-personal-month`, `/reflect-work-month`
+3. **Automation runs 9x/day** — full pipeline (tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync)
+4. **End of week** — Run retro (`/retro-week`)
+5. **Monthly** — `/recap-month`
 
 ### The Pull/Push Cycle
 
@@ -68,7 +68,7 @@ yarn push              # Push local edits → Notion (delta-only, hash-based)
 yarn collect           # Fetch data from external APIs → Notion
 yarn update            # Sync Notion records → Google Calendar events
 yarn summarize         # Generate weekly summaries from calendar data
-yarn recap             # Generate monthly recaps from weekly summaries
+yarn aggregate         # Aggregate weekly summaries into monthly recaps
 yarn push              # Push local JSON edits → Notion (delta-only)
 yarn pull              # Pull Notion + Calendar → local JSON
 yarn vault-sync        # Sync data to Brickocampus vault (diff-only)
@@ -78,7 +78,7 @@ yarn vault-sync        # Sync data to Brickocampus vault (diff-only)
 
 ```bash
 yarn summarize         # Generate weekly summaries from calendar data
-yarn recap             # Generate monthly recaps from weekly summaries
+yarn aggregate         # Aggregate weekly summaries into monthly recaps
 yarn generate          # Generate yearly config
 ```
 
@@ -104,7 +104,7 @@ yarn nyc:import        # One-time CSV → Notion import for NYC databases
 
 ### Claude Code Skills
 
-Reflection/planning skills (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
+Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
 
 ### Utilities
 

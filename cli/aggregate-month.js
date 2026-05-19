@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Recap Month CLI
- * Command-line interface for generating monthly recaps from weekly recaps
+ * Aggregate Month CLI
+ * Command-line interface for aggregating weekly summaries into monthly recaps
  */
 
 require("dotenv").config();

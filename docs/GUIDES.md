@@ -581,7 +581,7 @@ yarn summarize
 # Select your calendar and date range
 
 # Generate monthly recap
-yarn recap
+yarn aggregate
 # Select recap type (All, Personal only, or Work only)
 # Verify new calendar blocks appear in the correct category
 ```
@@ -705,7 +705,7 @@ if (summaryData.personalNewCategoryBlocks !== undefined) {
 yarn summarize
 
 # Generate monthly recap
-yarn recap-month
+yarn aggregate
 
 # Verify new category appears with correct data
 ```

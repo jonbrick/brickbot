@@ -1,0 +1,80 @@
+// Lists months needing reflection work for a given type (personal or work)
+// Usage: node scripts/recap-months.js personal
+//        node scripts/recap-months.js work
+
+const type = process.argv[2];
+if (!type || !["personal", "work"].includes(type)) {
+  console.error("Usage: node scripts/recap-months.js <personal|work>");
+  process.exit(1);
+}
+
+const summaries = require("../data/summaries.json");
+const isPersonal = type === "personal";
+const recaps = isPersonal
+  ? summaries.personalMonthlyRecap || []
+  : summaries.workMonthlyRecap || [];
+
+// Mirrors MONTHLY_RECAP_BLOCK_PROPERTIES + MONTHLY_RECAP_TASK_PROPERTIES in
+// src/config/unified-sources.js. Used to detect whether brickbot's `recap`
+// stage has populated the month (sum-of-bytes check, not single-field sample —
+// any one field can legitimately be empty if the month had no events in that
+// category).
+const aggFields = isPersonal
+  ? [
+      "Family Block Details",
+      "Relationship Block Details",
+      "Interpersonal Block Details",
+      "Hobbies Block Details",
+      "Mental Health Block Details",
+      "Personal Task Details",
+      "Home Task Details",
+      "Physical Health Task Details",
+      "Mental Health Task Details",
+      "Admin Task Details",
+      "Coding Task Details",
+    ]
+  : [
+      "Meetings Block Details",
+      "Social & Personal Block Details",
+      "Design Task Details",
+      "Research Task Details",
+      "Admin Task Details",
+      "Coding Task Details",
+      "QA Task Details",
+      "Hiring Task Details",
+      "Sketch Task Details",
+    ];
+
+const results = [];
+for (const r of recaps) {
+  const title = r["Month Recap"] || "";
+  const aiRecap = (r["AI Recap"] || "").trim();
+  const myRecap = (r["My Recap"] || "").trim();
+  const q1 = (r["What went well?"] || "").trim();
+  const q2 = (r["What didn't go so well?"] || "").trim();
+  const q3 = (r["What did I learn?"] || "").trim();
+  const status = (r["Status"] || "Not started").trim();
+  const qsFilled = [q1, q2, q3].filter(Boolean).length;
+  const aggBytes = aggFields.reduce(
+    (sum, f) => sum + (r[f] || "").length,
+    0
+  );
+
+  results.push({ title, status, aiRecap, myRecap, qsFilled, aggBytes });
+}
+
+const needsWork = results
+  .filter((r) => r.status !== "Done")
+  .sort((a, b) => a.title.localeCompare(b.title));
+
+console.log("Months needing recap work:");
+for (const r of needsWork) {
+  const ai = r.aiRecap ? "✓" : "◯";
+  const my = r.myRecap ? "✓" : "◯";
+  const agg = r.aggBytes > 100 ? "ready" : `THIN (${r.aggBytes}b)`;
+  console.log(
+    `  ${r.title} — ${r.status} — AI:${ai} My:${my} Qs:${r.qsFilled}/3 | brickbot agg: ${agg}`
+  );
+}
+if (needsWork.length === 0) console.log("  All monthly recaps complete!");
+console.log("Or pick any month to revisit.");

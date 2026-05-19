@@ -463,7 +463,7 @@ oura: {
 
 **Location**: `src/config/unified-sources.js`
 
-**Purpose**: Filter words from output columns in `yarn summarize` and `yarn recap`.
+**Purpose**: Filter words from output columns in `yarn summarize` and `yarn aggregate`.
 
 **Structure**: `CONTENT_FILTERS[command][recapType][columnName] = ["word1", "word2"]`
 
@@ -521,7 +521,7 @@ Universal date range selector with context-aware options.
 | `yarn collect` | `"day"` | `{ startDate, endDate }` |
 | `yarn update` | `"day"` | `{ startDate, endDate }` |
 | `yarn summarize` | `"week"` | `{ weeks, displayText }` |
-| `yarn recap` | `"month"` | `{ months, displayText }` |
+| `yarn aggregate` | `"month"` | `{ months, displayText }` |
 
 #### Menu Options by Granularity
 
@@ -688,14 +688,14 @@ DRY_RUN=false  # Set to true for testing without creating records
 
 ### Data Pipeline (automated 9x/day)
 
-Full pipeline runs automatically via launchd: `tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync`
+Full pipeline runs automatically via launchd: `tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync`
 
 | Command | Purpose | Interactive |
 |---------|---------|-------------|
 | `yarn collect` | Fetch from external APIs → Notion | Yes (`--auto` for non-interactive) |
 | `yarn update` | Sync Notion → Google Calendar | Yes (`--auto` for non-interactive) |
 | `yarn summarize` | Generate weekly summaries from calendar data | Yes (`--auto` for non-interactive) |
-| `yarn recap` | Generate monthly recaps from weekly summaries | Yes (`--auto` for non-interactive) |
+| `yarn aggregate` | Aggregate weekly summaries into monthly recaps | Yes (`--auto` for non-interactive) |
 | `yarn push` | Push local JSON edits → Notion (delta-only) | Yes (`--auto` for non-interactive) |
 | `yarn pull` | Pull Notion + Calendar → `data/*.json` | Yes (`--auto` for non-interactive) |
 | `yarn vault-sync` | Sync data to Brickocampus vault (diff-only) | Yes (`--auto` for non-interactive) |
@@ -734,7 +734,7 @@ Full pipeline runs automatically via launchd: `tokens:refresh → collect → up
 
 ### Claude Code Skills
 
-Reflection/planning skills (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. Skills follow the pull/push cycle: `yarn pull` → run skill → `yarn push`.
+Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. Skills follow the pull/push cycle: `yarn pull` → run skill → `yarn push`.
 
 ### Local Data Files
 

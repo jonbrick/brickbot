@@ -64,7 +64,7 @@ Work items also have Work Categories: Research, Sketch, Design, Coding, Crit, QA
 6. Jon reviews summaries and writes retros
 
 **Monthly:**
-7. `yarn recap` generates monthly recaps from weekly summaries
+7. `yarn aggregate` aggregates weekly summaries into monthly recaps
 8. Monthly plans exist for Personal and Work
 
 ### Monthly Plans

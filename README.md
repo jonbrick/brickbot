@@ -548,7 +548,7 @@ Generate weekly summaries to test the summary pipeline.
 yarn collect        # Fetch data from external APIs → Notion
 yarn update         # Sync Notion records → Google Calendar events
 yarn summarize      # Generate weekly summaries from calendar data
-yarn recap          # Generate monthly recaps from weekly summaries
+yarn aggregate      # Aggregate weekly summaries into monthly recaps
 yarn push           # Push local JSON edits → Notion (delta-only)
 yarn pull           # Pull Notion + Calendar → local JSON (data/*.json)
 yarn vault-sync     # Sync data to Brickocampus vault (diff-only)
@@ -568,7 +568,7 @@ Edit `data/*.json` locally, then `yarn push` to sync changes back. Only changed 
 
 ```bash
 yarn summarize      # Generate weekly summaries from calendar data
-yarn recap          # Generate monthly recaps from weekly summaries
+yarn aggregate      # Aggregate weekly summaries into monthly recaps
 yarn generate       # Generate yearly config
 ```
 
@@ -594,7 +594,7 @@ yarn plan           # Parse yarn plan data
 
 ### Claude Code Skills
 
-Reflection/planning skills (`/retro`, `/plan-*`, `/reflect-*`, `/coding-tasks-week`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
+Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
 
 ### Token Management
 
@@ -625,7 +625,7 @@ yarn tokens:refresh # Refresh expired tokens
 Brickbot runs automatically 9x daily — every 2 hours, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM) via launchd. The full automation surface (Cowork morning-brief, meeting-processor, watchdog, app-launcher, pmset wakes) lives in `~/Documents/Brickocampus/_automation/_automation-readme.md`. This section covers `com.brickbot.daily` only:
 
 ```
-tokens:refresh → collect → update → summarize → recap → push → pull → vault-sync
+tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync
 ```
 
 - **Resilience:** 3-min default per-step timeout (pull: 8-min). Bails on token refresh failure.
@@ -658,20 +658,17 @@ Automation handles the full pipeline 9x/day. No manual action needed.
 
 ```bash
 # In Claude Code:
-/retro                         # Weekly retro (personal, work, or both)
-/plan-personal-week            # Plan next personal week
-/plan-work-week                # Plan next work week
+/retro-week                    # Weekly retro (personal, work, or both)
+/plan-week                     # Plan next week (personal + work in one session)
 ```
 
 ### Monthly
 
 ```bash
-yarn recap                     # Generate monthly recaps
+yarn aggregate                 # Aggregate weekly summaries into monthly recaps
 # In Claude Code:
-/reflect-personal-month        # Personal monthly reflection
-/reflect-work-month            # Work monthly reflection
-/plan-personal-month           # Plan next personal month
-/plan-work-month               # Plan next work month
+/recap-month                   # Monthly recap (personal + work in one session)
+/plan-month                    # Plan next month (personal + work in one session)
 yarn push                      # Sync reflections and plans to Notion
 ```
 

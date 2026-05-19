@@ -121,6 +121,14 @@ function buildPropertiesFromRecord(record) {
       continue;
     }
 
+    // Pre-format title types — needed for DBs without static config (e.g. retros).
+    // _formatProperties falls back to rich_text when the static config doesn't
+    // declare the title property, which Notion rejects with "X is expected to be title."
+    if (type === "title") {
+      properties[key] = { title: [{ text: { content: String(value) } }] };
+      continue;
+    }
+
     properties[key] = value;
   }
 

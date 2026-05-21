@@ -19,7 +19,7 @@
 ## Table of Contents
 
 - [Design Patterns](#design-patterns)
-  - [Medications list and calendar event format](#medications-list-and-calendar-event-format)
+  - [Medications and Supplements calendar event format](#medications-and-supplements-calendar-event-format)
 - [Output at Edges](#output-at-edges)
 - [Code Quality & DRY Principles](#code-quality--dry-principles)
 - [API Rate Limiting](#api-rate-limiting)
@@ -250,23 +250,30 @@ function autoDiscoverCollectors() {
 }
 ```
 
-### Medications list and calendar event format
+### Medications and Supplements calendar event format
 
-**Location**: `src/config/notion/medications.js`
+**Locations**: `src/config/notion/medications.js` and `src/config/notion/supplements.js`. The two DBs are siblings — each has its own Notion DB, Google Calendar, and transformer. They share the same one-way-from-Notion sync shape (event-ID pattern + orphan cleanup; no `Calendar Created` checkbox).
 
-The medication list, section order, and Notion column mapping are defined in one place:
+#### Medications
 
-- **`MEDICATION_SECTIONS`** – Array of sections. Each section has a `label` (used in the calendar event summary) and `fields` (array of `{ key, label }`). The order of sections and fields controls the calendar event description and the left-to-right summary.
-- **`properties`** – Notion property definitions. Each medication is a checkbox; the `name` must match the Notion column name exactly.
-- **`fieldMappings`** – Map config keys to Notion property keys (typically the same string).
-
-To add or reorder medications: edit `MEDICATION_SECTIONS` (and add the corresponding entry to `properties` and `fieldMappings`), then add a matching checkbox column in the Notion Medications database.
+- **`MEDICATION_SHORT_NAMES`** – Ordered map `{ <propertyKey>: <truncatedName> }`. Iteration order = display order in the calendar event title. Adding or reordering meds: edit this constant **and** add a matching entry in `properties` + `fieldMappings`, then add the matching checkbox column in Notion.
+- **`properties.other`** – Free-text rich_text field for ad-hoc meds (NyQuil, Tylenol, etc.) that don't earn a dedicated checkbox.
 
 **Calendar event behavior:**
 
-- **Description**: Section lines (one per medication: ✅ or ❌ plus label), with `-----------` between sections.
-- **Summary**: `💊` plus comma-separated section labels for sections that have at least one checkbox checked; sections with no checks are omitted.
-- **Skip**: No event is created when every checkbox is unchecked.
+- **Summary**: `💊 <comma list>` — short names of checked checkboxes (in `MEDICATION_SHORT_NAMES` order) followed by the `Other` text verbatim. Examples: `💊 Gaba, Sertra` / `💊 Gaba, Sertra, Nyquil` / `💊 Tylenol, Mucinex`.
+- **Description**: One `✅`/`❌` line per checkbox using the full Notion label, then `Other: <text>` on a new line if `Other` is non-empty.
+- **Skip**: No event when `No meds` is checked, the date is missing, or no checkbox is checked and `Other` is empty.
+
+#### Supplements
+
+Single-checkbox DB. Schema: `Date`, `Calendar Event ID`, `Supplements` (checkbox), `No Supps` (checkbox).
+
+**Calendar event behavior:**
+
+- **Summary**: `🍬 Supplements`
+- **Description**: `✅ Supplements`
+- **Skip**: No event when `No Supps` is checked, `Supplements` is unchecked, or the date is missing.
 
 ---
 

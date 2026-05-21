@@ -11,6 +11,7 @@ const githubWork = require("./github-work");
 const withings = require("./withings");
 const bloodPressure = require("./blood-pressure");
 const medications = require("./medications");
+const supplements = require("./supplements");
 const events = require("./events");
 const trips = require("./trips");
 const personalSummary = require("./personal-summary");
@@ -38,6 +39,7 @@ const databases = {
   withings: withings.database,
   bloodPressure: bloodPressure.database,
   medications: medications.database,
+  supplements: supplements.database,
   events: events.database,
   trips: trips.database,
   personalSummary: personalSummary.database,
@@ -66,6 +68,7 @@ const properties = {
   withings: withings.properties,
   bloodPressure: bloodPressure.properties,
   medications: medications.properties,
+  supplements: supplements.properties,
   events: events.properties,
   trips: trips.properties,
   personalSummary: personalSummary.properties,
@@ -94,6 +97,7 @@ const fieldMappings = {
   withings: withings.fieldMappings,
   bloodPressure: bloodPressure.fieldMappings,
   medications: medications.fieldMappings || {},
+  supplements: supplements.fieldMappings || {},
   events: events.fieldMappings || {},
   trips: trips.fieldMappings || {},
   personalSummary: personalSummary.fieldMappings,

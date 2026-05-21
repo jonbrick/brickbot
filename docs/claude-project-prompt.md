@@ -191,6 +191,7 @@ Each Notion data source maps to one or more Google Calendars:
 - Body Weight → Body Weight calendar
 - Blood Pressure → Blood Pressure calendar
 - Medications → Medications calendar
+- Supplements → Supplements calendar
 
 **Habits & Hobbies:**
 - Meditation → Meditation calendar

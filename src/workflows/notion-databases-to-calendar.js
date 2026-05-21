@@ -388,8 +388,9 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
     );
   }
 
-  // Run cleanup for Events/Trips only (hybrid pattern integrations)
-  if (integrationId === "events" || integrationId === "trips") {
+  // Run cleanup when the integration opts in via databaseConfig.cleanupOrphans.
+  // Deletes calendar events that don't have a matching Notion Calendar Event ID.
+  if (integrationConfig.databaseConfig?.cleanupOrphans === true) {
     try {
       // Get the calendar ID used for this integration
       // Use first record's calendarId from created events, or resolve from config

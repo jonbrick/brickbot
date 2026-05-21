@@ -191,14 +191,15 @@ INTEGRATIONS: {
 
 Brickbot supports different sync patterns based on data characteristics:
 
-| Pattern      | Properties                                              | Behavior                     | Use For                        |
-| ------------ | ------------------------------------------------------- | ---------------------------- | ------------------------------ |
-| **Checkbox** | `calendarCreatedProperty` only                          | One-way, create-only         | API-sourced data (append-only) |
-| **Hybrid**   | `calendarEventIdProperty` + `useHybridPattern: true`    | Bidirectional, update/delete | User-managed data              |
+| Pattern        | Properties                                              | Behavior                     | Use For                        |
+| -------------- | ------------------------------------------------------- | ---------------------------- | ------------------------------ |
+| **Checkbox**   | `calendarCreatedProperty` only                          | One-way, create-only         | API-sourced data (append-only) |
+| **Event ID**   | `calendarEventIdProperty` (+ optional `cleanupOrphans`) | One-way create + orphan sweep | User-managed data, no edits   |
+| **Hybrid**     | `calendarEventIdProperty` + `useHybridPattern: true`    | Bidirectional, update/delete | User-managed data with edits   |
 
 #### Checkbox Pattern (One-Way Sync)
 
-Used by: oura, strava, githubPersonal, githubWork, steam, withings, bloodPressure, medications
+Used by: oura, strava, githubPersonal, githubWork, steam, withings, bloodPressure
 
 - Tracks sync status with boolean checkbox
 - Creates calendar events, never updates or deletes
@@ -211,13 +212,30 @@ databaseConfig: {
 }
 ```
 
+#### Event ID Pattern (One-Way Create + Orphan Cleanup)
+
+Used by: medications, supplements
+
+- Stores Google Calendar event ID as sync state (no checkbox)
+- Creates calendar events, never updates
+- With `cleanupOrphans: true`, deletes calendar events whose ID isn't in Notion — safe because the user only ever writes to the DB, never directly to the calendar
+- Appropriate when records may be removed from Notion and you want the calendar to follow
+
+```javascript
+databaseConfig: {
+  dateProperty: "date",
+  calendarEventIdProperty: "Calendar Event ID",
+  cleanupOrphans: true,
+}
+```
+
 #### Hybrid Pattern (Bidirectional Sync)
 
 Used by: events, trips
 
 - Stores Google Calendar event ID + tracks sync status
 - Can update existing calendar events when Notion records change
-- Can delete orphaned calendar events when Notion records are deleted
+- Can delete orphaned calendar events when Notion records are deleted (`cleanupOrphans: true`)
 - Records with Status **🧊 Ice Box**, **↗️ Next Year**, or **🛑 Won't Do** are skipped (not synced); see `CALENDAR_SKIP_STATUSES` in `src/config/notion/task-categories.js`
 - Appropriate for manually managed data that users edit/delete
 
@@ -226,10 +244,11 @@ databaseConfig: {
   dateProperty: "Date",
   calendarEventIdProperty: "Calendar Event ID",
   useHybridPattern: true,
+  cleanupOrphans: true,
 }
 ```
 
-**Principle**: Use the simplest pattern that meets requirements. Don't add event ID tracking unless you need update/delete sync.
+**Principle**: Use the simplest pattern that meets requirements. Don't add event ID tracking unless you need orphan cleanup or update/delete sync.
 
 ### 4. Monthly Recap Configuration
 

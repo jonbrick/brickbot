@@ -168,6 +168,13 @@ const DATABASE_CONFIG = [
     envVar: "NOTION_MEDICATIONS_DATABASE_ID",
     parent: "databases",
   },
+  {
+    name: "Supplements",
+    icon: "🍬",
+    sourceId: "367b9535d4fd8043be4eef4f8de0b70c",
+    envVar: "NOTION_SUPPLEMENTS_DATABASE_ID",
+    parent: "databases",
+  },
 ];
 
 const RELATION_CONFIG = [

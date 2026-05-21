@@ -12,6 +12,7 @@ const { CALENDARS, SUMMARY_GROUPS } = require("../unified-sources");
  */
 const ADDITIONAL_EMOJI_PREFIXES = [
   "💊", // notion-medications-to-calendar.js
+  "🍬", // notion-supplements-to-calendar.js
   ...(SUMMARY_GROUPS.sleep && SUMMARY_GROUPS.sleep.emoji ? [SUMMARY_GROUPS.sleep.emoji] : []), // notion-oura-to-calendar-sleep.js
 ];
 

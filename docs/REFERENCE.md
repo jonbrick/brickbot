@@ -358,11 +358,11 @@ When syncing Notion Events and Trips to Google Calendar, event color is set from
 
 **Events and Trips calendar sync**: Events and Trips databases must have a **Status** (select) property in Notion. Records with Status **🧊 Ice Box**, **↗️ Next Year**, or **🛑 Won't Do** are skipped by `yarn update` (not synced to Google Calendar). The skip list is defined in `src/config/notion/task-categories.js` as `CALENDAR_SKIP_STATUSES`.
 
-### Medications config
+### Medications + Supplements config
 
-**Location**: `src/config/notion/medications.js`
+**Locations**: `src/config/notion/medications.js` and `src/config/notion/supplements.js`
 
-List and order of medications are defined by `MEDICATION_SECTIONS` (section labels and fields). Each section’s fields must have matching entries in `properties` and `fieldMappings`; Notion checkbox column names must match `properties[].name`. See [Internals – Medications list and calendar event format](INTERNALS.md#medications-list-and-calendar-event-format) for description/summary behavior and how to add or reorder medications.
+Two sibling DBs synced to two sibling Google Calendars (💊 + 🍬). Medications list and ordering are defined by `MEDICATION_SHORT_NAMES` in `medications.js`; iteration order = title display order. Each med checkbox must have matching entries in `properties` and `fieldMappings`; Notion checkbox column names must match `properties[].name`. The medications DB also carries a free-text `Other` field for ad-hoc meds. Supplements is a single-checkbox DB. See [Internals – Medications and Supplements calendar event format](INTERNALS.md#medications-and-supplements-calendar-event-format) for description/summary behavior.
 
 ### SUMMARY_GROUPS Registry
 

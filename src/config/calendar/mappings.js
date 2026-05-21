@@ -97,6 +97,16 @@ const calendarMappings = {
   },
 
   /**
+   * Supplements calendar mapping
+   * All supplement records go to supplements calendar (direct mapping)
+   */
+  supplements: {
+    type: "direct",
+    sourceDatabase: "supplements",
+    calendarId: process.env.SUPPLEMENTS_CALENDAR_ID,
+  },
+
+  /**
    * Events calendar mapping
    * All events go to events calendar (direct mapping)
    */

@@ -57,8 +57,13 @@ for (const r of recaps) {
   const aiQ2 = (r["AI What did not go so well?"] || "").trim();
   const aiQ3 = (r["AI What did I learn?"] || "").trim();
   const status = (r["Status"] || "Not started").trim();
-  const myQs = [myQ1, myQ2, myQ3].filter(Boolean).length;
-  const aiQs = [aiQ1, aiQ2, aiQ3].filter(Boolean).length;
+  // brickbot's aggregate stage joins weekly retro values with commas; when all
+  // weeks are empty, the snapshot field becomes ",,,," — non-empty but
+  // semantically empty. Require at least one alphanumeric character so the
+  // comma-soup case correctly counts as 0/3.
+  const hasContent = (s) => /[a-zA-Z0-9]/.test(s);
+  const myQs = [myQ1, myQ2, myQ3].filter(hasContent).length;
+  const aiQs = [aiQ1, aiQ2, aiQ3].filter(hasContent).length;
   const aggBytes = aggFields.reduce(
     (sum, f) => sum + (r[f] || "").length,
     0

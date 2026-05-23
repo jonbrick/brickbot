@@ -23,6 +23,7 @@ const calendarMappings = {
     mappings: {
       "Normal Wake Up": process.env.NORMAL_WAKE_UP_CALENDAR_ID,
       "Sleep In": process.env.SLEEP_IN_CALENDAR_ID,
+      Naps: process.env.NAPS_CALENDAR_ID,
     },
   },
 

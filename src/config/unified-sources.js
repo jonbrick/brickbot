@@ -140,6 +140,17 @@ const CALENDARS = {
       },
     ],
   },
+  naps: {
+    id: "naps",
+    envVar: "NAPS_CALENDAR_ID",
+    name: "Naps",
+    emoji: "💤",
+    ignoreAllDayEvents: true,
+    dateLogic: "end",
+    // Naps are context-only — no Weekly Summary fields. Stays off the
+    // sleep-trend counters (sleepInDays / earlyWakeupDays / sleepHoursTotal).
+    dataFields: [],
+  },
   workout: {
     id: "workout",
     envVar: "WORKOUT_CALENDAR_ID",
@@ -746,7 +757,7 @@ const INTEGRATIONS = {
     id: "oura",
     name: "Oura (Sleep)",
     notionDbEnvVar: "NOTION_SLEEP_DATABASE_ID",
-    calendarRouting: ["normalWakeUp", "sleepIn"],
+    calendarRouting: ["normalWakeUp", "sleepIn", "naps"],
     collect: true,
     displayMetadata: {
       tableTitle: "OURA SLEEP DATA",
@@ -1236,6 +1247,7 @@ const INTEGRATIONS = {
 const FETCH_KEY_MAPPING = {
   normalWakeUp: "earlyWakeup",
   sleepIn: "sleepIn",
+  naps: "naps",
   workout: "workout",
   sober: "sober",
   drinking: "drinking",

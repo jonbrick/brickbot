@@ -37,7 +37,7 @@ module.exports = {
     googleCalendar: {
       name: "Google Calendar",
       type: "select",
-      options: ["Normal Wake Up", "Sleep In"],
+      options: ["Normal Wake Up", "Sleep In", "Naps"],
       enabled: true,
     },
     heartRateAvg: { name: "Heart Rate Avg", type: "number", enabled: true },
@@ -104,5 +104,16 @@ module.exports = {
     wakeTimeThreshold: 7,
     normalWakeUpLabel: "Normal Wake Up",
     sleepInLabel: "Sleep In",
+    // Naps routing: Oura type === "sleep" sessions where duration is in
+    // [min, max] hours AND wake hour is in [wakeHourMin, wakeHourMax) go to
+    // the Naps calendar. Everything else with type === "sleep" is dropped
+    // (drowsy noise or fragmented main sleep). Active only when
+    // NAPS_CALENDAR_ID is set.
+    napsLabel: "Naps",
+    napDurationMinHours: 0.5,
+    napDurationMaxHours: 3,
+    napWakeHourMin: 10,
+    napWakeHourMax: 20,
+    napsEnabled: !!process.env.NAPS_CALENDAR_ID,
   },
 };

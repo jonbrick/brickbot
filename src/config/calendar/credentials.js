@@ -10,6 +10,7 @@ const { resolveCalendarId, getCalendarIds, hasCalendarsConfigured } = require(".
 const calendars = {
   normalWakeUp: process.env.NORMAL_WAKE_UP_CALENDAR_ID,
   sleepIn: process.env.SLEEP_IN_CALENDAR_ID,
+  naps: process.env.NAPS_CALENDAR_ID,
   fitness: process.env.WORKOUT_CALENDAR_ID,
   videoGames: process.env.VIDEO_GAMES_CALENDAR_ID,
   personalPRs: process.env.PERSONAL_PRS_CALENDAR_ID,

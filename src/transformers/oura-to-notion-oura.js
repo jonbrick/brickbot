@@ -5,8 +5,8 @@ const {
   formatDate,
   formatDateLong,
   formatTime,
-  isSleepIn,
 } = require("../utils/date");
+const { categorizeOuraSession } = require("../utils/oura-categorization");
 const { filterEnabledProperties } = require("../utils/transformers");
 const { formatDateForNotion } = require("../utils/date-handler");
 
@@ -19,14 +19,13 @@ const { formatDateForNotion } = require("../utils/date-handler");
 function transformOuraToNotion(session) {
   const props = config.notion.properties.oura;
 
-  // Determine wake up type (extract hour from ISO string to preserve timezone)
+  // Determine calendar label from session type + duration + wake hour. The
+  // workflow filter has already dropped sessions that categorize as null, so
+  // we fall back to sleepInLabel defensively if categorization returns null
+  // here (shouldn't happen in practice).
   const sleepInType =
-    session.bedtimeEnd && isSleepIn(
-      session.bedtimeEnd,
-      config.notion.sleepCategorization.wakeTimeThreshold
-    )
-      ? config.notion.sleepCategorization.sleepInLabel
-      : config.notion.sleepCategorization.normalWakeUpLabel;
+    categorizeOuraSession(session, config.notion.sleepCategorization) ||
+    config.notion.sleepCategorization.sleepInLabel;
 
   const recoveryIndex = null; // Not currently extracted
   const sleepBalance = null; // Not currently extracted

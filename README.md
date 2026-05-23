@@ -162,7 +162,7 @@ Properties:
 - **HRV** (Number)
 - **Respiratory Rate** (Number)
 - **Efficiency** (Number)
-- **Google Calendar** (Select: Normal Wake Up, Sleep In)
+- **Google Calendar** (Select: Normal Wake Up, Sleep In, Naps)
 - **Sleep ID** (Text)
 - **Calendar Created** (Checkbox)
 - **Type** (Text)
@@ -283,6 +283,7 @@ Create the following calendars in Google Calendar:
 - Fitness
 - Sleep In
 - Normal Wake Up
+- Naps
 - Body Weight
 - Video Games
 

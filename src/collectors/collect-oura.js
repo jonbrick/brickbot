@@ -1,8 +1,9 @@
 // Fetches sleep data from Oura API for a specific date range
 
 const OuraService = require("../services/OuraService");
-const { parseDate, formatDate, getDayName, isSleepIn } = require("../utils/date");
+const { parseDate, formatDate, getDayName } = require("../utils/date");
 const { extractSourceDate } = require("../utils/date-handler");
+const { categorizeOuraSession } = require("../utils/oura-categorization");
 const config = require("../config");
 
 /**
@@ -148,14 +149,13 @@ function extractSleepFields(processedData) {
     // Night of date is already calculated in processed format (nightOf is a Date object)
     const nightOfDateStr = record.nightOf ? formatDate(record.nightOf) : "N/A";
 
-    // Determine wake time category (use fixed isSleepIn with string + config threshold)
+    // Determine calendar label for display. Display path mirrors sync path
+    // so the dry-run preview matches what would actually be written. Null
+    // (drowsy noise, fragmented main sleep) falls back to a placeholder so
+    // the row still renders.
     const googleCalendar =
-      record.bedtimeEnd && isSleepIn(
-        record.bedtimeEnd,
-        config.notion.sleepCategorization.wakeTimeThreshold
-      )
-        ? config.notion.sleepCategorization.sleepInLabel
-        : config.notion.sleepCategorization.normalWakeUpLabel;
+      categorizeOuraSession(record, config.notion.sleepCategorization) ||
+      "(dropped)";
 
     return {
       id: record.sleepId,

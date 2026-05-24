@@ -129,6 +129,15 @@ function buildPropertiesFromRecord(record) {
       continue;
     }
 
+    // Pre-format select types — needed for DBs without static config (e.g. personalProjects).
+    // _formatProperties' cross-DB fallback only finds properties declared in config;
+    // undeclared select props fall through to rich_text and Notion rejects with
+    // "X is expected to be select."
+    if (type === "select") {
+      properties[key] = { select: { name: String(value) } };
+      continue;
+    }
+
     properties[key] = value;
   }
 

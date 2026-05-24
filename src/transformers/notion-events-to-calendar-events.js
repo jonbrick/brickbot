@@ -86,8 +86,8 @@ function transformEventToCalendarEvent(record, repo) {
     end: { date: addOneDay(dateRange.end) },
   };
 
-  // Add color if mapped (subcategory overrides category)
-  const colorId = getColorIdForNotionEvent(category, subcategory);
+  // Add color if mapped (status > subcategory > category)
+  const colorId = getColorIdForNotionEvent(category, subcategory, status);
   if (colorId) {
     event.colorId = colorId;
   }

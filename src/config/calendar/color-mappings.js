@@ -50,6 +50,16 @@ const EVENTS_SUBCATEGORY_TO_COLOR = {
   "Wasted day": "11", // Tomato/red
 };
 
+// Events Status to Color Mapping (overrides subcategory + category when set)
+// "🫥 N/A" = external context (Mercury retrograde, family in Baltimore, etc.)
+// Note: "8" Graphite collides with physicalHealth in PERSONAL_COLOR_MAPPING, but
+// that map only applies to reads from the personalCalendar — `events` calendar is
+// not aggregated through it today. Revisit if personal summary starts ingesting
+// the events calendar.
+const EVENTS_STATUS_TO_COLOR = {
+  "🫥 N/A": "8", // Graphite/grey
+};
+
 // Google Calendar event color palette — the one `event.colorId` uses.
 // Source: https://developers.google.com/calendar/api/v3/reference/colors (colors.event)
 //   "1"  Lavender    "5"  Banana     "9"  Blueberry
@@ -151,12 +161,17 @@ function getColorIdFromNotionCategory(category) {
 }
 
 /**
- * Get Google Calendar color ID for a Notion Event (subcategory overrides category)
+ * Get Google Calendar color ID for a Notion Event
+ * Precedence: Status > Subcategory > Category
  * @param {string|null} category - Notion Events Category value
  * @param {string|Array|null} subcategory - Notion Events Subcategory value (may be array from multi-select)
+ * @param {string|null} status - Notion Events Status value (e.g., "🫥 N/A")
  * @returns {string|null} Google Calendar color ID or null if no color
  */
-function getColorIdForNotionEvent(category, subcategory) {
+function getColorIdForNotionEvent(category, subcategory, status) {
+  if (status != null && EVENTS_STATUS_TO_COLOR[status] !== undefined) {
+    return EVENTS_STATUS_TO_COLOR[status];
+  }
   const sub = Array.isArray(subcategory) ? subcategory[0] : subcategory;
   if (sub != null && EVENTS_SUBCATEGORY_TO_COLOR[sub] !== undefined) {
     return EVENTS_SUBCATEGORY_TO_COLOR[sub];
@@ -169,6 +184,7 @@ module.exports = {
   WORK_COLOR_MAPPING,
   EVENTS_TRIPS_CATEGORY_TO_COLOR,
   EVENTS_SUBCATEGORY_TO_COLOR,
+  EVENTS_STATUS_TO_COLOR,
   getPersonalCategoryByColor,
   getPersonalCategoryDisplayName,
   getEnhancedPersonalCategory,

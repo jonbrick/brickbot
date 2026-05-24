@@ -12,6 +12,7 @@ Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in th
 
 - **`NOTION_*_DATABASE_ID` env vars hold database UUIDs, not data source UUIDs.** Use the 32-char ID from the `notion.so/<id>` URL — never the `collection://<id>` data source ID some tooling surfaces.
 - **Brickbot improvements / bugs aren't tracked here.** They live as personal projects in Notion (`2026 Projects` DB) with vault stubs at `~/Documents/Brickocampus/personal/projects/`. Don't add project or bug lists to this file — they churn the repo.
+- **Personal Google Calendars aren't on Claude's GCal MCP.** Claude's MCP runs as `jon.brick@cortex.io` (work) — it can read/write work calendars but returns `PrincipalImpl has no access to LazyEmailPrincipal` on any personal calendar (Sleep In, Normal Wake Up, Naps, Sober, Drinking, Workout, Reading, Meditation, Cooking, Art, Coding, Music, Video Games, Body Weight, Blood Pressure, Personal PRs, personalCalendar). **Escape hatch:** brickbot's `.env` has `PERSONAL_GOOGLE_REFRESH_TOKEN` on both machines; a local node script using `src/services/GoogleCalendarService.js` with `accountType = "personal"` can list/create/delete on any personal cal. Pattern: `scripts/cleanup-stale-oura-naps-on-gcal.js`. Don't waste MCP calls trying to reach personal cals — go straight to a brickbot-local script.
 
 ## Development principles
 

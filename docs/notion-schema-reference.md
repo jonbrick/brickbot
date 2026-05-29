@@ -68,7 +68,7 @@ This document contains the exact property names, types, and allowed values for e
 | Event Name | title | |
 | Status | status | "🧊 Ice Box", "⏸️ Blocked", "🟣 Considering", "🔴 To Do", "🟠 To Book", "🟡 Scheduled", "🔵 Doing", "🟢 Done", "↗️ Next Year", "🛑 Won't Do" |
 | Category | select | "🌱 Personal", "🍻 Interpersonal", "❤️ Mental Health", "🏠 Home", "💪 Physical Health", "💼 Work" |
-| Subcategory | select | "💼 Work Event", "🍸 Work Social", "🏝️ Work OOO", "🚀 Work Milestone", "😎 Work Remote", "💜 Family Event", "🍻 Friend Event", "🗽 Friends & Fam vist NYC", "💒 Wedding", "❤️ Relationship", "🎄 Family Holidays", "🏠 Home Updates", "🕶️ Shopping & Styling", "🎸 Concerts", "🎭 Comedy", "🏛️ Museums & Tours", "🏈 Sports Event", "🗳️ Volunteer & Vote", "🏝️ Vacation", "🧗 Adventures", "🏃 Race", "🩺 Medical", "🤒 Sick", "😔 Wasted Day" |
+| Subcategory | select | "🎪 Work Conferences & Events", "🍸 Work Social", "🏝️ Work OOO", "🚀 Work Milestone", "😎 Work Remote", "💜 Family Event", "🍻 Friend Event", "🗽 Friends & Fam vist NYC", "💒 Wedding", "❤️ Relationship", "🎄 Family Holidays", "🏠 Home Updates", "🕶️ Shopping & Styling", "🎸 Concerts", "🎭 Comedy", "🏛️ Museums & Tours", "🏈 Sports Event", "🗳️ Volunteer & Vote", "🏝️ Vacation", "🧗 Adventures", "🏃 Race", "🩺 Medical", "🤒 Sick", "😔 Wasted Day" |
 | Date | date | **Use this to filter events by date** |
 | Notes | text | |
 | Calendar Event ID | text | |

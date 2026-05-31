@@ -658,6 +658,12 @@ async function pullCalendar(spinner, startDate, endDate) {
         end: event.end?.dateTime || event.end?.date || "",
         location: event.location || "",
         status: event.status || "",
+        attendees: (event.attendees || []).map((a) => ({
+          email: a.email || "",
+          name: a.displayName || "",
+          response: a.responseStatus || "",
+          self: !!a.self,
+        })),
       }));
       calendar[calId] = mergeCalendarBucket(existingBucket, pulled, windowStartDay, windowEndDay);
       spinner.stop(`  ✓ ${pulled.length} pulled / ${calendar[calId].length} total ${calConfig.name}`);

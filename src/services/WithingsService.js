@@ -335,18 +335,21 @@ class WithingsService {
    *
    * @param {Date} startDate - Start date
    * @param {Date} endDate - End date
+   * @param {string} [measureTypes] - Comma-separated Withings measure type codes.
+   *   Defaults to body-composition types ("1,5,6,8,76,77,88") for the Body+ scale.
+   *   Pass "9,10,11" for diastolic/systolic/pulse (BPM Connect).
    * @returns {Promise<Array>} Measurement groups
    */
-  async fetchMeasurements(startDate, endDate) {
+  async fetchMeasurements(startDate, endDate, measureTypes = "1,5,6,8,76,77,88") {
     try {
       // Ensure startDate is at midnight (00:00:00) for start of day
       const normalizedStartDate = new Date(startDate);
       normalizedStartDate.setHours(0, 0, 0, 0);
-      
+
       // Ensure endDate includes the full day (23:59:59)
       const normalizedEndDate = new Date(endDate);
       normalizedEndDate.setHours(23, 59, 59, 999);
-      
+
       const startTimestamp = this._formatDateForAPI(normalizedStartDate);
       const endTimestamp = this._formatDateForAPI(normalizedEndDate);
 
@@ -356,11 +359,8 @@ class WithingsService {
         console.log(`   Start: ${normalizedStartDate.toISOString()} (${startTimestamp})`);
         console.log(`   End: ${normalizedEndDate.toISOString()} (${endTimestamp})`);
         console.log(`   Date Range: ${normalizedStartDate.toDateString()} to ${normalizedEndDate.toDateString()}`);
+        console.log(`   Measure types: ${measureTypes}`);
       }
-
-      // Get all measurement types available from your scale
-      // Types: 1=Weight, 5=Fat Free Mass, 6=Fat Ratio, 8=Fat Mass, 76=Muscle Mass, 77=Hydration, 88=Bone Mass
-      const measureTypes = "1,5,6,8,76,77,88";
 
       const response = await this._makeRequest("getmeas", {
         startdate: startTimestamp,

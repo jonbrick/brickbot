@@ -17,9 +17,25 @@ const updatableIntegrations = Object.entries(INTEGRATIONS).filter(
 // Build registry for each updatable integration
 updatableIntegrations.forEach(([id, config]) => {
   try {
-    // Bind the generic sync function with the integration ID
-    const syncFn = (startDate, endDate, options) =>
-      syncToCalendar(id, startDate, endDate, options);
+    // Bind sync function — most integrations use the generic 1:1 (record → event)
+    // flow. Integrations that aggregate multiple records into one event per day
+    // (e.g. blood pressure: 3 cuff readings → 1 daily-average event) opt out
+    // via aggregateByDay: true and provide their own day-grouping workflow.
+    let syncFn;
+    if (config.aggregateByDay === true) {
+      const customWorkflow = require(`../workflows/${id}-daily-calendar-sync.js`);
+      const customFnName = `sync${id.charAt(0).toUpperCase() + id.slice(1)}ToCalendarDaily`;
+      const customSync = customWorkflow[customFnName];
+      if (!customSync) {
+        throw new Error(
+          `Daily-aggregate workflow ${customFnName} not found in ${id}-daily-calendar-sync.js`
+        );
+      }
+      syncFn = (startDate, endDate) => customSync(startDate, endDate);
+    } else {
+      syncFn = (startDate, endDate, options) =>
+        syncToCalendar(id, startDate, endDate, options);
+    }
 
     // Store in registry
     updaterRegistry[id] = {

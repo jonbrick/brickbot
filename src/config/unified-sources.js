@@ -1083,8 +1083,11 @@ const INTEGRATIONS = {
     name: "Blood Pressure",
     notionDbEnvVar: "NOTION_BLOOD_PRESSURE_DATABASE_ID",
     calendarRouting: ["bloodPressure"],
-    collect: false,
+    collect: true,
     updateCalendar: true,
+    // Aggregate raw cuff readings (N per day) into one averaged calendar event
+    // per day. Custom syncFn lives at workflows/bloodPressure-daily-calendar-sync.js.
+    aggregateByDay: true,
     calendarSyncMetadata: {
       emptyMessage:
         "✅ No blood pressure records found without calendar events\n",
@@ -1093,8 +1096,6 @@ const INTEGRATIONS = {
       displayNameProperty: "name",
       displayNameFormat: "text",
       skipReason: "Missing date",
-      transformerFile: "../transformers/notion-blood-pressure-to-calendar.js",
-      transformerFunction: "transformBloodPressureToCalendarEvent",
       displayFields: [
         { key: "name", property: "name" },
         { key: "date", property: "date" },
@@ -1109,8 +1110,8 @@ const INTEGRATIONS = {
     },
     databaseConfig: {
       dateProperty: "date",
-      uniqueIdProperty: null,
-      uniqueIdType: null,
+      uniqueIdProperty: "measurementId",
+      uniqueIdType: "text",
       calendarCreatedProperty: "calendarCreated",
     },
   },

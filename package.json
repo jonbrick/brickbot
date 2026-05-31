@@ -14,6 +14,7 @@
     "journal:import": "node cli/journal-import.js",
     "logs": "cat local/logs/daily-$(date +%Y-%m-%d).log 2>/dev/null || echo 'No log for today'",
     "sync": "node cli/sync.js",
+    "daily-brief": "node cli/daily-brief.js",
     "collect": "node cli/collect-data.js",
     "update": "node cli/update-calendar.js",
     "summarize": "node cli/summarize-week.js",

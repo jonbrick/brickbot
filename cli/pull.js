@@ -1051,14 +1051,18 @@ async function main() {
   let sections, startDate, endDate;
 
   if (autoMode) {
-    // Auto mode: pull everything, last 30 days for date-scoped data
+    // Auto mode: pull everything; date-scoped window is -29 / +3 days.
+    // Forward window is load-bearing for daily-brief: the 6 AM brief reads
+    // calendar.json populated by the prior night's 11 PM sync, so today's
+    // events must already be in the window when that sync runs.
     sections = ["plan", "collected", "summaries", "calendar", "nyc", "retro", "life"];
     endDate = new Date();
+    endDate.setDate(endDate.getDate() + 3);
     endDate.setHours(23, 59, 59, 999);
     startDate = new Date();
     startDate.setDate(startDate.getDate() - 29);
     startDate.setHours(0, 0, 0, 0);
-    console.log(`Auto mode: all sections (${sections.length}), last 30 days for date-scoped (${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]})\n`);
+    console.log(`Auto mode: all sections (${sections.length}), -29 / +3 days for date-scoped (${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]})\n`);
   } else {
     const answers = await inquirer.prompt([
       {

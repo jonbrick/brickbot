@@ -464,12 +464,18 @@
             name: MONTH_NAMES[monthNum] || "",
             emoji: MONTH_EMOJIS[monthNum] || "",
             summary: {
-              work: wp?.["Work Plan"] || "",
-              personal: pp?.["Personal Plan"] || "",
-              interpersonal: pp?.["Interpersonal Plan"] || "",
-              home: pp?.["Home Plan"] || "",
-              health: pp?.["Physical Health Plan"] || "",
-              mental: pp?.["Mental Health Plan"] || "",
+              // AI/My twin schema (2026-06-01): show My if present, else AI draft
+              work:
+                wp?.["My Overall Work Plan"] ||
+                wp?.["AI Overall Work Plan"] ||
+                "",
+              personal: pp?.["My Personal"] || pp?.["AI Personal"] || "",
+              interpersonal:
+                pp?.["My Interpersonal"] || pp?.["AI Interpersonal"] || "",
+              home: pp?.["My Home"] || pp?.["AI Home"] || "",
+              health:
+                pp?.["My Physical Health"] || pp?.["AI Physical Health"] || "",
+              mental: pp?.["My Mental Health"] || pp?.["AI Mental Health"] || "",
             },
             weeks: weekIds,
           };
@@ -491,7 +497,7 @@
               workCategory: r["Work Category"] || null,
               retro: r.Retro || "",
               status: r.Status || "",
-              description: r.Description || "",
+              description: r["My Description"] || r["AI Description"] || "",
               weekId: weekId || null,
             };
           })

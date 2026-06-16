@@ -387,7 +387,7 @@ function syncThemes(themes, goals) {
   return results;
 }
 
-function syncPersonalProjects(projects, goals) {
+function syncPersonalProjects(projects, goals, { dryRun = false } = {}) {
   const dir = path.join(VAULT_DIR, "projects");
   if (!fs.existsSync(dir)) {
     return { written: 0, skipped: 0, warnings: [], errors: [] };
@@ -474,12 +474,11 @@ function syncPersonalProjects(projects, goals) {
       : '""';
 
     const goalIds = record["🏆 Goal"] || [];
-    if (goalIds.length > 0) {
-      const slug = goalLookup[normalizeNotionId(goalIds[0])];
-      desired.goal = slug ? `"[[${slug}]]"` : '""';
-    } else {
-      desired.goal = '""';
-    }
+    const goalLinks = goalIds
+      .map((id) => goalLookup[normalizeNotionId(id)])
+      .filter(Boolean)
+      .map((s) => `"[[${s}]]"`);
+    desired.goal = `[${goalLinks.join(", ")}]`;
 
     // notion_name: only if Notion title diverges from filename slug
     const fileSlug = file.replace(/\.md$/, "");
@@ -506,6 +505,17 @@ function syncPersonalProjects(projects, goals) {
 
     if (Object.keys(updates).length === 0) {
       results.skipped++;
+      continue;
+    }
+
+    if (dryRun) {
+      const relPath = path.relative(VAULT_DIR, filePath);
+      console.log(`  would update: ${relPath}`);
+      for (const [key, valQuoted] of Object.entries(updates)) {
+        const current = parsed.frontmatter[key];
+        console.log(`    ${key}: ${JSON.stringify(current)} → ${valQuoted}`);
+      }
+      results.written++;
       continue;
     }
 
@@ -646,13 +656,16 @@ async function main() {
   }
 
   if (lifeData?.personalProjects) {
+    if (DRY_RUN) console.log("Personal Projects (dry-run):");
     const r = syncPersonalProjects(
       lifeData.personalProjects,
-      lifeData.goals || []
+      lifeData.goals || [],
+      { dryRun: DRY_RUN }
     );
     allResults.push({ name: "Personal Projects", ...r });
+    const verb = DRY_RUN ? "would update" : "written";
     console.log(
-      `Personal Projects: ${r.written} written, ${r.skipped} unchanged` +
+      `Personal Projects: ${r.written} ${verb}, ${r.skipped} unchanged` +
         (r.warnings.length ? `, ${r.warnings.length} warnings` : "") +
         (r.errors.length ? `, ${r.errors.length} errors` : "")
     );

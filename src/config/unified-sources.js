@@ -1049,6 +1049,9 @@ const INTEGRATIONS = {
       displayType: "withings",
     },
     updateCalendar: true,
+    // Aggregate raw scale measurements (N per day) into one averaged calendar
+    // event per day. Custom syncFn lives at workflows/withings-daily-calendar-sync.js.
+    aggregateByDay: true,
     calendarSyncMetadata: {
       emptyMessage: "✅ No body weight records found without calendar events\n",
       sourceType: "withings",
@@ -1056,9 +1059,6 @@ const INTEGRATIONS = {
       displayNameProperty: "name",
       displayNameFormat: "text",
       skipReason: "Missing date",
-      transformerFile:
-        "../transformers/notion-withings-to-calendar-bodyweight.js",
-      transformerFunction: "transformBodyWeightToCalendarEvent",
       displayFields: [
         { key: "name", property: "name" },
         { key: "date", property: "date" },

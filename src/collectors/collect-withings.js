@@ -3,6 +3,8 @@
 const WithingsService = require("../services/WithingsService");
 const { extractSourceDate } = require("../utils/date-handler");
 
+const SCALE_MODEL = "Body+";
+
 /**
  * Decode Withings measurement value
  * Formula: actualValue = value × 10^unit
@@ -63,23 +65,25 @@ async function fetchWithingsData(startDate, endDate) {
   }
 
   // Fetch measurement groups
-  const measurementGroups = await service.fetchMeasurements(startDate, endDate);
+  const allGroups = await service.fetchMeasurements(startDate, endDate);
 
   if (process.env.DEBUG) {
     console.log(`\n📦 Raw API Response:`);
-    console.log(`   Total measurement groups: ${measurementGroups.length}`);
-    if (measurementGroups.length > 0) {
+    console.log(`   Total measurement groups: ${allGroups.length}`);
+    if (allGroups.length > 0) {
       console.log(
         `   Sample group structure:`,
-        JSON.stringify(measurementGroups[0], null, 2)
+        JSON.stringify(allGroups[0], null, 2)
       );
     }
   }
 
+  const measurementGroups = allGroups.filter((g) => g.model === SCALE_MODEL);
+
   if (measurementGroups.length === 0) {
     if (process.env.DEBUG) {
       console.log(
-        `\n⚠️  No measurements found for date range ${startDate.toISOString()} to ${endDate.toISOString()}`
+        `\n⚠️  No Body+ measurements found for date range ${startDate.toISOString()} to ${endDate.toISOString()}`
       );
     }
     return [];

@@ -69,15 +69,24 @@ async function syncWithingsToCalendarDaily(startDate, endDate) {
       results.skipped.push({ pageId: record.id, reason: "Missing date" });
       continue;
     }
+    const weight = repo.extractProperty(
+      record,
+      config.notion.getPropertyName(props.weight)
+    );
+    // A "body weight reading" without a weight isn't a reading — skip so it
+    // can't surface as a "? lbs" line in the day's event. Belt-and-suspenders
+    // with the SCALE_MODEL filter in collect-withings.js.
+    if (weight === null || weight === undefined) {
+      results.skipped.push({ pageId: record.id, reason: "Missing weight" });
+      continue;
+    }
+
     const dayKey = nyDateKey(dateValue);
     if (!byDay.has(dayKey)) byDay.set(dayKey, []);
 
     byDay.get(dayKey).push({
       pageId: record.id,
-      weight: repo.extractProperty(
-        record,
-        config.notion.getPropertyName(props.weight)
-      ),
+      weight,
       fatPercentage: repo.extractProperty(
         record,
         config.notion.getPropertyName(props.fatPercentage)
@@ -131,7 +140,7 @@ async function syncWithingsToCalendarDaily(startDate, endDate) {
 
       const readingsLine = readings
         .map((r) => {
-          const parts = [`${r.weight ?? "?"} lbs`];
+          const parts = [`${r.weight} lbs`];
           if (r.fatPercentage !== null && r.fatPercentage !== undefined) {
             parts.push(`${r.fatPercentage}% fat`);
           }

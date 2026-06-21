@@ -216,10 +216,16 @@ async function handleCalendarSync(sourceId, startDate, endDate, action) {
   const useHybridPattern =
     useEventIdPattern && repo.databaseConfig.useHybridPattern === true;
 
+  // Daily-aggregation workflows (BP, body weight) are brute-force idempotent —
+  // they always rebuild events for the full date range from current Notion
+  // state. Gating them on per-record "unsynced" state means Notion-side
+  // deletions (e.g. cleaning up junk rows) never propagate to the calendar.
+  const aggregateByDay = INTEGRATIONS[sourceId].aggregateByDay === true;
+
   // Get records based on pattern
   let records;
-  if (useHybridPattern) {
-    // Hybrid pattern: fetch ALL records so existing ones can be updated
+  if (aggregateByDay || useHybridPattern) {
+    // Fetch ALL records so the workflow can rebuild the range from scratch.
     records = await repo.getAllInDateRange(startDate, endDate);
   } else if (useEventIdPattern) {
     // Use new event ID pattern

@@ -4,7 +4,7 @@
  * Imports 5 Minute Journal exports (JSON) into data/journal.json
  *
  * Usage: yarn journal:import [path-to-export-dir-or-json]
- * Default: imports all exports found in local/journal/
+ * Default: imports all exports found in local/journal-inbox/
  * Output: data/journal.json (2026 entries only)
  */
 
@@ -14,11 +14,11 @@ const path = require("path");
 const DATA_DIR = path.join(__dirname, "..", "data");
 
 /**
- * Find all 5 Minute Journal exports in local/journal/
+ * Find all 5 Minute Journal exports in local/journal-inbox/
  * Returns array of paths to index.json files, sorted oldest-first
  */
 function findExportPaths() {
-  const journalDir = path.join(__dirname, "..", "local", "journal");
+  const journalDir = path.join(__dirname, "..", "local", "journal-inbox");
   if (!fs.existsSync(journalDir)) {
     fs.mkdirSync(journalDir, { recursive: true });
   }
@@ -110,9 +110,9 @@ function main() {
     inputPaths = findExportPaths();
     if (inputPaths.length === 0) {
       console.error(
-        "No 5 Minute Journal export found in local/journal/\n" +
+        "No 5 Minute Journal export found in local/journal-inbox/\n" +
           "Usage: yarn journal:import [path-to-export-dir-or-json]\n" +
-          "Drop your 5MJ export (unzipped) into local/journal/ and re-run."
+          "Drop your 5MJ export (unzipped) into local/journal-inbox/ and re-run."
       );
       process.exit(1);
     }

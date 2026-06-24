@@ -19,7 +19,7 @@
     <!-- Paired with pmset wake schedule (5 min before each).                       -->
     <!--  7 AM — kickoff (concurrent with 7 AM Cowork morning-brief)               -->
     <!--  9, 11 AM, 1, 3, 5, 7 PM — daytime cadence                                -->
-    <!--  9 PM — concurrent with 9 PM Cowork meeting-processor                     -->
+    <!--  9 PM — concurrent with 9 PM Cowork evening-processor                     -->
     <!--  11 PM — end of day                                                       -->
     <key>StartCalendarInterval</key>
     <array>

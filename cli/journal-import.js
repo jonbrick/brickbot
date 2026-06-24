@@ -1,51 +1,82 @@
 #!/usr/bin/env node
 /**
  * Journal Import CLI
- * Imports 5 Minute Journal exports (JSON) into data/journal.json
+ * Imports 5 Minute Journal exports into data/journal.json (which lives in the
+ * Brickocampus vault via the data/ symlink).
+ *
+ * Inbox model (vault-resident, synced across machines):
+ *   - Drop an unzipped 5MJ export into journal/inbox/  (a dir containing index.json)
+ *   - Run: yarn journal:import
+ *   - The script reads the text into data/journal.json, copies the tiny index.json
+ *     to journal/archive/<export-id>.json (the permanent record), and moves the
+ *     bulky export out of the inbox to the Trash.
+ *   - An empty inbox is a no-op: data/journal.json already holds every entry.
+ *
+ * journal/ is a symlink into the vault (~/Documents/Brickocampus/_brickbot/journal),
+ * the same mechanism data/ uses — so brickbot stays scripts-only and the journal
+ * data (Jon's manual exports) lives in the vault.
  *
  * Usage: yarn journal:import [path-to-export-dir-or-json]
- * Default: imports all exports found in local/journal-inbox/
+ *   - No arg: scan journal/inbox/ (normal path; archives + clears the inbox)
+ *   - Explicit path: ad-hoc import only (no archiving, no inbox changes)
  * Output: data/journal.json (2026 entries only)
  */
 
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
+const INBOX_DIR = path.join(__dirname, "..", "journal", "inbox");
+const ARCHIVE_DIR = path.join(__dirname, "..", "journal", "archive");
+
+function ensureDir(d) {
+  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+}
 
 /**
- * Find all 5 Minute Journal exports in local/journal-inbox/
- * Returns array of paths to index.json files, sorted oldest-first
+ * Find export directories in journal/inbox/ (each a dir containing index.json).
+ * Returns [{ name, dir, indexPath }], sorted oldest-first by name.
  */
-function findExportPaths() {
-  const journalDir = path.join(__dirname, "..", "local", "journal-inbox");
-  if (!fs.existsSync(journalDir)) {
-    fs.mkdirSync(journalDir, { recursive: true });
+function findInboxExports() {
+  ensureDir(INBOX_DIR);
+  const exports = [];
+  for (const e of fs.readdirSync(INBOX_DIR)) {
+    if (e.startsWith(".")) continue; // skip .DS_Store etc.
+    const dir = path.join(INBOX_DIR, e);
+    let stat;
+    try {
+      stat = fs.statSync(dir);
+    } catch {
+      continue;
+    }
+    const indexPath = path.join(dir, "index.json");
+    if (stat.isDirectory() && fs.existsSync(indexPath)) {
+      exports.push({ name: e, dir, indexPath });
+    }
   }
-  const entries = fs.readdirSync(journalDir);
-  const paths = [];
+  return exports.sort((a, b) => a.name.localeCompare(b.name));
+}
 
-  // Look for export directories (d20260309-... pattern) with index.json
-  const exportDirs = entries
-    .filter((e) => {
-      const fullPath = path.join(journalDir, e);
-      return (
-        fs.statSync(fullPath).isDirectory() &&
-        fs.existsSync(path.join(fullPath, "index.json"))
-      );
-    })
-    .sort();
-
-  for (const dir of exportDirs) {
-    paths.push(path.join(journalDir, dir, "index.json"));
+/**
+ * Move a path to the macOS Trash (recoverable), suffixing on name collision.
+ */
+function moveToTrash(target) {
+  const trashDir = path.join(os.homedir(), ".Trash");
+  ensureDir(trashDir);
+  let dest = path.join(trashDir, path.basename(target));
+  if (fs.existsSync(dest)) dest = `${dest}-${Date.now()}`;
+  try {
+    fs.renameSync(target, dest);
+  } catch (e) {
+    if (e.code === "EXDEV") {
+      // Cross-volume: copy then remove the original.
+      fs.cpSync(target, dest, { recursive: true });
+      fs.rmSync(target, { recursive: true, force: true });
+    } else {
+      throw e;
+    }
   }
-
-  // Also check for standalone index.json
-  if (fs.existsSync(path.join(journalDir, "index.json"))) {
-    paths.push(path.join(journalDir, "index.json"));
-  }
-
-  return paths;
 }
 
 /**
@@ -87,39 +118,11 @@ function transformRecords(rawRecords) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-// --- Main ---
-
-function main() {
-  let inputPaths = [];
-
-  if (process.argv[2]) {
-    // Explicit path provided
-    let inputPath = process.argv[2];
-    if (
-      fs.existsSync(inputPath) &&
-      fs.statSync(inputPath).isDirectory()
-    ) {
-      inputPath = path.join(inputPath, "index.json");
-    }
-    if (!fs.existsSync(inputPath)) {
-      console.error(`File not found: ${inputPath}`);
-      process.exit(1);
-    }
-    inputPaths = [inputPath];
-  } else {
-    inputPaths = findExportPaths();
-    if (inputPaths.length === 0) {
-      console.error(
-        "No 5 Minute Journal export found in local/journal-inbox/\n" +
-          "Usage: yarn journal:import [path-to-export-dir-or-json]\n" +
-          "Drop your 5MJ export (unzipped) into local/journal-inbox/ and re-run."
-      );
-      process.exit(1);
-    }
-    console.log(`Found ${inputPaths.length} export(s)`);
-  }
-
-  // Merge records from all exports
+/**
+ * Merge the given index.json paths into data/journal.json (record-level
+ * idempotency: same-date records overwritten, dates not in the import kept).
+ */
+function importAndWrite(inputPaths) {
   let newRecords = [];
   for (const inputPath of inputPaths) {
     console.log(`\nImporting from: ${inputPath}`);
@@ -149,7 +152,7 @@ function main() {
     entryMap.set(entry.date, entry);
   }
 
-  // Merge: new records overwrite existing by date, existing entries not in import are kept
+  // Merge: new records overwrite existing by date, existing entries kept
   let added = 0;
   let updated = 0;
   let unchanged = 0;
@@ -175,30 +178,77 @@ function main() {
     _meta: {
       source: "5 Minute Journal",
       totalEntries: allEntries.length,
-      dateRange: allEntries.length > 0
-        ? `${allEntries[0].date} to ${allEntries[allEntries.length - 1].date}`
-        : "none",
+      dateRange:
+        allEntries.length > 0
+          ? `${allEntries[0].date} to ${allEntries[allEntries.length - 1].date}`
+          : "none",
     },
     entries: allEntries,
   };
 
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-
+  ensureDir(DATA_DIR);
   fs.writeFileSync(journalPath, JSON.stringify(journal, null, 2));
 
   console.log(`\n✅ data/journal.json written`);
   console.log(`   ${allEntries.length} total entries`);
-  console.log(`   ${added} added, ${updated} updated, ${unchanged} unchanged, ${kept} kept from previous`);
+  console.log(
+    `   ${added} added, ${updated} updated, ${unchanged} unchanged, ${kept} kept from previous`
+  );
   if (allEntries.length > 0) {
-    console.log(`   ${allEntries[0].date} → ${allEntries[allEntries.length - 1].date}`);
+    console.log(
+      `   ${allEntries[0].date} → ${allEntries[allEntries.length - 1].date}`
+    );
   }
 
   // Stats
   const withGratitude = allEntries.filter((r) => r.gratitude.length > 0).length;
   const withEvening = allEntries.filter((r) => r.amazingness.length > 0).length;
-  console.log(`   ${withGratitude} with morning entries, ${withEvening} with evening entries\n`);
+  console.log(
+    `   ${withGratitude} with morning entries, ${withEvening} with evening entries\n`
+  );
+}
+
+// --- Main ---
+
+function main() {
+  // Explicit path: ad-hoc import only — no archiving, no inbox changes.
+  if (process.argv[2]) {
+    let inputPath = process.argv[2];
+    if (fs.existsSync(inputPath) && fs.statSync(inputPath).isDirectory()) {
+      inputPath = path.join(inputPath, "index.json");
+    }
+    if (!fs.existsSync(inputPath)) {
+      console.error(`File not found: ${inputPath}`);
+      process.exit(1);
+    }
+    importAndWrite([inputPath]);
+    return;
+  }
+
+  // Inbox mode: import everything in journal/inbox/, then archive + clear it.
+  const exports = findInboxExports();
+  if (exports.length === 0) {
+    console.log(
+      "Inbox empty — nothing new to import.\n" +
+        "(data/journal.json already holds every imported entry; drop a 5MJ export\n" +
+        " into journal/inbox/ to add more.)"
+    );
+    return;
+  }
+
+  console.log(`Found ${exports.length} export(s) in journal/inbox/`);
+  importAndWrite(exports.map((e) => e.indexPath));
+
+  // Archive the tiny index.json, then move the bulky export out to Trash.
+  ensureDir(ARCHIVE_DIR);
+  for (const exp of exports) {
+    const archivePath = path.join(ARCHIVE_DIR, `${exp.name}.json`);
+    fs.copyFileSync(exp.indexPath, archivePath);
+    console.log(`📦 archived journal/archive/${exp.name}.json`);
+    moveToTrash(exp.dir);
+    console.log(`🗑️  cleared ${exp.name}/ from inbox → Trash`);
+  }
+  console.log("\n✅ Inbox empty. Archive holds the index.json record.\n");
 }
 
 main();

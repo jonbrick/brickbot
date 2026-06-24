@@ -5,19 +5,20 @@
  * Brickocampus vault via the data/ symlink).
  *
  * Inbox model (vault-resident, synced across machines):
- *   - Drop an unzipped 5MJ export into journal/inbox/  (a dir containing index.json)
+ *   - Drop an unzipped 5MJ export into _journal-inbox/  (a dir containing index.json)
  *   - Run: yarn journal:import
  *   - The script reads the text into data/journal.json, copies the tiny index.json
- *     to journal/archive/<export-id>.json (the permanent record), and moves the
+ *     to journal-archive/<export-id>.json (the permanent record), and moves the
  *     bulky export out of the inbox to the Trash.
  *   - An empty inbox is a no-op: data/journal.json already holds every entry.
  *
- * journal/ is a symlink into the vault (~/Documents/Brickocampus/_brickbot/journal),
- * the same mechanism data/ uses — so brickbot stays scripts-only and the journal
- * data (Jon's manual exports) lives in the vault.
+ * _journal-inbox/ and journal-archive/ are symlinks into the vault
+ * (~/Documents/Brickocampus/_brickbot/), the same mechanism data/ uses — so
+ * brickbot stays scripts-only and the journal data (Jon's manual exports) lives
+ * in the vault.
  *
  * Usage: yarn journal:import [path-to-export-dir-or-json]
- *   - No arg: scan journal/inbox/ (normal path; archives + clears the inbox)
+ *   - No arg: scan _journal-inbox/ (normal path; archives + clears the inbox)
  *   - Explicit path: ad-hoc import only (no archiving, no inbox changes)
  * Output: data/journal.json (2026 entries only)
  */
@@ -27,15 +28,15 @@ const path = require("path");
 const os = require("os");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
-const INBOX_DIR = path.join(__dirname, "..", "journal", "inbox");
-const ARCHIVE_DIR = path.join(__dirname, "..", "journal", "archive");
+const INBOX_DIR = path.join(__dirname, "..", "_journal-inbox");
+const ARCHIVE_DIR = path.join(__dirname, "..", "journal-archive");
 
 function ensureDir(d) {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 }
 
 /**
- * Find export directories in journal/inbox/ (each a dir containing index.json).
+ * Find export directories in _journal-inbox/ (each a dir containing index.json).
  * Returns [{ name, dir, indexPath }], sorted oldest-first by name.
  */
 function findInboxExports() {
@@ -225,18 +226,18 @@ function main() {
     return;
   }
 
-  // Inbox mode: import everything in journal/inbox/, then archive + clear it.
+  // Inbox mode: import everything in _journal-inbox/, then archive + clear it.
   const exports = findInboxExports();
   if (exports.length === 0) {
     console.log(
       "Inbox empty — nothing new to import.\n" +
         "(data/journal.json already holds every imported entry; drop a 5MJ export\n" +
-        " into journal/inbox/ to add more.)"
+        " into _journal-inbox/ to add more.)"
     );
     return;
   }
 
-  console.log(`Found ${exports.length} export(s) in journal/inbox/`);
+  console.log(`Found ${exports.length} export(s) in _journal-inbox/`);
   importAndWrite(exports.map((e) => e.indexPath));
 
   // Archive the tiny index.json, then move the bulky export out to Trash.
@@ -244,7 +245,7 @@ function main() {
   for (const exp of exports) {
     const archivePath = path.join(ARCHIVE_DIR, `${exp.name}.json`);
     fs.copyFileSync(exp.indexPath, archivePath);
-    console.log(`📦 archived journal/archive/${exp.name}.json`);
+    console.log(`📦 archived journal-archive/${exp.name}.json`);
     moveToTrash(exp.dir);
     console.log(`🗑️  cleared ${exp.name}/ from inbox → Trash`);
   }

@@ -51,13 +51,38 @@ function transformSupplementToCalendarEvent(record, repo) {
     );
   }
 
-  // Title reflects which batches were taken (AM / PM / AM + PM).
+  // Title reflects which batches were taken (AM / PM / AM + PM) plus, when the
+  // day wasn't fully compliant, the items skipped within those batches:
+  //   ≤2 skips → names them; 3+ → a count.
   const tags = [];
   if (amOn) tags.push("AM");
   if (pmOn) tags.push("PM");
+
+  // Unique skipped items across the taken batches, in routine order.
+  const skipped = [];
+  const seenSkips = new Set();
+  const collectSkips = (on, list) => {
+    if (!on) return;
+    for (const item of list) {
+      if (!seenSkips.has(item)) {
+        seenSkips.add(item);
+        skipped.push(item);
+      }
+    }
+  };
+  collectSkips(amOn, amSkipped);
+  collectSkips(pmOn, pmSkipped);
+
+  let skipPart = "";
+  if (skipped.length === 1 || skipped.length === 2) {
+    skipPart = ` · skipped ${skipped.join(", ")}`;
+  } else if (skipped.length >= 3) {
+    skipPart = ` · ${skipped.length} skipped`;
+  }
+
   // Prefix must match ADDITIONAL_EMOJI_PREFIXES in config/calendar/summary-emoji-prefixes.js so yarn summarize can strip it.
   const summary = tags.length
-    ? `🍬 Supplements (${tags.join(" + ")})`
+    ? `🍬 Supplements (${tags.join(" + ")}${skipPart})`
     : "🍬 Supplements";
 
   const lines = [];

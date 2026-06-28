@@ -95,10 +95,12 @@ async function main() {
       continue;
     }
 
+    // All-day events use date-only start/end (no "T"); timed events use dateTime.
+    const allDay = !String(start).includes("T");
     const eventData = {
       summary,
-      start: { dateTime: start, timeZone: TIME_ZONE },
-      end: { dateTime: end, timeZone: TIME_ZONE },
+      start: allDay ? { date: start } : { dateTime: start, timeZone: TIME_ZONE },
+      end: allDay ? { date: end } : { dateTime: end, timeZone: TIME_ZONE },
     };
     if (description) eventData.description = description;
     if (location) eventData.location = location;

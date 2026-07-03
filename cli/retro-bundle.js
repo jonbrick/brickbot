@@ -5,7 +5,7 @@
  * Retro bundle: emit one JSON object on stdout with all data /retro-week
  * needs for the given week. Read-only against data/*.json.
  *
- * Contract: ~/Documents/Brickocampus/personal/projects/doing/Build retro-week data bundler/bundle-shape.md
+ * Contract: ~/projects/brickocampus/personal/projects/doing/Build retro-week data bundler/bundle-shape.md
  *
  * Usage: yarn retro:bundle <wk>
  */

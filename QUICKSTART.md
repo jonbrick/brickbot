@@ -104,7 +104,7 @@ yarn nyc:import        # One-time CSV → Notion import for NYC databases
 
 ### Claude Code Skills
 
-Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault at `~/Documents/Brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
+Reflection/planning skills (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault at `~/projects/brickocampus/.claude/skills/`. Launch Claude Code from the vault to use them. They follow the same pull/push cycle: `yarn pull` → skill edits `data/*.json` → `yarn push`.
 
 ### Utilities
 

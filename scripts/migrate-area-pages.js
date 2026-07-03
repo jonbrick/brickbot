@@ -17,7 +17,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const VAULT = path.join(process.env.HOME, "Documents", "Brickocampus");
+const VAULT = path.join(process.env.HOME, "projects", "brickocampus");
 const PD = path.join(VAULT, "work/cortex/projects/Product Design");
 const EXECUTE = process.argv.includes("--execute");
 

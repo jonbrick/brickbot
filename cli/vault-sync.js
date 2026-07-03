@@ -23,8 +23,8 @@ const crypto = require("crypto");
 
 const VAULT_DIR = path.join(
   process.env.HOME,
-  "Documents",
-  "Brickocampus",
+  "projects",
+  "brickocampus",
   "personal"
 );
 const DATA_DIR = path.join(__dirname, "..", "data");

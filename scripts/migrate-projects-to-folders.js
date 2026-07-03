@@ -31,7 +31,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const VAULT = path.join(process.env.HOME, "Documents", "Brickocampus");
+const VAULT = path.join(process.env.HOME, "projects", "brickocampus");
 const WORK_TEAMS = [
   path.join(VAULT, "work/cortex/projects/Product Design"),
   path.join(VAULT, "work/cortex/projects/Design Engineering"),

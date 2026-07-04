@@ -22,6 +22,7 @@ const { delay } = require("../src/utils/async");
 const { createSpinner } = require("../src/utils/cli");
 const { blocksToMarkdown } = require("../src/utils/notion-content");
 
+const { readFileSyncRetry, writeFileSyncRetry } = require("../src/utils/fs-retry");
 const DATA_DIR = path.join(__dirname, "..", "data");
 const LOCAL_DIR = path.join(__dirname, "..", "local");
 const autoMode = process.argv.includes("--auto");
@@ -194,7 +195,7 @@ async function pullPlanData(spinner) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "plan.json"),
     JSON.stringify(plan, null, 2)
   );
@@ -224,7 +225,7 @@ async function pullNycData(spinner) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "nyc.json"),
     JSON.stringify(nyc, null, 2)
   );
@@ -254,7 +255,7 @@ async function pullRetroData(spinner) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "retro.json"),
     JSON.stringify(retro, null, 2)
   );
@@ -290,7 +291,7 @@ async function pullLifeData(spinner) {
     const previousTasks = {};
     try {
       if (fs.existsSync(existingLifePath)) {
-        const existing = JSON.parse(fs.readFileSync(existingLifePath, "utf-8"));
+        const existing = JSON.parse(readFileSyncRetry(existingLifePath, "utf-8"));
         if (existing.tasks) {
           for (const t of existing.tasks) {
             if (t._notionId) previousTasks[t._notionId] = t;
@@ -345,7 +346,7 @@ async function pullLifeData(spinner) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "life.json"),
     JSON.stringify(life, null, 2)
   );
@@ -423,7 +424,7 @@ async function pullCollectedData(spinner, startDate, endDate) {
   let existing = null;
   try {
     if (fs.existsSync(collectedPath)) {
-      existing = JSON.parse(fs.readFileSync(collectedPath, "utf-8"));
+      existing = JSON.parse(readFileSyncRetry(collectedPath, "utf-8"));
     }
   } catch {
     existing = null;
@@ -465,7 +466,7 @@ async function pullCollectedData(spinner, startDate, endDate) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "collected.json"),
     JSON.stringify(collected, null, 2)
   );
@@ -531,7 +532,7 @@ async function pullSummaries(spinner) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "summaries.json"),
     JSON.stringify(summaries, null, 2)
   );
@@ -596,7 +597,7 @@ async function pullCalendar(spinner, startDate, endDate) {
   let existing = null;
   try {
     if (fs.existsSync(calendarPath)) {
-      existing = JSON.parse(fs.readFileSync(calendarPath, "utf-8"));
+      existing = JSON.parse(readFileSyncRetry(calendarPath, "utf-8"));
     }
   } catch {
     existing = null;
@@ -679,7 +680,7 @@ async function pullCalendar(spinner, startDate, endDate) {
   }
 
   ensureDir(DATA_DIR);
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(DATA_DIR, "calendar.json"),
     JSON.stringify(calendar, null, 2)
   );
@@ -1000,42 +1001,42 @@ function generateHtmlViews() {
 
   // Collected data viewer
   ensureDir(path.join(LOCAL_DIR, "collected"));
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(LOCAL_DIR, "collected", "index.html"),
     generateDataViewerHtml("Collected Data", "../../data/collected.json")
   );
 
   // Summaries viewer
   ensureDir(path.join(LOCAL_DIR, "summaries"));
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(LOCAL_DIR, "summaries", "index.html"),
     generateDataViewerHtml("Summaries & Recaps", "../../data/summaries.json")
   );
 
   // Calendar viewer
   ensureDir(path.join(LOCAL_DIR, "calendar"));
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(LOCAL_DIR, "calendar", "index.html"),
     generateDataViewerHtml("Calendar Events", "../../data/calendar.json")
   );
 
   // NYC viewer
   ensureDir(path.join(LOCAL_DIR, "nyc"));
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(LOCAL_DIR, "nyc", "index.html"),
     generateNycViewerHtml()
   );
 
   // Retro viewer
   ensureDir(path.join(LOCAL_DIR, "retro"));
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(LOCAL_DIR, "retro", "index.html"),
     generateDataViewerHtml("Retro Data", "../../data/retro.json")
   );
 
   // Life viewer
   ensureDir(path.join(LOCAL_DIR, "life"));
-  fs.writeFileSync(
+  writeFileSyncRetry(
     path.join(LOCAL_DIR, "life", "index.html"),
     generateDataViewerHtml("Life Data", "../../data/life.json")
   );

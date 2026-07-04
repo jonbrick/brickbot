@@ -21,6 +21,7 @@ const { delay } = require("../src/utils/async");
 const { createSpinner } = require("../src/utils/cli");
 const { markdownToBlocks } = require("../src/utils/notion-content");
 
+const { readFileSyncRetry, writeFileSyncRetry } = require("../src/utils/fs-retry");
 const DATA_DIR = path.join(__dirname, "..", "data");
 const db = new NotionDatabase();
 
@@ -80,7 +81,7 @@ function readDataFile(filename) {
     console.log(`  ✗ ${filename} not found (run yarn pull first)`);
     return null;
   }
-  return JSON.parse(fs.readFileSync(filepath, "utf-8"));
+  return JSON.parse(readFileSyncRetry(filepath, "utf-8"));
 }
 
 // Notion property types that are safe to push back

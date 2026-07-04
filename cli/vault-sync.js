@@ -27,6 +27,7 @@ const VAULT_DIR = path.join(
   "brickocampus",
   "personal"
 );
+const { readFileSyncRetry, writeFileSyncRetry } = require("../src/utils/fs-retry");
 const DATA_DIR = path.join(__dirname, "..", "data");
 
 // --- Helpers ---
@@ -63,7 +64,7 @@ function computeSyncHash(markdown) {
 /** Read sync_hash from an existing vault file's frontmatter */
 function readSyncHash(filePath) {
   try {
-    const content = fs.readFileSync(filePath, "utf8");
+    const content = readFileSyncRetry(filePath, "utf8");
     const match = content.match(/^sync_hash:\s*"([a-f0-9]+)"/m);
     return match ? match[1] : null;
   } catch {
@@ -81,7 +82,7 @@ function writeIfChanged(filePath, markdown) {
 
   if (readSyncHash(filePath) === hash) return false;
 
-  fs.writeFileSync(filePath, finalMarkdown);
+  writeFileSyncRetry(filePath, finalMarkdown);
   return true;
 }
 
@@ -165,7 +166,7 @@ function ensureDir(dir) {
 function readJsonSafe(filename) {
   const filePath = path.join(DATA_DIR, filename);
   if (!fs.existsSync(filePath)) return null;
-  return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  return JSON.parse(readFileSyncRetry(filePath, "utf8"));
 }
 
 // --- Transformers ---
@@ -423,7 +424,7 @@ function syncPersonalProjects(projects, goals, { dryRun = false } = {}) {
     const file = path.basename(filePath);
     let content;
     try {
-      content = fs.readFileSync(filePath, "utf8");
+      content = readFileSyncRetry(filePath, "utf8");
     } catch (err) {
       results.errors.push(`${file}: ${err.message}`);
       continue;
@@ -521,7 +522,7 @@ function syncPersonalProjects(projects, goals, { dryRun = false } = {}) {
 
     try {
       const newContent = serializeFrontmatter(parsed, updates);
-      fs.writeFileSync(filePath, newContent);
+      writeFileSyncRetry(filePath, newContent);
       results.written++;
     } catch (err) {
       results.errors.push(`${file}: ${err.message}`);
@@ -578,7 +579,7 @@ function pruneOrphans({ retroData, lifeData, dryRun }) {
     const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
     for (const file of files) {
       const fullPath = path.join(dir, file);
-      const content = fs.readFileSync(fullPath, "utf8");
+      const content = readFileSyncRetry(fullPath, "utf8");
       const match = content.match(/^notion_id:\s*"([^"]+)"/m);
 
       if (!match) {

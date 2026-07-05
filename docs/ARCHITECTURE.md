@@ -649,7 +649,7 @@ Brickbot follows a local-first pattern: all Notion data is pulled to local JSON 
 Runs 9x/day via launchd (`infra/launchd/com.brickbot.daily.plist`):
 
 ```
-tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync
+tokens:refresh → collect → update → summarize → aggregate → pull → vault-sync
 ```
 
 **Schedule:** every 2 hours, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM)
@@ -671,7 +671,7 @@ Brickbot has four interaction patterns:
 Interactive commands for data pipeline operations (`yarn collect`, `yarn update`, `yarn summarize`, etc.).
 
 ### 2. Automation
-Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync` 9x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
+Non-interactive launchd automation running `tokens:refresh → collect → update → summarize → aggregate → pull → vault-sync` 9x/day with `--auto` flag. Fails fast on transient errors (3-min default step timeout, bail on token refresh failure, 15-min wall-clock cap on the full pipeline).
 
 ### 3. Vault Skills
 Reflection/planning slash commands (`/retro-week`, `/plan-*`, `/recap-month`) live in the Brickocampus vault, not in brickbot. They read/edit `data/*.json` and push back via `yarn push` — brickbot is the plumbing, the vault hosts the user-facing skills.

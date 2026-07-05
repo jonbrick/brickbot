@@ -626,7 +626,7 @@ yarn tokens:refresh # Refresh expired tokens
 Brickbot runs automatically 9x daily — every 2 hours, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM) via launchd. The full automation surface (Cowork morning-brief, evening-processor, watchdog, app-launcher, pmset wakes) lives in `~/projects/brickocampus/_automation/_automation-readme.md`. This section covers `com.brickbot.daily` only:
 
 ```
-tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync
+tokens:refresh → collect → update → summarize → aggregate → pull → vault-sync
 ```
 
 - **Resilience:** 3-min default per-step timeout (pull: 8-min). Bails on token refresh failure.

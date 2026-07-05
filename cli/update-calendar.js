@@ -322,13 +322,20 @@ async function main() {
       source = selected.source;
       action = selected.action;
 
-      const dateResult = await selectDateRange({
-        minGranularity: "day",
-        allowFuture: false,
-      });
-      startDate = dateResult.startDate;
-      endDate = dateResult.endDate;
-      if (dateResult.displayText) console.log(dateResult.displayText);
+      // --from/--to passed without --auto: honor the flags, skip the prompt.
+      if (cliDateRange) {
+        startDate = cliDateRange.fromDate;
+        endDate = cliDateRange.toDate;
+        console.log(`Date range from flags: ${formatDate(startDate)} to ${formatDate(endDate)}\n`);
+      } else {
+        const dateResult = await selectDateRange({
+          minGranularity: "day",
+          allowFuture: false,
+        });
+        startDate = dateResult.startDate;
+        endDate = dateResult.endDate;
+        if (dateResult.displayText) console.log(dateResult.displayText);
+      }
     }
 
     // Route to appropriate handler

@@ -231,14 +231,32 @@ async function main() {
         console.log("ℹ️ Dry run: results will not be saved to Notion\n");
       }
 
-      const { months: selectedMonths, displayText } = await selectDateRange({
-        minGranularity: "month",
-      });
-      months = selectedMonths;
-      if (!months || months.length === 0) {
-        throw new Error("No months selected");
+      // --from/--to passed without --auto: honor the flags, skip the prompt.
+      // Mirrors auto-mode: resolve each covered month's Notion weeks.
+      if (cliDateRange) {
+        const { getWeeksForMonthFromNotion } = require("../src/utils/date-pickers");
+        months = [];
+        for (const { month: m, year: y } of cliDateRange.months) {
+          const { weeks: notionWeeks } = await getWeeksForMonthFromNotion(y, m);
+          if (notionWeeks.length === 0) {
+            throw new Error(`No weeks found for ${y}-${String(m).padStart(2, "0")}`);
+          }
+          months.push({ month: m, year: y, weeks: notionWeeks });
+        }
+        const monthDesc = months.map((m) =>
+          `${new Date(m.year, m.month - 1, 1).toLocaleString("default", { month: "long" })} ${m.year}`
+        ).join(", ");
+        console.log(`Months from flags: ${monthDesc}\n`);
+      } else {
+        const { months: selectedMonths, displayText } = await selectDateRange({
+          minGranularity: "month",
+        });
+        months = selectedMonths;
+        if (!months || months.length === 0) {
+          throw new Error("No months selected");
+        }
+        if (displayText) console.log(displayText);
       }
-      if (displayText) console.log(displayText);
     }
 
     // Progress callback for workflows (suppresses workflow's default console.log)

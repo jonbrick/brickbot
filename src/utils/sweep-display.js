@@ -122,7 +122,13 @@ function displayRecordsTable(records, sourceId) {
   }
 
   const label = records.length === 1 ? recordLabel : `${recordLabel}s`;
-  console.log(`Found ${records.length} ${label} without calendar events\n`);
+  // Hybrid (events/trips) and aggregate (withings/bloodPressure) sources display
+  // ALL records for reconciliation, not just those missing an event — so the
+  // "without calendar events" phrasing only holds for the plain unsynced pattern.
+  const reconciles =
+    integration.databaseConfig?.useHybridPattern || integration.aggregateByDay;
+  const suffix = reconciles ? "to sync" : "without calendar events";
+  console.log(`Found ${records.length} ${label} ${suffix}\n`);
 
   records.forEach((record) => {
     console.log("  " + displayFormat(record));

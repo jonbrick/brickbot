@@ -462,9 +462,16 @@ async function main() {
         console.log("ℹ️ Dry run: results will not be saved to Notion\n");
       }
 
-      const dateResult = await selectDateRange({ minGranularity: "week" });
-      weeks = dateResult.weeks;
-      if (dateResult.displayText) console.log(dateResult.displayText);
+      // --from/--to passed without --auto: honor the flags, skip the prompt.
+      if (cliDateRange) {
+        weeks = cliDateRange.weeks;
+        const weekDesc = weeks.map((w) => `W${w.weekNumber}/${w.year}`).join(", ");
+        console.log(`Weeks from flags: ${weekDesc}\n`);
+      } else {
+        const dateResult = await selectDateRange({ minGranularity: "week" });
+        weeks = dateResult.weeks;
+        if (dateResult.displayText) console.log(dateResult.displayText);
+      }
     }
 
     if (displayOnly && !dryRun) {

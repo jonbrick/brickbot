@@ -688,7 +688,7 @@ DRY_RUN=false  # Set to true for testing without creating records
 
 ### Data Pipeline (automated 9x/day)
 
-Full pipeline runs automatically via launchd: `tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync`
+Full pipeline runs automatically via launchd: `tokens:refresh → collect → update → summarize → aggregate → pull → vault-sync` (`push` is manual only — see below)
 
 | Command | Purpose | Interactive |
 |---------|---------|-------------|

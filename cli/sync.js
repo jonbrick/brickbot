@@ -2,7 +2,7 @@
 
 /**
  * Sync CLI
- * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → aggregate → push → pull → vault-sync
+ * Runs the full Brickbot pipeline: tokens:refresh → collect → update → summarize → aggregate → pull → vault-sync
  * Called by launchd or manually via `yarn sync`
  *
  * Usage:
@@ -51,13 +51,16 @@ const WALL_CLOCK_TIMEOUT = 15 * 60 * 1000; // 15 minutes total — caps the caff
 
 const rangeFlag = dateRangeFlags(range);
 
+// NOTE: `push` (local → Notion) is intentionally NOT in this pipeline. Nothing
+// edits data/*.json between automated runs, so an auto push could only ever
+// clobber Notion (the source of truth) with stale local state. `yarn push` is
+// manual + push-skill invoked only. See harden-brickbot-sync-layer-brief §4a.4.
 const STEPS = [
   { name: "tokens:refresh", cmd: `${NODE} cli/tokens/refresh.js --auto` },
   { name: "collect", cmd: `${NODE} cli/collect-data.js --auto${rangeFlag}` },
   { name: "update", cmd: `${NODE} cli/update-calendar.js --auto${rangeFlag}` },
   { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto${rangeFlag}` },
   { name: "aggregate", cmd: `${NODE} cli/aggregate-month.js --auto${rangeFlag}` },
-  { name: "push", cmd: `${NODE} cli/push.js --auto` },
   { name: "pull", cmd: `${NODE} cli/pull.js --auto`, timeout: 8 * 60 * 1000 },
   { name: "vault-sync", cmd: `${NODE} cli/vault-sync.js --auto` },
 ];

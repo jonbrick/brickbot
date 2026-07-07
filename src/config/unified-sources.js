@@ -412,6 +412,13 @@ const CALENDARS = {
         emoji: "📝",
         dataFields: FIELD_TEMPLATES.categoryActivity("admin", "Admin"),
       },
+      marketing: {
+        emoji: "📣",
+        dataFields: FIELD_TEMPLATES.categoryActivity(
+          "marketing",
+          "Marketing & Branding",
+        ),
+      },
     },
   },
   tasks: {

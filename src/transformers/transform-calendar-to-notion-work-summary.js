@@ -149,7 +149,7 @@ function transformCalendarEventsToRecapData(
   // Work Calendar blocks (only if "workCalendar" is selected)
   if (shouldCalculate("workCalendar")) {
     const {
-      getWorkCategoryByColor,
+      getEnhancedWorkCategory,
     } = require("../config/calendar/color-mappings");
 
     // Get all events from the single Work Calendar
@@ -163,7 +163,7 @@ function transformCalendarEventsToRecapData(
     // Group events by category for per-category data
     const eventsByCategory = {};
     filteredEvents.forEach((event) => {
-      const category = getWorkCategoryByColor(event.colorId);
+      const category = getEnhancedWorkCategory(event);
       if (!eventsByCategory[category]) {
         eventsByCategory[category] = [];
       }

@@ -11,7 +11,7 @@
 const PERSONAL_COLOR_MAPPING = {
   2: { category: "personal", displayName: "Personal" }, // Sage/Green (default)
   3: { category: "interpersonal", displayName: "Interpersonal" }, // Grape - Handled by interpersonal matcher for family/relationship split
-  5: { category: "home", displayName: "Home" }, // Citron
+  5: { category: "home", displayName: "Home" }, // Banana
   8: { category: "physicalHealth", displayName: "Physical Health" }, // Graphite
   9: { category: "ignore", displayName: "Ignore" }, // Blueberry
   11: { category: "mentalHealth", displayName: "Mental Health" }, // Tomato/Red
@@ -19,19 +19,38 @@ const PERSONAL_COLOR_MAPPING = {
 
 // Work Calendar Color Mappings (for future use)
 // Maps colorId (string) to category object with category key and display name
+// Color names below match Google's event-color palette (colorId → name) documented
+// at the bottom of this file. colorId 1 (Lavender) is the calendar's default; work
+// events left uncolored arrive as colorId=null and fall through to "meetings".
 const WORK_COLOR_MAPPING = {
-  1: { category: "meetings", displayName: "Meetings" }, // Peacock (default)
+  1: { category: "meetings", displayName: "Meetings" }, // Lavender
   2: { category: "design", displayName: "Design" }, // Sage
   3: { category: "coding", displayName: "Coding" }, // Grape
   4: { category: "rituals", displayName: "Rituals" }, // Flamingo
-  5: { category: "crit", displayName: "Crit" }, // Citron
+  5: { category: "crit", displayName: "Crit" }, // Banana
   6: { category: "sketch", displayName: "Sketch" }, // Tangerine
-  7: { category: "research", displayName: "Research" }, // Lavender
+  7: { category: "research", displayName: "Research" }, // Peacock
   8: { category: "personalAndSocial", displayName: "Personal & Social" }, // Graphite
   9: { category: "admin", displayName: "Admin" }, // Blueberry
   10: { category: "hiring", displayName: "Hiring" }, // Basil
   11: { category: "qa", displayName: "QA" }, // Tomato
 };
+
+// Keyword-based work category overrides (title-driven, color-independent).
+// Google's event palette has only 11 colors and all are assigned above, so a 12th
+// category ("Marketing & Branding") can't be keyed on colorId — these events also
+// arrive uncolored (colorId=null) from the calendar app, which would otherwise
+// bucket them into the "meetings" default. Matched by title before the color lookup.
+// Ordered array: first matching rule wins.
+const WORK_KEYWORD_CATEGORIES = [
+  {
+    category: "marketing",
+    // "Focus Lab" = the brand agency engagement; "brand"/"branding"/"rebrand(ing)"/"visual
+    // strategy" = the work itself. The trailing \b keeps the match to the brand word-family
+    // (brand, branding, rebrand, rebranding) while excluding names like "Brandon"/"Brandy".
+    pattern: /focus lab|brand(ing)?\b|visual strategy/i,
+  },
+];
 
 // Events/Trips Category to Color Mapping
 // Maps Notion category select values (with emojis) to Google Calendar color IDs
@@ -151,6 +170,29 @@ function getWorkCategoryDisplayName(colorId) {
 }
 
 /**
+ * Match a work event's title against keyword-based category rules.
+ * @param {Object} event - Calendar event (uses event.summary)
+ * @returns {string|null} Category key if a rule matches, else null
+ */
+function getWorkKeywordCategory(event) {
+  const title = (event && event.summary) || "";
+  if (!title) return null;
+  const rule = WORK_KEYWORD_CATEGORIES.find((r) => r.pattern.test(title));
+  return rule ? rule.category : null;
+}
+
+/**
+ * Get the work category for an event, preferring a title-keyword match over color.
+ * Keyword rules take precedence so color-less categories (e.g. "marketing") work;
+ * everything else falls back to the standard colorId mapping.
+ * @param {Object} event - Calendar event with summary and colorId
+ * @returns {string} Category key
+ */
+function getEnhancedWorkCategory(event) {
+  return getWorkKeywordCategory(event) || getWorkCategoryByColor(event.colorId);
+}
+
+/**
  * Get Google Calendar color ID from Notion category value (Events/Trips)
  * @param {string|null} category - Notion category value (e.g., "🍻 Interpersonal", "💼 Work", "🌱 Personal")
  * @returns {string|null} Google Calendar color ID or null if no color
@@ -190,6 +232,8 @@ module.exports = {
   getEnhancedPersonalCategory,
   getWorkCategoryByColor,
   getWorkCategoryDisplayName,
+  getWorkKeywordCategory,
+  getEnhancedWorkCategory,
   getColorIdFromNotionCategory,
   getColorIdForNotionEvent,
 };

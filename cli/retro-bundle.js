@@ -65,7 +65,8 @@ function main() {
   const life = loadJson("life.json");
   const journal = loadJson("journal.json");
 
-  const weekTitle = `Week ${wk}`;
+  // plan.json week titles are zero-padded ("Week 08")
+  const weekTitle = `Week ${String(wk).padStart(2, "0")}`;
   const weekRecord = plan.weeks.find((w) => w.Week === weekTitle);
   if (!weekRecord) {
     process.stderr.write(`week not found in plan.json: "${weekTitle}"\n`);

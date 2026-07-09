@@ -20,6 +20,7 @@
     "summarize": "node cli/summarize-week.js",
     "aggregate": "node cli/aggregate-month.js",
     "retro:bundle": "node cli/retro-bundle.js",
+    "plan:bundle": "node cli/plan-bundle.js",
     "generate": "node cli/generate-year.js",
     "tokens:check": "node cli/tokens/check.js",
     "tokens:refresh": "node cli/tokens/refresh.js",

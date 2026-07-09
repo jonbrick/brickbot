@@ -99,6 +99,8 @@ function main() {
   const workRetro = joinByWeek(retro.workWeekly, weekNotionId)[0];
 
   const habits = joinByWeek(life.habits, weekNotionId).map(strip);
+  const habitsPlan =
+    joinByWeek(life.habitsPlan, weekNotionId).map(strip)[0] || null;
   const tasks = (life.tasks || [])
     .filter((t) => inRange(t["Due Date"], start, end))
     .map(strip);
@@ -128,6 +130,7 @@ function main() {
       work: workRetro ? strip(workRetro) : null,
     },
     habits,
+    habitsPlan,
     tasks,
     journal: journalEntries,
   };

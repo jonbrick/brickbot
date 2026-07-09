@@ -45,6 +45,7 @@ const LIFE_DATABASES = {
   relationships: { envVar: "NOTION_RELATIONSHIPS_DATABASE_ID", label: "Relationships" },
   tasks: { envVar: "TASKS_DATABASE_ID", label: "Tasks" },
   habits: { envVar: "HABITS_WEEK_SUMMARY_DATABASE_ID", label: "Habits" },
+  habitsPlan: { envVar: "HABITS_PLAN_DATABASE_ID", label: "Habits Plans" },
   personalMonthlyPlans: { envVar: "PERSONAL_MONTHLY_PLAN_DATABASE_ID", label: "Personal Monthly Plans" },
   workMonthlyPlans: { envVar: "WORK_MONTHLY_PLAN_DATABASE_ID", label: "Work Monthly Plans" },
   personalProjects: { envVar: "NOTION_PERSONAL_PROJECTS_DATABASE_ID", label: "Personal Projects" },

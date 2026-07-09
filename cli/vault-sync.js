@@ -408,11 +408,14 @@ function syncPersonalProjects(projects, goals, { dryRun = false } = {}) {
   const matchedNotionIds = new Set();
 
   // Recursively find .md files under personal/projects/<Project Name>/<slug>.md.
-  // Skip the _personal-project-triage/ folder (pre-Notion staging, flat layout).
+  // Skip "_"-prefixed staging/system folders (e.g. _personal-project-inbox) —
+  // pre-Notion staging, flat layout. Matches the skip convention in
+  // scripts/migrate-projects-to-folders.js, so renaming the staging folder can't
+  // reintroduce a gap where staging briefs get synced as real projects.
   const files = [];
   const walk = (subdir) => {
     for (const entry of fs.readdirSync(subdir, { withFileTypes: true })) {
-      if (entry.name.startsWith(".") || entry.name === "_personal-project-triage") continue;
+      if (entry.name.startsWith(".") || entry.name.startsWith("_")) continue;
       const full = path.join(subdir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.isFile() && entry.name.endsWith(".md")) files.push(full);

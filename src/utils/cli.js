@@ -998,6 +998,54 @@ async function promptMultiSelect(message, choices) {
  *
  * Order independence: if from > to, the values are swapped silently.
  */
+/**
+ * Derive the unique Sun–Sat weeks and calendar months a [fromDate, toDate]
+ * span touches. Shared by parseDateRangeFromArgv (explicit --from/--to) and
+ * defaultAutoRange (the --auto default window) so both return an identical
+ * { weeks, months } shape.
+ * @returns {{weeks: Array<{weekNumber:number,year:number}>, months: Array<{month:number,year:number}>}}
+ */
+function deriveWeeksAndMonths(fromDate, toDate) {
+  const weekKeys = new Set();
+  const weeks = [];
+  const monthKeys = new Set();
+  const months = [];
+  for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
+    const yr = d.getFullYear();
+    const wk = getWeekNumber(d, yr);
+    const wKey = `${yr}-W${wk}`;
+    if (!weekKeys.has(wKey)) {
+      weekKeys.add(wKey);
+      weeks.push({ weekNumber: wk, year: yr });
+    }
+    const mKey = `${yr}-${d.getMonth() + 1}`;
+    if (!monthKeys.has(mKey)) {
+      monthKeys.add(mKey);
+      months.push({ month: d.getMonth() + 1, year: yr });
+    }
+  }
+  return { weeks, months };
+}
+
+/**
+ * The default --auto window: last week + this week + next week (3 Sun–Sat
+ * weeks, week-aligned). Returns the same shape as parseDateRangeFromArgv's
+ * `range`, so every date-scoped step consumes its own granularity —
+ * collect/update take fromDate/toDate, summarize takes weeks, aggregate takes
+ * months. One definition of the auto window, shared across the pipeline.
+ */
+function defaultAutoRange() {
+  const today = getToday();
+  const fromDate = getWeekStart(today); // Sunday of this week
+  fromDate.setDate(fromDate.getDate() - 7); // → Sunday of last week
+  fromDate.setHours(0, 0, 0, 0);
+  const toDate = getWeekEnd(today); // Saturday of this week
+  toDate.setDate(toDate.getDate() + 7); // → Saturday of next week
+  toDate.setHours(23, 59, 59, 999);
+  const { weeks, months } = deriveWeeksAndMonths(fromDate, toDate);
+  return { from: formatDate(fromDate), to: formatDate(toDate), fromDate, toDate, weeks, months };
+}
+
 function parseDateRangeFromArgv(argv) {
   const get = (flag) => {
     for (const arg of argv) {
@@ -1060,25 +1108,8 @@ function parseDateRangeFromArgv(argv) {
     return { range: null, error: `${dateFlag !== null ? "--date" : "--from"} "${from}" is in the future. Backfill only makes sense for past days.` };
   }
 
-  // Derive unique weeks and months covered by the range
-  const weekKeys = new Set();
-  const weeks = [];
-  const monthKeys = new Set();
-  const months = [];
-  for (let d = new Date(fromDate); d <= toDate; d.setDate(d.getDate() + 1)) {
-    const yr = d.getFullYear();
-    const wk = getWeekNumber(d, yr);
-    const wKey = `${yr}-W${wk}`;
-    if (!weekKeys.has(wKey)) {
-      weekKeys.add(wKey);
-      weeks.push({ weekNumber: wk, year: yr });
-    }
-    const mKey = `${yr}-${d.getMonth() + 1}`;
-    if (!monthKeys.has(mKey)) {
-      monthKeys.add(mKey);
-      months.push({ month: d.getMonth() + 1, year: yr });
-    }
-  }
+  // Derive unique weeks and months covered by the range (shared helper)
+  const { weeks, months } = deriveWeeksAndMonths(fromDate, toDate);
 
   return {
     range: { from, to, fromDate, toDate, weeks, months },
@@ -1113,5 +1144,6 @@ module.exports = {
   promptSelect,
   promptMultiSelect,
   parseDateRangeFromArgv,
+  defaultAutoRange,
   dateRangeFlags,
 };

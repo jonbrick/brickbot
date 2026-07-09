@@ -18,7 +18,7 @@
  *
  * Skips:
  *   - Area pages (frontmatter type: product-area or type: domain) — stay flat
- *   - Files in _work-project-triage/ and _personal-project-triage/ — stay flat
+ *   - Files in _work-project-inbox/ and _personal-project-inbox/ — stay flat
  *   - Files already inside a project folder (idempotent re-runs)
  *
  * Usage:

@@ -22,16 +22,23 @@
 const { execSync, execFileSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const { parseDateRangeFromArgv, dateRangeFlags } = require("../src/utils/cli");
+const { parseDateRangeFromArgv, dateRangeFlags, defaultAutoRange } = require("../src/utils/cli");
 
 const autoMode = process.argv.includes("--auto");
 
-const { range, error: rangeError } = parseDateRangeFromArgv(process.argv);
+const { range: explicitRange, error: rangeError } = parseDateRangeFromArgv(process.argv);
 if (rangeError) {
   console.error(rangeError);
   process.exit(1);
 }
-const isBackfill = !!range;
+const isBackfill = !!explicitRange;
+// In --auto with no explicit --from/--to, fall back to a centralized week-aligned
+// window (last + this + next week) so every date-scoped step shares one window
+// definition instead of each computing its own. Explicit --from/--to backfills
+// pass through unchanged and keep isBackfill semantics (wall-clock-timeout bypass
+// + backfill log name). The forwarded `--auto --from --to` flag shape is the same
+// one backfills already use, so the steps' range handling is unchanged.
+const range = explicitRange || (autoMode ? defaultAutoRange() : null);
 
 const projectDir = path.resolve(__dirname, "..");
 const logDir = path.join(projectDir, "local", "logs");
@@ -170,10 +177,11 @@ function main() {
     cleanOldLogs();
   }
 
-  if (isBackfill) {
+  if (range) {
+    const label = isBackfill ? "backfill" : "auto";
     const weekDesc = range.weeks.map((w) => `W${w.weekNumber}/${w.year}`).join(", ");
     const monthDesc = range.months.map((m) => `${m.month}/${m.year}`).join(", ");
-    log(`=== Brickbot Run: ${new Date().toLocaleString()} [backfill ${range.from} → ${range.to}; weeks ${weekDesc}; months ${monthDesc}] ===`);
+    log(`=== Brickbot Run: ${new Date().toLocaleString()} [${label} ${range.from} → ${range.to}; weeks ${weekDesc}; months ${monthDesc}] ===`);
   } else {
     log(`=== Brickbot Run: ${new Date().toLocaleString()} ===`);
   }

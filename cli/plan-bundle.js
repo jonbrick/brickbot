@@ -232,6 +232,9 @@ function main() {
       },
       soberDrinking,
       plannedBlocks,
+      // _notionId kept: /plan-week writes this week's numbers + Status to it.
+      habitsPlan:
+        joinByWeek(life.habitsPlan, weekNotionId).map(stripKeepId)[0] || null,
       mealFile: { path: mealFilePath, exists: fs.existsSync(mealFilePath) },
     },
     inputs: {
@@ -263,6 +266,9 @@ function main() {
                 null,
             },
             rocks: joinByWeek(plan.rocks, priorWeekNotionId).map(strip),
+            // Prior week's numbers are the defaults for the habit walk.
+            habitsPlan:
+              strip(joinByWeek(life.habitsPlan, priorWeekNotionId)[0]) || null,
           }
         : null,
       themes: (life.themes || []).map(strip),

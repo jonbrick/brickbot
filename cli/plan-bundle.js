@@ -203,7 +203,9 @@ function main() {
         ) || null
       : null;
 
-  const priorWeekRecord = plan.weeks.find((w) => w.Week === `Week ${wk - 1}`);
+  const priorWeekRecord = plan.weeks.find(
+    (w) => w.Week === `Week ${String(wk - 1).padStart(2, "0")}`
+  );
   const priorWeekNotionId = priorWeekRecord ? priorWeekRecord._notionId : null;
 
   const bundle = {

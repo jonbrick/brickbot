@@ -272,17 +272,14 @@ const RELATION_CONFIG = [
     sourcePropertyName: "🎟️ {year} Events",
     targetPropertyName: "✈️ {year} Trips",
   },
-  // Goals relations (2 relations)
+  // Goals relations (1 relation)
+  // No Goals↔Tasks relation: since 2026-07-11, a task's "🏆 {year} Goals" is a
+  // rollup deriving from the Projects relation → the project's "🏆 Goal".
+  // The Projects DB and that rollup are created manually, not by this generator.
   {
     sourceDb: "{year} Goals",
     targetDb: "{year} Themes",
     sourcePropertyName: "🏔️ {year} Themes",
-    targetPropertyName: "🏆 {year} Goals",
-  },
-  {
-    sourceDb: "{year} Goals",
-    targetDb: "{year} Tasks",
-    sourcePropertyName: "✅ {year} Tasks",
     targetPropertyName: "🏆 {year} Goals",
   },
   // Rocks relations (1 relation)

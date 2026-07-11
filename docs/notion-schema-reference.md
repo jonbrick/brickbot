@@ -25,7 +25,7 @@ This document contains the exact property names, types, and allowed values for e
 | Calendar Created | checkbox | |
 | 🏔️ 2026 Themes | relation | → Themes database (single) |
 | ⏰ 2026 Weeks | relation | → Weeks database |
-| ✅ 2026 Tasks | relation | → Tasks database |
+| 🔨 2026 Projects | relation | → Projects database |
 | 🎟️ 2026 Events | relation | → Events database |
 | ✈️ 2026 Trips | relation | → Trips database |
 | 👤 Be, Do, Have | relation | → Life Purpose database |
@@ -57,7 +57,8 @@ This document contains the exact property names, types, and allowed values for e
 | Notes | text | |
 | Priority | text | |
 | 🪨 2026 Rocks | relation | → Rocks database |
-| 🏆 2026 Goals | relation | → Goals database |
+| 💎 2026 Projects | relation | → Projects database |
+| 🏆 2026 Goals | rollup | Read-only — derives from 💎 2026 Projects → the project's 🏆 Goal. Never write it; set the project relation instead. (Was a direct relation until 2026-07-11.) |
 
 **Important:** To find tasks for a specific day, filter by the "Due Date" property, NOT by rock or week relations.
 

@@ -508,6 +508,20 @@ class NotionDatabase {
         return null;
       }
 
+      case "rollup": {
+        const rollup = property.rollup;
+        if (!rollup) return null;
+        if (rollup.type === "number") return rollup.number;
+        if (rollup.type === "date") return rollup.date?.start || null;
+        if (rollup.type === "array") {
+          // Each array item is the rolled-up target property value of one related page
+          return rollup.array.flatMap((item) =>
+            item.type === "relation" ? item.relation.map((r) => r.id) : []
+          );
+        }
+        return null;
+      }
+
       default:
         return null;
     }

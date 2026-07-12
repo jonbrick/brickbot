@@ -12,6 +12,7 @@
 #
 # Schedule (keep in sync with _automation/_automation-readme.md Schedule table):
 #   brickbot-daily-brief        — 6 AM
+#   pull-linear                 — 6:30 AM
 #   yarn-sync                   — every 2 hr, 7 AM–11 PM (7, 9, 11 AM, 1, 3, 5, 7, 9, 11 PM)
 #   cowork-morning-brief        — 7 AM
 #   cowork-evening-processor    — 9 PM
@@ -167,6 +168,8 @@ check_job() {
 }
 
 check_job "brickbot-daily-brief" "06:00" 600
+
+check_job "pull-linear" "06:30" 900
 
 check_job "yarn-sync" \
   "07:00 09:00 11:00 13:00 15:00 17:00 19:00 21:00 23:00" \

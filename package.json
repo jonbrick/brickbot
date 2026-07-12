@@ -6,6 +6,7 @@
   "scripts": {
     "plan": "node cli/plan-parse.js",
     "pull": "node cli/pull.js",
+    "pull:linear": "node cli/pull-linear.js",
     "push": "node cli/push.js",
     "vault-sync": "node cli/vault-sync.js",
     "view": "node cli/view.js",

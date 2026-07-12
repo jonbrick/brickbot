@@ -3,8 +3,8 @@
  * @layer 1 - Integration (CLI)
  *
  * Plan bundle: emit one JSON object on stdout with all data /plan-week
- * needs for the given week. Read-only against data/*.json and the vault
- * meal-plan folder — safe on either machine (no writes, no iCloud race).
+ * needs for the given week. Read-only against data/*.json — safe on
+ * either machine (no writes, no iCloud race).
  *
  * Mirrors cli/retro-bundle.js conventions (joinByWeek via the Weeks
  * relation, plumbing-key stripping, fail loud, --silent stdout JSON).
@@ -12,8 +12,6 @@
  * Usage: yarn --silent plan:bundle <wk>
  */
 
-const fs = require("fs");
-const os = require("os");
 const path = require("path");
 
 const PLUMBING_KEYS = new Set([
@@ -99,11 +97,19 @@ function main() {
   const calendar = loadJson("calendar.json");
   const retro = loadJson("retro.json");
 
+  // Linear caches (yarn pull:linear) may be absent until the first
+  // scheduled pull lands; not fatal.
   let workProjects = null;
   try {
     workProjects = loadJson("workProjects.json");
   } catch {
-    workProjects = null; // hand-pulled cache may be absent; not fatal
+    workProjects = null;
+  }
+  let workTasks = null;
+  try {
+    workTasks = loadJson("workTasks.json");
+  } catch {
+    workTasks = null;
   }
 
   // plan.json week titles are zero-padded ("Week 08"); life.json task
@@ -176,17 +182,6 @@ function main() {
         String(e.summary || "").startsWith("Planned:")
     )
     .map(calSlim);
-  const year = start.slice(0, 4);
-  const mealFilePath = path.join(
-    os.homedir(),
-    "projects",
-    "brickocampus",
-    "personal",
-    "meal-plans",
-    year,
-    `Week ${String(wk).padStart(2, "0")}.md`
-  );
-
   // --- Inputs (read-only context; the "lens").
   const monthRecord = (plan.months || []).find(
     (m) =>
@@ -237,7 +232,6 @@ function main() {
       // _notionId kept: /plan-week writes this week's numbers + Status to it.
       habitsPlan:
         joinByWeek(life.habitsPlan, weekNotionId).map(stripKeepId)[0] || null,
-      mealFile: { path: mealFilePath, exists: fs.existsSync(mealFilePath) },
     },
     inputs: {
       goals: (life.goals || [])
@@ -248,8 +242,23 @@ function main() {
         .map(stripKeepId),
       workProjects: workProjects
         ? {
-            pulledAt: workProjects._meta ? workProjects._meta.pulled_at : null,
+            pulledAt: workProjects._meta
+              ? workProjects._meta.pulledAt || workProjects._meta.pulled_at
+              : null,
             projects: workProjects.projects || [],
+          }
+        : null,
+      // The week's Linear tickets: due in span (done ones included, so the
+      // plan doesn't double-book) plus open undated. A non-empty
+      // "Completed At" means done — Status names are team-customizable.
+      workTickets: workTasks
+        ? {
+            pulledAt: workTasks._meta ? workTasks._meta.pulledAt : null,
+            tickets: (workTasks.tasks || []).filter(
+              (t) =>
+                inRange(t["Due Date"], start, end) ||
+                (!t["Due Date"] && !t["Completed At"])
+            ),
           }
         : null,
       monthPlans: {

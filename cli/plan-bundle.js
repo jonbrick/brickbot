@@ -82,16 +82,7 @@ function loadJson(name) {
   return require(path.join(__dirname, "..", "data", name));
 }
 
-function main() {
-  const wkArg = process.argv[2];
-  const wk = Number.parseInt(wkArg, 10);
-  if (!Number.isInteger(wk) || wk < 1 || wk > 53) {
-    process.stderr.write(
-      `usage: yarn --silent plan:bundle <wk>  (wk must be an integer 1..53, got ${JSON.stringify(wkArg)})\n`
-    );
-    process.exit(1);
-  }
-
+function buildBundle(wk) {
   const plan = loadJson("plan.json");
   const life = loadJson("life.json");
   const calendar = loadJson("calendar.json");
@@ -118,17 +109,15 @@ function main() {
   const taskWeekKey = `Week ${wk}`;
   const weekRecord = plan.weeks.find((w) => w.Week === weekTitle);
   if (!weekRecord) {
-    process.stderr.write(`week not found in plan.json: "${weekTitle}"\n`);
-    process.exit(1);
+    throw new Error(`week not found in plan.json: "${weekTitle}"`);
   }
   const weekNotionId = weekRecord._notionId;
   const start = weekRecord["Date Range (SET)"];
   const end = weekRecord["Date Range (SET) End"];
   if (!start || !end) {
-    process.stderr.write(
-      `week "${weekTitle}" missing Date Range (SET) / Date Range (SET) End\n`
+    throw new Error(
+      `week "${weekTitle}" missing Date Range (SET) / Date Range (SET) End`
     );
-    process.exit(1);
   }
 
   // --- Tasks: Week Number is the clean key (string "Week 28"); union with
@@ -286,7 +275,28 @@ function main() {
     },
   };
 
-  process.stdout.write(JSON.stringify(bundle, null, 2) + "\n");
+  return bundle;
 }
 
-main();
+function main() {
+  const wkArg = process.argv[2];
+  const wk = Number.parseInt(wkArg, 10);
+  if (!Number.isInteger(wk) || wk < 1 || wk > 53) {
+    process.stderr.write(
+      `usage: yarn --silent plan:bundle <wk>  (wk must be an integer 1..53, got ${JSON.stringify(wkArg)})\n`
+    );
+    process.exit(1);
+  }
+  try {
+    process.stdout.write(JSON.stringify(buildBundle(wk), null, 2) + "\n");
+  } catch (err) {
+    process.stderr.write(`${err.message}\n`);
+    process.exit(1);
+  }
+}
+
+module.exports = { buildBundle };
+
+if (require.main === module) {
+  main();
+}

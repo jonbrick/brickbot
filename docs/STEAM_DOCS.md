@@ -290,3 +290,43 @@ Both UTC and Eastern values are stored at every layer (DynamoDB, API response, N
 The `date` field always means **Eastern date** across all record types (Checker, Summarizer, API). The `date_utc` field always means **UTC date**. This convention is consistent across the entire pipeline.
 
 `collect-steam.js` uses the Eastern timestamps directly from the API — no timezone conversion or offset adjustment needed. The `formatDisplay()` function parses hours/minutes from the ISO string itself (not `getHours()`) to avoid local timezone dependency.
+
+## Known Limitations
+
+### Playtime is attributed to detection-time, not play-time
+
+**Symptom:** An isolated gaming session can appear at a time you weren't playing —
+e.g. a single midday session on a day you were away from the machine — while every
+real session clusters in your usual window (evenings). First observed 2026-07-17: a
+lone 90-min midday Darktide period inside an otherwise evening-only week.
+
+**Root cause:** Steam's API (`GetOwnedGames`) exposes only _cumulative_ lifetime
+playtime (`playtime_forever`) — there is no session history. The Checker
+(`steam-playtime-tracker/index.mjs`) polls every 30 min and treats _any_ increase in
+that counter as "actively playing in the preceding 30-min window," stamping the record
+at poll-time (`new Date()`), not at actual play-time. The Summarizer's 30-min block
+snapping is downstream and cosmetic — it cannot create or move a period, only round
+its edges. So a phantom period always traces back to real Checker records, not to
+snapping.
+
+**The counter can rise without real-time active play:**
+
+- Game left running / idle — Steam counts idle-with-the-game-open as playtime.
+- Deferred flush / backfill — Steam commits playtime to the profile late (on client
+  sync or game close), so old play surfaces at a later poll.
+- Play on another device sharing the account.
+
+**Reading the signature:** N consecutive 30-min blocks means the counter rose ~30 min
+at each of N consecutive polls → the process was running across that window (active or
+idle). A single one-off block is more consistent with a one-time deferred flush.
+
+**Why it isn't cheaply fixed:** No session data exists to fix it with. A presence check
+via `ISteamUser/GetPlayerSummaries` (`gameid` / `gameextrainfo` = currently in-game)
+would catch the deferred-flush and other-device cases, but _not_ left-running/idle —
+Steam reports an idle open game as in-game, indistinguishable from real play. It would
+also require a Lambda change + redeploy.
+
+**Remediating a confirmed phantom:** Delete the Notion record (🎮 Steam Data DB) and
+the Video Games calendar event. The source of truth is the `DAILY_` period record in
+the DynamoDB `steam-playtime` table — a manual backfill over that date recreates the
+Notion/calendar entries from it unless that record is deleted too (AWS console).

@@ -204,6 +204,18 @@ async function syncToCalendar(integrationId, startDate, endDate, options = {}) {
 
   const metadata = integrationConfig.calendarSyncMetadata;
 
+  // Small, non-date-scoped DBs (Events, Trips) opt out of the caller's rolling
+  // window via databaseConfig.syncEntireDb and reconcile their full contents on
+  // every run. The wide span flows into both the record fetch (getAllInDateRange)
+  // and the orphan cleanup (listEvents), so the whole DB and the whole calendar
+  // are reconciled each pass — no future-dated record waits for the window to
+  // reach it, and a Notion deletion clears its event immediately.
+  if (integrationConfig.databaseConfig?.syncEntireDb) {
+    const now = new Date();
+    startDate = new Date(now.getFullYear() - 5, 0, 1);
+    endDate = new Date(now.getFullYear() + 5, 11, 31, 23, 59, 59, 999);
+  }
+
   // Create database instance using IntegrationDatabase
   const repo = new IntegrationDatabase(integrationId);
 

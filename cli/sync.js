@@ -65,7 +65,9 @@ const rangeFlag = dateRangeFlags(range);
 const STEPS = [
   { name: "tokens:refresh", cmd: `${NODE} cli/tokens/refresh.js --auto` },
   { name: "collect", cmd: `${NODE} cli/collect-data.js --auto${rangeFlag}` },
-  { name: "update", cmd: `${NODE} cli/update-calendar.js --auto${rangeFlag}` },
+  // Events/Trips sync their full DB every run (syncEntireDb), adding ~1 min of
+  // calendar re-push to this step; give it headroom over the 3-min default.
+  { name: "update", cmd: `${NODE} cli/update-calendar.js --auto${rangeFlag}`, timeout: 6 * 60 * 1000 },
   { name: "summarize", cmd: `${NODE} cli/summarize-week.js --auto${rangeFlag}` },
   { name: "aggregate", cmd: `${NODE} cli/aggregate-month.js --auto${rangeFlag}` },
   { name: "pull", cmd: `${NODE} cli/pull.js --auto`, timeout: 8 * 60 * 1000 },

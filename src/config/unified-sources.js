@@ -1211,6 +1211,7 @@ const INTEGRATIONS = {
       calendarEventIdProperty: "Calendar Event ID",
       useHybridPattern: true,
       cleanupOrphans: true,
+      syncEntireDb: true,
     },
   },
   trips: {
@@ -1244,6 +1245,7 @@ const INTEGRATIONS = {
       calendarEventIdProperty: "Calendar Event ID",
       useHybridPattern: true,
       cleanupOrphans: true,
+      syncEntireDb: true,
     },
   },
 };

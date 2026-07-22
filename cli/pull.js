@@ -416,8 +416,8 @@ function mergeCollectedBucket(existingRecords, pulledRecords, datePropertyName, 
 
 async function pullCollectedData(spinner, startDate, endDate) {
   const now = new Date().toISOString();
-  const windowStartDay = startDate.toISOString().split("T")[0];
-  const windowEndDay = endDate.toISOString().split("T")[0];
+  const windowStartDay = toLocalDay(startDate);
+  const windowEndDay = toLocalDay(endDate);
 
   // Load existing collected.json so we can merge — historical records outside
   // this pull's window must survive the rolling auto-sync.
@@ -543,6 +543,22 @@ async function pullSummaries(spinner) {
 }
 
 /**
+ * Format a Date as a `YYYY-MM-DD` day string in LOCAL time.
+ *
+ * Using toISOString() here would shift by the UTC offset and can name the wrong
+ * calendar day (e.g. an ET end-of-day rolls into the next UTC date). The merge
+ * window boundary is compared as a day string, so it must match the LOCAL day
+ * the fetch actually reached — otherwise an edge day the fetch didn't cover gets
+ * treated as in-window and wiped. See mergeCalendarBucket + pullCalendar.
+ */
+function toLocalDay(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
  * Merge a freshly-pulled calendar bucket against the existing bucket.
  *
  * Per-event rules (keyed by Google event id = _calendarId):
@@ -589,8 +605,8 @@ function mergeCalendarBucket(existingEvents, pulledEvents, windowStartDay, windo
 
 async function pullCalendar(spinner, startDate, endDate) {
   const now = new Date().toISOString();
-  const windowStartDay = startDate.toISOString().split("T")[0];
-  const windowEndDay = endDate.toISOString().split("T")[0];
+  const windowStartDay = toLocalDay(startDate);
+  const windowEndDay = toLocalDay(endDate);
 
   // Load existing calendar.json so we can merge — historical events outside this
   // pull's window must survive the rolling auto-sync.
@@ -1053,18 +1069,20 @@ async function main() {
   let sections, startDate, endDate;
 
   if (autoMode) {
-    // Auto mode: pull everything; date-scoped window is -29 / +3 days.
-    // Forward window is load-bearing for daily-brief: the 6 AM brief reads
-    // calendar.json populated by the prior night's 11 PM sync, so today's
-    // events must already be in the window when that sync runs.
+    // Auto mode: pull everything; date-scoped window is -29 / +14 days.
+    // Forward window is load-bearing: the daily brief reads calendar.json from
+    // the prior night's sync, and /plan-week needs the whole target week — plus
+    // next week — present. A short forward window silently drops the back half
+    // of the current week from calendar.json, because the fetch cutoff lands
+    // mid-week (this is what +14 fixes; +3 only reached ~Thursday).
     sections = ["plan", "collected", "summaries", "calendar", "nyc", "retro", "life"];
     endDate = new Date();
-    endDate.setDate(endDate.getDate() + 3);
+    endDate.setDate(endDate.getDate() + 14);
     endDate.setHours(23, 59, 59, 999);
     startDate = new Date();
     startDate.setDate(startDate.getDate() - 29);
     startDate.setHours(0, 0, 0, 0);
-    console.log(`Auto mode: all sections (${sections.length}), -29 / +3 days for date-scoped (${startDate.toISOString().split("T")[0]} to ${endDate.toISOString().split("T")[0]})\n`);
+    console.log(`Auto mode: all sections (${sections.length}), -29 / +14 days for date-scoped (${toLocalDay(startDate)} to ${toLocalDay(endDate)})\n`);
   } else {
     const answers = await inquirer.prompt([
       {
